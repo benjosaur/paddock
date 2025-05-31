@@ -1,4 +1,10 @@
-import type { MpLog, VolunteerLog, MagLog } from "../types";
+import type {
+  MpLog,
+  VolunteerLog,
+  MagLog,
+  Client,
+  ClientRequest,
+} from "../types";
 
 export const mockMpLogs: MpLog[] = [
   {
@@ -101,5 +107,101 @@ export const mockMagLogs: MagLog[] = [
       "James Wright",
     ],
     notes: "Q1 strategy planning",
+  },
+];
+
+// New Mock Data for Clients
+export const mockClients: Client[] = [
+  {
+    id: "client-1",
+    name: "Alice Wonderland",
+    dob: "1985-07-22",
+    address: "123 Main St, Anytown",
+    postCode: "AT1 2BC",
+    phone: "01234 567890",
+    email: "alice.w@example.com",
+    nextOfKin: "Mad Hatter (Friend)",
+    referredBy: "Queen of Hearts Clinic",
+    clientAgreementDate: "2024-01-15",
+    clientAgreementComments: "Standard agreement signed.",
+    riskAssessmentDate: "2024-01-10",
+    riskAssessmentComments: "Low risk, standard precautions.",
+    needs: ["Companionship", "Shopping assistance"],
+    servicesProvided: ["Weekly visits", "Grocery shopping"],
+    age: 38,
+    hasMp: true,
+    hasAttendanceAllowance: false,
+  },
+  {
+    id: "client-2",
+    name: "Bob The Builder",
+    dob: "1970-03-10",
+    address: "456 Fixit Ave, Builderville",
+    postCode: "BV2 3CD",
+    phone: "09876 543210",
+    email: "bob.b@example.com",
+    nextOfKin: "Wendy (Partner)",
+    referredBy: "Self-referral",
+    needs: ["Home maintenance advice", "Gardening help"],
+    servicesProvided: ["Monthly consultation", "Seasonal garden tidy-up"],
+    age: 54,
+    hasMp: false,
+    hasAttendanceAllowance: true,
+  },
+  {
+    id: "client-3",
+    name: "Charlie Brown",
+    dob: "1995-11-05",
+    address: "789 Good Grief Ln, Peanuts Town",
+    postCode: "PT3 4DE",
+    phone: "01122 334455",
+    email: "charlie.b@example.com",
+    nextOfKin: "Snoopy (Dog)",
+    referredBy: "Lucy van Pelt Psychiatry",
+    clientAgreementDate: "2023-05-20",
+    clientAgreementComments: "Client hesitant but agreed.",
+    riskAssessmentDate: "2023-05-15",
+    riskAssessmentComments: "Moderate anxiety, requires gentle approach.",
+    needs: ["Emotional support", "Social interaction"],
+    servicesProvided: ["Befriending service", "Group activities"],
+    age: 28,
+    hasMp: true,
+    hasAttendanceAllowance: true,
+  },
+];
+
+// New Mock Data for Client Requests
+export const mockClientRequests: ClientRequest[] = [
+  {
+    id: "req-1",
+    clientId: "client-1",
+    requestType: "volunteer",
+    startDate: "2025-06-10",
+    schedule: "Tuesdays, 2 PM - 4 PM",
+    status: "pending",
+  },
+  {
+    id: "req-2",
+    clientId: "client-2",
+    requestType: "paid",
+    startDate: "2025-07-01",
+    schedule: "First Monday of the month, 10 AM",
+    status: "approved",
+  },
+  {
+    id: "req-3",
+    clientId: "client-1",
+    requestType: "volunteer",
+    startDate: "2025-08-01",
+    schedule: "Fridays, 10 AM - 12 PM",
+    status: "approved",
+  },
+  {
+    id: "req-4",
+    clientId: "client-3",
+    requestType: "volunteer",
+    startDate: "2025-06-15",
+    schedule: "Flexible, ad-hoc",
+    status: "pending",
   },
 ];

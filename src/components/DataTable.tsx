@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
-import { Search, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import type { TableColumn } from "../types";
 
 interface DataTableProps<T> {
@@ -17,6 +17,7 @@ interface DataTableProps<T> {
   onDelete?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
+  onViewItem?: (item: T) => void;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -26,6 +27,7 @@ export function DataTable<T extends { id: string }>({
   onDelete,
   title,
   searchPlaceholder,
+  onViewItem,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -114,6 +116,12 @@ export function DataTable<T extends { id: string }>({
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
+                        {onViewItem && (
+                          <DropdownMenuItem onClick={() => onViewItem(item)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                        )}
                         {onEdit && (
                           <DropdownMenuItem onClick={() => onEdit(item.id)}>
                             <Edit className="mr-2 h-4 w-4" />

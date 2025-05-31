@@ -7,12 +7,21 @@ import {
 } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { DataTable } from "./components/DataTable";
-import { mockMpLogs, mockVolunteerLogs, mockMagLogs } from "./data/mockData";
+import { ClientDetailModal } from "./components/ClientDetailModal";
+import {
+  mockMpLogs,
+  mockVolunteerLogs,
+  mockMagLogs,
+  mockClients,
+  mockClientRequests,
+} from "./data/mockData";
 import type {
   UserRole,
   MpLog,
   VolunteerLog,
   MagLog,
+  Client,
+  ClientRequest,
   TableColumn,
 } from "./types";
 
@@ -51,8 +60,54 @@ const magLogColumns: TableColumn<MagLog>[] = [
   { key: "notes", header: "Notes" },
 ];
 
+// Define columns for Clients table
+const clientColumns: TableColumn<Client>[] = [
+  { key: "id", header: "ID" },
+  { key: "name", header: "Name" },
+  { key: "age", header: "Age" },
+  { key: "postCode", header: "Post Code" },
+  {
+    key: "servicesProvided",
+    header: "Services",
+    render: (item: Client) => item.servicesProvided.join(", "), // Added type for item
+  },
+  {
+    key: "needs",
+    header: "Need Types",
+    render: (item: Client) => item.needs.join(", "),
+  }, // Added type for item
+  {
+    key: "hasMp",
+    header: "Has MP?",
+    render: (item: Client) => (item.hasMp ? "Yes" : "No"),
+  }, // Added type for item
+  {
+    key: "hasAttendanceAllowance",
+    header: "Has AA?",
+    render: (item: Client) => (item.hasAttendanceAllowance ? "Yes" : "No"), // Added type for item
+  },
+];
+
+// Define columns for New Requests table
+const newRequestColumns: TableColumn<ClientRequest>[] = [
+  { key: "id", header: "Request ID" },
+  {
+    key: "clientId",
+    header: "Client Name",
+    render: (item: ClientRequest) =>
+      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
+      item.clientId, // Added types for item and c
+  },
+  { key: "requestType", header: "Type" },
+  { key: "startDate", header: "Start Date" },
+  { key: "schedule", header: "Schedule" },
+  { key: "status", header: "Status" },
+];
+
 function App() {
   const [userRole] = useState<UserRole>("Admin");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleEdit = (id: string) => {
     console.log("Edit item:", id);
@@ -60,6 +115,16 @@ function App() {
 
   const handleDelete = (id: string) => {
     console.log("Delete item:", id);
+  };
+
+  const handleViewClient = (client: Client) => {
+    setSelectedClient(client);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedClient(null);
   };
 
   return (
@@ -111,6 +176,35 @@ function App() {
                 />
               }
             />
+            <Route // Added route for Clients page
+              path="/clients"
+              element={
+                <DataTable
+                  key="clients"
+                  title="Clients"
+                  searchPlaceholder="Search clients..."
+                  data={mockClients}
+                  columns={clientColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onViewItem={handleViewClient as (item: unknown) => void}
+                />
+              }
+            />
+            <Route // Added route for New Requests page
+              path="/new-requests"
+              element={
+                <DataTable
+                  key="new-requests"
+                  title="New Client Requests"
+                  searchPlaceholder="Search requests..."
+                  data={mockClientRequests}
+                  columns={newRequestColumns}
+                  onEdit={handleEdit} // Assuming edit/delete might apply here too
+                  onDelete={handleDelete}
+                />
+              }
+            />
             {/* Add routes for other views (Volunteers, Expiries) here if needed */}
             <Route
               path="*"
@@ -123,6 +217,11 @@ function App() {
           </Routes>
         </main>
       </div>
+      <ClientDetailModal
+        client={selectedClient}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </Router>
   );
 }
