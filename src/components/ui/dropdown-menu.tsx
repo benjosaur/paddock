@@ -73,7 +73,7 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
     <button
       onClick={handleClick}
       className={cn(
-        "flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200/60 bg-white/80 backdrop-blur-sm hover:bg-gray-50/90 hover:border-gray-300/70 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 cursor-pointer",
+        "flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200/60 bg-white/80 backdrop-blur-sm hover:bg-gray-50/90 hover:border-gray-300/70 transition-all duration-200 ease-in-out transform active:scale-95 cursor-pointer",
         className
       )}
     >
@@ -118,7 +118,7 @@ const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
     <button
       onClick={handleClick}
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 ease-in-out hover:bg-gray-100/80 hover:text-gray-900 focus:bg-gray-100/80 focus:text-gray-900 transform hover:scale-[1.02] active:scale-[0.98]",
+        "relative flex w-full cursor-pointer select-none items-center rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 ease-in-out hover:bg-gray-100/80 hover:text-gray-900 focus:bg-gray-100/80 focus:text-gray-900 transform active:scale-[0.98]",
         className
       )}
     >

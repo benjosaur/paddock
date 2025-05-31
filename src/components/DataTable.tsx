@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { MpLog } from "../types";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -9,14 +8,25 @@ import {
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
 import { Search, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import type { TableColumn } from "../types";
 
-interface DataTableProps {
-  data: MpLog[];
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+interface DataTableProps<T> {
+  data: T[];
+  columns: TableColumn<T>[];
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  title: string;
+  searchPlaceholder: string;
 }
 
-export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
+export function DataTable<T extends { id: string }>({
+  data,
+  columns,
+  onEdit,
+  onDelete,
+  title,
+  searchPlaceholder,
+}: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredData = data.filter((item) =>
@@ -30,7 +40,7 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            MP Logs
+            {title}
           </h1>
           <span className="text-sm text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
             Total: {filteredData.length}
@@ -38,9 +48,9 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
         </div>
         <div className="flex items-center space-x-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-gray-500 transition-colors duration-200" />
             <Input
-              placeholder="Search logs..."
+              placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-72 shadow-sm"
@@ -50,68 +60,76 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
         </div>
       </div>
 
-      <div className="border border-gray-200/60 rounded-xl overflow-hidden shadow-sm bg-white/80 backdrop-blur-sm">
-        <table className="w-full">
-          <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/60 backdrop-blur-sm">
+      <div className="border border-gray-200/60 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm">
+        <table className="w-full rounded-xl">
+          <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/60 backdrop-blur-sm rounded-t-xl">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                ID
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                Date
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                Client
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                MP
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                Service(s)
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                Notes
-              </th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-800">
-                Actions
-              </th>
+              {columns.map((col, index) => (
+                <th
+                  key={String(col.key)}
+                  className={`px-6 py-4 text-left text-sm font-semibold text-gray-800 ${
+                    index === 0 ? "rounded-tl-xl" : ""
+                  }`}
+                >
+                  {col.header}
+                </th>
+              ))}
+              {(onEdit || onDelete) && (
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
-          <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50">
-            {filteredData.map((item) => (
+          <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
+            {filteredData.map((item, index) => (
               <tr
                 key={item.id}
-                className="hover:bg-gray-50/80 transition-colors duration-150 ease-in-out"
+                className={`hover:bg-gray-100/80 transition-colors duration-150 ease-in-out ${
+                  index === filteredData.length - 1 ? "rounded-b-xl" : ""
+                }`}
               >
-                <td className="px-6 py-4 text-sm text-gray-700">{item.id}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">{item.date}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {item.client}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">{item.mp}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {item.services.join(", ")}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {item.notes}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => onEdit(item.id)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDelete(item.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
+                {columns.map((col, colIndex) => (
+                  <td
+                    key={String(col.key)}
+                    className={`px-6 py-4 text-sm text-gray-700 ${
+                      index === filteredData.length - 1 && colIndex === 0
+                        ? "rounded-bl-xl"
+                        : ""
+                    }`}
+                  >
+                    {col.render
+                      ? col.render(item)
+                      : (item[col.key as keyof T] as React.ReactNode)}
+                  </td>
+                ))}
+                {(onEdit || onDelete) && (
+                  <td
+                    className={`px-6 py-4 text-right ${
+                      index === filteredData.length - 1 ? "rounded-br-xl" : ""
+                    }`}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {onEdit && (
+                          <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
+                        {onDelete && (
+                          <DropdownMenuItem onClick={() => onDelete(item.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

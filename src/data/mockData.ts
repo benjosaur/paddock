@@ -76,7 +76,16 @@ export const mockMagLogs: MagLog[] = [
     date: "2025-01-15",
     attendee: "Management Meeting",
     total: 8,
-    attendees: ["Sarah Johnson", "David Wilson", "Michael Thompson", "Emma Clarke", "James Wright", "Lisa Brown", "Mark Davis", "Jane Smith"],
+    attendees: [
+      "Sarah Johnson",
+      "David Wilson",
+      "Michael Thompson",
+      "Emma Clarke",
+      "James Wright",
+      "Lisa Brown",
+      "Mark Davis",
+      "Jane Smith",
+    ],
     notes: "Monthly review and planning session",
   },
   {
@@ -84,7 +93,13 @@ export const mockMagLogs: MagLog[] = [
     date: "2025-01-22",
     attendee: "Strategy Session",
     total: 5,
-    attendees: ["Sarah Johnson", "David Wilson", "Michael Thompson", "Emma Clarke", "James Wright"],
+    attendees: [
+      "Sarah Johnson",
+      "David Wilson",
+      "Michael Thompson",
+      "Emma Clarke",
+      "James Wright",
+    ],
     notes: "Q1 strategy planning",
   },
 ];

@@ -19,6 +19,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
 #root {
   min-height: 100vh;
 }
