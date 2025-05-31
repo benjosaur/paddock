@@ -1,6 +1,7 @@
 // This file re-exports components from the ui directory
 // to allow for cleaner imports elsewhere in the application.
 
+export * from "./alert-dialog";
 export * from "./button";
 export * from "./dropdown-menu";
 export * from "./input";
