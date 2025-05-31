@@ -8,12 +8,17 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
+import { MpDetailModal } from "./components/MpDetailModal";
+import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
 import {
   mockMpLogs,
   mockVolunteerLogs,
   mockMagLogs,
   mockClients,
   mockClientRequests,
+  mockMps,
+  mockVolunteers,
+  mockExpiries,
 } from "./data/mockData";
 import type {
   UserRole,
@@ -23,6 +28,9 @@ import type {
   Client,
   ClientRequest,
   TableColumn,
+  Mp,
+  Volunteer,
+  ExpiryItem,
 } from "./types";
 
 const mpLogColumns: TableColumn<MpLog>[] = [
@@ -69,23 +77,60 @@ const clientColumns: TableColumn<Client>[] = [
   {
     key: "servicesProvided",
     header: "Services",
-    render: (item: Client) => item.servicesProvided.join(", "), // Added type for item
+    render: (item: Client) => item.servicesProvided.join(", "),
   },
   {
     key: "needs",
     header: "Need Types",
     render: (item: Client) => item.needs.join(", "),
-  }, // Added type for item
+  },
   {
     key: "hasMp",
     header: "Has MP?",
     render: (item: Client) => (item.hasMp ? "Yes" : "No"),
-  }, // Added type for item
+  },
   {
     key: "hasAttendanceAllowance",
     header: "Has AA?",
-    render: (item: Client) => (item.hasAttendanceAllowance ? "Yes" : "No"), // Added type for item
+    render: (item: Client) => (item.hasAttendanceAllowance ? "Yes" : "No"),
   },
+];
+
+// Define columns for MPs table
+const mpColumns: TableColumn<Mp>[] = [
+  { key: "id", header: "ID" },
+  { key: "name", header: "Name" },
+  { key: "age", header: "Age" },
+  { key: "postCode", header: "Post Code" },
+  {
+    key: "servicesOffered",
+    header: "Services",
+    render: (item: Mp) => item.servicesOffered.join(", "),
+  },
+  { key: "dbsExpiry", header: "DBS Expiry" },
+  { key: "capacity", header: "Capacity?" },
+  { key: "transport", header: "Transport?" },
+];
+
+// Define columns for Volunteers table
+const volunteerColumns: TableColumn<Volunteer>[] = [
+  { key: "id", header: "ID" },
+  { key: "name", header: "Name" },
+  { key: "age", header: "Age" },
+  { key: "postCode", header: "Post Code" },
+  {
+    key: "servicesOffered",
+    header: "Services",
+    render: (item: Volunteer) => item.servicesOffered.join(", "),
+  },
+  {
+    key: "needTypes",
+    header: "Need Types",
+    render: (item: Volunteer) => item.needTypes.join(", "),
+  },
+  { key: "dbsExpiry", header: "DBS" },
+  { key: "capacity", header: "Capacity?" },
+  { key: "transport", header: "Transport?" },
 ];
 
 // Define columns for New Requests table
@@ -96,7 +141,7 @@ const newRequestColumns: TableColumn<ClientRequest>[] = [
     header: "Client Name",
     render: (item: ClientRequest) =>
       mockClients.find((c: Client) => c.id === item.clientId)?.name ||
-      item.clientId, // Added types for item and c
+      item.clientId,
   },
   { key: "requestType", header: "Type" },
   { key: "startDate", header: "Start Date" },
@@ -104,10 +149,28 @@ const newRequestColumns: TableColumn<ClientRequest>[] = [
   { key: "status", header: "Status" },
 ];
 
+const expiryColumns: TableColumn<ExpiryItem>[] = [
+  { key: "date", header: "Date" },
+  {
+    key: "type",
+    header: "Type",
+    render: (item: ExpiryItem) => (item.type === "dbs" ? "DBS" : "Training"),
+  },
+  { key: "mpVolunteer", header: "MP/Volunteer" },
+  { key: "name", header: "Training" },
+  { key: "personType", header: "Type" },
+];
+
 function App() {
   const [userRole] = useState<UserRole>("Admin");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [selectedMp, setSelectedMp] = useState<Mp | null>(null);
+  const [isMpModalOpen, setIsMpModalOpen] = useState(false);
+  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(
+    null
+  );
+  const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
 
   const handleEdit = (id: string) => {
     console.log("Edit item:", id);
@@ -119,12 +182,32 @@ function App() {
 
   const handleViewClient = (client: Client) => {
     setSelectedClient(client);
-    setIsModalOpen(true);
+    setIsClientModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseClientModal = () => {
+    setIsClientModalOpen(false);
     setSelectedClient(null);
+  };
+
+  const handleViewMp = (mp: Mp) => {
+    setSelectedMp(mp);
+    setIsMpModalOpen(true);
+  };
+
+  const handleCloseMpModal = () => {
+    setIsMpModalOpen(false);
+    setSelectedMp(null);
+  };
+
+  const handleViewVolunteer = (volunteer: Volunteer) => {
+    setSelectedVolunteer(volunteer);
+    setIsVolunteerModalOpen(true);
+  };
+
+  const handleCloseVolunteerModal = () => {
+    setIsVolunteerModalOpen(false);
+    setSelectedVolunteer(null);
   };
 
   return (
@@ -176,7 +259,7 @@ function App() {
                 />
               }
             />
-            <Route // Added route for Clients page
+            <Route
               path="/clients"
               element={
                 <DataTable
@@ -191,7 +274,37 @@ function App() {
                 />
               }
             />
-            <Route // Added route for New Requests page
+            <Route
+              path="/mps"
+              element={
+                <DataTable
+                  key="mps"
+                  title="MPs"
+                  searchPlaceholder="Search MPs..."
+                  data={mockMps}
+                  columns={mpColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onViewItem={handleViewMp as (item: unknown) => void}
+                />
+              }
+            />
+            <Route
+              path="/volunteers"
+              element={
+                <DataTable
+                  key="volunteers"
+                  title="Volunteers"
+                  searchPlaceholder="Search volunteers..."
+                  data={mockVolunteers}
+                  columns={volunteerColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onViewItem={handleViewVolunteer as (item: unknown) => void}
+                />
+              }
+            />
+            <Route
               path="/new-requests"
               element={
                 <DataTable
@@ -200,12 +313,25 @@ function App() {
                   searchPlaceholder="Search requests..."
                   data={mockClientRequests}
                   columns={newRequestColumns}
-                  onEdit={handleEdit} // Assuming edit/delete might apply here too
+                  onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
               }
             />
-            {/* Add routes for other views (Volunteers, Expiries) here if needed */}
+            <Route
+              path="/expiries"
+              element={
+                <DataTable
+                  key="expiries"
+                  title="Expiries"
+                  searchPlaceholder="Search expiries..."
+                  data={mockExpiries}
+                  columns={expiryColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              }
+            />
             <Route
               path="*"
               element={
@@ -219,8 +345,18 @@ function App() {
       </div>
       <ClientDetailModal
         client={selectedClient}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        isOpen={isClientModalOpen}
+        onClose={handleCloseClientModal}
+      />
+      <MpDetailModal
+        mp={selectedMp}
+        isOpen={isMpModalOpen}
+        onClose={handleCloseMpModal}
+      />
+      <VolunteerDetailModal
+        volunteer={selectedVolunteer}
+        isOpen={isVolunteerModalOpen}
+        onClose={handleCloseVolunteerModal}
       />
     </Router>
   );

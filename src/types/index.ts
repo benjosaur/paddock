@@ -47,6 +47,56 @@ export interface ClientRequest {
   status: "pending" | "approved" | "rejected";
 }
 
+export interface TrainingRecordItem {
+  training: string;
+  expiry: string;
+}
+
+export interface Mp {
+  id: string;
+  // Contact Information from modal & table
+  name: string;
+  address: string;
+  postCode: string;
+  phone: string;
+  email: string;
+  nextOfKin: string;
+  dbsNumber?: string; // From "DBS" in contact info, assuming it's the number
+  dbsExpiry: string; // From table
+  age?: number; // From table
+  // Offerings from modal & table
+  servicesOffered: string[];
+  specialisms: string[];
+  transport: string; // From table "Transport?" and modal "Transport"
+  capacity: string; // From table "Capacity?" and modal "Capacity"
+  // Training Record from modal
+  trainingRecords: TrainingRecordItem[];
+  // Logs - will use MpLog, filtered by MP's name or ID
+}
+
+export interface Volunteer {
+  id: string;
+  // Contact Information
+  name: string;
+  age?: number;
+  address: string;
+  postCode: string;
+  phone: string;
+  email: string;
+  nextOfKin: string;
+  dbsNumber?: string;
+  dbsExpiry?: string;
+  // Offerings / Skills
+  servicesOffered: string[]; // Corresponds to "Services" in table
+  needTypes: string[]; // Corresponds to "Need Types" in table
+  transport: string; // Corresponds to "Transport?" in table
+  capacity: string; // Corresponds to "Capacity?" in table
+  specialisms?: string[]; // From "Offerings" tab, not directly in table overview
+  // Training Record
+  trainingRecords: TrainingRecordItem[];
+  // Logs will use VolunteerLog, filtered by Volunteer's name or ID
+}
+
 export interface Client {
   id: string;
   // Contact Information
@@ -69,4 +119,13 @@ export interface Client {
   age?: number; // Can be calculated from DOB
   hasMp?: boolean; // "has MP?"
   hasAttendanceAllowance?: boolean; // "has Attendance Allowance?"
+}
+
+export interface ExpiryItem {
+  id: string;
+  date: string;
+  type: "training" | "dbs";
+  mpVolunteer: string;
+  name: string;
+  personType: "MP" | "Volunteer";
 }

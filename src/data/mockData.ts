@@ -4,6 +4,9 @@ import type {
   MagLog,
   Client,
   ClientRequest,
+  Mp,
+  Volunteer,
+  ExpiryItem,
 } from "../types";
 
 export const mockMpLogs: MpLog[] = [
@@ -46,6 +49,130 @@ export const mockMpLogs: MpLog[] = [
     mp: "David Wilson",
     services: ["Meeting"],
     notes: "Constituency surgery appointment",
+  },
+];
+
+// New Mock Data for MPs
+export const mockMps: Mp[] = [
+  {
+    id: "mp-1",
+    name: "Sarah Johnson",
+    address: "12 Caring Lane, Townsville",
+    postCode: "TV1 2AB",
+    phone: "01234 567891",
+    email: "sarah.j@mpcares.com",
+    nextOfKin: "John Johnson (Husband)",
+    dbsNumber: "1234567890",
+    dbsExpiry: "2026-05-20",
+    age: 45,
+    servicesOffered: ["Personal Care", "Medication Reminders"],
+    specialisms: ["Dementia Care", "Palliative Care"],
+    transport: "Own Car",
+    capacity: "Full",
+    trainingRecords: [
+      { training: "First Aid", expiry: "2025-10-10" },
+      { training: "Safeguarding Adults", expiry: "2026-01-15" },
+    ],
+  },
+  {
+    id: "mp-2",
+    name: "David Wilson",
+    address: "34 Helping Hand Rd, Cityville",
+    postCode: "CV2 3BC",
+    phone: "09876 543211",
+    email: "david.w@mpcares.com",
+    nextOfKin: "Mary Wilson (Wife)",
+    dbsExpiry: "2025-11-30",
+    age: 52,
+    servicesOffered: ["Companionship", "Meal Preparation"],
+    specialisms: ["Elderly Care"],
+    transport: "Public Transport",
+    capacity: "Part-time Available",
+    trainingRecords: [
+      { training: "Food Hygiene", expiry: "2025-08-01" },
+      { training: "Manual Handling", expiry: "2026-03-22" },
+    ],
+  },
+  {
+    id: "mp-3",
+    name: "Michael Thompson",
+    address: "56 Support Street, Villagetown",
+    postCode: "VT3 4CD",
+    phone: "01122 334456",
+    email: "michael.t@mpcares.com",
+    nextOfKin: "Susan Thompson (Sister)",
+    dbsNumber: "0987654321",
+    dbsExpiry: "2027-02-10",
+    age: 38,
+    servicesOffered: ["Social Outings", "Light Housekeeping"],
+    specialisms: ["Learning Disabilities Support"],
+    transport: "Own Car, Wheelchair Accessible",
+    capacity: "Available Weekends",
+    trainingRecords: [{ training: "Basic Life Support", expiry: "2025-07-01" }],
+  },
+];
+
+// New Mock Data for Volunteers
+export const mockVolunteers: Volunteer[] = [
+  {
+    id: "vol-1",
+    name: "Alice Cooper",
+    age: 34,
+    address: "789 Volunteer Ave, Community City",
+    postCode: "CC4 5DE",
+    phone: "02345 678901",
+    email: "alice.c@example.org",
+    nextOfKin: "Bob The Builder (Friend)",
+    dbsNumber: "VOL987654321",
+    dbsExpiry: "2027-08-15",
+    servicesOffered: ["Admin Support", "Event Assistance"],
+    needTypes: ["Office Tasks", "Public Engagement"],
+    transport: "Bicycle",
+    capacity: "Weekends, 5hrs/week",
+    specialisms: ["Organisational Skills", "Public Speaking"],
+    trainingRecords: [
+      { training: "Data Protection", expiry: "2026-06-30" },
+      { training: "Health & Safety Basics", expiry: "2025-12-01" },
+    ],
+  },
+  {
+    id: "vol-2",
+    name: "Bob Stevens",
+    age: 28,
+    address: "101 Helper St, Support Town",
+    postCode: "ST5 6FG",
+    phone: "03456 789012",
+    email: "bob.s@example.org",
+    nextOfKin: "Carol White (Partner)",
+    dbsExpiry: "2026-10-20",
+    servicesOffered: ["Befriending", "Gardening"],
+    needTypes: ["Social Support", "Outdoor Activities"],
+    transport: "Own Car",
+    capacity: "Mon, Wed PM",
+    trainingRecords: [
+      { training: "Mental Health First Aid", expiry: "2027-01-10" },
+      { training: "Safeguarding Vulnerable Adults", expiry: "2026-09-05" },
+    ],
+  },
+  {
+    id: "vol-3",
+    name: "Carol White",
+    age: 45,
+    address: "202 Kindness Rd, Generosity Village",
+    postCode: "GV6 7HI",
+    phone: "04567 890123",
+    email: "carol.w@example.org",
+    nextOfKin: "Alice Cooper (Friend)",
+    dbsNumber: "VOL123456789",
+    dbsExpiry: "2025-07-25",
+    servicesOffered: ["Driving", "Shopping Assistance"],
+    needTypes: ["Transportation", "Practical Support"],
+    transport: "Own Car (Wheelchair accessible)",
+    capacity: "Flexible, 10hrs/month",
+    specialisms: ["Advanced Driving Course"],
+    trainingRecords: [
+      { training: "First Aid for Drivers", expiry: "2026-04-12" },
+    ],
   },
 ];
 
@@ -205,3 +332,66 @@ export const mockClientRequests: ClientRequest[] = [
     status: "pending",
   },
 ];
+
+// Generate expiry data from MPs and Volunteers
+const generateExpiries = (): ExpiryItem[] => {
+  const expiries: ExpiryItem[] = [];
+
+  // MP DBS expiries
+  mockMps.forEach((mp) => {
+    if (mp.dbsExpiry) {
+      expiries.push({
+        id: `mp-dbs-${mp.id}`,
+        date: mp.dbsExpiry,
+        type: "dbs",
+        mpVolunteer: mp.name,
+        name: "DBS Check",
+        personType: "MP",
+      });
+    }
+
+    // MP training expiries
+    mp.trainingRecords.forEach((training, index) => {
+      expiries.push({
+        id: `mp-training-${mp.id}-${index}`,
+        date: training.expiry,
+        type: "training",
+        mpVolunteer: mp.name,
+        name: training.training,
+        personType: "MP",
+      });
+    });
+  });
+
+  // Volunteer DBS expiries
+  mockVolunteers.forEach((volunteer) => {
+    if (volunteer.dbsExpiry) {
+      expiries.push({
+        id: `vol-dbs-${volunteer.id}`,
+        date: volunteer.dbsExpiry,
+        type: "dbs",
+        mpVolunteer: volunteer.name,
+        name: "DBS Check",
+        personType: "Volunteer",
+      });
+    }
+
+    // Volunteer training expiries
+    volunteer.trainingRecords.forEach((training, index) => {
+      expiries.push({
+        id: `vol-training-${volunteer.id}-${index}`,
+        date: training.expiry,
+        type: "training",
+        mpVolunteer: volunteer.name,
+        name: training.training,
+        personType: "Volunteer",
+      });
+    });
+  });
+
+  return expiries.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+};
+
+export const mockExpiries = generateExpiries();
