@@ -19,19 +19,19 @@ const clientRequestColumns: TableColumn<ClientRequest>[] = [
   { key: "status", header: "Status" },
 ];
 
-interface ClientRequestRoutesProps {
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-}
-
 export default function ClientRequestRoutes({
-  onEdit,
   onDelete,
-}: ClientRequestRoutesProps) {
+}: {
+  onDelete: (id: string) => void;
+}) {
   const navigate = useNavigate();
 
   const handleAddNew = () => {
     navigate("/new-requests/create");
+  };
+
+  const handleEditNavigation = (id: string) => {
+    navigate(`/new-requests/edit/${id}`);
   };
 
   return (
@@ -45,13 +45,14 @@ export default function ClientRequestRoutes({
             searchPlaceholder="Search requests..."
             data={mockClientRequests}
             columns={clientRequestColumns}
-            onEdit={onEdit}
+            onEdit={handleEditNavigation}
             onDelete={onDelete}
             onAddNew={handleAddNew}
           />
         }
       />
       <Route path="create" element={<ClientRequestForm />} />
+      <Route path="edit/:id" element={<ClientRequestForm />} />
     </Routes>
   );
 }

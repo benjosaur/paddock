@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { mockClients } from "../data/mockData";
+import { mockClients, mockClientRequests } from "../data/mockData";
 import type { ClientRequest, Client } from "../types";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<ClientRequest>>({
     clientId: "",
     requestType: "volunteer",
@@ -32,13 +35,26 @@ export function ClientRequestForm() {
     { value: "rejected", label: "Rejected" },
   ];
 
+  useEffect(() => {
+    if (isEditing && id) {
+      const request = mockClientRequests.find((r) => r.id === id);
+      if (request) {
+        setFormData(request);
+      }
+    }
+  }, [isEditing, id]);
+
   const handleInputChange = (field: keyof ClientRequest, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating Client Request:", formData);
+    if (isEditing) {
+      console.log("Updating Client Request:", formData);
+    } else {
+      console.log("Creating Client Request:", formData);
+    }
     navigate("/new-requests");
   };
 
@@ -50,7 +66,7 @@ export function ClientRequestForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New Client Request
+          {isEditing ? "Edit Client Request" : "Create New Client Request"}
         </h1>
       </div>
 
@@ -185,7 +201,9 @@ export function ClientRequestForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create Client Request</Button>
+            <Button type="submit">
+              {isEditing ? "Update Request" : "Create Client Request"}
+            </Button>
           </div>
         </form>
       </div>
