@@ -167,99 +167,162 @@ export function TableSearchForm() {
   };
 
   const getTableColumns = (tableName: string): TableColumn<any>[] => {
-    const commonColumns = (fields: string[]): TableColumn<any>[] =>
-      fields.map((field) => ({
-        key: field,
-        header:
-          field.charAt(0).toUpperCase() +
-          field.slice(1).replace(/([A-Z])/g, " $1"),
-        render: (item: any) => {
-          const value = item[field];
-          if (Array.isArray(value)) {
-            return value.join(", ");
-          }
-          if (typeof value === "boolean") {
-            return value ? "Yes" : "No";
-          }
-          return value?.toString() || "";
-        },
-      }));
-
     switch (tableName) {
       case "mpLogs":
-        return commonColumns([
-          "id",
-          "date",
-          "clientId",
-          "mpId",
-          "services",
-          "hoursLogged",
-          "notes",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "date", header: "Date" },
+          {
+            key: "clientId",
+            header: "Client",
+            render: (item: any) =>
+              mockClients.find((c) => c.id === item.clientId)?.name ||
+              item.clientId,
+          },
+          {
+            key: "mpId",
+            header: "MP",
+            render: (item: any) =>
+              mockMps.find((mp) => mp.id === item.mpId)?.name || item.mpId,
+          },
+          {
+            key: "services",
+            header: "Service(s)",
+            render: (item: any) =>
+              Array.isArray(item.services)
+                ? item.services.join(", ")
+                : item.services,
+          },
+          { key: "hoursLogged", header: "Hours Logged" },
+          { key: "notes", header: "Notes" },
+        ];
       case "volunteerLogs":
-        return commonColumns([
-          "id",
-          "date",
-          "clientId",
-          "volunteerId",
-          "activity",
-          "hoursLogged",
-          "notes",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "date", header: "Date" },
+          {
+            key: "clientId",
+            header: "Client",
+            render: (item: any) =>
+              mockClients.find((c) => c.id === item.clientId)?.name ||
+              item.clientId,
+          },
+          {
+            key: "volunteerId",
+            header: "Volunteer",
+            render: (item: any) =>
+              mockVolunteers.find((v) => v.id === item.volunteerId)?.name ||
+              item.volunteerId,
+          },
+          { key: "activity", header: "Activity" },
+          { key: "hoursLogged", header: "Hours Logged" },
+          { key: "notes", header: "Notes" },
+        ];
       case "magLogs":
-        return commonColumns(["id", "date", "total", "attendees", "notes"]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "date", header: "Date" },
+          { key: "total", header: "Total" },
+          {
+            key: "attendees",
+            header: "Attendees",
+            render: (item: any) => {
+              if (Array.isArray(item.attendees)) {
+                const clientNames = item.attendees.map(
+                  (clientId: string) =>
+                    mockClients.find((c) => c.id === clientId)?.name || clientId
+                );
+                return clientNames.join(", ");
+              }
+              return item.attendees?.toString() || "";
+            },
+          },
+          { key: "notes", header: "Notes" },
+        ];
       case "clients":
-        return commonColumns([
-          "id",
-          "name",
-          "dob",
-          "address",
-          "phone",
-          "email",
-          "needs",
-          "servicesProvided",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "name", header: "Name" },
+          { key: "dob", header: "Date of Birth" },
+          { key: "address", header: "Address" },
+          { key: "phone", header: "Phone" },
+          { key: "email", header: "Email" },
+          {
+            key: "needs",
+            header: "Needs",
+            render: (item: any) =>
+              Array.isArray(item.needs) ? item.needs.join(", ") : item.needs,
+          },
+          {
+            key: "servicesProvided",
+            header: "Services Provided",
+            render: (item: any) =>
+              Array.isArray(item.servicesProvided)
+                ? item.servicesProvided.join(", ")
+                : item.servicesProvided,
+          },
+        ];
       case "mps":
-        return commonColumns([
-          "id",
-          "name",
-          "address",
-          "phone",
-          "email",
-          "servicesOffered",
-          "transport",
-          "capacity",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "name", header: "Name" },
+          { key: "address", header: "Address" },
+          { key: "phone", header: "Phone" },
+          { key: "email", header: "Email" },
+          {
+            key: "servicesOffered",
+            header: "Services Offered",
+            render: (item: any) =>
+              Array.isArray(item.servicesOffered)
+                ? item.servicesOffered.join(", ")
+                : item.servicesOffered,
+          },
+          { key: "transport", header: "Transport" },
+          { key: "capacity", header: "Capacity" },
+        ];
       case "volunteers":
-        return commonColumns([
-          "id",
-          "name",
-          "age",
-          "address",
-          "phone",
-          "email",
-          "servicesOffered",
-          "transport",
-          "capacity",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "name", header: "Name" },
+          { key: "age", header: "Age" },
+          { key: "address", header: "Address" },
+          { key: "phone", header: "Phone" },
+          { key: "email", header: "Email" },
+          {
+            key: "servicesOffered",
+            header: "Services Offered",
+            render: (item: any) =>
+              Array.isArray(item.servicesOffered)
+                ? item.servicesOffered.join(", ")
+                : item.servicesOffered,
+          },
+          { key: "transport", header: "Transport" },
+          { key: "capacity", header: "Capacity" },
+        ];
       case "clientRequests":
-        return commonColumns([
-          "id",
-          "clientId",
-          "requestType",
-          "startDate",
-          "schedule",
-          "status",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          {
+            key: "clientId",
+            header: "Client",
+            render: (item: any) =>
+              mockClients.find((c) => c.id === item.clientId)?.name ||
+              item.clientId,
+          },
+          { key: "requestType", header: "Request Type" },
+          { key: "startDate", header: "Start Date" },
+          { key: "schedule", header: "Schedule" },
+          { key: "status", header: "Status" },
+        ];
       case "expiries":
-        return commonColumns([
-          "id",
-          "date",
-          "type",
-          "mpVolunteer",
-          "name",
-          "personType",
-        ]);
+        return [
+          { key: "id", header: "ID" },
+          { key: "date", header: "Date" },
+          { key: "type", header: "Type" },
+          { key: "mpVolunteer", header: "MP/Volunteer" },
+          { key: "name", header: "Name" },
+          { key: "personType", header: "Person Type" },
+        ];
       default:
         return [];
     }

@@ -124,7 +124,6 @@ function App() {
               path="/mps/*"
               element={
                 <MpsRoutes
-                  handleEdit={handleEdit}
                   handleDelete={handleDelete}
                   handleViewMp={handleViewMp}
                 />
@@ -134,7 +133,6 @@ function App() {
               path="/volunteers/*"
               element={
                 <VolunteersRoutes
-                  handleEdit={handleEdit}
                   handleDelete={handleDelete}
                   handleViewVolunteer={handleViewVolunteer}
                 />
@@ -142,12 +140,7 @@ function App() {
             />
             <Route
               path="/new-requests/*"
-              element={
-                <ClientRequestRoutes
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              }
+              element={<ClientRequestRoutes onDelete={handleDelete} />}
             />
             <Route
               path="/expiries"
