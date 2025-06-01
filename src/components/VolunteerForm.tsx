@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import type { Mp } from "../types";
+import type { Volunteer } from "../types";
 
-export function MpForm() {
+export function VolunteerForm() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<Partial<Mp>>({
+  const [formData, setFormData] = useState<Partial<Volunteer>>({
     name: "",
+    age: undefined,
     address: "",
     postCode: "",
     phone: "",
@@ -15,27 +16,31 @@ export function MpForm() {
     nextOfKin: "",
     dbsNumber: "",
     dbsExpiry: "",
-    age: undefined,
     servicesOffered: [],
-    specialisms: [],
+    needTypes: [],
     transport: "",
     capacity: "",
+    specialisms: [],
     trainingRecords: [],
   });
 
   const [servicesInput, setServicesInput] = useState("");
+  const [needTypesInput, setNeedTypesInput] = useState("");
   const [specialismsInput, setSpecialismsInput] = useState("");
   const [trainingInput, setTrainingInput] = useState({
     training: "",
     expiry: "",
   });
 
-  const handleInputChange = (field: keyof Mp, value: string | number) => {
+  const handleInputChange = (
+    field: keyof Volunteer,
+    value: string | number
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleArrayInputChange = (
-    field: "servicesOffered" | "specialisms",
+    field: "servicesOffered" | "needTypes" | "specialisms",
     value: string
   ) => {
     const array = value
@@ -65,19 +70,19 @@ export function MpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating MP:", formData);
-    navigate("/mps");
+    console.log("Creating Volunteer:", formData);
+    navigate("/volunteers");
   };
 
   const handleCancel = () => {
-    navigate("/mps");
+    navigate("/volunteers");
   };
 
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New MP
+          Create New Volunteer
         </h1>
       </div>
 
@@ -256,6 +261,24 @@ export function MpForm() {
 
               <div>
                 <label
+                  htmlFor="needTypes"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Need Types (comma-separated)
+                </label>
+                <Input
+                  id="needTypes"
+                  value={needTypesInput}
+                  onChange={(e) => {
+                    setNeedTypesInput(e.target.value);
+                    handleArrayInputChange("needTypes", e.target.value);
+                  }}
+                  placeholder="e.g., Elderly Care, Disability Support"
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="specialisms"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -369,7 +392,7 @@ export function MpForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create MP</Button>
+            <Button type="submit">Create Volunteer</Button>
           </div>
         </form>
       </div>

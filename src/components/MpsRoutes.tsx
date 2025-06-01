@@ -19,11 +19,11 @@ const mpColumns: TableColumn<Mp>[] = [
   { key: "transport", header: "Transport?" },
 ];
 
-export function MpsRoutes({ 
-  handleEdit, 
-  handleDelete, 
-  handleViewMp 
-}: { 
+export function MpsRoutes({
+  handleEdit,
+  handleDelete,
+  handleViewMp,
+}: {
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
   handleViewMp: (mp: Mp) => void;

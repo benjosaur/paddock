@@ -10,6 +10,7 @@ import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
 import ClientsRoutes from "./components/ClientsRoutes";
 import MpsRoutes from "./components/MpsRoutes";
+import { VolunteersRoutes } from "./components/VolunteersRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
 import {
@@ -18,7 +19,6 @@ import {
   mockMagLogs,
   mockClients,
   mockClientRequests,
-  mockVolunteers,
   mockExpiries,
 } from "./data/mockData";
 import type {
@@ -67,27 +67,6 @@ const magLogColumns: TableColumn<MagLog>[] = [
     render: (item) => item.attendees.join(", "),
   },
   { key: "notes", header: "Notes" },
-];
-
-// Define columns for Volunteers table
-const volunteerColumns: TableColumn<Volunteer>[] = [
-  { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
-  { key: "age", header: "Age" },
-  { key: "postCode", header: "Post Code" },
-  {
-    key: "servicesOffered",
-    header: "Services",
-    render: (item: Volunteer) => item.servicesOffered.join(", "),
-  },
-  {
-    key: "needTypes",
-    header: "Need Types",
-    render: (item: Volunteer) => item.needTypes.join(", "),
-  },
-  { key: "dbsExpiry", header: "DBS" },
-  { key: "capacity", header: "Capacity?" },
-  { key: "transport", header: "Transport?" },
 ];
 
 // Define columns for New Requests table
@@ -237,17 +216,12 @@ function App() {
               }
             />
             <Route
-              path="/volunteers"
+              path="/volunteers/*"
               element={
-                <DataTable
-                  key="volunteers"
-                  title="Volunteers"
-                  searchPlaceholder="Search volunteers..."
-                  data={mockVolunteers}
-                  columns={volunteerColumns}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewItem={handleViewVolunteer as (item: unknown) => void}
+                <VolunteersRoutes
+                  handleEdit={handleEdit}
+                  handleDelete={handleDelete}
+                  handleViewVolunteer={handleViewVolunteer}
                 />
               }
             />
