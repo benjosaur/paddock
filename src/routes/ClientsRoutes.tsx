@@ -48,6 +48,10 @@ export default function ClientsRoutes({
     navigate("/clients/create");
   };
 
+  const handleEdit = (id: string) => {
+    navigate(`/clients/edit/${id}`);
+  };
+
   return (
     <Routes>
       <Route
@@ -59,7 +63,7 @@ export default function ClientsRoutes({
             searchPlaceholder="Search clients..."
             data={mockClients}
             columns={clientColumns}
-            onEdit={onEdit}
+            onEdit={handleEdit}
             onDelete={onDelete}
             onViewItem={onViewClient as (item: unknown) => void}
             onAddNew={handleAddNew}
@@ -67,6 +71,7 @@ export default function ClientsRoutes({
         }
       />
       <Route path="create" element={<ClientForm />} />
+      <Route path="edit/:id" element={<ClientForm />} />
     </Routes>
   );
 }

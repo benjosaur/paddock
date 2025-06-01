@@ -20,11 +20,9 @@ const mpColumns: TableColumn<Mp>[] = [
 ];
 
 export function MpsRoutes({
-  handleEdit,
   handleDelete,
   handleViewMp,
 }: {
-  handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
   handleViewMp: (mp: Mp) => void;
 }) {
@@ -32,6 +30,10 @@ export function MpsRoutes({
 
   const handleAddNew = () => {
     navigate("/mps/create");
+  };
+
+  const handleEditNavigation = (id: string) => {
+    navigate(`/mps/edit/${id}`);
   };
 
   return (
@@ -45,7 +47,7 @@ export function MpsRoutes({
             searchPlaceholder="Search MPs..."
             data={mockMps}
             columns={mpColumns}
-            onEdit={handleEdit}
+            onEdit={handleEditNavigation}
             onDelete={handleDelete}
             onViewItem={handleViewMp as (item: unknown) => void}
             onAddNew={handleAddNew}
@@ -53,6 +55,7 @@ export function MpsRoutes({
         }
       />
       <Route path="create" element={<MpForm />} />
+      <Route path="edit/:id" element={<MpForm />} />
     </Routes>
   );
 }

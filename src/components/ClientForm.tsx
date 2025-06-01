@@ -1,11 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { mockClients } from "../data/mockData";
 import type { Client } from "../types";
 
 export function ClientForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<Client>>({
     name: "",
     dob: "",
@@ -25,6 +29,15 @@ export function ClientForm() {
     hasAttendanceAllowance: false,
   });
 
+  useEffect(() => {
+    if (isEditing && id) {
+      const existingClient = mockClients.find((client) => client.id === id);
+      if (existingClient) {
+        setFormData(existingClient);
+      }
+    }
+  }, [id, isEditing]);
+
   const handleInputChange = (field: keyof Client, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -42,7 +55,11 @@ export function ClientForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating client:", formData);
+    if (isEditing) {
+      console.log("Updating client:", formData);
+    } else {
+      console.log("Creating client:", formData);
+    }
     navigate("/clients");
   };
 
@@ -54,7 +71,7 @@ export function ClientForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New Client
+          {isEditing ? "Edit Client" : "Create New Client"}
         </h1>
       </div>
 
@@ -333,7 +350,9 @@ export function ClientForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create Client</Button>
+            <Button type="submit">
+              {isEditing ? "Update Client" : "Create Client"}
+            </Button>
           </div>
         </form>
       </div>

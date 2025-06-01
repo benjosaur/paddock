@@ -1,11 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { mockVolunteers } from "../data/mockData";
 import type { Volunteer } from "../types";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<Volunteer>>({
     name: "",
     age: undefined,
@@ -31,6 +35,18 @@ export function VolunteerForm() {
     training: "",
     expiry: "",
   });
+
+  useEffect(() => {
+    if (isEditing && id) {
+      const volunteer = mockVolunteers.find((v) => v.id === id);
+      if (volunteer) {
+        setFormData(volunteer);
+        setServicesInput(volunteer.servicesOffered.join(", "));
+        setNeedTypesInput(volunteer.needTypes.join(", "));
+        setSpecialismsInput((volunteer.specialisms || []).join(", "));
+      }
+    }
+  }, [isEditing, id]);
 
   const handleInputChange = (
     field: keyof Volunteer,
@@ -70,7 +86,11 @@ export function VolunteerForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating Volunteer:", formData);
+    if (isEditing) {
+      console.log("Updating Volunteer:", formData);
+    } else {
+      console.log("Creating Volunteer:", formData);
+    }
     navigate("/volunteers");
   };
 
@@ -82,7 +102,7 @@ export function VolunteerForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New Volunteer
+          {isEditing ? "Edit Volunteer" : "Create New Volunteer"}
         </h1>
       </div>
 
@@ -392,7 +412,9 @@ export function VolunteerForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create Volunteer</Button>
+            <Button type="submit">
+              {isEditing ? "Update Volunteer" : "Create Volunteer"}
+            </Button>
           </div>
         </form>
       </div>

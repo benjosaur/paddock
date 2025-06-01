@@ -25,11 +25,9 @@ const volunteerColumns: TableColumn<Volunteer>[] = [
 ];
 
 export default function VolunteersRoutes({
-  handleEdit,
   handleDelete,
   handleViewVolunteer,
 }: {
-  handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
   handleViewVolunteer: (volunteer: Volunteer) => void;
 }) {
@@ -37,6 +35,10 @@ export default function VolunteersRoutes({
 
   const handleAddNew = () => {
     navigate("/volunteers/create");
+  };
+
+  const handleEditNavigation = (id: string) => {
+    navigate(`/volunteers/edit/${id}`);
   };
 
   return (
@@ -50,7 +52,7 @@ export default function VolunteersRoutes({
             searchPlaceholder="Search volunteers..."
             data={mockVolunteers}
             columns={volunteerColumns}
-            onEdit={handleEdit}
+            onEdit={handleEditNavigation}
             onDelete={handleDelete}
             onViewItem={handleViewVolunteer as (item: unknown) => void}
             onAddNew={handleAddNew}
@@ -58,6 +60,7 @@ export default function VolunteersRoutes({
         }
       />
       <Route path="create" element={<VolunteerForm />} />
+      <Route path="edit/:id" element={<VolunteerForm />} />
     </Routes>
   );
 }

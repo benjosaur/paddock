@@ -1,11 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { mockMps } from "../data/mockData";
 import type { Mp } from "../types";
 
 export function MpForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<Mp>>({
     name: "",
     address: "",
@@ -29,6 +33,17 @@ export function MpForm() {
     training: "",
     expiry: "",
   });
+
+  useEffect(() => {
+    if (isEditing && id) {
+      const mp = mockMps.find((m) => m.id === id);
+      if (mp) {
+        setFormData(mp);
+        setServicesInput(mp.servicesOffered.join(", "));
+        setSpecialismsInput(mp.specialisms.join(", "));
+      }
+    }
+  }, [isEditing, id]);
 
   const handleInputChange = (field: keyof Mp, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -65,7 +80,11 @@ export function MpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating MP:", formData);
+    if (isEditing) {
+      console.log("Updating MP:", formData);
+    } else {
+      console.log("Creating MP:", formData);
+    }
     navigate("/mps");
   };
 
@@ -77,7 +96,7 @@ export function MpForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New MP
+          {isEditing ? "Edit MP" : "Create New MP"}
         </h1>
       </div>
 
@@ -369,7 +388,9 @@ export function MpForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create MP</Button>
+            <Button type="submit">
+              {isEditing ? "Update MP" : "Create MP"}
+            </Button>
           </div>
         </form>
       </div>
