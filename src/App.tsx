@@ -11,19 +11,14 @@ import { ClientDetailModal } from "./components/ClientDetailModal";
 import ClientsRoutes from "./components/ClientsRoutes";
 import MpsRoutes from "./components/MpsRoutes";
 import MpLogRoutes from "./components/MpLogRoutes";
+import MagLogRoutes from "./components/MagLogRoutes";
 import VolunteerLogRoutes from "./components/VolunteerLogRoutes";
 import VolunteersRoutes from "./components/VolunteersRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
-import {
-  mockMagLogs,
-  mockClients,
-  mockClientRequests,
-  mockExpiries,
-} from "./data/mockData";
+import { mockClients, mockClientRequests, mockExpiries } from "./data/mockData";
 import type {
   UserRole,
-  MagLog,
   Client,
   ClientRequest,
   TableColumn,
@@ -31,18 +26,6 @@ import type {
   Volunteer,
   ExpiryItem,
 } from "./types";
-
-const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  { key: "total", header: "Total" },
-  {
-    key: "attendees",
-    header: "Attendees",
-    render: (item) => item.attendees.join(", "),
-  },
-  { key: "notes", header: "Notes" },
-];
 
 // Define columns for New Requests table
 const newRequestColumns: TableColumn<ClientRequest>[] = [
@@ -144,17 +127,9 @@ function App() {
               }
             />
             <Route
-              path="/mag-logs"
+              path="/mag-logs/*"
               element={
-                <DataTable
-                  key="mag-logs"
-                  title="MAG Logs"
-                  searchPlaceholder="Search MAG logs..."
-                  data={mockMagLogs}
-                  columns={magLogColumns}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
+                <MagLogRoutes onEdit={handleEdit} onDelete={handleDelete} />
               }
             />
             <Route
