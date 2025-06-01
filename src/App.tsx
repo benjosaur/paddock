@@ -14,34 +14,18 @@ import MpLogRoutes from "./components/MpLogRoutes";
 import MagLogRoutes from "./components/MagLogRoutes";
 import VolunteerLogRoutes from "./components/VolunteerLogRoutes";
 import VolunteersRoutes from "./components/VolunteersRoutes";
+import ClientRequestRoutes from "./components/ClientRequestRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
-import { mockClients, mockClientRequests, mockExpiries } from "./data/mockData";
+import { mockExpiries } from "./data/mockData";
 import type {
   UserRole,
   Client,
-  ClientRequest,
   TableColumn,
   Mp,
   Volunteer,
   ExpiryItem,
 } from "./types";
-
-// Define columns for New Requests table
-const newRequestColumns: TableColumn<ClientRequest>[] = [
-  { key: "id", header: "Request ID" },
-  {
-    key: "clientId",
-    header: "Client Name",
-    render: (item: ClientRequest) =>
-      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
-      item.clientId,
-  },
-  { key: "requestType", header: "Type" },
-  { key: "startDate", header: "Start Date" },
-  { key: "schedule", header: "Schedule" },
-  { key: "status", header: "Status" },
-];
 
 const expiryColumns: TableColumn<ExpiryItem>[] = [
   { key: "date", header: "Date" },
@@ -163,14 +147,9 @@ function App() {
               }
             />
             <Route
-              path="/new-requests"
+              path="/new-requests/*"
               element={
-                <DataTable
-                  key="new-requests"
-                  title="New Client Requests"
-                  searchPlaceholder="Search requests..."
-                  data={mockClientRequests}
-                  columns={newRequestColumns}
+                <ClientRequestRoutes
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
