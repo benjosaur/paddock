@@ -14,8 +14,9 @@ import type {
   VolunteerLog,
   TableColumn,
   TrainingRecordItem,
+  Client,
 } from "../types";
-import { mockVolunteerLogs } from "../data/mockData";
+import { mockVolunteerLogs, mockClients } from "../data/mockData";
 import { DataTable } from "./DataTable";
 
 interface VolunteerDetailModalProps {
@@ -26,6 +27,13 @@ interface VolunteerDetailModalProps {
 
 const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
   { key: "date", header: "Date" },
+  {
+    key: "clientId",
+    header: "Client",
+    render: (item: VolunteerLog) =>
+      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
+      item.clientId,
+  },
   { key: "activity", header: "Activity" },
   { key: "hoursLogged", header: "Hours Logged" },
   { key: "notes", header: "Notes" },
@@ -47,7 +55,7 @@ export function VolunteerDetailModal({
     if (volunteer) {
       setVolunteerLogs(
         mockVolunteerLogs.filter(
-          (log: VolunteerLog) => log.volunteer === volunteer.name
+          (log: VolunteerLog) => log.volunteerId === volunteer.id
         )
       );
     } else {

@@ -1,7 +1,7 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MagLogForm } from "../components/MagLogForm";
-import { mockMagLogs } from "../data/mockData";
+import { mockMagLogs, mockClients } from "../data/mockData";
 import type { MagLog, TableColumn } from "../types";
 
 const magLogColumns: TableColumn<MagLog>[] = [
@@ -11,7 +11,13 @@ const magLogColumns: TableColumn<MagLog>[] = [
   {
     key: "attendees",
     header: "Registered Attendees",
-    render: (item) => item.attendees.join(", "),
+    render: (item) => {
+      const clientNames = item.attendees.map((clientId) => {
+        const client = mockClients.find((c) => c.id === clientId);
+        return client ? client.name : clientId;
+      });
+      return clientNames.join(", ");
+    },
   },
   { key: "notes", header: "Notes" },
 ];
@@ -28,6 +34,10 @@ export default function MagLogRoutes({ onEdit, onDelete }: MagLogRoutesProps) {
     navigate("/mag-logs/new");
   };
 
+  const handleEdit = (id: string) => {
+    navigate(`/mag-logs/edit/${id}`);
+  };
+
   return (
     <Routes>
       <Route
@@ -39,13 +49,14 @@ export default function MagLogRoutes({ onEdit, onDelete }: MagLogRoutesProps) {
             searchPlaceholder="Search MAG logs..."
             data={mockMagLogs}
             columns={magLogColumns}
-            onEdit={onEdit}
+            onEdit={handleEdit}
             onDelete={onDelete}
             onAddNew={handleAddNew}
           />
         }
       />
       <Route path="new" element={<MagLogForm />} />
+      <Route path="edit/:id" element={<MagLogForm />} />
     </Routes>
   );
 }

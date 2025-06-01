@@ -1,30 +1,43 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { mockVolunteers } from "../data/mockData";
+import { mockVolunteers, mockVolunteerLogs } from "../data/mockData";
 import { mockClients } from "../data/mockData";
 import type { Client, VolunteerLog, Volunteer } from "../types";
 
 export function VolunteerLogForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<VolunteerLog>>({
     date: "",
-    client: "",
-    volunteer: "",
+    clientId: "",
+    volunteerId: "",
     activity: "",
     hoursLogged: 0,
     notes: "",
   });
 
+  // Load existing data when editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const existingLog = mockVolunteerLogs.find((log) => log.id === id);
+      if (existingLog) {
+        setFormData(existingLog);
+      }
+    }
+  }, [id, isEditing]);
+
   const clientOptions = mockClients.map((client: Client) => ({
-    value: client.name,
+    value: client.id,
     label: client.name,
   }));
 
   const volunteerOptions = mockVolunteers.map((volunteer: Volunteer) => ({
-    value: volunteer.name,
+    value: volunteer.id,
     label: volunteer.name,
   }));
 
@@ -37,7 +50,10 @@ export function VolunteerLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating Volunteer Log:", formData);
+    console.log(
+      isEditing ? "Updating Volunteer Log:" : "Creating Volunteer Log:",
+      formData
+    );
     navigate("/volunteer-logs");
   };
 
@@ -49,7 +65,7 @@ export function VolunteerLogForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New Volunteer Log
+          {isEditing ? "Edit Volunteer Log" : "Create New Volunteer Log"}
         </h1>
       </div>
 
@@ -88,11 +104,11 @@ export function VolunteerLogForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option) => option.value === formData.client
+                      (option) => option.value === formData.clientId
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("client", selectedOption?.value || "")
+                    handleInputChange("clientId", selectedOption?.value || "")
                   }
                   placeholder="Select a client..."
                   className="react-select-container"
@@ -113,11 +129,14 @@ export function VolunteerLogForm() {
                   options={volunteerOptions}
                   value={
                     volunteerOptions.find(
-                      (option) => option.value === formData.volunteer
+                      (option) => option.value === formData.volunteerId
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("volunteer", selectedOption?.value || "")
+                    handleInputChange(
+                      "volunteerId",
+                      selectedOption?.value || ""
+                    )
                   }
                   placeholder="Select a volunteer..."
                   className="react-select-container"
@@ -198,7 +217,9 @@ export function VolunteerLogForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create Volunteer Log</Button>
+            <Button type="submit">
+              {isEditing ? "Update Volunteer Log" : "Create Volunteer Log"}
+            </Button>
           </div>
         </form>
       </div>

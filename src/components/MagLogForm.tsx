@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { mockClients } from "../data/mockData";
+import { mockClients, mockMagLogs } from "../data/mockData";
 import type { MagLog, Client } from "../types";
 
 export function MagLogForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<MagLog>>({
     date: "",
     total: undefined,
@@ -15,8 +18,18 @@ export function MagLogForm() {
     notes: "",
   });
 
+  // Load existing data when editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const existingLog = mockMagLogs.find((log) => log.id === id);
+      if (existingLog) {
+        setFormData(existingLog);
+      }
+    }
+  }, [id, isEditing]);
+
   const clientOptions = mockClients.map((client: Client) => ({
-    value: client.name,
+    value: client.id,
     label: client.name,
   }));
 
@@ -38,7 +51,11 @@ export function MagLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating MAG Log:", formData);
+    if (isEditing) {
+      console.log("Updating MAG Log:", formData);
+    } else {
+      console.log("Creating MAG Log:", formData);
+    }
     navigate("/mag-logs");
   };
 
@@ -50,7 +67,7 @@ export function MagLogForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New MAG Log
+          {isEditing ? "Edit MAG Log" : "Create New MAG Log"}
         </h1>
       </div>
 
@@ -150,7 +167,9 @@ export function MagLogForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create MAG Log</Button>
+            <Button type="submit">
+              {isEditing ? "Update MAG Log" : "Create MAG Log"}
+            </Button>
           </div>
         </form>
       </div>

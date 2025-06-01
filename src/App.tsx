@@ -101,12 +101,7 @@ function App() {
             />
             <Route
               path="/volunteer-logs/*"
-              element={
-                <VolunteerLogRoutes
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              }
+              element={<VolunteerLogRoutes onDelete={handleDelete} />}
             />
             <Route
               path="/mag-logs/*"

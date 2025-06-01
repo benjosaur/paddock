@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "./ui/dialog"; // Assuming you have a Dialog component from shadcn/ui
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"; // Assuming Tabs from shadcn/ui
+} from "./ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import type {
   Client,
   MpLog,
@@ -16,8 +16,15 @@ import type {
   MagLog,
   ClientRequest,
   TableColumn,
+  Volunteer,
 } from "../types";
-import { mockMpLogs, mockMagLogs, mockClientRequests } from "../data/mockData"; // Removed mockVolunteerLogsData as it's not used for filtering yet
+import {
+  mockMpLogs,
+  mockMagLogs,
+  mockClientRequests,
+  mockVolunteers,
+  mockVolunteerLogs,
+} from "../data/mockData";
 import { DataTable } from "./DataTable";
 
 interface ClientDetailModalProps {
@@ -39,6 +46,13 @@ const mpLogModalColumns: TableColumn<MpLog>[] = [
 
 const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
   { key: "date", header: "Date" },
+  {
+    key: "volunteerId",
+    header: "Volunteer",
+    render: (item: VolunteerLog) =>
+      mockVolunteers.find((v: Volunteer) => v.id === item.volunteerId)?.name ||
+      item.volunteerId,
+  },
   { key: "activity", header: "Activity" },
   { key: "hoursLogged", header: "Hours Logged" },
   { key: "notes", header: "Notes" },
@@ -46,8 +60,7 @@ const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
 
 const magLogModalColumns: TableColumn<MagLog>[] = [
   { key: "date", header: "Date" },
-  { key: "attendee", header: "Attendee" },
-  { key: "total", header: "Total" },
+  { key: "total", header: "Total Attendees" },
   { key: "notes", header: "Notes" },
 ];
 
@@ -75,9 +88,13 @@ export function ClientDetailModal({
       setClientMpLogs(
         mockMpLogs.filter((log: MpLog) => log.clientId === client.id)
       );
-      setClientVolunteerLogs([]);
+      setClientVolunteerLogs(
+        mockVolunteerLogs.filter(
+          (log: VolunteerLog) => log.clientId === client.id
+        )
+      );
       setClientMagLogs(
-        mockMagLogs.filter((log: MagLog) => log.attendees.includes(client.name))
+        mockMagLogs.filter((log: MagLog) => log.attendees.includes(client.id))
       );
       setClientRequests(
         mockClientRequests.filter(

@@ -11,8 +11,8 @@ export interface MpLog {
 export interface VolunteerLog {
   id: string;
   date: string;
-  client: string;
-  volunteer: string;
+  clientId: string;
+  volunteerId: string;
   activity: string;
   hoursLogged: number;
   notes: string;
