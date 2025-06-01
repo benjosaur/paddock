@@ -8,6 +8,7 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
+import { TableSearchForm } from "./components/TableSearchForm";
 import ClientsRoutes from "./routes/ClientsRoutes";
 import MpsRoutes from "./routes/MpsRoutes";
 import MpLogRoutes from "./routes/MpLogRoutes";
@@ -160,6 +161,7 @@ function App() {
                 />
               }
             />
+            <Route path="/table-search" element={<TableSearchForm />} />
             <Route
               path="*"
               element={

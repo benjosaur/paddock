@@ -12,10 +12,11 @@ export function Sidebar({ userRole }: SidebarProps) {
     { key: "volunteer-logs", label: "Volunteer Logs", path: "/volunteer-logs" },
     { key: "mag-logs", label: "MAG Logs", path: "/mag-logs" },
     { key: "clients", label: "Clients", path: "/clients" },
-    { key: "mps", label: "MPs", path: "/mps" }, // Added MPs to sidebar
+    { key: "mps", label: "MPs", path: "/mps" },
     { key: "volunteers", label: "Volunteers", path: "/volunteers" },
     { key: "expiries", label: "Expiries", path: "/expiries" },
     { key: "new-requests", label: "New Requests", path: "/new-requests" },
+    { key: "table-search", label: "Search Tables", path: "/table-search" },
   ];
 
   return (
