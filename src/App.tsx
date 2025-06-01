@@ -9,6 +9,7 @@ import { Sidebar } from "./components/Sidebar";
 import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
 import ClientsRoutes from "./components/ClientsRoutes";
+import MpsRoutes from "./components/MpsRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
 import {
@@ -17,7 +18,6 @@ import {
   mockMagLogs,
   mockClients,
   mockClientRequests,
-  mockMps,
   mockVolunteers,
   mockExpiries,
 } from "./data/mockData";
@@ -67,22 +67,6 @@ const magLogColumns: TableColumn<MagLog>[] = [
     render: (item) => item.attendees.join(", "),
   },
   { key: "notes", header: "Notes" },
-];
-
-// Define columns for MPs table
-const mpColumns: TableColumn<Mp>[] = [
-  { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
-  { key: "age", header: "Age" },
-  { key: "postCode", header: "Post Code" },
-  {
-    key: "servicesOffered",
-    header: "Services",
-    render: (item: Mp) => item.servicesOffered.join(", "),
-  },
-  { key: "dbsExpiry", header: "DBS Expiry" },
-  { key: "capacity", header: "Capacity?" },
-  { key: "transport", header: "Transport?" },
 ];
 
 // Define columns for Volunteers table
@@ -243,17 +227,12 @@ function App() {
               }
             />
             <Route
-              path="/mps"
+              path="/mps/*"
               element={
-                <DataTable
-                  key="mps"
-                  title="MPs"
-                  searchPlaceholder="Search MPs..."
-                  data={mockMps}
-                  columns={mpColumns}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewItem={handleViewMp as (item: unknown) => void}
+                <MpsRoutes
+                  handleEdit={handleEdit}
+                  handleDelete={handleDelete}
+                  handleViewMp={handleViewMp}
                 />
               }
             />
