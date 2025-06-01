@@ -28,6 +28,7 @@ interface DataTableProps<T> {
   title: string;
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
+  onAddNew?: () => void;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -38,6 +39,7 @@ export function DataTable<T extends { id: string }>({
   title,
   searchPlaceholder,
   onViewItem,
+  onAddNew,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -80,7 +82,7 @@ export function DataTable<T extends { id: string }>({
         </div>
         <div className="flex items-center space-x-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-gray-500 transition-colors duration-200" />
+            <Search className="absolute z-1 left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-gray-500 transition-colors duration-200" />
             <Input
               placeholder={searchPlaceholder}
               value={searchTerm}
@@ -88,7 +90,9 @@ export function DataTable<T extends { id: string }>({
               className="pl-10 w-72 shadow-sm"
             />
           </div>
-          <Button className="shadow-sm">Add New</Button>
+          <Button className="shadow-sm" onClick={onAddNew}>
+            Add New
+          </Button>
         </div>
       </div>
 

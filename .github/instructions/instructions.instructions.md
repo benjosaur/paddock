@@ -8,3 +8,4 @@ applyTo: "**"
 - Backend Stack: Python, FastAPI, PostgreSQL.
 - camelCase for variables, functions, and methods.
 - PascalCase for classes and components.
+- If there is ambiguity ask for clarification.

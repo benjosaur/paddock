@@ -8,6 +8,7 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
+import ClientsRoutes from "./components/ClientsRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
 import {
@@ -66,34 +67,6 @@ const magLogColumns: TableColumn<MagLog>[] = [
     render: (item) => item.attendees.join(", "),
   },
   { key: "notes", header: "Notes" },
-];
-
-// Define columns for Clients table
-const clientColumns: TableColumn<Client>[] = [
-  { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
-  { key: "age", header: "Age" },
-  { key: "postCode", header: "Post Code" },
-  {
-    key: "servicesProvided",
-    header: "Services",
-    render: (item: Client) => item.servicesProvided.join(", "),
-  },
-  {
-    key: "needs",
-    header: "Need Types",
-    render: (item: Client) => item.needs.join(", "),
-  },
-  {
-    key: "hasMp",
-    header: "Has MP?",
-    render: (item: Client) => (item.hasMp ? "Yes" : "No"),
-  },
-  {
-    key: "hasAttendanceAllowance",
-    header: "Has AA?",
-    render: (item: Client) => (item.hasAttendanceAllowance ? "Yes" : "No"),
-  },
 ];
 
 // Define columns for MPs table
@@ -260,17 +233,12 @@ function App() {
               }
             />
             <Route
-              path="/clients"
+              path="/clients/*"
               element={
-                <DataTable
-                  key="clients"
-                  title="Clients"
-                  searchPlaceholder="Search clients..."
-                  data={mockClients}
-                  columns={clientColumns}
+                <ClientsRoutes
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  onViewItem={handleViewClient as (item: unknown) => void}
+                  onViewClient={handleViewClient}
                 />
               }
             />
