@@ -90,9 +90,11 @@ export function DataTable<T extends { id: string }>({
               className="pl-10 w-72 shadow-sm"
             />
           </div>
-          <Button className="shadow-sm" onClick={onAddNew}>
-            Add New
-          </Button>
+          {onAddNew && (
+            <Button className="shadow-sm" onClick={onAddNew}>
+              Add New
+            </Button>
+          )}
         </div>
       </div>
 

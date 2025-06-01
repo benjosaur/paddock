@@ -164,8 +164,6 @@ function App() {
                   searchPlaceholder="Search expiries..."
                   data={mockExpiries}
                   columns={expiryColumns}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
                 />
               }
             />
