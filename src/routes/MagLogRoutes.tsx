@@ -1,6 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "./DataTable";
-import { MagLogForm } from "./MagLogForm";
+import { DataTable } from "../components/DataTable";
+import { MagLogForm } from "../components/MagLogForm";
 import { mockMagLogs } from "../data/mockData";
 import type { MagLog, TableColumn } from "../types";
 

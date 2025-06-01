@@ -1,6 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "./DataTable";
-import { VolunteerLogForm } from "./VolunteerLogForm";
+import { DataTable } from "../components/DataTable";
+import { VolunteerLogForm } from "../components/VolunteerLogForm";
 import { mockVolunteerLogs } from "../data/mockData";
 import type { VolunteerLog, TableColumn } from "../types";
 

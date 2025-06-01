@@ -1,6 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "./DataTable";
-import { MpLogForm } from "./MpLogForm";
+import { DataTable } from "../components/DataTable";
+import { MpLogForm } from "../components/MpLogForm";
 import { mockMpLogs } from "../data/mockData";
 import type { MpLog, TableColumn } from "../types";
 

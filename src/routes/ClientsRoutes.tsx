@@ -1,6 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "./DataTable";
-import { ClientForm } from "./ClientForm";
+import { DataTable } from "../components/DataTable";
+import { ClientForm } from "../components/ClientForm";
 import { mockClients } from "../data/mockData";
 import type { Client, TableColumn } from "../types";
 
