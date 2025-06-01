@@ -35,7 +35,6 @@ import type {
 const magLogColumns: TableColumn<MagLog>[] = [
   { key: "id", header: "ID" },
   { key: "date", header: "Date" },
-  { key: "attendee", header: "Attendee" },
   { key: "total", header: "Total" },
   {
     key: "attendees",

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { mockVolunteers } from "../data/mockData";
@@ -16,6 +17,16 @@ export function VolunteerLogForm() {
     hoursLogged: 0,
     notes: "",
   });
+
+  const clientOptions = mockClients.map((client: Client) => ({
+    value: client.name,
+    label: client.name,
+  }));
+
+  const volunteerOptions = mockVolunteers.map((volunteer: Volunteer) => ({
+    value: volunteer.name,
+    label: volunteer.name,
+  }));
 
   const handleInputChange = (
     field: keyof VolunteerLog,
@@ -73,20 +84,22 @@ export function VolunteerLogForm() {
                 >
                   Client
                 </label>
-                <select
-                  id="client"
-                  value={formData.client || ""}
-                  onChange={(e) => handleInputChange("client", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select a client...</option>
-                  {mockClients.map((client: Client) => (
-                    <option key={client.id} value={client.name}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={clientOptions}
+                  value={
+                    clientOptions.find(
+                      (option) => option.value === formData.client
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleInputChange("client", selectedOption?.value || "")
+                  }
+                  placeholder="Select a client..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isClearable
+                />
               </div>
 
               <div>
@@ -96,22 +109,22 @@ export function VolunteerLogForm() {
                 >
                   Volunteer *
                 </label>
-                <select
-                  id="volunteer"
-                  value={formData.volunteer || ""}
-                  onChange={(e) =>
-                    handleInputChange("volunteer", e.target.value)
+                <Select
+                  options={volunteerOptions}
+                  value={
+                    volunteerOptions.find(
+                      (option) => option.value === formData.volunteer
+                    ) || null
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(selectedOption) =>
+                    handleInputChange("volunteer", selectedOption?.value || "")
+                  }
+                  placeholder="Select a volunteer..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
                   required
-                >
-                  <option value="">Select a volunteer...</option>
-                  {mockVolunteers.map((volunteer: Volunteer) => (
-                    <option key={volunteer.id} value={volunteer.name}>
-                      {volunteer.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>

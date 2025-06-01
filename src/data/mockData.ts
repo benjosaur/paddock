@@ -215,7 +215,6 @@ export const mockMagLogs: MagLog[] = [
   {
     id: "1",
     date: "2025-01-15",
-    attendee: "Management Meeting",
     total: 8,
     attendees: [
       "Sarah Johnson",
@@ -232,7 +231,6 @@ export const mockMagLogs: MagLog[] = [
   {
     id: "2",
     date: "2025-01-22",
-    attendee: "Strategy Session",
     total: 5,
     attendees: [
       "Sarah Johnson",

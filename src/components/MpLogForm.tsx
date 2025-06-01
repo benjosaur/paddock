@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { mockClients, mockMps } from "../data/mockData";
@@ -17,6 +18,16 @@ export function MpLogForm() {
   });
 
   const [servicesInput, setServicesInput] = useState("");
+
+  const clientOptions = mockClients.map((client: Client) => ({
+    value: client.name,
+    label: client.name,
+  }));
+
+  const mpOptions = mockMps.map((mp: Mp) => ({
+    value: mp.name,
+    label: mp.name,
+  }));
 
   const handleInputChange = (field: keyof MpLog, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -85,20 +96,22 @@ export function MpLogForm() {
                 >
                   Client *
                 </label>
-                <select
-                  id="client"
-                  value={formData.client || ""}
-                  onChange={(e) => handleInputChange("client", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                <Select
+                  options={clientOptions}
+                  value={
+                    clientOptions.find(
+                      (option) => option.value === formData.client
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleInputChange("client", selectedOption?.value || "")
+                  }
+                  placeholder="Select a client..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
                   required
-                >
-                  <option value="">Select a client...</option>
-                  {mockClients.map((client: Client) => (
-                    <option key={client.id} value={client.name}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
@@ -108,20 +121,21 @@ export function MpLogForm() {
                 >
                   MP *
                 </label>
-                <select
-                  id="mp"
-                  value={formData.mp || ""}
-                  onChange={(e) => handleInputChange("mp", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                <Select
+                  options={mpOptions}
+                  value={
+                    mpOptions.find((option) => option.value === formData.mp) ||
+                    null
+                  }
+                  onChange={(selectedOption) =>
+                    handleInputChange("mp", selectedOption?.value || "")
+                  }
+                  placeholder="Select an MP..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
                   required
-                >
-                  <option value="">Select an MP...</option>
-                  {mockMps.map((mp: Mp) => (
-                    <option key={mp.id} value={mp.name}>
-                      {mp.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 

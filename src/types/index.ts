@@ -21,7 +21,6 @@ export interface VolunteerLog {
 export interface MagLog {
   id: string;
   date: string;
-  attendee: string;
   total: number;
   attendees: string[];
   notes: string;
