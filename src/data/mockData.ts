@@ -16,6 +16,7 @@ export const mockMpLogs: MpLog[] = [
     client: "John Smith",
     mp: "Sarah Johnson",
     services: ["Consultation", "Document Review"],
+    hoursLogged: 2.5,
     notes: "Initial consultation regarding housing issues",
   },
   {
@@ -24,6 +25,7 @@ export const mockMpLogs: MpLog[] = [
     client: "Mary Brown",
     mp: "David Wilson",
     services: ["Meeting", "Follow-up"],
+    hoursLogged: 1.5,
     notes: "Follow-up meeting for benefits claim",
   },
   {
@@ -32,6 +34,7 @@ export const mockMpLogs: MpLog[] = [
     client: "Robert Davis",
     mp: "Sarah Johnson",
     services: ["Phone Call"],
+    hoursLogged: 0.5,
     notes: "Phone consultation about local services",
   },
   {
@@ -40,6 +43,7 @@ export const mockMpLogs: MpLog[] = [
     client: "Emma Wilson",
     mp: "Michael Thompson",
     services: ["Document Review", "Consultation"],
+    hoursLogged: 3,
     notes: "Review of planning application documents",
   },
   {
@@ -48,6 +52,7 @@ export const mockMpLogs: MpLog[] = [
     client: "James Taylor",
     mp: "David Wilson",
     services: ["Meeting"],
+    hoursLogged: 1,
     notes: "Constituency surgery appointment",
   },
 ];
@@ -180,6 +185,7 @@ export const mockVolunteerLogs: VolunteerLog[] = [
   {
     id: "1",
     date: "2025-01-15",
+    client: "Alice Wonderland",
     volunteer: "Alice Cooper",
     activity: "Admin Support",
     hoursLogged: 4,
@@ -188,6 +194,7 @@ export const mockVolunteerLogs: VolunteerLog[] = [
   {
     id: "2",
     date: "2025-01-16",
+    client: "Bob The Builder",
     volunteer: "Bob Stevens",
     activity: "Event Planning",
     hoursLogged: 6,
@@ -196,6 +203,7 @@ export const mockVolunteerLogs: VolunteerLog[] = [
   {
     id: "3",
     date: "2025-01-17",
+    client: "Charlie Brown",
     volunteer: "Carol White",
     activity: "Client Support",
     hoursLogged: 3,

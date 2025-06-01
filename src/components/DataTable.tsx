@@ -111,9 +111,7 @@ export function DataTable<T extends { id: string }>({
                 </th>
               ))}
               {(onEdit || onDelete) && (
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl">
-                  Actions
-                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
             </tr>
           </thead>

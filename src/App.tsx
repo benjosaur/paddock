@@ -10,12 +10,12 @@ import { DataTable } from "./components/DataTable";
 import { ClientDetailModal } from "./components/ClientDetailModal";
 import ClientsRoutes from "./components/ClientsRoutes";
 import MpsRoutes from "./components/MpsRoutes";
-import { VolunteersRoutes } from "./components/VolunteersRoutes";
+import MpLogRoutes from "./components/MpLogRoutes";
+import VolunteerLogRoutes from "./components/VolunteerLogRoutes";
+import VolunteersRoutes from "./components/VolunteersRoutes";
 import { MpDetailModal } from "./components/MpDetailModal";
 import { VolunteerDetailModal } from "./components/VolunteerDetailModal";
 import {
-  mockMpLogs,
-  mockVolunteerLogs,
   mockMagLogs,
   mockClients,
   mockClientRequests,
@@ -23,8 +23,6 @@ import {
 } from "./data/mockData";
 import type {
   UserRole,
-  MpLog,
-  VolunteerLog,
   MagLog,
   Client,
   ClientRequest,
@@ -33,28 +31,6 @@ import type {
   Volunteer,
   ExpiryItem,
 } from "./types";
-
-const mpLogColumns: TableColumn<MpLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  { key: "client", header: "Client" },
-  { key: "mp", header: "MP" },
-  {
-    key: "services",
-    header: "Service(s)",
-    render: (item) => item.services.join(", "),
-  },
-  { key: "notes", header: "Notes" },
-];
-
-const volunteerLogColumns: TableColumn<VolunteerLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  { key: "volunteer", header: "Volunteer" },
-  { key: "activity", header: "Activity" },
-  { key: "hoursLogged", header: "Hours Logged" },
-  { key: "notes", header: "Notes" },
-];
 
 const magLogColumns: TableColumn<MagLog>[] = [
   { key: "id", header: "ID" },
@@ -154,28 +130,15 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/mp-logs" />} />
             <Route
-              path="/mp-logs"
+              path="/mp-logs/*"
               element={
-                <DataTable
-                  key="mp-logs"
-                  title="MP Logs"
-                  searchPlaceholder="Search MP logs..."
-                  data={mockMpLogs}
-                  columns={mpLogColumns}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
+                <MpLogRoutes onEdit={handleEdit} onDelete={handleDelete} />
               }
             />
             <Route
-              path="/volunteer-logs"
+              path="/volunteer-logs/*"
               element={
-                <DataTable
-                  key="volunteer-logs"
-                  title="Volunteer Logs"
-                  searchPlaceholder="Search volunteer logs..."
-                  data={mockVolunteerLogs}
-                  columns={volunteerLogColumns}
+                <VolunteerLogRoutes
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

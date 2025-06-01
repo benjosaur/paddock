@@ -4,12 +4,14 @@ export interface MpLog {
   client: string;
   mp: string;
   services: string[];
+  hoursLogged: number;
   notes: string;
 }
 
 export interface VolunteerLog {
   id: string;
   date: string;
+  client: string;
   volunteer: string;
   activity: string;
   hoursLogged: number;

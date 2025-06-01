@@ -24,7 +24,7 @@ const volunteerColumns: TableColumn<Volunteer>[] = [
   { key: "transport", header: "Transport?" },
 ];
 
-export function VolunteersRoutes({
+export default function VolunteersRoutes({
   handleEdit,
   handleDelete,
   handleViewVolunteer,
