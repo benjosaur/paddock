@@ -1,8 +1,8 @@
 export interface MpLog {
   id: string;
   date: string;
-  client: string;
-  mp: string;
+  clientId: string;
+  mpId: string;
   services: string[];
   hoursLogged: number;
   notes: string;

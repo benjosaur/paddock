@@ -9,8 +9,14 @@ import {
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import type { Mp, MpLog, TableColumn, TrainingRecordItem } from "../types";
-import { mockMpLogs } from "../data/mockData";
+import type {
+  Mp,
+  MpLog,
+  TableColumn,
+  TrainingRecordItem,
+  Client,
+} from "../types";
+import { mockMpLogs, mockClients } from "../data/mockData";
 import { DataTable } from "./DataTable";
 
 interface MpDetailModalProps {
@@ -21,7 +27,13 @@ interface MpDetailModalProps {
 
 const mpLogModalColumns: TableColumn<MpLog>[] = [
   { key: "date", header: "Date" },
-  { key: "client", header: "Client" },
+  {
+    key: "clientId",
+    header: "Client",
+    render: (item: MpLog) =>
+      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
+      item.clientId,
+  },
   {
     key: "services",
     header: "Service(s)",
@@ -40,7 +52,7 @@ export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
 
   useEffect(() => {
     if (mp) {
-      setMpLogs(mockMpLogs.filter((log: MpLog) => log.mp === mp.name));
+      setMpLogs(mockMpLogs.filter((log: MpLog) => log.mpId === mp.id));
     } else {
       setMpLogs([]);
     }

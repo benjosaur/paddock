@@ -73,7 +73,7 @@ export function ClientDetailModal({
   useEffect(() => {
     if (client) {
       setClientMpLogs(
-        mockMpLogs.filter((log: MpLog) => log.client === client.name)
+        mockMpLogs.filter((log: MpLog) => log.clientId === client.id)
       );
       setClientVolunteerLogs([]);
       setClientMagLogs(

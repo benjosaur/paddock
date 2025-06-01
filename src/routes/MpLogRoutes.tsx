@@ -1,14 +1,25 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MpLogForm } from "../components/MpLogForm";
-import { mockMpLogs } from "../data/mockData";
-import type { MpLog, TableColumn } from "../types";
+import { mockMpLogs, mockClients, mockMps } from "../data/mockData";
+import type { MpLog, TableColumn, Client, Mp } from "../types";
 
 const mpLogColumns: TableColumn<MpLog>[] = [
   { key: "id", header: "ID" },
   { key: "date", header: "Date" },
-  { key: "client", header: "Client" },
-  { key: "mp", header: "MP" },
+  {
+    key: "clientId",
+    header: "Client",
+    render: (item: MpLog) =>
+      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
+      item.clientId,
+  },
+  {
+    key: "mpId",
+    header: "MP",
+    render: (item: MpLog) =>
+      mockMps.find((mp: Mp) => mp.id === item.mpId)?.name || item.mpId,
+  },
   {
     key: "services",
     header: "Service(s)",
@@ -19,15 +30,18 @@ const mpLogColumns: TableColumn<MpLog>[] = [
 ];
 
 interface MpLogRoutesProps {
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export default function MpLogRoutes({ onEdit, onDelete }: MpLogRoutesProps) {
+export default function MpLogRoutes({ onDelete }: MpLogRoutesProps) {
   const navigate = useNavigate();
 
   const handleAddNew = () => {
     navigate("/mp-logs/create");
+  };
+
+  const handleEdit = (id: string) => {
+    navigate(`/mp-logs/edit/${id}`);
   };
 
   return (
@@ -41,13 +55,14 @@ export default function MpLogRoutes({ onEdit, onDelete }: MpLogRoutesProps) {
             searchPlaceholder="Search MP logs..."
             data={mockMpLogs}
             columns={mpLogColumns}
-            onEdit={onEdit}
+            onEdit={handleEdit}
             onDelete={onDelete}
             onAddNew={handleAddNew}
           />
         }
       />
       <Route path="create" element={<MpLogForm />} />
+      <Route path="edit/:id" element={<MpLogForm />} />
     </Routes>
   );
 }

@@ -1,17 +1,20 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { mockClients, mockMps } from "../data/mockData";
+import { mockClients, mockMps, mockMpLogs } from "../data/mockData";
 import type { MpLog, Client, Mp } from "../types";
 
 export function MpLogForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState<Partial<MpLog>>({
     date: "",
-    client: "",
-    mp: "",
+    clientId: "",
+    mpId: "",
     services: [],
     hoursLogged: undefined,
     notes: "",
@@ -19,13 +22,24 @@ export function MpLogForm() {
 
   const [servicesInput, setServicesInput] = useState("");
 
+  // Load existing data when editing
+  useEffect(() => {
+    if (isEditing && id) {
+      const existingLog = mockMpLogs.find((log) => log.id === id);
+      if (existingLog) {
+        setFormData(existingLog);
+        setServicesInput(existingLog.services.join(", "));
+      }
+    }
+  }, [id, isEditing]);
+
   const clientOptions = mockClients.map((client: Client) => ({
-    value: client.name,
+    value: client.id,
     label: client.name,
   }));
 
   const mpOptions = mockMps.map((mp: Mp) => ({
-    value: mp.name,
+    value: mp.id,
     label: mp.name,
   }));
 
@@ -49,7 +63,11 @@ export function MpLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating MP Log:", formData);
+    if (isEditing) {
+      console.log("Updating MP Log:", formData);
+    } else {
+      console.log("Creating MP Log:", formData);
+    }
     navigate("/mp-logs");
   };
 
@@ -61,7 +79,7 @@ export function MpLogForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create New MP Log
+          {isEditing ? "Edit MP Log" : "Create New MP Log"}
         </h1>
       </div>
 
@@ -100,11 +118,11 @@ export function MpLogForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option) => option.value === formData.client
+                      (option) => option.value === formData.clientId
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("client", selectedOption?.value || "")
+                    handleInputChange("clientId", selectedOption?.value || "")
                   }
                   placeholder="Select a client..."
                   className="react-select-container"
@@ -124,11 +142,12 @@ export function MpLogForm() {
                 <Select
                   options={mpOptions}
                   value={
-                    mpOptions.find((option) => option.value === formData.mp) ||
-                    null
+                    mpOptions.find(
+                      (option) => option.value === formData.mpId
+                    ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("mp", selectedOption?.value || "")
+                    handleInputChange("mpId", selectedOption?.value || "")
                   }
                   placeholder="Select an MP..."
                   className="react-select-container"
@@ -204,7 +223,9 @@ export function MpLogForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">Create MP Log</Button>
+            <Button type="submit">
+              {isEditing ? "Update MP Log" : "Create MP Log"}
+            </Button>
           </div>
         </form>
       </div>

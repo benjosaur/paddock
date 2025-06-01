@@ -97,9 +97,7 @@ function App() {
             <Route path="/" element={<Navigate to="/mp-logs" />} />
             <Route
               path="/mp-logs/*"
-              element={
-                <MpLogRoutes onEdit={handleEdit} onDelete={handleDelete} />
-              }
+              element={<MpLogRoutes onDelete={handleDelete} />}
             />
             <Route
               path="/volunteer-logs/*"
