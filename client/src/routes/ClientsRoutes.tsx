@@ -32,13 +32,11 @@ const clientColumns: TableColumn<Client>[] = [
 ];
 
 interface ClientsRoutesProps {
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onViewClient: (client: Client) => void;
 }
 
 export default function ClientsRoutes({
-  onEdit,
   onDelete,
   onViewClient,
 }: ClientsRoutesProps) {

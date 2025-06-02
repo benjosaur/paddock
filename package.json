@@ -10,7 +10,10 @@
   ],
   "scripts": {
     "dev": "cd client && bun run dev",
+    "dev:server": "cd server && bun run dev",
+    "dev:full": "bun run dev:server & bun run dev",
     "build": "cd client && bun run build",
+    "build:server": "cd server && bun run build",
     "lint": "cd client && bun run lint",
     "preview": "cd client && bun run preview"
   },

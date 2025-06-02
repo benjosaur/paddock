@@ -51,10 +51,6 @@ function App() {
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
 
-  const handleEdit = (id: string) => {
-    console.log("Edit item:", id);
-  };
-
   const handleDelete = (id: string) => {
     console.log("Delete item:", id);
   };
@@ -106,15 +102,12 @@ function App() {
             />
             <Route
               path="/mag-logs/*"
-              element={
-                <MagLogRoutes onEdit={handleEdit} onDelete={handleDelete} />
-              }
+              element={<MagLogRoutes onDelete={handleDelete} />}
             />
             <Route
               path="/clients/*"
               element={
                 <ClientsRoutes
-                  onEdit={handleEdit}
                   onDelete={handleDelete}
                   onViewClient={handleViewClient}
                 />
