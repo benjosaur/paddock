@@ -23,7 +23,7 @@ export const clientRequestsRouter = router({
     .input(clientRequestSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
-        "SELECT * FROM clientRequests WHERE clientId = $1 ORDER BY start_date DESC",
+        "SELECT * FROM clientRequests WHERE clientId = $1 ORDER BY startDate DESC",
         [input.clientId]
       );
       return result.rows;
@@ -33,7 +33,7 @@ export const clientRequestsRouter = router({
     .input(clientRequestSchema.pick({ status: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
-        "SELECT * FROM clientRequests WHERE status = $1 ORDER BY start_date DESC",
+        "SELECT * FROM clientRequests WHERE status = $1 ORDER BY startDate DESC",
         [input.status]
       );
       return result.rows;
@@ -42,11 +42,7 @@ export const clientRequestsRouter = router({
   create: publicProcedure
     .input(createClientRequestSchema)
     .mutation(async ({ ctx, input }) => {
-      const id = crypto.randomUUID();
-      return await ctx.db.create<ClientRequest>("clientRequests", {
-        id,
-        ...input,
-      });
+      return await ctx.db.create<ClientRequest>("clientRequests", input);
     }),
 
   update: publicProcedure

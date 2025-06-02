@@ -107,7 +107,7 @@ export const magLogSchema = z.object({
   id: z.number(),
   date: z.string(),
   total: z.number(),
-  attendees: z.array(z.string()),
+  attendees: z.array(z.number()),
   notes: z.string(),
 });
 

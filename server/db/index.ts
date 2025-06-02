@@ -23,20 +23,23 @@ export const db = {
 
   // Helper methods for common operations
   async findById<T>(table: string, id: number): Promise<T | null> {
+    let query = "";
     try {
-      const query = `SELECT * FROM ${table} WHERE id = $1`;
+      query = `SELECT * FROM ${table} WHERE id = $1`;
       const result = await pool.query(query, [id]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("SQL Query Failed in findById:");
       console.error("Table:", table);
       console.error("ID:", id);
+      console.error("Query:", query);
       console.error("Error:", error);
       throw error;
     }
   },
 
   async findAll<T>(table: string): Promise<T[]> {
+    let query = "";
     try {
       const query = `SELECT * FROM ${table}`;
       const result = await pool.query(query);
@@ -44,12 +47,14 @@ export const db = {
     } catch (error) {
       console.error("SQL Query Failed in findAll:");
       console.error("Table:", table);
+      console.error("Query:", query);
       console.error("Error:", error);
       throw error;
     }
   },
 
   async create<T>(table: string, data: Record<string, any>): Promise<T> {
+    let query = "";
     try {
       const keys = Object.keys(data);
       const values = Object.values(data);
@@ -57,31 +62,11 @@ export const db = {
       const placeholders = keys
         .map((key, i) => {
           const value = data[key];
-          if (Array.isArray(value)) {
-            let arrayType = "TEXT[]";
-
-            if (value.length > 0) {
-              const firstElement = value[0];
-              const elementType = typeof firstElement;
-
-              switch (elementType) {
-                case "string":
-                  arrayType = "TEXT[]";
-                  break;
-                case "number":
-                  // Check if it's an integer or float
-                  arrayType = Number.isInteger(firstElement)
-                    ? "INT[]"
-                    : "DOUBLE PRECISION[]";
-                  break;
-                case "boolean":
-                  arrayType = "BOOLEAN[]";
-                  break;
-                default:
-                  arrayType = "TEXT[]"; // fallback for objects, etc.
-              }
-            }
-            return `$${i + 1}::${arrayType}`;
+          if (
+            Array.isArray(value) ||
+            (typeof value === "object" && value !== null)
+          ) {
+            return `$${i + 1}::jsonb`;
           }
           return `$${i + 1}`;
         })
@@ -89,13 +74,24 @@ export const db = {
 
       const columns = keys.join(", ");
 
-      const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
-      const result = await pool.query(query, values);
+      const processedValues = values.map((value) => {
+        if (
+          Array.isArray(value) ||
+          (typeof value === "object" && value !== null)
+        ) {
+          return JSON.stringify(value);
+        }
+        return value;
+      });
+
+      query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
+      const result = await pool.query(query, processedValues);
       return result.rows[0];
     } catch (error) {
       console.error("SQL Query Failed in create:");
       console.error("Table:", table);
       console.error("Data:", data);
+      console.error("Query:", query);
       console.error("Error:", error);
       throw error;
     }
@@ -106,6 +102,7 @@ export const db = {
     id: number,
     data: Record<string, any>
   ): Promise<T | null> {
+    let query = "";
     try {
       const keys = Object.keys(data);
       const values = Object.values(data);
@@ -113,59 +110,51 @@ export const db = {
       const setClause = keys
         .map((key, i) => {
           const value = data[key];
-          if (Array.isArray(value)) {
-            let arrayType = "TEXT[]"; // default fallback
-
-            if (value.length > 0) {
-              const firstElement = value[0];
-              const elementType = typeof firstElement;
-
-              switch (elementType) {
-                case "string":
-                  arrayType = "TEXT[]";
-                  break;
-                case "number":
-                  // Check if it's an integer or float
-                  arrayType = Number.isInteger(firstElement)
-                    ? "INT[]"
-                    : "DOUBLE PRECISION[]";
-                  break;
-                case "boolean":
-                  arrayType = "BOOLEAN[]";
-                  break;
-                default:
-                  arrayType = "TEXT[]"; // fallback for objects, etc.
-              }
-            }
-
-            return `${key} = $${i + 2}::${arrayType}`;
+          if (
+            Array.isArray(value) ||
+            (typeof value === "object" && value !== null)
+          ) {
+            return `${key} = $${i + 2}::jsonb`;
           }
           return `${key} = $${i + 2}`;
         })
         .join(", ");
 
-      const query = `UPDATE ${table} SET ${setClause} WHERE id = $1 RETURNING *`;
-      const result = await pool.query(query, [id, ...values]);
+      const processedValues = values.map((value) => {
+        if (
+          Array.isArray(value) ||
+          (typeof value === "object" && value !== null)
+        ) {
+          return JSON.stringify(value);
+        }
+        return value;
+      });
+
+      query = `UPDATE ${table} SET ${setClause} WHERE id = $1 RETURNING *`;
+      const result = await pool.query(query, [id, ...processedValues]);
       return result.rows[0] || null;
     } catch (error) {
       console.error("SQL Query Failed in update:");
       console.error("Table:", table);
       console.error("ID:", id);
       console.error("Data:", data);
+      console.error("Query:", query);
       console.error("Error:", error);
       throw error;
     }
   },
 
   async delete(table: string, id: number): Promise<boolean> {
+    let query = "";
     try {
-      const query = `DELETE FROM ${table} WHERE id = $1`;
+      query = `DELETE FROM ${table} WHERE id = $1`;
       const result = await pool.query(query, [id]);
       return (result.rowCount ?? 0) > 0;
     } catch (error) {
       console.error("SQL Query Failed in delete:");
       console.error("Table:", table);
       console.error("ID:", id);
+      console.error("Query:", query);
       console.error("Error:", error);
       throw error;
     }
