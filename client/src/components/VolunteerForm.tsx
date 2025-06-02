@@ -7,7 +7,7 @@ import type { Volunteer } from "../types";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: number }>();
+  const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<Volunteer>>({

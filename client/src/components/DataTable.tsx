@@ -43,7 +43,7 @@ export function DataTable<T extends { id: number }>({
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   const filteredData = data.filter((item) =>
     Object.values(item).some((value) =>
@@ -76,12 +76,12 @@ export function DataTable<T extends { id: number }>({
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             {title}
           </h1>
-          <span className="text-sm text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
+          <span className="text-sm select-none text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
             Total: {filteredData.length}
           </span>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="relative group">
+          <div className="relative select-none group">
             <Search className="absolute z-1 left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-gray-500 transition-colors duration-200" />
             <Input
               placeholder={searchPlaceholder}
@@ -98,8 +98,8 @@ export function DataTable<T extends { id: number }>({
         </div>
       </div>
 
-      <div className="border border-gray-200/60 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm">
-        <table className="w-full rounded-xl">
+      <div className="border select-none border-gray-200/60 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm">
+        <table className="w-full select-text rounded-xl">
           <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/60 backdrop-blur-sm rounded-t-xl">
             <tr>
               {columns.map((col, index) => (

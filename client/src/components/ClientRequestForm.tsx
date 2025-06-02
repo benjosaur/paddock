@@ -8,11 +8,11 @@ import type { ClientRequest, Client } from "../types";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: number }>();
+  const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<ClientRequest>>({
-    clientId: "",
+    clientId: undefined,
     requestType: "volunteer",
     startDate: "",
     schedule: "",
@@ -44,7 +44,10 @@ export function ClientRequestForm() {
     }
   }, [isEditing, id]);
 
-  const handleInputChange = (field: keyof ClientRequest, value: string) => {
+  const handleInputChange = (
+    field: keyof ClientRequest,
+    value: string | number | undefined
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -93,7 +96,7 @@ export function ClientRequestForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value || "")
+                    handleInputChange("clientId", selectedOption?.value)
                   }
                   placeholder="Select a client..."
                   className="react-select-container"

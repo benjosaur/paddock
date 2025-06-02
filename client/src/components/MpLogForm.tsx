@@ -8,13 +8,13 @@ import type { MpLog, Client, Mp } from "../types";
 
 export function MpLogForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: number }>();
+  const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<MpLog>>({
     date: "",
-    clientId: "",
-    mpId: "",
+    clientId: undefined,
+    mpId: undefined,
     services: [],
     hoursLogged: undefined,
     notes: "",
@@ -43,7 +43,10 @@ export function MpLogForm() {
     label: mp.name,
   }));
 
-  const handleInputChange = (field: keyof MpLog, value: string) => {
+  const handleInputChange = (
+    field: keyof MpLog,
+    value: string | number | undefined
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -122,7 +125,7 @@ export function MpLogForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value || "")
+                    handleInputChange("clientId", selectedOption?.value)
                   }
                   placeholder="Select a client..."
                   className="react-select-container"
@@ -147,7 +150,7 @@ export function MpLogForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("mpId", selectedOption?.value || "")
+                    handleInputChange("mpId", selectedOption?.value)
                   }
                   placeholder="Select an MP..."
                   className="react-select-container"

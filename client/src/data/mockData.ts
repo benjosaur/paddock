@@ -11,46 +11,46 @@ import type {
 
 export const mockMpLogs: MpLog[] = [
   {
-    id: "1",
+    id: 1,
     date: "2025-01-15",
-    clientId: "client-1",
-    mpId: "mp-1",
+    clientId: 1,
+    mpId: 1,
     services: ["Consultation", "Document Review"],
     hoursLogged: 2.5,
     notes: "Initial consultation regarding housing issues",
   },
   {
-    id: "2",
+    id: 2,
     date: "2025-01-16",
-    clientId: "client-2",
-    mpId: "mp-2",
+    clientId: 2,
+    mpId: 2,
     services: ["Meeting", "Follow-up"],
     hoursLogged: 1.5,
     notes: "Follow-up meeting for benefits claim",
   },
   {
-    id: "3",
+    id: 3,
     date: "2025-01-17",
-    clientId: "client-3",
-    mpId: "mp-1",
+    clientId: 3,
+    mpId: 1,
     services: ["Phone Call"],
     hoursLogged: 0.5,
     notes: "Phone consultation about local services",
   },
   {
-    id: "4",
+    id: 4,
     date: "2025-01-18",
-    clientId: "client-1",
-    mpId: "mp-3",
+    clientId: 1,
+    mpId: 3,
     services: ["Document Review", "Consultation"],
     hoursLogged: 3,
     notes: "Review of planning application documents",
   },
   {
-    id: "5",
+    id: 5,
     date: "2025-01-19",
-    clientId: "client-2",
-    mpId: "mp-2",
+    clientId: 2,
+    mpId: 2,
     services: ["Meeting"],
     hoursLogged: 1,
     notes: "Constituency surgery appointment",
@@ -60,7 +60,7 @@ export const mockMpLogs: MpLog[] = [
 // New Mock Data for MPs
 export const mockMps: Mp[] = [
   {
-    id: "mp-1",
+    id: 1,
     name: "Sarah Johnson",
     address: "12 Caring Lane, Townsville",
     postCode: "TV1 2AB",
@@ -80,7 +80,7 @@ export const mockMps: Mp[] = [
     ],
   },
   {
-    id: "mp-2",
+    id: 2,
     name: "David Wilson",
     address: "34 Helping Hand Rd, Cityville",
     postCode: "CV2 3BC",
@@ -99,7 +99,7 @@ export const mockMps: Mp[] = [
     ],
   },
   {
-    id: "mp-3",
+    id: 3,
     name: "Michael Thompson",
     address: "56 Support Street, Villagetown",
     postCode: "VT3 4CD",
@@ -120,7 +120,7 @@ export const mockMps: Mp[] = [
 // New Mock Data for Volunteers
 export const mockVolunteers: Volunteer[] = [
   {
-    id: "vol-1",
+    id: 1,
     name: "Alice Cooper",
     dob: "1991-05-12",
     address: "789 Volunteer Ave, Community City",
@@ -141,7 +141,7 @@ export const mockVolunteers: Volunteer[] = [
     ],
   },
   {
-    id: "vol-2",
+    id: 2,
     name: "Bob Stevens",
     dob: "1997-09-08",
     address: "101 Helper St, Support Town",
@@ -160,7 +160,7 @@ export const mockVolunteers: Volunteer[] = [
     ],
   },
   {
-    id: "vol-3",
+    id: 3,
     name: "Carol White",
     dob: "1980-04-25",
     address: "202 Kindness Rd, Generosity Village",
@@ -183,28 +183,28 @@ export const mockVolunteers: Volunteer[] = [
 
 export const mockVolunteerLogs: VolunteerLog[] = [
   {
-    id: "1",
+    id: 1,
     date: "2025-01-15",
-    clientId: "client-1",
-    volunteerId: "vol-1",
+    clientId: 1,
+    volunteerId: 1,
     activity: "Admin Support",
     hoursLogged: 4,
     notes: "Data entry and filing",
   },
   {
-    id: "2",
+    id: 2,
     date: "2025-01-16",
-    clientId: "client-2",
-    volunteerId: "vol-2",
+    clientId: 2,
+    volunteerId: 2,
     activity: "Event Planning",
     hoursLogged: 6,
     notes: "Planning community outreach event",
   },
   {
-    id: "3",
+    id: 3,
     date: "2025-01-17",
-    clientId: "client-3",
-    volunteerId: "vol-3",
+    clientId: 3,
+    volunteerId: 3,
     activity: "Client Support",
     hoursLogged: 3,
     notes: "Assisting with client intake",
@@ -213,26 +213,17 @@ export const mockVolunteerLogs: VolunteerLog[] = [
 
 export const mockMagLogs: MagLog[] = [
   {
-    id: "1",
+    id: 1,
     date: "2025-01-15",
     total: 8,
-    attendees: [
-      "client-1",
-      "client-2",
-      "client-3",
-      "client-1",
-      "client-2",
-      "client-3",
-      "client-1",
-      "client-2",
-    ],
+    attendees: [1, 2, 3, 1, 2, 3, 1, 2],
     notes: "Monthly review and planning session",
   },
   {
-    id: "2",
+    id: 2,
     date: "2025-01-22",
     total: 5,
-    attendees: ["client-1", "client-2", "client-3", "client-1", "client-2"],
+    attendees: [1, 2, 3, 1, 2],
     notes: "Q1 strategy planning",
   },
 ];
@@ -240,7 +231,7 @@ export const mockMagLogs: MagLog[] = [
 // New Mock Data for Clients
 export const mockClients: Client[] = [
   {
-    id: "client-1",
+    id: 1,
     name: "Alice Wonderland",
     dob: "1985-07-22",
     address: "123 Main St, Anytown",
@@ -259,7 +250,7 @@ export const mockClients: Client[] = [
     hasAttendanceAllowance: false,
   },
   {
-    id: "client-2",
+    id: 2,
     name: "Bob The Builder",
     dob: "1970-03-10",
     address: "456 Fixit Ave, Builderville",
@@ -274,7 +265,7 @@ export const mockClients: Client[] = [
     hasAttendanceAllowance: true,
   },
   {
-    id: "client-3",
+    id: 3,
     name: "Charlie Brown",
     dob: "1995-11-05",
     address: "789 Good Grief Ln, Peanuts Town",
@@ -297,32 +288,32 @@ export const mockClients: Client[] = [
 // New Mock Data for Client Requests
 export const mockClientRequests: ClientRequest[] = [
   {
-    id: "req-1",
-    clientId: "client-1",
+    id: 1,
+    clientId: 1,
     requestType: "volunteer",
     startDate: "2025-06-10",
     schedule: "Tuesdays, 2 PM - 4 PM",
     status: "pending",
   },
   {
-    id: "req-2",
-    clientId: "client-2",
+    id: 2,
+    clientId: 2,
     requestType: "paid",
     startDate: "2025-07-01",
     schedule: "First Monday of the month, 10 AM",
     status: "approved",
   },
   {
-    id: "req-3",
-    clientId: "client-1",
+    id: 3,
+    clientId: 1,
     requestType: "volunteer",
     startDate: "2025-08-01",
     schedule: "Fridays, 10 AM - 12 PM",
     status: "approved",
   },
   {
-    id: "req-4",
-    clientId: "client-3",
+    id: 4,
+    clientId: 3,
     requestType: "volunteer",
     startDate: "2025-06-15",
     schedule: "Flexible, ad-hoc",
@@ -333,12 +324,13 @@ export const mockClientRequests: ClientRequest[] = [
 // Generate expiry data from MPs and Volunteers
 const generateExpiries = (): ExpiryItem[] => {
   const expiries: ExpiryItem[] = [];
+  let idCounter = 1;
 
   // MP DBS expiries
   mockMps.forEach((mp) => {
     if (mp.dbsExpiry) {
       expiries.push({
-        id: `mp-dbs-${mp.id}`,
+        id: idCounter++,
         date: mp.dbsExpiry,
         type: "dbs",
         mpVolunteer: mp.name,
@@ -348,9 +340,9 @@ const generateExpiries = (): ExpiryItem[] => {
     }
 
     // MP training expiries
-    mp.trainingRecords.forEach((training, index) => {
+    mp.trainingRecords.forEach((training) => {
       expiries.push({
-        id: `mp-training-${mp.id}-${index}`,
+        id: idCounter++,
         date: training.expiry,
         type: "training",
         mpVolunteer: mp.name,
@@ -364,7 +356,7 @@ const generateExpiries = (): ExpiryItem[] => {
   mockVolunteers.forEach((volunteer) => {
     if (volunteer.dbsExpiry) {
       expiries.push({
-        id: `vol-dbs-${volunteer.id}`,
+        id: idCounter++,
         date: volunteer.dbsExpiry,
         type: "dbs",
         mpVolunteer: volunteer.name,
@@ -374,9 +366,9 @@ const generateExpiries = (): ExpiryItem[] => {
     }
 
     // Volunteer training expiries
-    volunteer.trainingRecords.forEach((training, index) => {
+    volunteer.trainingRecords.forEach((training) => {
       expiries.push({
-        id: `vol-training-${volunteer.id}-${index}`,
+        id: idCounter++,
         date: training.expiry,
         type: "training",
         mpVolunteer: volunteer.name,

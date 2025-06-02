@@ -9,13 +9,13 @@ import type { Client, VolunteerLog, Volunteer } from "../types";
 
 export function VolunteerLogForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: number }>();
+  const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<VolunteerLog>>({
     date: "",
-    clientId: "",
-    volunteerId: "",
+    clientId: undefined,
+    volunteerId: undefined,
     activity: "",
     hoursLogged: 0,
     notes: "",
@@ -43,7 +43,7 @@ export function VolunteerLogForm() {
 
   const handleInputChange = (
     field: keyof VolunteerLog,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -108,7 +108,7 @@ export function VolunteerLogForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value || "")
+                    handleInputChange("clientId", selectedOption?.value)
                   }
                   placeholder="Select a client..."
                   className="react-select-container"
@@ -133,10 +133,7 @@ export function VolunteerLogForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange(
-                      "volunteerId",
-                      selectedOption?.value || ""
-                    )
+                    handleInputChange("volunteerId", selectedOption?.value)
                   }
                   placeholder="Select a volunteer..."
                   className="react-select-container"
@@ -194,10 +191,10 @@ export function VolunteerLogForm() {
                 />
               </div>
 
-              <div>
+              <div className="select-none">
                 <label
                   htmlFor="notes"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block select-text text-sm font-medium text-gray-700 mb-1"
                 >
                   Notes
                 </label>

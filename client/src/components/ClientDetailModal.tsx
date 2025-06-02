@@ -159,7 +159,6 @@ export function ClientDetailModal({
               </h3>
               {renderDetailItem("ID", client.id)}
               {renderDetailItem("Date of Birth", client.dob)}
-              {renderDetailItem("Age", client.age)}
               {renderDetailItem("Address", client.address)}
               {renderDetailItem("Post Code", client.postCode)}
               {renderDetailItem("Phone", client.phone)}

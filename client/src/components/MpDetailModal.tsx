@@ -141,7 +141,7 @@ export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
                 <DataTable
                   data={mp.trainingRecords.map((tr, index) => ({
                     ...tr,
-                    id: index.toString(),
+                    id: index,
                   }))}
                   columns={trainingRecordModalColumns}
                   title=""
