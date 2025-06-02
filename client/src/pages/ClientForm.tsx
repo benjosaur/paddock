@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { mockMps } from "../data/mockData";
-import type { Mp } from "../types";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { mockClients } from "../data/mockData";
+import type { Client } from "../types";
 
-export function MpForm() {
+export function ClientForm() {
   const navigate = useNavigate();
   const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<Mp>>({
+  const [formData, setFormData] = useState<Partial<Client>>({
     name: "",
     dob: "",
     address: "",
@@ -18,39 +18,32 @@ export function MpForm() {
     phone: "",
     email: "",
     nextOfKin: "",
-    dbsNumber: "",
-    dbsExpiry: "",
-    servicesOffered: [],
-    specialisms: [],
-    transport: "",
-    capacity: "",
-    trainingRecords: [],
-  });
-
-  const [servicesInput, setServicesInput] = useState("");
-  const [specialismsInput, setSpecialismsInput] = useState("");
-  const [trainingInput, setTrainingInput] = useState({
-    training: "",
-    expiry: "",
+    referredBy: "",
+    clientAgreementDate: "",
+    clientAgreementComments: "",
+    riskAssessmentDate: "",
+    riskAssessmentComments: "",
+    needs: [],
+    servicesProvided: [],
+    hasMp: false,
+    hasAttendanceAllowance: false,
   });
 
   useEffect(() => {
     if (isEditing && id) {
-      const mp = mockMps.find((m) => m.id === id);
-      if (mp) {
-        setFormData(mp);
-        setServicesInput(mp.servicesOffered.join(", "));
-        setSpecialismsInput(mp.specialisms.join(", "));
+      const existingClient = mockClients.find((client) => client.id === id);
+      if (existingClient) {
+        setFormData(existingClient);
       }
     }
-  }, [isEditing, id]);
+  }, [id, isEditing]);
 
-  const handleInputChange = (field: keyof Mp, value: string | number) => {
+  const handleInputChange = (field: keyof Client, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleArrayInputChange = (
-    field: "servicesOffered" | "specialisms",
+    field: "needs" | "servicesProvided",
     value: string
   ) => {
     const array = value
@@ -60,43 +53,25 @@ export function MpForm() {
     setFormData((prev) => ({ ...prev, [field]: array }));
   };
 
-  const addTrainingRecord = () => {
-    if (trainingInput.training && trainingInput.expiry) {
-      setFormData((prev) => ({
-        ...prev,
-        trainingRecords: [...(prev.trainingRecords || []), trainingInput],
-      }));
-      setTrainingInput({ training: "", expiry: "" });
-    }
-  };
-
-  const removeTrainingRecord = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      trainingRecords:
-        prev.trainingRecords?.filter((_, i) => i !== index) || [],
-    }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating MP:", formData);
+      console.log("Updating client:", formData);
     } else {
-      console.log("Creating MP:", formData);
+      console.log("Creating client:", formData);
     }
-    navigate("/mps");
+    navigate("/clients");
   };
 
   const handleCancel = () => {
-    navigate("/mps");
+    navigate("/clients");
   };
 
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit MP" : "Create New MP"}
+          {isEditing ? "Edit Client" : "Create New Client"}
         </h1>
       </div>
 
@@ -216,33 +191,16 @@ export function MpForm() {
 
               <div>
                 <label
-                  htmlFor="dbsNumber"
+                  htmlFor="referredBy"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  DBS Number
+                  Referred By/On
                 </label>
                 <Input
-                  id="dbsNumber"
-                  value={formData.dbsNumber || ""}
+                  id="referredBy"
+                  value={formData.referredBy || ""}
                   onChange={(e) =>
-                    handleInputChange("dbsNumber", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="dbsExpiry"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  DBS Expiry
-                </label>
-                <Input
-                  id="dbsExpiry"
-                  type="date"
-                  value={formData.dbsExpiry || ""}
-                  onChange={(e) =>
-                    handleInputChange("dbsExpiry", e.target.value)
+                    handleInputChange("referredBy", e.target.value)
                   }
                 />
               </div>
@@ -250,134 +208,140 @@ export function MpForm() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Services & Capacity
+                Services & Assessments
               </h3>
 
               <div>
                 <label
-                  htmlFor="servicesOffered"
+                  htmlFor="clientAgreementDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Offered (comma-separated)
+                  Client Agreement Date
                 </label>
                 <Input
-                  id="servicesOffered"
-                  value={servicesInput}
-                  onChange={(e) => {
-                    setServicesInput(e.target.value);
-                    handleArrayInputChange("servicesOffered", e.target.value);
-                  }}
+                  id="clientAgreementDate"
+                  type="date"
+                  value={formData.clientAgreementDate || ""}
+                  onChange={(e) =>
+                    handleInputChange("clientAgreementDate", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="clientAgreementComments"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Client Agreement Comments
+                </label>
+                <Input
+                  id="clientAgreementComments"
+                  value={formData.clientAgreementComments || ""}
+                  onChange={(e) =>
+                    handleInputChange("clientAgreementComments", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="riskAssessmentDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Risk Assessment Date
+                </label>
+                <Input
+                  id="riskAssessmentDate"
+                  type="date"
+                  value={formData.riskAssessmentDate || ""}
+                  onChange={(e) =>
+                    handleInputChange("riskAssessmentDate", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="riskAssessmentComments"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Risk Assessment Comments
+                </label>
+                <Input
+                  id="riskAssessmentComments"
+                  value={formData.riskAssessmentComments || ""}
+                  onChange={(e) =>
+                    handleInputChange("riskAssessmentComments", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="needs"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Needs (comma-separated)
+                </label>
+                <Input
+                  id="needs"
+                  value={formData.needs?.join(", ") || ""}
+                  onChange={(e) =>
+                    handleArrayInputChange("needs", e.target.value)
+                  }
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>
 
               <div>
                 <label
-                  htmlFor="specialisms"
+                  htmlFor="servicesProvided"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Specialisms (comma-separated)
+                  Services Provided (comma-separated)
                 </label>
                 <Input
-                  id="specialisms"
-                  value={specialismsInput}
-                  onChange={(e) => {
-                    setSpecialismsInput(e.target.value);
-                    handleArrayInputChange("specialisms", e.target.value);
-                  }}
-                  placeholder="e.g., Dementia Care, Mobility Support"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="transport"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Transport
-                </label>
-                <Input
-                  id="transport"
-                  value={formData.transport || ""}
+                  id="servicesProvided"
+                  value={formData.servicesProvided?.join(", ") || ""}
                   onChange={(e) =>
-                    handleInputChange("transport", e.target.value)
+                    handleArrayInputChange("servicesProvided", e.target.value)
                   }
-                  placeholder="e.g., Own Car, Public Transport"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="capacity"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Capacity
-                </label>
-                <Input
-                  id="capacity"
-                  value={formData.capacity || ""}
-                  onChange={(e) =>
-                    handleInputChange("capacity", e.target.value)
-                  }
-                  placeholder="e.g., Full Time, Part Time"
+                  placeholder="e.g., Home Care, Meal Preparation"
                 />
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-md font-medium text-gray-700">
-                  Training Records
-                </h4>
-
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Training name"
-                    value={trainingInput.training}
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.hasMp || false}
                     onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        training: e.target.value,
-                      }))
+                      handleInputChange("hasMp", e.target.checked)
                     }
+                    className="rounded border-gray-300"
                   />
-                  <Input
-                    type="date"
-                    placeholder="Expiry date"
-                    value={trainingInput.expiry}
-                    onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        expiry: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button type="button" onClick={addTrainingRecord} size="sm">
-                    Add
-                  </Button>
-                </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Has MP?
+                  </span>
+                </label>
 
-                {formData.trainingRecords &&
-                  formData.trainingRecords.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.trainingRecords.map((record, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                        >
-                          <span className="text-sm">
-                            {record.training} - {record.expiry}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeTrainingRecord(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.hasAttendanceAllowance || false}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "hasAttendanceAllowance",
+                        e.target.checked
+                      )
+                    }
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Has Attendance Allowance?
+                  </span>
+                </label>
               </div>
             </div>
           </div>
@@ -387,7 +351,7 @@ export function MpForm() {
               Cancel
             </Button>
             <Button type="submit">
-              {isEditing ? "Update MP" : "Create MP"}
+              {isEditing ? "Update Client" : "Create Client"}
             </Button>
           </div>
         </form>

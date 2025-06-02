@@ -147,7 +147,7 @@ export function VolunteerDetailModal({
                 <DataTable
                   data={volunteer.trainingRecords.map((tr, index) => ({
                     ...tr,
-                    id: index.toString(),
+                    id: index,
                   }))}
                   columns={trainingRecordModalColumns}
                   title=""

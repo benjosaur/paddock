@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { mockClients } from "../data/mockData";
-import type { Client } from "../types";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { mockMps } from "../data/mockData";
+import type { Mp } from "../types";
 
-export function ClientForm() {
+export function MpForm() {
   const navigate = useNavigate();
   const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<Client>>({
+  const [formData, setFormData] = useState<Partial<Mp>>({
     name: "",
     dob: "",
     address: "",
@@ -18,32 +18,39 @@ export function ClientForm() {
     phone: "",
     email: "",
     nextOfKin: "",
-    referredBy: "",
-    clientAgreementDate: "",
-    clientAgreementComments: "",
-    riskAssessmentDate: "",
-    riskAssessmentComments: "",
-    needs: [],
-    servicesProvided: [],
-    hasMp: false,
-    hasAttendanceAllowance: false,
+    dbsNumber: "",
+    dbsExpiry: "",
+    servicesOffered: [],
+    specialisms: [],
+    transport: "",
+    capacity: "",
+    trainingRecords: [],
+  });
+
+  const [servicesInput, setServicesInput] = useState("");
+  const [specialismsInput, setSpecialismsInput] = useState("");
+  const [trainingInput, setTrainingInput] = useState({
+    training: "",
+    expiry: "",
   });
 
   useEffect(() => {
     if (isEditing && id) {
-      const existingClient = mockClients.find((client) => client.id === id);
-      if (existingClient) {
-        setFormData(existingClient);
+      const mp = mockMps.find((m) => m.id === id);
+      if (mp) {
+        setFormData(mp);
+        setServicesInput(mp.servicesOffered.join(", "));
+        setSpecialismsInput(mp.specialisms.join(", "));
       }
     }
-  }, [id, isEditing]);
+  }, [isEditing, id]);
 
-  const handleInputChange = (field: keyof Client, value: string | boolean) => {
+  const handleInputChange = (field: keyof Mp, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleArrayInputChange = (
-    field: "needs" | "servicesProvided",
+    field: "servicesOffered" | "specialisms",
     value: string
   ) => {
     const array = value
@@ -53,25 +60,43 @@ export function ClientForm() {
     setFormData((prev) => ({ ...prev, [field]: array }));
   };
 
+  const addTrainingRecord = () => {
+    if (trainingInput.training && trainingInput.expiry) {
+      setFormData((prev) => ({
+        ...prev,
+        trainingRecords: [...(prev.trainingRecords || []), trainingInput],
+      }));
+      setTrainingInput({ training: "", expiry: "" });
+    }
+  };
+
+  const removeTrainingRecord = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      trainingRecords:
+        prev.trainingRecords?.filter((_, i) => i !== index) || [],
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating client:", formData);
+      console.log("Updating MP:", formData);
     } else {
-      console.log("Creating client:", formData);
+      console.log("Creating MP:", formData);
     }
-    navigate("/clients");
+    navigate("/mps");
   };
 
   const handleCancel = () => {
-    navigate("/clients");
+    navigate("/mps");
   };
 
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit Client" : "Create New Client"}
+          {isEditing ? "Edit MP" : "Create New MP"}
         </h1>
       </div>
 
@@ -191,16 +216,33 @@ export function ClientForm() {
 
               <div>
                 <label
-                  htmlFor="referredBy"
+                  htmlFor="dbsNumber"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Referred By/On
+                  DBS Number
                 </label>
                 <Input
-                  id="referredBy"
-                  value={formData.referredBy || ""}
+                  id="dbsNumber"
+                  value={formData.dbsNumber || ""}
                   onChange={(e) =>
-                    handleInputChange("referredBy", e.target.value)
+                    handleInputChange("dbsNumber", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="dbsExpiry"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  DBS Expiry
+                </label>
+                <Input
+                  id="dbsExpiry"
+                  type="date"
+                  value={formData.dbsExpiry || ""}
+                  onChange={(e) =>
+                    handleInputChange("dbsExpiry", e.target.value)
                   }
                 />
               </div>
@@ -208,140 +250,134 @@ export function ClientForm() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Services & Assessments
+                Services & Capacity
               </h3>
 
               <div>
                 <label
-                  htmlFor="clientAgreementDate"
+                  htmlFor="servicesOffered"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client Agreement Date
+                  Services Offered (comma-separated)
                 </label>
                 <Input
-                  id="clientAgreementDate"
-                  type="date"
-                  value={formData.clientAgreementDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementDate", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="clientAgreementComments"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Client Agreement Comments
-                </label>
-                <Input
-                  id="clientAgreementComments"
-                  value={formData.clientAgreementComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementComments", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="riskAssessmentDate"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Risk Assessment Date
-                </label>
-                <Input
-                  id="riskAssessmentDate"
-                  type="date"
-                  value={formData.riskAssessmentDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentDate", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="riskAssessmentComments"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Risk Assessment Comments
-                </label>
-                <Input
-                  id="riskAssessmentComments"
-                  value={formData.riskAssessmentComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentComments", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="needs"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Needs (comma-separated)
-                </label>
-                <Input
-                  id="needs"
-                  value={formData.needs?.join(", ") || ""}
-                  onChange={(e) =>
-                    handleArrayInputChange("needs", e.target.value)
-                  }
+                  id="servicesOffered"
+                  value={servicesInput}
+                  onChange={(e) => {
+                    setServicesInput(e.target.value);
+                    handleArrayInputChange("servicesOffered", e.target.value);
+                  }}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>
 
               <div>
                 <label
-                  htmlFor="servicesProvided"
+                  htmlFor="specialisms"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Provided (comma-separated)
+                  Specialisms (comma-separated)
                 </label>
                 <Input
-                  id="servicesProvided"
-                  value={formData.servicesProvided?.join(", ") || ""}
+                  id="specialisms"
+                  value={specialismsInput}
+                  onChange={(e) => {
+                    setSpecialismsInput(e.target.value);
+                    handleArrayInputChange("specialisms", e.target.value);
+                  }}
+                  placeholder="e.g., Dementia Care, Mobility Support"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="transport"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Transport
+                </label>
+                <Input
+                  id="transport"
+                  value={formData.transport || ""}
                   onChange={(e) =>
-                    handleArrayInputChange("servicesProvided", e.target.value)
+                    handleInputChange("transport", e.target.value)
                   }
-                  placeholder="e.g., Home Care, Meal Preparation"
+                  placeholder="e.g., Own Car, Public Transport"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="capacity"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Capacity
+                </label>
+                <Input
+                  id="capacity"
+                  value={formData.capacity || ""}
+                  onChange={(e) =>
+                    handleInputChange("capacity", e.target.value)
+                  }
+                  placeholder="e.g., Full Time, Part Time"
                 />
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasMp || false}
-                    onChange={(e) =>
-                      handleInputChange("hasMp", e.target.checked)
-                    }
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has MP?
-                  </span>
-                </label>
+                <h4 className="text-md font-medium text-gray-700">
+                  Training Records
+                </h4>
 
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasAttendanceAllowance || false}
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Training name"
+                    value={trainingInput.training}
                     onChange={(e) =>
-                      handleInputChange(
-                        "hasAttendanceAllowance",
-                        e.target.checked
-                      )
+                      setTrainingInput((prev) => ({
+                        ...prev,
+                        training: e.target.value,
+                      }))
                     }
-                    className="rounded border-gray-300"
                   />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has Attendance Allowance?
-                  </span>
-                </label>
+                  <Input
+                    type="date"
+                    placeholder="Expiry date"
+                    value={trainingInput.expiry}
+                    onChange={(e) =>
+                      setTrainingInput((prev) => ({
+                        ...prev,
+                        expiry: e.target.value,
+                      }))
+                    }
+                  />
+                  <Button type="button" onClick={addTrainingRecord} size="sm">
+                    Add
+                  </Button>
+                </div>
+
+                {formData.trainingRecords &&
+                  formData.trainingRecords.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.trainingRecords.map((record, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                        >
+                          <span className="text-sm">
+                            {record.training} - {record.expiry}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeTrainingRecord(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -351,7 +387,7 @@ export function ClientForm() {
               Cancel
             </Button>
             <Button type="submit">
-              {isEditing ? "Update Client" : "Create Client"}
+              {isEditing ? "Update MP" : "Create MP"}
             </Button>
           </div>
         </form>

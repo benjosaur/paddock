@@ -1,48 +1,51 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { mockVolunteers, mockVolunteerLogs } from "../data/mockData";
-import { mockClients } from "../data/mockData";
-import type { Client, VolunteerLog, Volunteer } from "../types";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { mockClients, mockClientRequests } from "../data/mockData";
+import type { ClientRequest, Client } from "../types";
 
-export function VolunteerLogForm() {
+export function ClientRequestForm() {
   const navigate = useNavigate();
   const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<VolunteerLog>>({
-    date: "",
+  const [formData, setFormData] = useState<Partial<ClientRequest>>({
     clientId: undefined,
-    volunteerId: undefined,
-    activity: "",
-    hoursLogged: 0,
-    notes: "",
+    requestType: "volunteer",
+    startDate: "",
+    schedule: "",
+    status: "pending",
   });
-
-  // Load existing data when editing
-  useEffect(() => {
-    if (isEditing && id) {
-      const existingLog = mockVolunteerLogs.find((log) => log.id === id);
-      if (existingLog) {
-        setFormData(existingLog);
-      }
-    }
-  }, [id, isEditing]);
 
   const clientOptions = mockClients.map((client: Client) => ({
     value: client.id,
     label: client.name,
   }));
 
-  const volunteerOptions = mockVolunteers.map((volunteer: Volunteer) => ({
-    value: volunteer.id,
-    label: volunteer.name,
-  }));
+  const requestTypeOptions = [
+    { value: "volunteer", label: "Volunteer" },
+    { value: "paid", label: "Paid" },
+  ];
+
+  const statusOptions = [
+    { value: "pending", label: "Pending" },
+    { value: "approved", label: "Approved" },
+    { value: "rejected", label: "Rejected" },
+  ];
+
+  useEffect(() => {
+    if (isEditing && id) {
+      const request = mockClientRequests.find((r) => r.id === id);
+      if (request) {
+        setFormData(request);
+      }
+    }
+  }, [isEditing, id]);
 
   const handleInputChange = (
-    field: keyof VolunteerLog,
+    field: keyof ClientRequest,
     value: string | number | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -50,22 +53,23 @@ export function VolunteerLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(
-      isEditing ? "Updating Volunteer Log:" : "Creating Volunteer Log:",
-      formData
-    );
-    navigate("/volunteer-logs");
+    if (isEditing) {
+      console.log("Updating Client Request:", formData);
+    } else {
+      console.log("Creating Client Request:", formData);
+    }
+    navigate("/new-requests");
   };
 
   const handleCancel = () => {
-    navigate("/volunteer-logs");
+    navigate("/new-requests");
   };
 
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit Volunteer Log" : "Create New Volunteer Log"}
+          {isEditing ? "Edit Client Request" : "Create New Client Request"}
         </h1>
       </div>
 
@@ -74,31 +78,15 @@ export function VolunteerLogForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Log Information
+                Request Information
               </h3>
-
-              <div>
-                <label
-                  htmlFor="date"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Date *
-                </label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date || ""}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
-                  required
-                />
-              </div>
 
               <div>
                 <label
                   htmlFor="client"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client
+                  Client *
                 </label>
                 <Select
                   options={clientOptions}
@@ -114,55 +102,51 @@ export function VolunteerLogForm() {
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
-                  isClearable
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="volunteer"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Volunteer *
-                </label>
-                <Select
-                  options={volunteerOptions}
-                  value={
-                    volunteerOptions.find(
-                      (option) => option.value === formData.volunteerId
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    handleInputChange("volunteerId", selectedOption?.value)
-                  }
-                  placeholder="Select a volunteer..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isSearchable
                   required
                 />
               </div>
 
               <div>
                 <label
-                  htmlFor="hoursLogged"
+                  htmlFor="requestType"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Hours Logged *
+                  Request Type *
                 </label>
-                <Input
-                  id="hoursLogged"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={formData.hoursLogged || ""}
-                  onChange={(e) =>
+                <Select
+                  options={requestTypeOptions}
+                  value={
+                    requestTypeOptions.find(
+                      (option) => option.value === formData.requestType
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
                     handleInputChange(
-                      "hoursLogged",
-                      parseFloat(e.target.value) || 0
+                      "requestType",
+                      selectedOption?.value || ""
                     )
                   }
-                  placeholder="e.g., 4.5"
+                  placeholder="Select request type..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Start Date *
+                </label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate || ""}
+                  onChange={(e) =>
+                    handleInputChange("startDate", e.target.value)
+                  }
                   required
                 />
               </div>
@@ -170,41 +154,47 @@ export function VolunteerLogForm() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Activity Details
+                Service Details
               </h3>
 
               <div>
                 <label
-                  htmlFor="activity"
+                  htmlFor="schedule"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Activity *
+                  Schedule *
                 </label>
                 <Input
-                  id="activity"
-                  value={formData.activity || ""}
+                  id="schedule"
+                  value={formData.schedule || ""}
                   onChange={(e) =>
-                    handleInputChange("activity", e.target.value)
+                    handleInputChange("schedule", e.target.value)
                   }
-                  placeholder="e.g., Admin Support, Event Planning"
+                  placeholder="e.g., Mon, Wed, Fri at 10:00 AM"
                   required
                 />
               </div>
 
-              <div className="select-none">
+              <div>
                 <label
-                  htmlFor="notes"
-                  className="block select-text text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="status"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Notes
+                  Status
                 </label>
-                <textarea
-                  id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Additional notes about the volunteer activity..."
+                <Select
+                  options={statusOptions}
+                  value={
+                    statusOptions.find(
+                      (option) => option.value === formData.status
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleInputChange("status", selectedOption?.value || "")
+                  }
+                  placeholder="Select status..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
                 />
               </div>
             </div>
@@ -215,7 +205,7 @@ export function VolunteerLogForm() {
               Cancel
             </Button>
             <Button type="submit">
-              {isEditing ? "Update Volunteer Log" : "Create Volunteer Log"}
+              {isEditing ? "Update Request" : "Create Client Request"}
             </Button>
           </div>
         </form>

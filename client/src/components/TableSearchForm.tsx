@@ -225,17 +225,10 @@ export function TableSearchForm() {
           { key: "total", header: "Total" },
           {
             key: "attendees",
-            header: "Attendees",
-            render: (item: any) => {
-              if (Array.isArray(item.attendees)) {
-                const clientNames = item.attendees.map(
-                  (clientId: string) =>
-                    mockClients.find((c) => c.id === clientId)?.name || clientId
-                );
-                return clientNames.join(", ");
-              }
-              return item.attendees?.toString() || "";
-            },
+            header: "Attendee Id",
+            render: (item: any) =>
+              mockClients.find((c) => c.id === item.clientId)?.name ||
+              item.clientId,
           },
           { key: "notes", header: "Notes" },
         ];
