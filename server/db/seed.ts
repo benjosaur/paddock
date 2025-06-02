@@ -7,12 +7,7 @@ export async function seedDatabase() {
       "TRUNCATE TABLE mpLogs, volunteerLogs, clientRequests, mps, volunteers, clients, magLogs CASCADE"
     );
 
-    // Seed clients
-    const client1Id = crypto.randomUUID();
-    const client2Id = crypto.randomUUID();
-
     await db.create("clients", {
-      id: client1Id,
       name: "John Smith",
       dob: "1980-05-15",
       address: "123 Main Street",
@@ -28,7 +23,6 @@ export async function seedDatabase() {
     });
 
     await db.create("clients", {
-      id: client2Id,
       name: "Mary Johnson",
       dob: "1975-12-03",
       address: "456 Oak Avenue",
@@ -43,11 +37,7 @@ export async function seedDatabase() {
       hasAttendanceAllowance: true,
     });
 
-    // Seed MPs
-    const mp1Id = crypto.randomUUID();
-
     await db.create("mps", {
-      id: mp1Id,
       name: "Sarah Williams",
       dob: "1989-03-15",
       address: "789 Pine Road",
@@ -67,11 +57,7 @@ export async function seedDatabase() {
       ],
     });
 
-    // Seed volunteers
-    const volunteer1Id = crypto.randomUUID();
-
     await db.create("volunteers", {
-      id: volunteer1Id,
       name: "Tom Brown",
       dob: "1997-02-10",
       address: "321 Elm Street",

@@ -18,7 +18,7 @@ export const viewConfigSchema = z.object({
 });
 
 export const expiryItemSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   date: z.string(),
   type: z.enum(["training", "dbs"]),
   mpVolunteer: z.string(),
@@ -27,7 +27,7 @@ export const expiryItemSchema = z.object({
 });
 
 export const mpSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   name: z.string(),
   dob: z.string().optional(),
   address: z.string(),
@@ -45,7 +45,7 @@ export const mpSchema = z.object({
 });
 
 export const volunteerSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   name: z.string(),
   dob: z.string().optional(),
   address: z.string(),
@@ -64,7 +64,7 @@ export const volunteerSchema = z.object({
 });
 
 export const clientSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   name: z.string(),
   dob: z.string(),
   address: z.string(),
@@ -84,27 +84,27 @@ export const clientSchema = z.object({
 });
 
 export const mpLogSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   date: z.string(),
-  clientId: z.string(),
-  mpId: z.string(),
+  clientId: z.number(),
+  mpId: z.number(),
   services: z.array(z.string()),
   hoursLogged: z.number(),
   notes: z.string(),
 });
 
 export const volunteerLogSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   date: z.string(),
-  clientId: z.string(),
-  volunteerId: z.string(),
+  clientId: z.number(),
+  volunteerId: z.number(),
   activity: z.string(),
   hoursLogged: z.number(),
   notes: z.string(),
 });
 
 export const magLogSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   date: z.string(),
   total: z.number(),
   attendees: z.array(z.string()),
@@ -112,8 +112,8 @@ export const magLogSchema = z.object({
 });
 
 export const clientRequestSchema = z.object({
-  id: z.string(),
-  clientId: z.string(),
+  id: z.number(),
+  clientId: z.number(),
   requestType: z.enum(["paid", "volunteer"]),
   startDate: z.string(),
   schedule: z.string(),
@@ -128,26 +128,26 @@ export const createVolunteerLogSchema = volunteerLogSchema.omit({ id: true });
 export const createMagLogSchema = magLogSchema.omit({ id: true });
 export const createClientRequestSchema = clientRequestSchema.omit({ id: true });
 
-export const updateMpSchema = mpSchema.partial().extend({ id: z.string() });
+export const updateMpSchema = mpSchema.partial().extend({ id: z.number() });
 export const updateVolunteerSchema = volunteerSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 export const updateClientSchema = clientSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 export const updateMpLogSchema = mpLogSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 export const updateVolunteerLogSchema = volunteerLogSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 export const updateMagLogSchema = magLogSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 export const updateClientRequestSchema = clientRequestSchema
   .partial()
-  .extend({ id: z.string() });
+  .extend({ id: z.number() });
 
 export const idParamSchema = z.object({
-  id: z.string(),
+  id: z.number(),
 });

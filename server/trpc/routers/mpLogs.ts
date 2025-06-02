@@ -4,6 +4,7 @@ import {
   createMpLogSchema,
   updateMpLogSchema,
   idParamSchema,
+  mpLogSchema,
 } from "shared/schemas/index.ts";
 import type { MpLog } from "shared/types/index.ts";
 
@@ -19,7 +20,7 @@ export const mpLogsRouter = router({
     }),
 
   getByMpId: publicProcedure
-    .input(z.object({ mpId: z.string() }))
+    .input(mpLogSchema.pick({ mpId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM mpLogs WHERE mpId = $1 ORDER BY date DESC",
@@ -29,7 +30,7 @@ export const mpLogsRouter = router({
     }),
 
   getByClientId: publicProcedure
-    .input(z.object({ clientId: z.string() }))
+    .input(mpLogSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM mpLogs WHERE clientId = $1 ORDER BY date DESC",

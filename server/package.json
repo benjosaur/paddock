@@ -9,7 +9,8 @@
     "start": "bun run index.js",
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",
-    "db:reset": "bun run db.ts reset"
+    "db:reset": "bun run db.ts reset",
+    "db:test": "bun run db.ts test"
   },
   "dependencies": {
     "@trpc/server": "^10.45.2",

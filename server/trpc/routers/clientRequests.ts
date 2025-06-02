@@ -4,6 +4,7 @@ import {
   createClientRequestSchema,
   updateClientRequestSchema,
   idParamSchema,
+  clientRequestSchema,
 } from "shared/schemas/index.ts";
 import type { ClientRequest } from "shared/types/index.ts";
 
@@ -19,7 +20,7 @@ export const clientRequestsRouter = router({
     }),
 
   getByClientId: publicProcedure
-    .input(z.object({ clientId: z.string() }))
+    .input(clientRequestSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM clientRequests WHERE clientId = $1 ORDER BY start_date DESC",
@@ -29,7 +30,7 @@ export const clientRequestsRouter = router({
     }),
 
   getByStatus: publicProcedure
-    .input(z.object({ status: z.enum(["pending", "approved", "rejected"]) }))
+    .input(clientRequestSchema.pick({ status: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM clientRequests WHERE status = $1 ORDER BY start_date DESC",

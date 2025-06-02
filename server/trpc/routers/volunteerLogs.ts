@@ -4,6 +4,7 @@ import {
   createVolunteerLogSchema,
   updateVolunteerLogSchema,
   idParamSchema,
+  volunteerLogSchema,
 } from "shared/schemas/index.ts";
 import type { VolunteerLog } from "shared/types/index.ts";
 
@@ -19,7 +20,7 @@ export const volunteerLogsRouter = router({
     }),
 
   getByVolunteerId: publicProcedure
-    .input(z.object({ volunteerId: z.string() }))
+    .input(volunteerLogSchema.pick({ volunteerId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM volunteerLogs WHERE volunteerId = $1 ORDER BY date DESC",
@@ -29,7 +30,7 @@ export const volunteerLogsRouter = router({
     }),
 
   getByClientId: publicProcedure
-    .input(z.object({ clientId: z.string() }))
+    .input(volunteerLogSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
         "SELECT * FROM volunteerLogs WHERE clientId = $1 ORDER BY date DESC",

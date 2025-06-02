@@ -133,22 +133,22 @@ export async function initializeDatabase() {
 
     // Create indexes for better performance
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_mp_logs_mp_id ON mp_logs(mpId)"
+      "CREATE INDEX IF NOT EXISTS idx_mp_logs_mp_id ON mpLogs(mpId)"
     );
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_mp_logs_client_id ON mp_logs(clientId)"
+      "CREATE INDEX IF NOT EXISTS idx_mp_logs_client_id ON mpLogs(clientId)"
     );
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_volunteer_id ON volunteer_logs(volunteerId)"
+      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_volunteer_id ON volunteerLogs(volunteerId)"
     );
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_client_id ON volunteer_logs(clientId)"
+      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_client_id ON volunteerLogs(clientId)"
     );
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_client_requests_client_id ON client_requests(clientId)"
+      "CREATE INDEX IF NOT EXISTS idx_client_requests_client_id ON clientRequests(clientId)"
     );
     await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_client_requests_status ON client_requests(status)"
+      "CREATE INDEX IF NOT EXISTS idx_client_requests_status ON clientRequests(status)"
     );
 
     console.log("Database tables initialized successfully");
