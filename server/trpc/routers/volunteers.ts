@@ -21,8 +21,7 @@ export const volunteersRouter = router({
   create: publicProcedure
     .input(createVolunteerSchema)
     .mutation(async ({ ctx, input }) => {
-      const id = crypto.randomUUID();
-      return await ctx.db.create<Volunteer>("volunteers", { id, ...input });
+      return await ctx.db.create<Volunteer>("volunteers", input);
     }),
 
   update: publicProcedure

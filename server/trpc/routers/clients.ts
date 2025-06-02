@@ -21,8 +21,7 @@ export const clientsRouter = router({
   create: publicProcedure
     .input(createClientSchema)
     .mutation(async ({ ctx, input }) => {
-      const id = crypto.randomUUID();
-      return await ctx.db.create<Client>("clients", { id, ...input });
+      return await ctx.db.create<Client>("clients", input);
     }),
 
   update: publicProcedure

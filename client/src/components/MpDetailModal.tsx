@@ -114,7 +114,7 @@ export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
               {renderDetailItem("Next of Kin", mp.nextOfKin)}
               {renderDetailItem("DBS Number", mp.dbsNumber)}
               {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
-              {renderDetailItem("Age", mp.age)}
+              {renderDetailItem("Date of Birth", mp.dob)}
             </TabsContent>
 
             <TabsContent

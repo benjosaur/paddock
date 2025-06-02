@@ -9,20 +9,20 @@ import type { MpLog } from "shared/types/index.ts";
 
 export const mpLogsRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.db.findAll<MpLog>("mp_logs");
+    return await ctx.db.findAll<MpLog>("mpLogs");
   }),
 
   getById: publicProcedure
     .input(idParamSchema)
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<MpLog>("mp_logs", input.id);
+      return await ctx.db.findById<MpLog>("mpLogs", input.id);
     }),
 
   getByMpId: publicProcedure
     .input(z.object({ mpId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
-        "SELECT * FROM mp_logs WHERE mp_id = $1 ORDER BY date DESC",
+        "SELECT * FROM mpLogs WHERE mpId = $1 ORDER BY date DESC",
         [input.mpId]
       );
       return result.rows;
@@ -32,7 +32,7 @@ export const mpLogsRouter = router({
     .input(z.object({ clientId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
-        "SELECT * FROM mp_logs WHERE client_id = $1 ORDER BY date DESC",
+        "SELECT * FROM mpLogs WHERE clientId = $1 ORDER BY date DESC",
         [input.clientId]
       );
       return result.rows;
@@ -41,20 +41,19 @@ export const mpLogsRouter = router({
   create: publicProcedure
     .input(createMpLogSchema)
     .mutation(async ({ ctx, input }) => {
-      const id = crypto.randomUUID();
-      return await ctx.db.create<MpLog>("mp_logs", { id, ...input });
+      return await ctx.db.create<MpLog>("mpLogs", input);
     }),
 
   update: publicProcedure
     .input(updateMpLogSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return await ctx.db.update<MpLog>("mp_logs", id, data);
+      return await ctx.db.update<MpLog>("mpLogs", id, data);
     }),
 
   delete: publicProcedure
     .input(idParamSchema)
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("mp_logs", input.id);
+      return await ctx.db.delete("mpLogs", input.id);
     }),
 });

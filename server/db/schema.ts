@@ -5,7 +5,7 @@ export async function initializeDatabase() {
     // Create MPs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS mps (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         address TEXT NOT NULL,
         postCode VARCHAR(20) NOT NULL,
@@ -14,7 +14,7 @@ export async function initializeDatabase() {
         nextOfKin VARCHAR(255) NOT NULL,
         dbsNumber VARCHAR(255),
         dbsExpiry DATE NOT NULL,
-        age INTEGER,
+        dob DATE,
         servicesOffered TEXT[] NOT NULL DEFAULT '{}',
         specialisms TEXT[] NOT NULL DEFAULT '{}',
         transport VARCHAR(255) NOT NULL,
@@ -28,9 +28,9 @@ export async function initializeDatabase() {
     // Create Volunteers table
     await db.query(`
       CREATE TABLE IF NOT EXISTS volunteers (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        age INTEGER,
+        dob DATE,
         address TEXT NOT NULL,
         postCode VARCHAR(20) NOT NULL,
         phone VARCHAR(50) NOT NULL,
@@ -52,7 +52,7 @@ export async function initializeDatabase() {
     // Create Clients table
     await db.query(`
       CREATE TABLE IF NOT EXISTS clients (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         dob DATE NOT NULL,
         address TEXT NOT NULL,
@@ -67,7 +67,6 @@ export async function initializeDatabase() {
         riskAssessmentComments TEXT,
         needs TEXT[] NOT NULL DEFAULT '{}',
         servicesProvided TEXT[] NOT NULL DEFAULT '{}',
-        age INTEGER,
         hasMp BOOLEAN DEFAULT FALSE,
         hasAttendanceAllowance BOOLEAN DEFAULT FALSE,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -78,10 +77,10 @@ export async function initializeDatabase() {
     // Create MP Logs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS mpLogs (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         date DATE NOT NULL,
-        clientId VARCHAR(255) NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        mpId VARCHAR(255) NOT NULL REFERENCES mps(id) ON DELETE CASCADE,
+        clientId INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        mpId INT NOT NULL REFERENCES mps(id) ON DELETE CASCADE,
         services TEXT[] NOT NULL DEFAULT '{}',
         hoursLogged DECIMAL(5,2) NOT NULL,
         notes TEXT NOT NULL,
@@ -93,10 +92,10 @@ export async function initializeDatabase() {
     // Create Volunteer Logs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS volunteerLogs (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         date DATE NOT NULL,
-        clientId VARCHAR(255) NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        volunteerId VARCHAR(255) NOT NULL REFERENCES volunteers(id) ON DELETE CASCADE,
+        clientId INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        volunteerId INT NOT NULL REFERENCES volunteers(id) ON DELETE CASCADE,
         activity VARCHAR(255) NOT NULL,
         hoursLogged DECIMAL(5,2) NOT NULL,
         notes TEXT NOT NULL,
@@ -108,7 +107,7 @@ export async function initializeDatabase() {
     // Create MAG Logs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS magLogs (
-        id VARCHAR(255) PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         date DATE NOT NULL,
         total DECIMAL(10,2) NOT NULL,
         attendees TEXT[] NOT NULL DEFAULT '{}',
@@ -121,8 +120,8 @@ export async function initializeDatabase() {
     // Create Client Requests table
     await db.query(`
       CREATE TABLE IF NOT EXISTS clientRequests (
-        id VARCHAR(255) PRIMARY KEY,
-        clientId VARCHAR(255) NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        id SERIAL PRIMARY KEY,
+        clientId INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         requestType VARCHAR(20) NOT NULL CHECK (requestType IN ('paid', 'volunteer')),
         startDate DATE NOT NULL,
         schedule VARCHAR(255) NOT NULL,
@@ -155,6 +154,23 @@ export async function initializeDatabase() {
     console.log("Database tables initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
+    throw error;
+  }
+}
+
+export async function dropAllTables() {
+  try {
+    await db.query("DROP TABLE IF EXISTS mpLogs CASCADE");
+    await db.query("DROP TABLE IF EXISTS volunteerLogs CASCADE");
+    await db.query("DROP TABLE IF EXISTS clientRequests CASCADE");
+    await db.query("DROP TABLE IF EXISTS magLogs CASCADE");
+    await db.query("DROP TABLE IF EXISTS mps CASCADE");
+    await db.query("DROP TABLE IF EXISTS volunteers CASCADE");
+    await db.query("DROP TABLE IF EXISTS clients CASCADE");
+
+    console.log("All database tables dropped successfully");
+  } catch (error) {
+    console.error("Error dropping database tables:", error);
     throw error;
   }
 }

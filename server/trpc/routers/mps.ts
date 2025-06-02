@@ -21,8 +21,7 @@ export const mpsRouter = router({
   create: publicProcedure
     .input(createMpSchema)
     .mutation(async ({ ctx, input }) => {
-      const id = crypto.randomUUID();
-      return await ctx.db.create<Mp>("mps", { id, ...input });
+      return await ctx.db.create<Mp>("mps", input);
     }),
 
   update: publicProcedure

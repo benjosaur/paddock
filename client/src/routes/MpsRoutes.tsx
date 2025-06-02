@@ -7,7 +7,7 @@ import type { Mp, TableColumn } from "../types";
 const mpColumns: TableColumn<Mp>[] = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
-  { key: "age", header: "Age" },
+  { key: "dob", header: "Date of Birth" },
   { key: "postCode", header: "Post Code" },
   {
     key: "servicesOffered",

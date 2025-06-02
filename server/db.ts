@@ -1,4 +1,4 @@
-import { initializeDatabase } from "./db/schema.ts";
+import { initializeDatabase, dropAllTables } from "./db/schema.ts";
 import { seedDatabase } from "./db/seed.ts";
 
 const command = process.argv[2];
@@ -11,6 +11,7 @@ switch (command) {
     await seedDatabase();
     break;
   case "reset":
+    await dropAllTables();
     await initializeDatabase();
     await seedDatabase();
     break;

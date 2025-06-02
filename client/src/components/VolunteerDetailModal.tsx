@@ -112,7 +112,7 @@ export function VolunteerDetailModal({
               </h3>
               {renderDetailItem("ID", volunteer.id)}
               {renderDetailItem("Name", volunteer.name)}
-              {renderDetailItem("Age", volunteer.age)}
+              {renderDetailItem("Date of Birth", volunteer.dob)}
               {renderDetailItem("Address", volunteer.address)}
               {renderDetailItem("Post Code", volunteer.postCode)}
               {renderDetailItem("Phone", volunteer.phone)}

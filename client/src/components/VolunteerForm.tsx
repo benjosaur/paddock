@@ -12,7 +12,7 @@ export function VolunteerForm() {
 
   const [formData, setFormData] = useState<Partial<Volunteer>>({
     name: "",
-    age: undefined,
+    dob: "",
     address: "",
     postCode: "",
     phone: "",
@@ -131,18 +131,16 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="age"
+                  htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Age
+                  Date of Birth
                 </label>
                 <Input
-                  id="age"
-                  type="number"
-                  value={formData.age || ""}
-                  onChange={(e) =>
-                    handleInputChange("age", parseInt(e.target.value) || 0)
-                  }
+                  id="dob"
+                  type="date"
+                  value={formData.dob || ""}
+                  onChange={(e) => handleInputChange("dob", e.target.value)}
                 />
               </div>
 

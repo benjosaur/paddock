@@ -44,7 +44,40 @@ export const db = {
   ): Promise<T | null> {
     const keys = Object.keys(data);
     const values = Object.values(data);
-    const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(", ");
+
+    const setClause = keys
+      .map((key, i) => {
+        const value = data[key];
+        if (Array.isArray(value)) {
+          let arrayType = "TEXT[]"; // default fallback
+
+          if (value.length > 0) {
+            const firstElement = value[0];
+            const elementType = typeof firstElement;
+
+            switch (elementType) {
+              case "string":
+                arrayType = "TEXT[]";
+                break;
+              case "number":
+                // Check if it's an integer or float
+                arrayType = Number.isInteger(firstElement)
+                  ? "INT[]"
+                  : "DOUBLE PRECISION[]";
+                break;
+              case "boolean":
+                arrayType = "BOOLEAN[]";
+                break;
+              default:
+                arrayType = "TEXT[]"; // fallback for objects, etc.
+            }
+          }
+
+          return `${key} = $${i + 2}::${arrayType}`;
+        }
+        return `${key} = $${i + 2}`;
+      })
+      .join(", ");
 
     const result = await pool.query(
       `UPDATE ${table} SET ${setClause} WHERE id = $1 RETURNING *`,

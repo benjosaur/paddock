@@ -12,6 +12,7 @@ export function MpForm() {
 
   const [formData, setFormData] = useState<Partial<Mp>>({
     name: "",
+    dob: "",
     address: "",
     postCode: "",
     phone: "",
@@ -19,7 +20,6 @@ export function MpForm() {
     nextOfKin: "",
     dbsNumber: "",
     dbsExpiry: "",
-    age: undefined,
     servicesOffered: [],
     specialisms: [],
     transport: "",
@@ -125,18 +125,16 @@ export function MpForm() {
 
               <div>
                 <label
-                  htmlFor="age"
+                  htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Age
+                  Date of Birth
                 </label>
                 <Input
-                  id="age"
-                  type="number"
-                  value={formData.age || ""}
-                  onChange={(e) =>
-                    handleInputChange("age", parseInt(e.target.value) || 0)
-                  }
+                  id="dob"
+                  type="date"
+                  value={formData.dob || ""}
+                  onChange={(e) => handleInputChange("dob", e.target.value)}
                 />
               </div>
 

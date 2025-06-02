@@ -29,6 +29,7 @@ export const expiryItemSchema = z.object({
 export const mpSchema = z.object({
   id: z.string(),
   name: z.string(),
+  dob: z.string().optional(),
   address: z.string(),
   postCode: z.string(),
   phone: z.string(),
@@ -36,7 +37,6 @@ export const mpSchema = z.object({
   nextOfKin: z.string(),
   dbsNumber: z.string().optional(),
   dbsExpiry: z.string(),
-  age: z.number().optional(),
   servicesOffered: z.array(z.string()),
   specialisms: z.array(z.string()),
   transport: z.string(),
@@ -47,7 +47,7 @@ export const mpSchema = z.object({
 export const volunteerSchema = z.object({
   id: z.string(),
   name: z.string(),
-  age: z.number().optional(),
+  dob: z.string().optional(),
   address: z.string(),
   postCode: z.string(),
   phone: z.string(),
@@ -79,7 +79,6 @@ export const clientSchema = z.object({
   riskAssessmentComments: z.string().optional(),
   needs: z.array(z.string()),
   servicesProvided: z.array(z.string()),
-  age: z.number().optional(),
   hasMp: z.boolean().optional(),
   hasAttendanceAllowance: z.boolean().optional(),
 });

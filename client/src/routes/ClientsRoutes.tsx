@@ -7,7 +7,7 @@ import type { Client, TableColumn } from "../types";
 const clientColumns: TableColumn<Client>[] = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
-  { key: "age", header: "Age" },
+  { key: "dob", header: "Date of Birth" },
   { key: "postCode", header: "Post Code" },
   {
     key: "servicesProvided",

@@ -3,7 +3,6 @@ import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./trpc/router.ts";
 import { createContext } from "./trpc/context.ts";
-import { initializeDatabase } from "./db/schema.ts";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -34,8 +33,6 @@ app.get("/health", (req, res) => {
 
 async function startServer() {
   try {
-    await initializeDatabase();
-
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
     });

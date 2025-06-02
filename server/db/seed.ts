@@ -23,7 +23,6 @@ export async function seedDatabase() {
       referredBy: "NHS",
       needs: ["Personal Care", "Companionship"],
       servicesProvided: ["Personal Care"],
-      age: 44,
       hasMp: true,
       hasAttendanceAllowance: false,
     });
@@ -40,7 +39,6 @@ export async function seedDatabase() {
       referredBy: "Social Services",
       needs: ["Shopping", "Transport"],
       servicesProvided: ["Shopping"],
-      age: 49,
       hasMp: false,
       hasAttendanceAllowance: true,
     });
@@ -51,6 +49,7 @@ export async function seedDatabase() {
     await db.create("mps", {
       id: mp1Id,
       name: "Sarah Williams",
+      dob: "1989-03-15",
       address: "789 Pine Road",
       postCode: "N1 9AG",
       phone: "020 7946 0960",
@@ -58,7 +57,6 @@ export async function seedDatabase() {
       nextOfKin: "David Williams",
       dbsNumber: "DBS123456",
       dbsExpiry: "2025-12-31",
-      age: 35,
       servicesOffered: ["Personal Care", "Companionship"],
       specialisms: ["Dementia Care"],
       transport: "Car",
@@ -75,7 +73,7 @@ export async function seedDatabase() {
     await db.create("volunteers", {
       id: volunteer1Id,
       name: "Tom Brown",
-      age: 28,
+      dob: "1997-02-10",
       address: "321 Elm Street",
       postCode: "W1A 0AX",
       phone: "020 7946 0961",
