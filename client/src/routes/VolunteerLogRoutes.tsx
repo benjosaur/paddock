@@ -31,7 +31,7 @@ const volunteerLogColumns: TableColumn<VolunteerLog>[] = [
 ];
 
 interface VolunteerLogRoutesProps {
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 export default function VolunteerLogRoutes({
@@ -43,7 +43,7 @@ export default function VolunteerLogRoutes({
     navigate("/volunteer-logs/create");
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id: number) => {
     navigate(`/volunteer-logs/edit/${id}`);
   };
 

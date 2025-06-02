@@ -32,7 +32,7 @@ const clientColumns: TableColumn<Client>[] = [
 ];
 
 interface ClientsRoutesProps {
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onViewClient: (client: Client) => void;
 }
 
@@ -46,7 +46,7 @@ export default function ClientsRoutes({
     navigate("/clients/create");
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id: number) => {
     navigate(`/clients/edit/${id}`);
   };
 

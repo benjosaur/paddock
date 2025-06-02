@@ -51,7 +51,7 @@ function App() {
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     console.log("Delete item:", id);
   };
 

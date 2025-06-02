@@ -23,7 +23,7 @@ const magLogColumns: TableColumn<MagLog>[] = [
 ];
 
 interface MagLogRoutesProps {
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 export default function MagLogRoutes({ onDelete }: MagLogRoutesProps) {
@@ -33,7 +33,7 @@ export default function MagLogRoutes({ onDelete }: MagLogRoutesProps) {
     navigate("/mag-logs/new");
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id: number) => {
     navigate(`/mag-logs/edit/${id}`);
   };
 

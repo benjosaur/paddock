@@ -22,7 +22,7 @@ const clientRequestColumns: TableColumn<ClientRequest>[] = [
 export default function ClientRequestRoutes({
   onDelete,
 }: {
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }) {
   const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ export default function ClientRequestRoutes({
     navigate("/new-requests/create");
   };
 
-  const handleEditNavigation = (id: string) => {
+  const handleEditNavigation = (id: number) => {
     navigate(`/new-requests/edit/${id}`);
   };
 

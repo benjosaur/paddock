@@ -7,7 +7,7 @@ import type { Client } from "../types";
 
 export function ClientForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: number }>();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<Client>>({

@@ -30,7 +30,7 @@ const mpLogColumns: TableColumn<MpLog>[] = [
 ];
 
 interface MpLogRoutesProps {
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 export default function MpLogRoutes({ onDelete }: MpLogRoutesProps) {
@@ -40,7 +40,7 @@ export default function MpLogRoutes({ onDelete }: MpLogRoutesProps) {
     navigate("/mp-logs/create");
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id: number) => {
     navigate(`/mp-logs/edit/${id}`);
   };
 

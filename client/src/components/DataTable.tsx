@@ -23,15 +23,15 @@ import type { TableColumn } from "../types";
 interface DataTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
   onAddNew?: () => void;
 }
 
-export function DataTable<T extends { id: string }>({
+export function DataTable<T extends { id: number }>({
   data,
   columns,
   onEdit,
@@ -51,7 +51,7 @@ export function DataTable<T extends { id: string }>({
     )
   );
 
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteClick = (id: number) => {
     setItemToDelete(id);
     setDeleteDialogOpen(true);
   };

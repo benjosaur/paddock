@@ -7,7 +7,7 @@ import type { Mp } from "../types";
 
 export function MpForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: number }>();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<Mp>>({

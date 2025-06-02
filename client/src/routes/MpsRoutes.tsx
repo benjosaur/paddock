@@ -23,7 +23,7 @@ export function MpsRoutes({
   handleDelete,
   handleViewMp,
 }: {
-  handleDelete: (id: string) => void;
+  handleDelete: (id: number) => void;
   handleViewMp: (mp: Mp) => void;
 }) {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export function MpsRoutes({
     navigate("/mps/create");
   };
 
-  const handleEditNavigation = (id: string) => {
+  const handleEditNavigation = (id: number) => {
     navigate(`/mps/edit/${id}`);
   };
 

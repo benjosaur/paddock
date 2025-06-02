@@ -8,7 +8,7 @@ import type { MagLog, Client } from "../types";
 
 export function MagLogForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: number }>();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<MagLog>>({

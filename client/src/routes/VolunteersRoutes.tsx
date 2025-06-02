@@ -28,7 +28,7 @@ export default function VolunteersRoutes({
   handleDelete,
   handleViewVolunteer,
 }: {
-  handleDelete: (id: string) => void;
+  handleDelete: (id: number) => void;
   handleViewVolunteer: (volunteer: Volunteer) => void;
 }) {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ export default function VolunteersRoutes({
     navigate("/volunteers/create");
   };
 
-  const handleEditNavigation = (id: string) => {
+  const handleEditNavigation = (id: number) => {
     navigate(`/volunteers/edit/${id}`);
   };
 

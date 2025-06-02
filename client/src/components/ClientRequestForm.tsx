@@ -8,7 +8,7 @@ import type { ClientRequest, Client } from "../types";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: number }>();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<ClientRequest>>({

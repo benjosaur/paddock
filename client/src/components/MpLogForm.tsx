@@ -8,7 +8,7 @@ import type { MpLog, Client, Mp } from "../types";
 
 export function MpLogForm() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: number }>();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Partial<MpLog>>({
