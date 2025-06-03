@@ -5,7 +5,7 @@ function snakeToCamel(text: string): string {
 function camelToSnake(text: string): string {
   return text.replace(/([A-Z])/g, "_$1").toLowerCase();
 }
-export function keysToCamel<T>(obj: Record<string, any>): T {
+export function keysToCamel<T>(obj: T): T {
   if (Array.isArray(obj)) {
     return obj.map((v) => keysToCamel(v)) as T;
   } else if (obj !== null && typeof obj === "object") {
@@ -18,7 +18,7 @@ export function keysToCamel<T>(obj: Record<string, any>): T {
   return obj;
 }
 
-export function keysToSnake<T>(obj: Record<string, any>): T {
+export function keysToSnake<T>(obj: T): T {
   if (Array.isArray(obj)) {
     return obj.map((v) => keysToSnake(v)) as T;
   } else if (obj !== null && typeof obj === "object") {
