@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { VolunteerForm } from "../pages/VolunteerForm";
-import { mockVolunteers } from "../data/mockData";
+import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
+import { trpc } from "../utils/trpc";
 import type { Volunteer, TableColumn } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const volunteerColumns: TableColumn<Volunteer>[] = [
   { key: "id", header: "ID" },
@@ -24,14 +27,27 @@ const volunteerColumns: TableColumn<Volunteer>[] = [
   { key: "transport", header: "Transport?" },
 ];
 
-export default function VolunteersRoutes({
-  handleDelete,
-  handleViewVolunteer,
-}: {
-  handleDelete: (id: number) => void;
-  handleViewVolunteer: (volunteer: Volunteer) => void;
-}) {
+export default function VolunteersRoutes() {
   const navigate = useNavigate();
+  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(
+    null
+  );
+  const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const volunteersQueryKey = trpc.volunteers.getAll.queryKey();
+
+  const volunteers = volunteersQuery.data || [];
+
+  const deleteVolunteerMutation = useMutation(
+    trpc.volunteers.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteersQueryKey });
+      },
+    })
+  );
 
   const handleAddNew = () => {
     navigate("/volunteers/create");
@@ -39,6 +55,20 @@ export default function VolunteersRoutes({
 
   const handleEditNavigation = (id: number) => {
     navigate(`/volunteers/edit/${id}`);
+  };
+
+  const handleDelete = (id: number) => {
+    deleteVolunteerMutation.mutate({ id });
+  };
+
+  const handleViewVolunteer = (volunteer: Volunteer) => {
+    setSelectedVolunteer(volunteer);
+    setIsVolunteerModalOpen(true);
+  };
+
+  const handleCloseVolunteerModal = () => {
+    setIsVolunteerModalOpen(false);
+    setSelectedVolunteer(null);
   };
 
   return (
@@ -50,7 +80,7 @@ export default function VolunteersRoutes({
             key="volunteers"
             title="Volunteers"
             searchPlaceholder="Search volunteers..."
-            data={mockVolunteers}
+            data={volunteers}
             columns={volunteerColumns}
             onEdit={handleEditNavigation}
             onDelete={handleDelete}
@@ -61,6 +91,11 @@ export default function VolunteersRoutes({
       />
       <Route path="create" element={<VolunteerForm />} />
       <Route path="edit/:id" element={<VolunteerForm />} />
+      <VolunteerDetailModal
+        volunteer={selectedVolunteer}
+        isOpen={isVolunteerModalOpen}
+        onClose={handleCloseVolunteerModal}
+      />
     </Routes>
   );
 }

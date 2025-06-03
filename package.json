@@ -18,11 +18,13 @@
     "preview": "cd client && bun run preview"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "typescript": "^5"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
+  "packageManager": "bun@1.0.0",
   "trustedDependencies": [
     "@swc/core",
     "@tailwindcss/oxide"

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockVolunteers, mockVolunteerLogs } from "../data/mockData";
-import { mockClients } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { Client, VolunteerLog, Volunteer } from "../types";
 
 export function VolunteerLogForm() {
@@ -21,25 +21,52 @@ export function VolunteerLogForm() {
     notes: "",
   });
 
+  const queryClient = useQueryClient();
+
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const volunteerLogQuery = useQuery({
+    ...trpc.volunteerLogs.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const volunteerLogQueryKey = trpc.volunteerLogs.getAll.queryKey();
+
+  const createVolunteerLogMutation = useMutation(
+    trpc.volunteerLogs.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteerLogQueryKey });
+        navigate("/volunteer-logs");
+      },
+    })
+  );
+
+  const updateVolunteerLogMutation = useMutation(
+    trpc.volunteerLogs.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteerLogQueryKey });
+        navigate("/volunteer-logs");
+      },
+    })
+  );
+
   // Load existing data when editing
   useEffect(() => {
-    if (isEditing && id) {
-      const existingLog = mockVolunteerLogs.find((log) => log.id === id);
-      if (existingLog) {
-        setFormData(existingLog);
-      }
+    if (volunteerLogQuery.data) {
+      setFormData(volunteerLogQuery.data);
     }
-  }, [id, isEditing]);
+  }, [volunteerLogQuery.data]);
 
-  const clientOptions = mockClients.map((client: Client) => ({
+  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
     value: client.id,
     label: client.name,
   }));
 
-  const volunteerOptions = mockVolunteers.map((volunteer: Volunteer) => ({
-    value: volunteer.id,
-    label: volunteer.name,
-  }));
+  const volunteerOptions = (volunteersQuery.data || []).map(
+    (volunteer: Volunteer) => ({
+      value: volunteer.id,
+      label: volunteer.name,
+    })
+  );
 
   const handleInputChange = (
     field: keyof VolunteerLog,
@@ -50,16 +77,24 @@ export function VolunteerLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(
-      isEditing ? "Updating Volunteer Log:" : "Creating Volunteer Log:",
-      formData
-    );
-    navigate("/volunteer-logs");
+    if (isEditing) {
+      updateVolunteerLogMutation.mutate({ ...formData, id } as VolunteerLog & {
+        id: number;
+      });
+    } else {
+      createVolunteerLogMutation.mutate(formData as Omit<VolunteerLog, "id">);
+    }
   };
 
   const handleCancel = () => {
     navigate("/volunteer-logs");
   };
+
+  if (isEditing && volunteerLogQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && volunteerLogQuery.error)
+    return <div>Error loading volunteer log</div>;
+  if (clientsQuery.isLoading || volunteersQuery.isLoading)
+    return <div>Loading...</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -104,7 +139,8 @@ export function VolunteerLogForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option) => option.value === formData.clientId
+                      (option: { value: number; label: string }) =>
+                        option.value === formData.clientId
                     ) || null
                   }
                   onChange={(selectedOption) =>
@@ -129,7 +165,8 @@ export function VolunteerLogForm() {
                   options={volunteerOptions}
                   value={
                     volunteerOptions.find(
-                      (option) => option.value === formData.volunteerId
+                      (option: { value: number; label: string }) =>
+                        option.value === formData.volunteerId
                     ) || null
                   }
                   onChange={(selectedOption) =>

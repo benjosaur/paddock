@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockClients, mockClientRequests } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { ClientRequest, Client } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
@@ -19,7 +20,41 @@ export function ClientRequestForm() {
     status: "pending",
   });
 
-  const clientOptions = mockClients.map((client: Client) => ({
+  // tRPC queries
+  const queryClient = useQueryClient();
+
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const clientRequestQuery = useQuery({
+    ...trpc.clientRequests.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const clientRequestQueryKey = trpc.clientRequests.getAll.queryKey();
+
+  const clients = clientsQuery.data || [];
+  const clientRequest = clientRequestQuery.data;
+  const clientsLoading = clientsQuery.isLoading;
+  const requestLoading = clientRequestQuery.isLoading;
+
+  // tRPC mutations
+  const createMutation = useMutation(
+    trpc.clientRequests.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: clientRequestQueryKey });
+        navigate("/new-requests");
+      },
+    })
+  );
+
+  const updateMutation = useMutation(
+    trpc.clientRequests.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: clientRequestQueryKey });
+        navigate("/new-requests");
+      },
+    })
+  );
+
+  const clientOptions = clients.map((client: Client) => ({
     value: client.id,
     label: client.name,
   }));
@@ -36,13 +71,10 @@ export function ClientRequestForm() {
   ];
 
   useEffect(() => {
-    if (isEditing && id) {
-      const request = mockClientRequests.find((r) => r.id === id);
-      if (request) {
-        setFormData(request);
-      }
+    if (isEditing && clientRequest) {
+      setFormData(clientRequest);
     }
-  }, [isEditing, id]);
+  }, [isEditing, clientRequest]);
 
   const handleInputChange = (
     field: keyof ClientRequest,
@@ -53,17 +85,30 @@ export function ClientRequestForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const requestData = formData as ClientRequest;
+
     if (isEditing) {
-      console.log("Updating Client Request:", formData);
+      updateMutation.mutate({ ...requestData, id });
     } else {
-      console.log("Creating Client Request:", formData);
+      createMutation.mutate(requestData);
     }
-    navigate("/new-requests");
   };
 
   const handleCancel = () => {
     navigate("/new-requests");
   };
+
+  // Show loading state
+  if (isEditing && (requestLoading || clientsLoading)) {
+    return (
+      <div className="space-y-6 animate-in">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-lg text-gray-600">Loading client request...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">
@@ -92,7 +137,8 @@ export function ClientRequestForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option) => option.value === formData.clientId
+                      (option: { value: number; label: string }) =>
+                        option.value === formData.clientId
                     ) || null
                   }
                   onChange={(selectedOption) =>
@@ -102,6 +148,7 @@ export function ClientRequestForm() {
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
+                  isLoading={clientsLoading}
                   required
                 />
               </div>
@@ -204,8 +251,15 @@ export function ClientRequestForm() {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit">
-              {isEditing ? "Update Request" : "Create Client Request"}
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : isEditing
+                ? "Update Request"
+                : "Create Client Request"}
             </Button>
           </div>
         </form>

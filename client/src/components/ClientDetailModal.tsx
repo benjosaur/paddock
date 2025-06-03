@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { trpc } from "../utils/trpc";
 import type {
   Client,
   MpLog,
@@ -18,58 +19,14 @@ import type {
   TableColumn,
   Volunteer,
 } from "../types";
-import {
-  mockMpLogs,
-  mockMagLogs,
-  mockClientRequests,
-  mockVolunteers,
-  mockVolunteerLogs,
-} from "../data/mockData";
 import { DataTable } from "./DataTable";
+import { useQuery } from "@tanstack/react-query";
 
 interface ClientDetailModalProps {
   client: Client | null;
   isOpen: boolean;
   onClose: () => void;
 }
-
-const mpLogModalColumns: TableColumn<MpLog>[] = [
-  { key: "date", header: "Date" },
-  { key: "mp", header: "MP" },
-  {
-    key: "services",
-    header: "Service(s)",
-    render: (item) => item.services.join(", "),
-  },
-  { key: "notes", header: "Notes" },
-];
-
-const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
-  { key: "date", header: "Date" },
-  {
-    key: "volunteerId",
-    header: "Volunteer",
-    render: (item: VolunteerLog) =>
-      mockVolunteers.find((v: Volunteer) => v.id === item.volunteerId)?.name ||
-      item.volunteerId,
-  },
-  { key: "activity", header: "Activity" },
-  { key: "hoursLogged", header: "Hours Logged" },
-  { key: "notes", header: "Notes" },
-];
-
-const magLogModalColumns: TableColumn<MagLog>[] = [
-  { key: "date", header: "Date" },
-  { key: "total", header: "Total Attendees" },
-  { key: "notes", header: "Notes" },
-];
-
-const clientRequestModalColumns: TableColumn<ClientRequest>[] = [
-  { key: "requestType", header: "Type" },
-  { key: "startDate", header: "Start Date" },
-  { key: "schedule", header: "Schedule" },
-  { key: "status", header: "Status" },
-];
 
 export function ClientDetailModal({
   client,
@@ -83,21 +40,52 @@ export function ClientDetailModal({
   const [clientMagLogs, setClientMagLogs] = useState<MagLog[]>([]);
   const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
 
+  const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
+  const allVolunteerLogsQuery = useQuery(
+    trpc.volunteerLogs.getAll.queryOptions()
+  );
+  const allMagLogsQuery = useQuery(trpc.magLogs.getAll.queryOptions());
+  const allClientRequestsQuery = useQuery(
+    trpc.clientRequests.getAll.queryOptions()
+  );
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+
+  const allMpLogs = allMpLogsQuery.data || [];
+  const allVolunteerLogs = allVolunteerLogsQuery.data || [];
+  const allMagLogs = allMagLogsQuery.data || [];
+  const allClientRequests = allClientRequestsQuery.data || [];
+  const volunteers = volunteersQuery.data || [];
+
+  // Update columns to use tRPC data
+  const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
+    { key: "date", header: "Date" },
+    {
+      key: "volunteerId",
+      header: "Volunteer",
+      render: (item: VolunteerLog) =>
+        volunteers.find((v: Volunteer) => v.id === item.volunteerId)?.name ||
+        item.volunteerId,
+    },
+    { key: "activity", header: "Activity" },
+    { key: "hoursLogged", header: "Hours Logged" },
+    { key: "notes", header: "Notes" },
+  ];
+
   useEffect(() => {
     if (client) {
       setClientMpLogs(
-        mockMpLogs.filter((log: MpLog) => log.clientId === client.id)
+        allMpLogs.filter((log: MpLog) => log.clientId === client.id)
       );
       setClientVolunteerLogs(
-        mockVolunteerLogs.filter(
+        allVolunteerLogs.filter(
           (log: VolunteerLog) => log.clientId === client.id
         )
       );
       setClientMagLogs(
-        mockMagLogs.filter((log: MagLog) => log.attendees.includes(client.id))
+        allMagLogs.filter((log: MagLog) => log.attendees.includes(client.id))
       );
       setClientRequests(
-        mockClientRequests.filter(
+        allClientRequests.filter(
           (req: ClientRequest) => req.clientId === client.id
         )
       );
@@ -108,7 +96,31 @@ export function ClientDetailModal({
       setClientMagLogs([]);
       setClientRequests([]);
     }
-  }, [client]);
+  }, [client, allMpLogs, allVolunteerLogs, allMagLogs, allClientRequests]);
+
+  const mpLogModalColumns: TableColumn<MpLog>[] = [
+    { key: "date", header: "Date" },
+    { key: "mp", header: "MP" },
+    {
+      key: "services",
+      header: "Service(s)",
+      render: (item) => item.services.join(", "),
+    },
+    { key: "notes", header: "Notes" },
+  ];
+
+  const magLogModalColumns: TableColumn<MagLog>[] = [
+    { key: "date", header: "Date" },
+    { key: "total", header: "Total Attendees" },
+    { key: "notes", header: "Notes" },
+  ];
+
+  const clientRequestModalColumns: TableColumn<ClientRequest>[] = [
+    { key: "requestType", header: "Type" },
+    { key: "startDate", header: "Start Date" },
+    { key: "schedule", header: "Schedule" },
+    { key: "status", header: "Status" },
+  ];
 
   if (!client) return null;
 

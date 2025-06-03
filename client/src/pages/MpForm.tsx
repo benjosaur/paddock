@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockMps } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { Mp } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -34,16 +35,39 @@ export function MpForm() {
     expiry: "",
   });
 
+  const queryClient = useQueryClient();
+
+  const mpQuery = useQuery({
+    ...trpc.mps.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const mpQueryKey = trpc.mps.getAll.queryKey();
+
+  const createMpMutation = useMutation(
+    trpc.mps.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        navigate("/mps");
+      },
+    })
+  );
+
+  const updateMpMutation = useMutation(
+    trpc.mps.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        navigate("/mps");
+      },
+    })
+  );
+
   useEffect(() => {
-    if (isEditing && id) {
-      const mp = mockMps.find((m) => m.id === id);
-      if (mp) {
-        setFormData(mp);
-        setServicesInput(mp.servicesOffered.join(", "));
-        setSpecialismsInput(mp.specialisms.join(", "));
-      }
+    if (mpQuery.data) {
+      setFormData(mpQuery.data);
+      setServicesInput(mpQuery.data.servicesOffered.join(", "));
+      setSpecialismsInput(mpQuery.data.specialisms.join(", "));
     }
-  }, [isEditing, id]);
+  }, [mpQuery.data]);
 
   const handleInputChange = (field: keyof Mp, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -81,16 +105,18 @@ export function MpForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating MP:", formData);
+      updateMpMutation.mutate({ ...formData, id } as Mp & { id: number });
     } else {
-      console.log("Creating MP:", formData);
+      createMpMutation.mutate(formData as Omit<Mp, "id">);
     }
-    navigate("/mps");
   };
 
   const handleCancel = () => {
     navigate("/mps");
   };
+
+  if (isEditing && mpQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && mpQuery.error) return <div>Error loading MP</div>;
 
   return (
     <div className="space-y-6 animate-in">

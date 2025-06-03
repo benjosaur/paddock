@@ -9,3 +9,4 @@ applyTo: "**"
 - camelCase for variables, functions, methods and including SQL schemas.
 - PascalCase for classes and components.
 - If there is ambiguity ask for clarification.
+- Always stick to best practices.

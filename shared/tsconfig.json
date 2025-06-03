@@ -17,6 +17,6 @@
     "allowJs": true,
     "types": ["bun-types"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "../server/trpc/router.ts"],
   "exclude": ["node_modules"]
 }

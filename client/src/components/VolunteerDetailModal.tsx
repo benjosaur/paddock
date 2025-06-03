@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { trpc } from "../utils/trpc";
 import type {
   Volunteer,
   VolunteerLog,
@@ -16,33 +17,14 @@ import type {
   TrainingRecordItem,
   Client,
 } from "../types";
-import { mockVolunteerLogs, mockClients } from "../data/mockData";
 import { DataTable } from "./DataTable";
+import { useQuery } from "@tanstack/react-query";
 
 interface VolunteerDetailModalProps {
   volunteer: Volunteer | null;
   isOpen: boolean;
   onClose: () => void;
 }
-
-const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
-  { key: "date", header: "Date" },
-  {
-    key: "clientId",
-    header: "Client",
-    render: (item: VolunteerLog) =>
-      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
-      item.clientId,
-  },
-  { key: "activity", header: "Activity" },
-  { key: "hoursLogged", header: "Hours Logged" },
-  { key: "notes", header: "Notes" },
-];
-
-const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
-  { key: "training", header: "Training" },
-  { key: "expiry", header: "Expiry" },
-];
 
 export function VolunteerDetailModal({
   volunteer,
@@ -51,17 +33,45 @@ export function VolunteerDetailModal({
 }: VolunteerDetailModalProps) {
   const [volunteerLogs, setVolunteerLogs] = useState<VolunteerLog[]>([]);
 
+  const allVolunteerLogsQuery = useQuery(
+    trpc.volunteerLogs.getAll.queryOptions()
+  );
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+
+  const allVolunteerLogs = allVolunteerLogsQuery.data || [];
+  const clients = clientsQuery.data || [];
+
+  // Update columns to use tRPC data
+  const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
+    { key: "date", header: "Date" },
+    {
+      key: "clientId",
+      header: "Client",
+      render: (item: VolunteerLog) =>
+        clients.find((c: Client) => c.id === item.clientId)?.name ||
+        item.clientId,
+    },
+    { key: "activity", header: "Activity" },
+    { key: "hoursLogged", header: "Hours Logged" },
+    { key: "notes", header: "Notes" },
+  ];
+
+  const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
+    { key: "training", header: "Training" },
+    { key: "expiry", header: "Expiry" },
+  ];
+
   useEffect(() => {
     if (volunteer) {
       setVolunteerLogs(
-        mockVolunteerLogs.filter(
+        allVolunteerLogs.filter(
           (log: VolunteerLog) => log.volunteerId === volunteer.id
         )
       );
     } else {
       setVolunteerLogs([]);
     }
-  }, [volunteer]);
+  }, [volunteer, allVolunteerLogs]);
 
   if (!volunteer) return null;
 

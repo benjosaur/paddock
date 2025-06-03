@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockVolunteers } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { Volunteer } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -36,17 +37,41 @@ export function VolunteerForm() {
     expiry: "",
   });
 
+  const queryClient = useQueryClient();
+
+  const volunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const volunteerQueryKey = trpc.volunteers.getAll.queryKey();
+
+  const createVolunteerMutation = useMutation(
+    trpc.volunteers.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteerQueryKey });
+        navigate("/volunteers");
+      },
+    })
+  );
+
+  const updateVolunteerMutation = useMutation(
+    trpc.volunteers.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteerQueryKey });
+        navigate("/volunteers");
+      },
+    })
+  );
+
   useEffect(() => {
-    if (isEditing && id) {
-      const volunteer = mockVolunteers.find((v) => v.id === id);
-      if (volunteer) {
-        setFormData(volunteer);
-        setServicesInput(volunteer.servicesOffered.join(", "));
-        setNeedTypesInput(volunteer.needTypes.join(", "));
-        setSpecialismsInput((volunteer.specialisms || []).join(", "));
-      }
+    if (volunteerQuery.data) {
+      const volunteer = volunteerQuery.data;
+      setFormData(volunteer);
+      setServicesInput(volunteer.servicesOffered.join(", "));
+      setNeedTypesInput(volunteer.needTypes.join(", "));
+      setSpecialismsInput((volunteer.specialisms || []).join(", "));
     }
-  }, [isEditing, id]);
+  }, [volunteerQuery.data]);
 
   const handleInputChange = (
     field: keyof Volunteer,
@@ -87,16 +112,21 @@ export function VolunteerForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating Volunteer:", formData);
+      updateVolunteerMutation.mutate({ ...formData, id } as Volunteer & {
+        id: number;
+      });
     } else {
-      console.log("Creating Volunteer:", formData);
+      createVolunteerMutation.mutate(formData as Omit<Volunteer, "id">);
     }
-    navigate("/volunteers");
   };
 
   const handleCancel = () => {
     navigate("/volunteers");
   };
+
+  if (isEditing && volunteerQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && volunteerQuery.error)
+    return <div>Error loading volunteer</div>;
 
   return (
     <div className="space-y-6 animate-in">

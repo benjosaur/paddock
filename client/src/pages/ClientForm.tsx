@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockClients } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { Client } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function ClientForm() {
   const navigate = useNavigate();
   const id = Number(useParams<{ id: string }>().id);
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<Client>>({
+  const [formData, setFormData] = useState<Omit<Client, "id">>({
     name: "",
     dob: "",
     address: "",
@@ -29,14 +30,37 @@ export function ClientForm() {
     hasAttendanceAllowance: false,
   });
 
+  const queryClient = useQueryClient();
+
+  const clientQuery = useQuery({
+    ...trpc.clients.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const clientQueryKey = trpc.clients.getAll.queryKey();
+
+  const createClientMutation = useMutation(
+    trpc.clients.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        navigate("/clients");
+      },
+    })
+  );
+
+  const updateClientMutation = useMutation(
+    trpc.clients.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        navigate("/clients");
+      },
+    })
+  );
+
   useEffect(() => {
-    if (isEditing && id) {
-      const existingClient = mockClients.find((client) => client.id === id);
-      if (existingClient) {
-        setFormData(existingClient);
-      }
+    if (clientQuery.data) {
+      setFormData(clientQuery.data);
     }
-  }, [id, isEditing]);
+  }, [clientQuery.data]);
 
   const handleInputChange = (field: keyof Client, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -56,16 +80,20 @@ export function ClientForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating client:", formData);
+      updateClientMutation.mutate({ ...formData, id } as Client & {
+        id: number;
+      });
     } else {
-      console.log("Creating client:", formData);
+      createClientMutation.mutate(formData as Omit<Client, "id">);
     }
-    navigate("/clients");
   };
 
   const handleCancel = () => {
     navigate("/clients");
   };
+
+  if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && clientQuery.error) return <div>Error loading client</div>;
 
   return (
     <div className="space-y-6 animate-in">

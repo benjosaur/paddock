@@ -1,43 +1,54 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { VolunteerLogForm } from "../pages/VolunteerLogForm";
-import {
-  mockVolunteerLogs,
-  mockClients,
-  mockVolunteers,
-} from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { VolunteerLog, TableColumn, Client, Volunteer } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const volunteerLogColumns: TableColumn<VolunteerLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  {
-    key: "clientId",
-    header: "Client",
-    render: (item: VolunteerLog) =>
-      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
-      item.clientId,
-  },
-  {
-    key: "volunteerId",
-    header: "Volunteer",
-    render: (item: VolunteerLog) =>
-      mockVolunteers.find((v: Volunteer) => v.id === item.volunteerId)?.name ||
-      item.volunteerId,
-  },
-  { key: "activity", header: "Activity" },
-  { key: "hoursLogged", header: "Hours Logged" },
-  { key: "notes", header: "Notes" },
-];
-
-interface VolunteerLogRoutesProps {
-  onDelete: (id: number) => void;
-}
-
-export default function VolunteerLogRoutes({
-  onDelete,
-}: VolunteerLogRoutesProps) {
+export default function VolunteerLogRoutes() {
   const navigate = useNavigate();
+
+  const queryClient = useQueryClient();
+
+  const volunteerLogsQuery = useQuery(trpc.volunteerLogs.getAll.queryOptions());
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const volunteerLogsQueryKey = trpc.volunteerLogs.getAll.queryKey();
+
+  const volunteerLogs = volunteerLogsQuery.data || [];
+  const clients = clientsQuery.data || [];
+  const volunteers = volunteersQuery.data || [];
+
+  const deleteVolunteerLogMutation = useMutation(
+    trpc.volunteerLogs.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteerLogsQueryKey });
+      },
+    })
+  );
+
+  // Update columns to use tRPC data
+  const volunteerLogColumns: TableColumn<VolunteerLog>[] = [
+    { key: "id", header: "ID" },
+    { key: "date", header: "Date" },
+    {
+      key: "clientId",
+      header: "Client",
+      render: (item: VolunteerLog) =>
+        clients.find((c: Client) => c.id === item.clientId)?.name ||
+        item.clientId,
+    },
+    {
+      key: "volunteerId",
+      header: "Volunteer",
+      render: (item: VolunteerLog) =>
+        volunteers.find((v: Volunteer) => v.id === item.volunteerId)?.name ||
+        item.volunteerId,
+    },
+    { key: "activity", header: "Activity" },
+    { key: "hoursLogged", header: "Hours Logged" },
+    { key: "notes", header: "Notes" },
+  ];
 
   const handleAddNew = () => {
     navigate("/volunteer-logs/create");
@@ -45,6 +56,10 @@ export default function VolunteerLogRoutes({
 
   const handleEdit = (id: number) => {
     navigate(`/volunteer-logs/edit/${id}`);
+  };
+
+  const handleDelete = (id: number) => {
+    deleteVolunteerLogMutation.mutate({ id });
   };
 
   return (
@@ -56,10 +71,10 @@ export default function VolunteerLogRoutes({
             key="volunteer-logs"
             title="Volunteer Logs"
             searchPlaceholder="Search volunteer logs..."
-            data={mockVolunteerLogs}
+            data={volunteerLogs}
             columns={volunteerLogColumns}
             onEdit={handleEdit}
-            onDelete={onDelete}
+            onDelete={handleDelete}
             onAddNew={handleAddNew}
           />
         }
