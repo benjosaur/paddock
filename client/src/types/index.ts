@@ -1,4 +1,4 @@
-export * from "shared/types/index.js";
+export * from "shared/types/index.ts";
 
 export interface TableColumn<T> {
   key: keyof T | string;
