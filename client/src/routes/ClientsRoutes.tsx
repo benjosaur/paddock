@@ -82,26 +82,28 @@ export default function ClientsRoutes() {
       <Route
         index
         element={
-          <DataTable
-            key="clients"
-            title="Clients"
-            searchPlaceholder="Search clients..."
-            data={clientsQuery.data || []}
-            columns={clientColumns}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewItem={handleViewClient as (item: unknown) => void}
-            onAddNew={handleAddNew}
-          />
+          <>
+            <DataTable
+              key="clients"
+              title="Clients"
+              searchPlaceholder="Search clients..."
+              data={clientsQuery.data || []}
+              columns={clientColumns}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewItem={handleViewClient as (item: unknown) => void}
+              onAddNew={handleAddNew}
+            />
+            <ClientDetailModal
+              client={selectedClient}
+              isOpen={isClientModalOpen}
+              onClose={handleCloseClientModal}
+            />
+          </>
         }
       />
       <Route path="create" element={<ClientForm />} />
       <Route path="edit/:id" element={<ClientForm />} />
-      <ClientDetailModal
-        client={selectedClient}
-        isOpen={isClientModalOpen}
-        onClose={handleCloseClientModal}
-      />
     </Routes>
   );
 }

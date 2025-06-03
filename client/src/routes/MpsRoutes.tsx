@@ -70,26 +70,28 @@ export function MpsRoutes() {
       <Route
         index
         element={
-          <DataTable
-            key="mps"
-            title="MPs"
-            searchPlaceholder="Search MPs..."
-            data={mpsQuery.data || []}
-            columns={mpColumns}
-            onEdit={handleEditNavigation}
-            onDelete={handleDelete}
-            onViewItem={handleViewMp as (item: unknown) => void}
-            onAddNew={handleAddNew}
-          />
+          <>
+            <DataTable
+              key="mps"
+              title="MPs"
+              searchPlaceholder="Search MPs..."
+              data={mpsQuery.data || []}
+              columns={mpColumns}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
+              onViewItem={handleViewMp as (item: unknown) => void}
+              onAddNew={handleAddNew}
+            />
+            <MpDetailModal
+              mp={selectedMp}
+              isOpen={isMpModalOpen}
+              onClose={handleCloseMpModal}
+            />
+          </>
         }
       />
       <Route path="create" element={<MpForm />} />
       <Route path="edit/:id" element={<MpForm />} />
-      <MpDetailModal
-        mp={selectedMp}
-        isOpen={isMpModalOpen}
-        onClose={handleCloseMpModal}
-      />
     </Routes>
   );
 }

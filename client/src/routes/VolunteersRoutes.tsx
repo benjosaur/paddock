@@ -57,10 +57,6 @@ export default function VolunteersRoutes() {
     navigate(`/volunteers/edit/${id}`);
   };
 
-  const handleDelete = (id: number) => {
-    deleteVolunteerMutation.mutate({ id });
-  };
-
   const handleViewVolunteer = (volunteer: Volunteer) => {
     setSelectedVolunteer(volunteer);
     setIsVolunteerModalOpen(true);
@@ -71,31 +67,37 @@ export default function VolunteersRoutes() {
     setSelectedVolunteer(null);
   };
 
+  const handleDelete = (id: number) => {
+    deleteVolunteerMutation.mutate({ id });
+  };
+
   return (
     <Routes>
       <Route
         index
         element={
-          <DataTable
-            key="volunteers"
-            title="Volunteers"
-            searchPlaceholder="Search volunteers..."
-            data={volunteers}
-            columns={volunteerColumns}
-            onEdit={handleEditNavigation}
-            onDelete={handleDelete}
-            onViewItem={handleViewVolunteer as (item: unknown) => void}
-            onAddNew={handleAddNew}
-          />
+          <>
+            <DataTable
+              key="volunteers"
+              title="Volunteers"
+              searchPlaceholder="Search volunteers..."
+              data={volunteers}
+              columns={volunteerColumns}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
+              onViewItem={handleViewVolunteer as (item: unknown) => void}
+              onAddNew={handleAddNew}
+            />
+            <VolunteerDetailModal
+              volunteer={selectedVolunteer}
+              isOpen={isVolunteerModalOpen}
+              onClose={handleCloseVolunteerModal}
+            />
+          </>
         }
       />
       <Route path="create" element={<VolunteerForm />} />
       <Route path="edit/:id" element={<VolunteerForm />} />
-      <VolunteerDetailModal
-        volunteer={selectedVolunteer}
-        isOpen={isVolunteerModalOpen}
-        onClose={handleCloseVolunteerModal}
-      />
     </Routes>
   );
 }

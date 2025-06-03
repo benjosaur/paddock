@@ -6,7 +6,7 @@ import type { AppRouter } from "../../../shared/index.ts";
 export const queryClient = new QueryClient();
 
 const trpcClient = createTRPCClient<AppRouter>({
-  links: [httpBatchLink({ url: "http://localhost:3001" })],
+  links: [httpBatchLink({ url: "http://localhost:3001/trpc" })],
 });
 
 export const trpc = createTRPCOptionsProxy<AppRouter>({
