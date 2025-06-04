@@ -216,14 +216,14 @@ export const mockMagLogs: MagLog[] = [
     id: 1,
     date: "2025-01-15",
     total: 8,
-    attendees: [1, 2, 3, 1, 2, 3, 1, 2],
+    attendees: [1, 2, 3],
     notes: "Monthly review and planning session",
   },
   {
     id: 2,
     date: "2025-01-22",
     total: 5,
-    attendees: [1, 2, 3, 1, 2],
+    attendees: [1, 2],
     notes: "Q1 strategy planning",
   },
 ];
