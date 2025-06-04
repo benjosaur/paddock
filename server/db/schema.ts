@@ -2,6 +2,17 @@ import { db } from "./index.ts";
 
 export async function initializeDatabase() {
   try {
+    // Create updated_at trigger function
+    await db.query(`
+      CREATE OR REPLACE FUNCTION set_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
     // Create MPs table
     await db.query(`
       CREATE TABLE IF NOT EXISTS mps (
@@ -131,6 +142,56 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Create triggers for updated_at columns
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_mps
+      BEFORE UPDATE ON mps
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_volunteers
+      BEFORE UPDATE ON volunteers
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_clients
+      BEFORE UPDATE ON clients
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_mp_logs
+      BEFORE UPDATE ON mp_logs
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_volunteer_logs
+      BEFORE UPDATE ON volunteer_logs
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_mag_logs
+      BEFORE UPDATE ON mag_logs
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
+    await db.query(`
+      CREATE TRIGGER trigger_set_updated_at_client_requests
+      BEFORE UPDATE ON client_requests
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+    `);
+
     // Create indexes for better performance
     await db.query(
       "CREATE INDEX IF NOT EXISTS idx_mp_logs_mp_id ON mp_logs(mp_id)"
@@ -167,6 +228,7 @@ export async function dropAllTables() {
     await db.query("DROP TABLE IF EXISTS mps CASCADE");
     await db.query("DROP TABLE IF EXISTS volunteers CASCADE");
     await db.query("DROP TABLE IF EXISTS clients CASCADE");
+    await db.query("DROP FUNCTION IF EXISTS set_updated_at() CASCADE");
 
     console.log("All database tables dropped successfully");
   } catch (error) {
