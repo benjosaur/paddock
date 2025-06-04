@@ -14,6 +14,7 @@ import MagLogRoutes from "./routes/MagLogRoutes";
 import VolunteerLogRoutes from "./routes/VolunteerLogRoutes";
 import VolunteersRoutes from "./routes/VolunteersRoutes";
 import ClientRequestRoutes from "./routes/ClientRequestRoutes";
+import ExpiriesRoutes from "./routes/ExpiriesRoutes";
 import type { UserRole } from "./types";
 import { queryClient } from "./utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/clients/*" element={<ClientsRoutes />} />
                 <Route path="/mps/*" element={<MpsRoutes />} />
                 <Route path="/volunteers/*" element={<VolunteersRoutes />} />
+                <Route path="/expiries/*" element={<ExpiriesRoutes />} />
                 <Route
                   path="/new-requests/*"
                   element={<ClientRequestRoutes />}
