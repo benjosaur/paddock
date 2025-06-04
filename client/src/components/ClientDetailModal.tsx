@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
@@ -23,7 +23,7 @@ import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
 
 interface ClientDetailModalProps {
-  client: Client | null;
+  client: Client;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (id: number) => void;
@@ -37,13 +37,6 @@ export function ClientDetailModal({
   onEdit,
   onDelete,
 }: ClientDetailModalProps) {
-  const [clientMpLogs, setClientMpLogs] = useState<MpLog[]>([]);
-  const [clientVolunteerLogs, setClientVolunteerLogs] = useState<
-    VolunteerLog[]
-  >([]);
-  const [clientMagLogs, setClientMagLogs] = useState<MagLog[]>([]);
-  const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
-
   const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
   const allVolunteerLogsQuery = useQuery(
     trpc.volunteerLogs.getAll.queryOptions()
@@ -55,9 +48,21 @@ export function ClientDetailModal({
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 
   const allMpLogs = allMpLogsQuery.data || [];
+  const clientMpLogs = allMpLogs.filter(
+    (log: MpLog) => log.clientId === client.id
+  );
   const allVolunteerLogs = allVolunteerLogsQuery.data || [];
+  const clientVolunteerLogs = allVolunteerLogs.filter(
+    (log: VolunteerLog) => log.clientId === client.id
+  );
   const allMagLogs = allMagLogsQuery.data || [];
+  const clientMagLogs = allMagLogs.filter((log: MagLog) =>
+    log.attendees.includes(client.id)
+  );
   const allClientRequests = allClientRequestsQuery.data || [];
+  const clientRequests = allClientRequests.filter(
+    (req: ClientRequest) => req.clientId === client.id
+  );
   const volunteers = volunteersQuery.data || [];
 
   // Update columns to use tRPC data
@@ -74,33 +79,6 @@ export function ClientDetailModal({
     { key: "hoursLogged", header: "Hours Logged" },
     { key: "notes", header: "Notes" },
   ];
-
-  useEffect(() => {
-    if (client) {
-      setClientMpLogs(
-        allMpLogs.filter((log: MpLog) => log.clientId === client.id)
-      );
-      setClientVolunteerLogs(
-        allVolunteerLogs.filter(
-          (log: VolunteerLog) => log.clientId === client.id
-        )
-      );
-      setClientMagLogs(
-        allMagLogs.filter((log: MagLog) => log.attendees.includes(client.id))
-      );
-      setClientRequests(
-        allClientRequests.filter(
-          (req: ClientRequest) => req.clientId === client.id
-        )
-      );
-    } else {
-      // Clear logs and requests if no client is selected or modal is closed
-      setClientMpLogs([]);
-      setClientVolunteerLogs([]);
-      setClientMagLogs([]);
-      setClientRequests([]);
-    }
-  }, [client, allMpLogs, allVolunteerLogs, allMagLogs, allClientRequests]);
 
   const mpLogModalColumns: TableColumn<MpLog>[] = [
     { key: "date", header: "Date" },
@@ -156,6 +134,10 @@ export function ClientDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Client Details: {client.name}
           </DialogTitle>
+          <DialogDescription>
+            View and manage detailed information for this client including
+            contact info, services & needs, activity logs, and requests.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">

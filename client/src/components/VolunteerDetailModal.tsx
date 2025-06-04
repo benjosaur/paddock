@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
@@ -21,7 +21,7 @@ import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
 
 interface VolunteerDetailModalProps {
-  volunteer: Volunteer | null;
+  volunteer: Volunteer;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (id: number) => void;
@@ -35,14 +35,16 @@ export function VolunteerDetailModal({
   onEdit,
   onDelete,
 }: VolunteerDetailModalProps) {
-  const [volunteerLogs, setVolunteerLogs] = useState<VolunteerLog[]>([]);
-
   const allVolunteerLogsQuery = useQuery(
     trpc.volunteerLogs.getAll.queryOptions()
   );
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
 
   const allVolunteerLogs = allVolunteerLogsQuery.data || [];
+  const volunteerLogs = allVolunteerLogs.filter(
+    (log: VolunteerLog) => log.volunteerId === volunteer.id
+  );
+
   const clients = clientsQuery.data || [];
 
   // Update columns to use tRPC data
@@ -64,20 +66,6 @@ export function VolunteerDetailModal({
     { key: "training", header: "Training" },
     { key: "expiry", header: "Expiry" },
   ];
-
-  useEffect(() => {
-    if (volunteer) {
-      setVolunteerLogs(
-        allVolunteerLogs.filter(
-          (log: VolunteerLog) => log.volunteerId === volunteer.id
-        )
-      );
-    } else {
-      setVolunteerLogs([]);
-    }
-  }, [volunteer, allVolunteerLogs]);
-
-  if (!volunteer) return null;
 
   const renderDetailItem = (
     label: string,
@@ -107,6 +95,10 @@ export function VolunteerDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Volunteer Details: {volunteer.name}
           </DialogTitle>
+          <DialogDescription>
+            View and manage detailed information for this volunteer including
+            contact info, offerings, training records, and activity logs.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">

@@ -94,13 +94,15 @@ export default function VolunteersRoutes() {
               onViewItem={handleViewVolunteer as (item: unknown) => void}
               onAddNew={handleAddNew}
             />
-            <VolunteerDetailModal
-              volunteer={selectedVolunteer}
-              isOpen={isVolunteerModalOpen}
-              onClose={handleCloseVolunteerModal}
-              onEdit={handleEditNavigation}
-              onDelete={handleDelete}
-            />
+            {selectedVolunteer && (
+              <VolunteerDetailModal
+                volunteer={selectedVolunteer}
+                isOpen={isVolunteerModalOpen}
+                onClose={handleCloseVolunteerModal}
+                onEdit={handleEditNavigation}
+                onDelete={handleDelete}
+              />
+            )}
           </>
         }
       />

@@ -333,9 +333,8 @@ const generateExpiries = (): ExpiryItem[] => {
         id: idCounter++,
         date: mp.dbsExpiry,
         type: "dbs",
-        mpVolunteer: mp.name,
+        person: { id: mp.id, type: "MP", name: mp.name },
         name: "DBS Check",
-        personType: "MP",
       });
     }
 
@@ -345,9 +344,8 @@ const generateExpiries = (): ExpiryItem[] => {
         id: idCounter++,
         date: training.expiry,
         type: "training",
-        mpVolunteer: mp.name,
+        person: { id: mp.id, type: "MP", name: mp.name },
         name: training.training,
-        personType: "MP",
       });
     });
   });
@@ -359,9 +357,8 @@ const generateExpiries = (): ExpiryItem[] => {
         id: idCounter++,
         date: volunteer.dbsExpiry,
         type: "dbs",
-        mpVolunteer: volunteer.name,
+        person: { id: volunteer.id, type: "Volunteer", name: volunteer.name },
         name: "DBS Check",
-        personType: "Volunteer",
       });
     }
 
@@ -371,9 +368,8 @@ const generateExpiries = (): ExpiryItem[] => {
         id: idCounter++,
         date: training.expiry,
         type: "training",
-        mpVolunteer: volunteer.name,
+        person: { id: volunteer.id, type: "Volunteer", name: volunteer.name },
         name: training.training,
-        personType: "Volunteer",
       });
     });
   });

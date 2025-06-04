@@ -101,13 +101,15 @@ export default function ClientsRoutes() {
               onViewItem={handleViewClient as (item: unknown) => void}
               onAddNew={handleAddNew}
             />
-            <ClientDetailModal
-              client={selectedClient}
-              isOpen={isClientModalOpen}
-              onClose={handleCloseClientModal}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+            {selectedClient && (
+              <ClientDetailModal
+                client={selectedClient}
+                isOpen={isClientModalOpen}
+                onClose={handleCloseClientModal}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            )}
           </>
         }
       />

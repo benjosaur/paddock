@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
@@ -21,7 +21,7 @@ import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
 
 interface MpDetailModalProps {
-  mp: Mp | null;
+  mp: Mp;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (id: number) => void;
@@ -35,12 +35,11 @@ export function MpDetailModal({
   onEdit,
   onDelete,
 }: MpDetailModalProps) {
-  const [mpLogs, setMpLogs] = useState<MpLog[]>([]);
-
   const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
 
   const allMpLogs = allMpLogsQuery.data || [];
+  const mpLogs = allMpLogs.filter((log: MpLog) => log.mpId === mp.id);
   const clients = clientsQuery.data || [];
 
   const mpLogModalColumns: TableColumn<MpLog>[] = [
@@ -64,16 +63,6 @@ export function MpDetailModal({
     { key: "training", header: "Training" },
     { key: "expiry", header: "Expiry" },
   ];
-
-  useEffect(() => {
-    if (mp) {
-      setMpLogs(allMpLogs.filter((log: MpLog) => log.mpId === mp.id));
-    } else {
-      setMpLogs([]);
-    }
-  }, [mp, allMpLogs]);
-
-  if (!mp) return null;
 
   const renderDetailItem = (
     label: string,
@@ -103,6 +92,10 @@ export function MpDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             MP Details: {mp.name}
           </DialogTitle>
+          <DialogDescription>
+            View and manage detailed information for this MP including contact
+            info, offerings, training records, and activity logs.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">

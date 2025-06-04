@@ -88,13 +88,15 @@ export function MpsRoutes() {
               onViewItem={handleViewMp as (item: unknown) => void}
               onAddNew={handleAddNew}
             />
-            <MpDetailModal
-              mp={selectedMp}
-              isOpen={isMpModalOpen}
-              onClose={handleCloseMpModal}
-              onEdit={handleEditNavigation}
-              onDelete={handleDelete}
-            />
+            {selectedMp && (
+              <MpDetailModal
+                mp={selectedMp}
+                isOpen={isMpModalOpen}
+                onClose={handleCloseMpModal}
+                onEdit={handleEditNavigation}
+                onDelete={handleDelete}
+              />
+            )}
           </>
         }
       />
