@@ -98,6 +98,8 @@ export default function VolunteersRoutes() {
               volunteer={selectedVolunteer}
               isOpen={isVolunteerModalOpen}
               onClose={handleCloseVolunteerModal}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
             />
           </>
         }

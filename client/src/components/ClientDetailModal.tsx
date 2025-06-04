@@ -26,12 +26,16 @@ interface ClientDetailModalProps {
   client: Client | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function ClientDetailModal({
   client,
   isOpen,
   onClose,
+  onEdit,
+  onDelete,
 }: ClientDetailModalProps) {
   const [clientMpLogs, setClientMpLogs] = useState<MpLog[]>([]);
   const [clientVolunteerLogs, setClientVolunteerLogs] = useState<
@@ -291,6 +295,18 @@ export function ClientDetailModal({
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
+          <div className="flex gap-2">
+            {onEdit && (
+              <Button variant="default" onClick={() => onEdit(client.id)}>
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="destructive" onClick={() => onDelete(client.id)}>
+                Delete
+              </Button>
+            )}
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>

@@ -92,6 +92,8 @@ export function MpsRoutes() {
               mp={selectedMp}
               isOpen={isMpModalOpen}
               onClose={handleCloseMpModal}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
             />
           </>
         }

@@ -105,6 +105,8 @@ export default function ClientsRoutes() {
               client={selectedClient}
               isOpen={isClientModalOpen}
               onClose={handleCloseClientModal}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </>
         }

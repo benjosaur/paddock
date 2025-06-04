@@ -24,9 +24,17 @@ interface MpDetailModalProps {
   mp: Mp | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
-export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
+export function MpDetailModal({
+  mp,
+  isOpen,
+  onClose,
+  onEdit,
+  onDelete,
+}: MpDetailModalProps) {
   const [mpLogs, setMpLogs] = useState<MpLog[]>([]);
 
   const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
@@ -184,6 +192,20 @@ export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
+          {mp && (
+            <>
+              {onEdit && (
+                <Button onClick={() => onEdit(mp.id)} variant="default">
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button onClick={() => onDelete(mp.id)} variant="destructive">
+                  Delete
+                </Button>
+              )}
+            </>
+          )}
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>

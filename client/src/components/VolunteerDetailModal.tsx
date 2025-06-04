@@ -24,12 +24,16 @@ interface VolunteerDetailModalProps {
   volunteer: Volunteer | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function VolunteerDetailModal({
   volunteer,
   isOpen,
   onClose,
+  onEdit,
+  onDelete,
 }: VolunteerDetailModalProps) {
   const [volunteerLogs, setVolunteerLogs] = useState<VolunteerLog[]>([]);
 
@@ -193,6 +197,23 @@ export function VolunteerDetailModal({
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
+          {volunteer && (
+            <>
+              {onEdit && (
+                <Button onClick={() => onEdit(volunteer.id)} variant="default">
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  onClick={() => onDelete(volunteer.id)}
+                  variant="destructive"
+                >
+                  Delete
+                </Button>
+              )}
+            </>
+          )}
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
