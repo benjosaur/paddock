@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MpForm } from "../pages/MpForm";
-import { mockMps } from "../data/mockData";
+import { MpDetailModal } from "../components/MpDetailModal";
+import { trpc } from "../utils/trpc";
 import type { Mp, TableColumn } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const mpColumns: TableColumn<Mp>[] = [
   { key: "id", header: "ID" },
@@ -19,14 +22,23 @@ const mpColumns: TableColumn<Mp>[] = [
   { key: "transport", header: "Transport?" },
 ];
 
-export function MpsRoutes({
-  handleDelete,
-  handleViewMp,
-}: {
-  handleDelete: (id: number) => void;
-  handleViewMp: (mp: Mp) => void;
-}) {
+export function MpsRoutes() {
   const navigate = useNavigate();
+  const [selectedMp, setSelectedMp] = useState<Mp | null>(null);
+  const [isMpModalOpen, setIsMpModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const mpsQueryKey = trpc.mps.getAll.queryKey();
+
+  const deleteMpMutation = useMutation(
+    trpc.mps.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mpsQueryKey });
+      },
+    })
+  );
 
   const handleAddNew = () => {
     navigate("/mps/create");
@@ -36,22 +48,46 @@ export function MpsRoutes({
     navigate(`/mps/edit/${id}`);
   };
 
+  const handleDelete = (id: number) => {
+    deleteMpMutation.mutate({ id });
+  };
+
+  const handleViewMp = (mp: Mp) => {
+    setSelectedMp(mp);
+    setIsMpModalOpen(true);
+  };
+
+  const handleCloseMpModal = () => {
+    setIsMpModalOpen(false);
+    setSelectedMp(null);
+  };
+
+  if (mpsQuery.isLoading) return <div>Loading...</div>;
+  if (mpsQuery.error) return <div>Error loading MPs</div>;
+
   return (
     <Routes>
       <Route
         index
         element={
-          <DataTable
-            key="mps"
-            title="MPs"
-            searchPlaceholder="Search MPs..."
-            data={mockMps}
-            columns={mpColumns}
-            onEdit={handleEditNavigation}
-            onDelete={handleDelete}
-            onViewItem={handleViewMp as (item: unknown) => void}
-            onAddNew={handleAddNew}
-          />
+          <>
+            <DataTable
+              key="mps"
+              title="MPs"
+              searchPlaceholder="Search MPs..."
+              data={mpsQuery.data || []}
+              columns={mpColumns}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
+              onViewItem={handleViewMp as (item: unknown) => void}
+              onAddNew={handleAddNew}
+            />
+            <MpDetailModal
+              mp={selectedMp}
+              isOpen={isMpModalOpen}
+              onClose={handleCloseMpModal}
+            />
+          </>
         }
       />
       <Route path="create" element={<MpForm />} />

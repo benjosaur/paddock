@@ -1,4 +1,7 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+import { keysToCamel, keysToSnake } from "../utils/caseConverter";
+
+types.setTypeParser(1082, (val: string) => val);
 
 export const pool = new Pool({
   user: process.env.DB_USER || "benjo",
@@ -10,6 +13,7 @@ export const pool = new Pool({
 
 export const db = {
   query: async (text: string, params?: any[]) => {
+    // case conversion left to implementation
     try {
       return await pool.query(text, params);
     } catch (error) {
@@ -27,7 +31,7 @@ export const db = {
     try {
       query = `SELECT * FROM ${table} WHERE id = $1`;
       const result = await pool.query(query, [id]);
-      return result.rows[0] || null;
+      return keysToCamel<T>(result.rows[0]) || null;
     } catch (error) {
       console.error("SQL Query Failed in findById:");
       console.error("Table:", table);
@@ -43,7 +47,9 @@ export const db = {
     try {
       const query = `SELECT * FROM ${table}`;
       const result = await pool.query(query);
-      return result.rows;
+      console.log(result.rows);
+      console.log(keysToCamel(result.rows));
+      return keysToCamel(result.rows);
     } catch (error) {
       console.error("SQL Query Failed in findAll:");
       console.error("Table:", table);
@@ -55,13 +61,14 @@ export const db = {
 
   async create<T>(table: string, data: Record<string, any>): Promise<T> {
     let query = "";
+    let snakeData = keysToSnake(data);
     try {
-      const keys = Object.keys(data);
-      const values = Object.values(data);
+      const keys = Object.keys(snakeData);
+      const values = Object.values(snakeData);
 
       const placeholders = keys
         .map((key, i) => {
-          const value = data[key];
+          const value = snakeData[key];
           if (
             Array.isArray(value) ||
             (typeof value === "object" && value !== null)
@@ -86,11 +93,11 @@ export const db = {
 
       query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
       const result = await pool.query(query, processedValues);
-      return result.rows[0];
+      return keysToCamel(result.rows[0]);
     } catch (error) {
       console.error("SQL Query Failed in create:");
       console.error("Table:", table);
-      console.error("Data:", data);
+      console.error("Data:", snakeData);
       console.error("Query:", query);
       console.error("Error:", error);
       throw error;
@@ -103,13 +110,14 @@ export const db = {
     data: Record<string, any>
   ): Promise<T | null> {
     let query = "";
+    let snakeData = keysToSnake(data);
     try {
-      const keys = Object.keys(data);
-      const values = Object.values(data);
+      const keys = Object.keys(snakeData);
+      const values = Object.values(snakeData);
 
       const setClause = keys
         .map((key, i) => {
-          const value = data[key];
+          const value = snakeData[key];
           if (
             Array.isArray(value) ||
             (typeof value === "object" && value !== null)
@@ -132,12 +140,12 @@ export const db = {
 
       query = `UPDATE ${table} SET ${setClause} WHERE id = $1 RETURNING *`;
       const result = await pool.query(query, [id, ...processedValues]);
-      return result.rows[0] || null;
+      return keysToCamel(result.rows[0]) || null;
     } catch (error) {
       console.error("SQL Query Failed in update:");
       console.error("Table:", table);
       console.error("ID:", id);
-      console.error("Data:", data);
+      console.error("Data:", snakeData);
       console.error("Query:", query);
       console.error("Error:", error);
       throw error;

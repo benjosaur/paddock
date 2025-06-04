@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { trpc } from "../utils/trpc";
 import type {
   Mp,
   MpLog,
@@ -16,8 +17,8 @@ import type {
   TrainingRecordItem,
   Client,
 } from "../types";
-import { mockMpLogs, mockClients } from "../data/mockData";
 import { DataTable } from "./DataTable";
+import { useQuery } from "@tanstack/react-query";
 
 interface MpDetailModalProps {
   mp: Mp | null;
@@ -25,38 +26,44 @@ interface MpDetailModalProps {
   onClose: () => void;
 }
 
-const mpLogModalColumns: TableColumn<MpLog>[] = [
-  { key: "date", header: "Date" },
-  {
-    key: "clientId",
-    header: "Client",
-    render: (item: MpLog) =>
-      mockClients.find((c: Client) => c.id === item.clientId)?.name ||
-      item.clientId,
-  },
-  {
-    key: "services",
-    header: "Service(s)",
-    render: (item) => item.services.join(", "),
-  },
-  { key: "notes", header: "Notes" },
-];
-
-const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
-  { key: "training", header: "Training" },
-  { key: "expiry", header: "Expiry" },
-];
-
 export function MpDetailModal({ mp, isOpen, onClose }: MpDetailModalProps) {
   const [mpLogs, setMpLogs] = useState<MpLog[]>([]);
 
+  const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+
+  const allMpLogs = allMpLogsQuery.data || [];
+  const clients = clientsQuery.data || [];
+
+  const mpLogModalColumns: TableColumn<MpLog>[] = [
+    { key: "date", header: "Date" },
+    {
+      key: "clientId",
+      header: "Client",
+      render: (item: MpLog) =>
+        clients.find((c: Client) => c.id === item.clientId)?.name ||
+        item.clientId,
+    },
+    {
+      key: "services",
+      header: "Service(s)",
+      render: (item) => item.services.join(", "),
+    },
+    { key: "notes", header: "Notes" },
+  ];
+
+  const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
+    { key: "training", header: "Training" },
+    { key: "expiry", header: "Expiry" },
+  ];
+
   useEffect(() => {
     if (mp) {
-      setMpLogs(mockMpLogs.filter((log: MpLog) => log.mpId === mp.id));
+      setMpLogs(allMpLogs.filter((log: MpLog) => log.mpId === mp.id));
     } else {
       setMpLogs([]);
     }
-  }, [mp]);
+  }, [mp, allMpLogs]);
 
   if (!mp) return null;
 

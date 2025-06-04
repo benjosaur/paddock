@@ -1,13 +1,15 @@
 import { appRouter } from "../trpc/router.ts";
-import { createContext } from "../trpc/context.ts";
 import { Request, Response } from "express";
+import { createCallerFactory } from "../trpc/trpc.ts";
+import { db } from "../db/index.ts";
+
+const mockRequest = {} as Request;
+const mockResponse = {} as Response;
 
 export const createTestCaller = async () => {
-  const mockRequest = {} as Request;
-  const mockResponse = {} as Response;
-
-  const ctx = await createContext({ req: mockRequest, res: mockResponse });
-  return appRouter.createCaller(ctx);
+  const caller = createCallerFactory(appRouter);
+  const ctx = { req: mockRequest, res: mockResponse, db };
+  return caller(ctx);
 };
 
 export const testData = {

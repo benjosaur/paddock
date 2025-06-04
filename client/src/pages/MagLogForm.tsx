@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockClients, mockMagLogs } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { MagLog, Client } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function MagLogForm() {
   const navigate = useNavigate();
@@ -18,17 +19,41 @@ export function MagLogForm() {
     notes: "",
   });
 
+  const queryClient = useQueryClient();
+
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const magLogQuery = useQuery({
+    ...trpc.magLogs.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const magLogQueryKey = trpc.magLogs.getAll.queryKey();
+
+  const createMagLogMutation = useMutation(
+    trpc.magLogs.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        navigate("/mag-logs");
+      },
+    })
+  );
+
+  const updateMagLogMutation = useMutation(
+    trpc.magLogs.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        navigate("/mag-logs");
+      },
+    })
+  );
+
   // Load existing data when editing
   useEffect(() => {
-    if (isEditing && id) {
-      const existingLog = mockMagLogs.find((log) => log.id === id);
-      if (existingLog) {
-        setFormData(existingLog);
-      }
+    if (magLogQuery.data) {
+      setFormData(magLogQuery.data);
     }
-  }, [id, isEditing]);
+  }, [magLogQuery.data]);
 
-  const clientOptions = mockClients.map((client: Client) => ({
+  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
     value: client.id,
     label: client.name,
   }));
@@ -52,11 +77,12 @@ export function MagLogForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating MAG Log:", formData);
+      updateMagLogMutation.mutate({ ...formData, id } as MagLog & {
+        id: number;
+      });
     } else {
-      console.log("Creating MAG Log:", formData);
+      createMagLogMutation.mutate(formData as Omit<MagLog, "id">);
     }
-    navigate("/mag-logs");
   };
 
   const handleCancel = () => {
@@ -128,8 +154,9 @@ export function MagLogForm() {
                 </label>
                 <Select
                   options={clientOptions}
-                  value={clientOptions.filter((option) =>
-                    formData.attendees?.includes(option.value)
+                  value={clientOptions.filter(
+                    (option: { value: number; label: string }) =>
+                      formData.attendees?.includes(option.value)
                   )}
                   onChange={handleAttendeesChange}
                   placeholder="Search and select attendees..."

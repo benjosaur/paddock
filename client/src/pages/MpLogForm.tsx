@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { mockClients, mockMps, mockMpLogs } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { MpLog, Client, Mp } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function MpLogForm() {
   const navigate = useNavigate();
@@ -22,23 +23,49 @@ export function MpLogForm() {
 
   const [servicesInput, setServicesInput] = useState("");
 
+  const queryClient = useQueryClient();
+
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const mpLogQuery = useQuery({
+    ...trpc.mpLogs.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+  const mpLogQueryKey = trpc.mpLogs.getAll.queryKey();
+
+  const createMpLogMutation = useMutation(
+    trpc.mpLogs.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mpLogQueryKey });
+        navigate("/mp-logs");
+      },
+    })
+  );
+
+  const updateMpLogMutation = useMutation(
+    trpc.mpLogs.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mpLogQueryKey });
+        navigate("/mp-logs");
+      },
+    })
+  );
+
   // Load existing data when editing
   useEffect(() => {
-    if (isEditing && id) {
-      const existingLog = mockMpLogs.find((log) => log.id === id);
-      if (existingLog) {
-        setFormData(existingLog);
-        setServicesInput(existingLog.services.join(", "));
-      }
+    if (mpLogQuery.data) {
+      const existingLog = mpLogQuery.data;
+      setFormData(existingLog);
+      setServicesInput(existingLog.services.join(", "));
     }
-  }, [id, isEditing]);
+  }, [mpLogQuery.data]);
 
-  const clientOptions = mockClients.map((client: Client) => ({
+  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
     value: client.id,
     label: client.name,
   }));
 
-  const mpOptions = mockMps.map((mp: Mp) => ({
+  const mpOptions = (mpsQuery.data || []).map((mp: Mp) => ({
     value: mp.id,
     label: mp.name,
   }));
@@ -67,16 +94,20 @@ export function MpLogForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      console.log("Updating MP Log:", formData);
+      updateMpLogMutation.mutate({ ...formData, id } as MpLog & { id: number });
     } else {
-      console.log("Creating MP Log:", formData);
+      createMpLogMutation.mutate(formData as Omit<MpLog, "id">);
     }
-    navigate("/mp-logs");
   };
 
   const handleCancel = () => {
     navigate("/mp-logs");
   };
+
+  if (isEditing && mpLogQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && mpLogQuery.error) return <div>Error loading MP log</div>;
+  if (clientsQuery.isLoading || mpsQuery.isLoading)
+    return <div>Loading...</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -121,7 +152,8 @@ export function MpLogForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option) => option.value === formData.clientId
+                      (option: { value: number; label: string }) =>
+                        option.value === formData.clientId
                     ) || null
                   }
                   onChange={(selectedOption) =>
@@ -146,7 +178,8 @@ export function MpLogForm() {
                   options={mpOptions}
                   value={
                     mpOptions.find(
-                      (option) => option.value === formData.mpId
+                      (option: { value: number; label: string }) =>
+                        option.value === formData.mpId
                     ) || null
                   }
                   onChange={(selectedOption) =>

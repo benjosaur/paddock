@@ -1,33 +1,50 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MagLogForm } from "../pages/MagLogForm";
-import { mockMagLogs, mockClients } from "../data/mockData";
+import { trpc } from "../utils/trpc";
 import type { MagLog, TableColumn } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  { key: "total", header: "Total" },
-  {
-    key: "attendees",
-    header: "Registered Attendees",
-    render: (item) => {
-      const clientNames = item.attendees.map((clientId) => {
-        const client = mockClients.find((c) => c.id === clientId);
-        return client ? client.name : clientId;
-      });
-      return clientNames.join(", ");
-    },
-  },
-  { key: "notes", header: "Notes" },
-];
-
-interface MagLogRoutesProps {
-  onDelete: (id: number) => void;
-}
-
-export default function MagLogRoutes({ onDelete }: MagLogRoutesProps) {
+export default function MagLogRoutes() {
   const navigate = useNavigate();
+
+  const queryClient = useQueryClient();
+
+  const magLogsQuery = useQuery(trpc.magLogs.getAll.queryOptions());
+  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const magLogsQueryKey = trpc.magLogs.getAll.queryKey();
+
+  const magLogs = magLogsQuery.data || [];
+  const clients = clientsQuery.data || [];
+
+  const deleteMagLogMutation = useMutation(
+    trpc.magLogs.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: magLogsQueryKey });
+      },
+    })
+  );
+
+  // Update columns to use tRPC data
+  const magLogColumns: TableColumn<MagLog>[] = [
+    { key: "id", header: "ID" },
+    { key: "date", header: "Date" },
+    { key: "total", header: "Total" },
+    {
+      key: "attendees",
+      header: "Registered Attendees",
+      render: (item) => {
+        const clientNames = item.attendees.map((clientId) => {
+          const client = clients.find(
+            (c: { id: number; name: string }) => c.id === clientId
+          );
+          return client ? client.name : clientId;
+        });
+        return clientNames.join(", ");
+      },
+    },
+    { key: "notes", header: "Notes" },
+  ];
 
   const handleAddNew = () => {
     navigate("/mag-logs/new");
@@ -35,6 +52,10 @@ export default function MagLogRoutes({ onDelete }: MagLogRoutesProps) {
 
   const handleEdit = (id: number) => {
     navigate(`/mag-logs/edit/${id}`);
+  };
+
+  const handleDelete = (id: number) => {
+    deleteMagLogMutation.mutate({ id });
   };
 
   return (
@@ -46,10 +67,10 @@ export default function MagLogRoutes({ onDelete }: MagLogRoutesProps) {
             key="mag-logs"
             title="MAG Logs"
             searchPlaceholder="Search MAG logs..."
-            data={mockMagLogs}
+            data={magLogs}
             columns={magLogColumns}
             onEdit={handleEdit}
-            onDelete={onDelete}
+            onDelete={handleDelete}
             onAddNew={handleAddNew}
           />
         }

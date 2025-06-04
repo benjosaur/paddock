@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { VolunteerForm } from "../pages/VolunteerForm";
-import { mockVolunteers } from "../data/mockData";
+import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
+import { trpc } from "../utils/trpc";
 import type { Volunteer, TableColumn } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const volunteerColumns: TableColumn<Volunteer>[] = [
   { key: "id", header: "ID" },
@@ -24,14 +27,27 @@ const volunteerColumns: TableColumn<Volunteer>[] = [
   { key: "transport", header: "Transport?" },
 ];
 
-export default function VolunteersRoutes({
-  handleDelete,
-  handleViewVolunteer,
-}: {
-  handleDelete: (id: number) => void;
-  handleViewVolunteer: (volunteer: Volunteer) => void;
-}) {
+export default function VolunteersRoutes() {
   const navigate = useNavigate();
+  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(
+    null
+  );
+  const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const volunteersQueryKey = trpc.volunteers.getAll.queryKey();
+
+  const volunteers = volunteersQuery.data || [];
+
+  const deleteVolunteerMutation = useMutation(
+    trpc.volunteers.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: volunteersQueryKey });
+      },
+    })
+  );
 
   const handleAddNew = () => {
     navigate("/volunteers/create");
@@ -41,22 +57,43 @@ export default function VolunteersRoutes({
     navigate(`/volunteers/edit/${id}`);
   };
 
+  const handleViewVolunteer = (volunteer: Volunteer) => {
+    setSelectedVolunteer(volunteer);
+    setIsVolunteerModalOpen(true);
+  };
+
+  const handleCloseVolunteerModal = () => {
+    setIsVolunteerModalOpen(false);
+    setSelectedVolunteer(null);
+  };
+
+  const handleDelete = (id: number) => {
+    deleteVolunteerMutation.mutate({ id });
+  };
+
   return (
     <Routes>
       <Route
         index
         element={
-          <DataTable
-            key="volunteers"
-            title="Volunteers"
-            searchPlaceholder="Search volunteers..."
-            data={mockVolunteers}
-            columns={volunteerColumns}
-            onEdit={handleEditNavigation}
-            onDelete={handleDelete}
-            onViewItem={handleViewVolunteer as (item: unknown) => void}
-            onAddNew={handleAddNew}
-          />
+          <>
+            <DataTable
+              key="volunteers"
+              title="Volunteers"
+              searchPlaceholder="Search volunteers..."
+              data={volunteers}
+              columns={volunteerColumns}
+              onEdit={handleEditNavigation}
+              onDelete={handleDelete}
+              onViewItem={handleViewVolunteer as (item: unknown) => void}
+              onAddNew={handleAddNew}
+            />
+            <VolunteerDetailModal
+              volunteer={selectedVolunteer}
+              isOpen={isVolunteerModalOpen}
+              onClose={handleCloseVolunteerModal}
+            />
+          </>
         }
       />
       <Route path="create" element={<VolunteerForm />} />

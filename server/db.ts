@@ -23,3 +23,5 @@ switch (command) {
     console.log("Usage: bun run db.ts [init|seed|reset|test]");
     process.exit(1);
 }
+
+process.exit(0);
