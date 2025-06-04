@@ -6,11 +6,17 @@ import { MpDetailModal } from "../components/MpDetailModal";
 import { trpc } from "../utils/trpc";
 import type { Mp, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { calculateAgeBracket } from "../utils/helpers";
 
 const mpColumns: TableColumn<Mp>[] = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
-  { key: "dob", header: "Date of Birth" },
+  {
+    key: "dob",
+    header: "Age",
+    render: (item: Mp) =>
+      item.dob ? calculateAgeBracket(item.dob) + " years" : "Unknown",
+  },
   { key: "postCode", header: "Post Code" },
   {
     key: "servicesOffered",

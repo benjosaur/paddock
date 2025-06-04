@@ -3,6 +3,7 @@ import { DataTable } from "../components/DataTable";
 import { trpc } from "../utils/trpc";
 import type { ExpiryItem, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
+import { calculateTimeToDate } from "@/utils/helpers";
 
 const expiryColumns: TableColumn<ExpiryItem>[] = [
   {
@@ -16,7 +17,11 @@ const expiryColumns: TableColumn<ExpiryItem>[] = [
     render: (item: ExpiryItem) => item.person.type,
   },
   { key: "name", header: "Item" },
-  { key: "date", header: "Expiry Date" },
+  {
+    key: "date",
+    header: "Expires",
+    render: (item: ExpiryItem) => calculateTimeToDate(item.date),
+  },
   {
     key: "type",
     header: "Category",

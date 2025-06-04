@@ -6,11 +6,18 @@ import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { Client, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { calculateAgeBracket } from "@/utils/helpers";
 
 const clientColumns: TableColumn<Client>[] = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
-  { key: "dob", header: "Date of Birth" },
+  {
+    key: "dob",
+    header: "Age",
+    render: (item: Client) =>
+      item.dob ? calculateAgeBracket(item.dob) + " years" : "Unknown",
+  },
+
   { key: "postCode", header: "Post Code" },
   {
     key: "servicesProvided",
