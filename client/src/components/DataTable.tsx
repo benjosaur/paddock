@@ -47,7 +47,9 @@ export function DataTable<T extends { id: number }>({
 
   const filteredData = data.filter((item) =>
     Object.values(item).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      String(value || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     )
   );
 
