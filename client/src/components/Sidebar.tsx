@@ -21,8 +21,8 @@ export function Sidebar({ userRole }: SidebarProps) {
 
   return (
     <div className="w-48 bg-gradient-to-b from-gray-50/90 to-gray-100/80 backdrop-blur-sm border-r border-gray-200/60 p-6 flex flex-col space-y-3">
-      <div className="self-center text-2xl font-bold text-gray-800">
-        Paddock
+      <div className="self-center text-xl font-bold text-gray-800">
+        Wivey Cares
       </div>
       <div className="font-semibold text-gray-800 mt-5 px-3 mb-4">
         {userRole}

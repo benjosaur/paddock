@@ -21,9 +21,12 @@ export const expiryItemSchema = z.object({
   id: z.number(),
   date: z.string(),
   type: z.enum(["training", "dbs"]),
-  mpVolunteer: z.string(),
   name: z.string(),
-  personType: z.enum(["MP", "Volunteer"]),
+  person: z.object({
+    id: z.number(),
+    name: z.string(),
+    type: z.enum(["MP", "Volunteer"]),
+  }),
 });
 
 export const mpSchema = z.object({

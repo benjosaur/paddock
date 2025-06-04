@@ -5,9 +5,16 @@ import type { ExpiryItem, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
 
 const expiryColumns: TableColumn<ExpiryItem>[] = [
-  { key: "id", header: "Person ID" },
-  { key: "mpVolunteer", header: "Person" },
-  { key: "personType", header: "Type" },
+  {
+    key: "personName",
+    header: "Name",
+    render: (item: ExpiryItem) => item.person.name,
+  },
+  {
+    key: "personType",
+    header: "Role",
+    render: (item: ExpiryItem) => item.person.type,
+  },
   { key: "name", header: "Item" },
   { key: "date", header: "Expiry Date" },
   {

@@ -7,29 +7,28 @@ export const expiriesRouter = router({
     const volunteers = await ctx.db.findAll<Volunteer>("volunteers");
 
     const expiries: ExpiryItem[] = [];
+    let counter = 1;
 
     // MP DBS expiries
     mps.forEach((mp) => {
       if (mp.dbsExpiry) {
         expiries.push({
-          id: mp.id,
+          id: counter++,
           date: mp.dbsExpiry,
           type: "dbs",
-          mpVolunteer: mp.name,
+          person: { id: mp.id, type: "MP", name: mp.name },
           name: "DBS Check",
-          personType: "MP",
         });
       }
 
       // MP training expiries
       mp.trainingRecords.forEach((training) => {
         expiries.push({
-          id: mp.id,
+          id: counter++,
           date: training.expiry,
           type: "training",
-          mpVolunteer: mp.name,
+          person: { id: mp.id, type: "MP", name: mp.name },
           name: training.training,
-          personType: "MP",
         });
       });
     });
@@ -38,24 +37,22 @@ export const expiriesRouter = router({
     volunteers.forEach((volunteer) => {
       if (volunteer.dbsExpiry) {
         expiries.push({
-          id: volunteer.id,
+          id: counter++,
           date: volunteer.dbsExpiry,
           type: "dbs",
-          mpVolunteer: volunteer.name,
+          person: { id: volunteer.id, type: "Volunteer", name: volunteer.name },
           name: "DBS Check",
-          personType: "Volunteer",
         });
       }
 
       // Volunteer training expiries
       volunteer.trainingRecords.forEach((training) => {
         expiries.push({
-          id: volunteer.id,
+          id: counter++,
           date: training.expiry,
           type: "training",
-          mpVolunteer: volunteer.name,
+          person: { id: volunteer.id, type: "Volunteer", name: volunteer.name },
           name: training.training,
-          personType: "Volunteer",
         });
       });
     });

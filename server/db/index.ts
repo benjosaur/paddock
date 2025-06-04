@@ -111,6 +111,7 @@ export const db = {
   ): Promise<T | null> {
     let query = "";
     let snakeData = keysToSnake(data);
+    snakeData.updated_at = new Date();
     try {
       const keys = Object.keys(snakeData);
       const values = Object.values(snakeData);
