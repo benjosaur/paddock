@@ -1,5 +1,7 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import { keysToCamel, keysToSnake } from "../utils/caseConverter";
+
+types.setTypeParser(1082, (val: string) => val);
 
 export const pool = new Pool({
   user: process.env.DB_USER || "benjo",
@@ -45,6 +47,7 @@ export const db = {
     try {
       const query = `SELECT * FROM ${table}`;
       const result = await pool.query(query);
+      console.log(result.rows);
       console.log(keysToCamel(result.rows));
       return keysToCamel(result.rows);
     } catch (error) {
