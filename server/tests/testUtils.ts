@@ -24,7 +24,7 @@ export const testData = {
     dbsExpiry: "2025-12-31",
     servicesOffered: ["Companion", "Transport"],
     specialisms: ["Elderly Care"],
-    transport: "Yes",
+    transport: true,
     capacity: "Available",
     trainingRecords: [
       {
@@ -44,7 +44,7 @@ export const testData = {
     dbsExpiry: "2025-11-30",
     servicesOffered: ["Companion", "Shopping"],
     needTypes: ["Social", "Practical"],
-    transport: "Yes",
+    transport: true,
     capacity: "Available",
     specialisms: ["Mental Health"],
     trainingRecords: [

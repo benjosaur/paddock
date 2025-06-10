@@ -74,7 +74,7 @@ export async function seedDatabase() {
       dob: "1979-03-10",
       servicesOffered: ["Personal Care", "Medication Reminders"],
       specialisms: ["Dementia Care", "Palliative Care"],
-      transport: "Own Car",
+      transport: true,
       capacity: "Full",
       trainingRecords: [
         { training: "First Aid", expiry: "2025-10-10" },
@@ -93,7 +93,7 @@ export async function seedDatabase() {
       dob: "1972-08-15",
       servicesOffered: ["Companionship", "Meal Preparation"],
       specialisms: ["Elderly Care"],
-      transport: "Public Transport",
+      transport: true,
       capacity: "Part-time Available",
       trainingRecords: [
         { training: "Food Hygiene", expiry: "2025-08-01" },
@@ -113,7 +113,7 @@ export async function seedDatabase() {
       dob: "1987-01-20",
       servicesOffered: ["Social Outings", "Light Housekeeping"],
       specialisms: ["Learning Disabilities Support"],
-      transport: "Own Car, Wheelchair Accessible",
+      transport: true,
       capacity: "Available Weekends",
       trainingRecords: [
         { training: "Basic Life Support", expiry: "2025-07-01" },
@@ -133,7 +133,7 @@ export async function seedDatabase() {
       dbsExpiry: "2027-08-15",
       servicesOffered: ["Admin Support", "Event Assistance"],
       needTypes: ["Office Tasks", "Public Engagement"],
-      transport: "Bicycle",
+      transport: true,
       capacity: "Weekends, 5hrs/week",
       specialisms: ["Organisational Skills", "Public Speaking"],
       trainingRecords: [
@@ -153,7 +153,7 @@ export async function seedDatabase() {
       dbsExpiry: "2026-10-20",
       servicesOffered: ["Befriending", "Gardening"],
       needTypes: ["Social Support", "Outdoor Activities"],
-      transport: "Own Car",
+      transport: true,
       capacity: "Mon, Wed PM",
       trainingRecords: [
         { training: "Mental Health First Aid", expiry: "2027-01-10" },
@@ -173,7 +173,7 @@ export async function seedDatabase() {
       dbsExpiry: "2025-07-25",
       servicesOffered: ["Driving", "Shopping Assistance"],
       needTypes: ["Transportation", "Practical Support"],
-      transport: "Own Car (Wheelchair accessible)",
+      transport: true,
       capacity: "Flexible, 10hrs/month",
       specialisms: ["Advanced Driving Course"],
       trainingRecords: [
@@ -273,7 +273,7 @@ export async function seedDatabase() {
     // Seed Client Requests
     await db.create("client_requests", {
       clientId: 1,
-      requestType: "volunteer",
+      requestType: "Volunteer",
       startDate: "2025-06-10",
       schedule: "Tuesdays, 2 PM - 4 PM",
       status: "pending",
@@ -281,7 +281,7 @@ export async function seedDatabase() {
 
     await db.create("client_requests", {
       clientId: 2,
-      requestType: "paid",
+      requestType: "MP",
       startDate: "2025-07-01",
       schedule: "First Monday of the month, 10 AM",
       status: "approved",
@@ -289,7 +289,7 @@ export async function seedDatabase() {
 
     await db.create("client_requests", {
       clientId: 1,
-      requestType: "volunteer",
+      requestType: "Volunteer",
       startDate: "2025-08-01",
       schedule: "Fridays, 10 AM - 12 PM",
       status: "approved",
@@ -297,7 +297,7 @@ export async function seedDatabase() {
 
     await db.create("client_requests", {
       clientId: 3,
-      requestType: "volunteer",
+      requestType: "Volunteer",
       startDate: "2025-06-15",
       schedule: "Flexible, ad-hoc",
       status: "pending",

@@ -54,7 +54,7 @@ function App() {
                   path="/new-requests/*"
                   element={<ClientRequestRoutes />}
                 />
-                <Route path="/table-search" element={<TableSearchForm />} />
+                {/* <Route path="/table-search" element={<TableSearchForm />} /> */}
                 <Route
                   path="*"
                   element={
