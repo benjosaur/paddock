@@ -30,7 +30,11 @@ const volunteerColumns: TableColumn<Volunteer>[] = [
   },
   { key: "dbsExpiry", header: "DBS" },
   { key: "capacity", header: "Capacity?" },
-  { key: "transport", header: "Transport?" },
+  {
+    key: "transport",
+    header: "Transport?",
+    render: (item: Volunteer) => (item.transport ? "Yes" : "No"),
+  },
 ];
 
 export default function VolunteersRoutes() {

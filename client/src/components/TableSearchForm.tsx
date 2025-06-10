@@ -270,7 +270,11 @@ export function TableSearchForm() {
                 ? item.servicesOffered.join(", ")
                 : item.servicesOffered,
           },
-          { key: "transport", header: "Transport" },
+          {
+            key: "transport",
+            header: "Transport",
+            render: (item: any) => (item.transport ? "Yes" : "No"),
+          },
           { key: "capacity", header: "Capacity" },
         ];
       case "volunteers":
@@ -289,7 +293,11 @@ export function TableSearchForm() {
                 ? item.servicesOffered.join(", ")
                 : item.servicesOffered,
           },
-          { key: "transport", header: "Transport" },
+          {
+            key: "transport",
+            header: "Transport",
+            render: (item: any) => (item.transport ? "Yes" : "No"),
+          },
           { key: "capacity", header: "Capacity" },
         ];
       case "clientRequests":

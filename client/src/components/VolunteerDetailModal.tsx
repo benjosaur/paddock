@@ -138,7 +138,10 @@ export function VolunteerDetailModal({
               {renderDetailItem("Services Offered", volunteer.servicesOffered)}
               {renderDetailItem("Need Types", volunteer.needTypes)}
               {renderDetailItem("Specialisms", volunteer.specialisms)}
-              {renderDetailItem("Transport", volunteer.transport)}
+              {renderDetailItem(
+                "Transport",
+                volunteer.transport ? "Yes" : "No"
+              )}
               {renderDetailItem("Capacity", volunteer.capacity)}
             </TabsContent>
 

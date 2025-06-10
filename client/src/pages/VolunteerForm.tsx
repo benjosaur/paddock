@@ -23,7 +23,7 @@ export function VolunteerForm() {
     dbsExpiry: "",
     servicesOffered: [],
     needTypes: [],
-    transport: "",
+    transport: false,
     capacity: "",
     specialisms: [],
     trainingRecords: [],
@@ -75,7 +75,7 @@ export function VolunteerForm() {
 
   const handleInputChange = (
     field: keyof Volunteer,
-    value: string | number
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -350,14 +350,19 @@ export function VolunteerForm() {
                 >
                   Transport
                 </label>
-                <Input
-                  id="transport"
-                  value={formData.transport || ""}
-                  onChange={(e) =>
-                    handleInputChange("transport", e.target.value)
-                  }
-                  placeholder="e.g., Own Car, Public Transport"
-                />
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.transport || false}
+                    onChange={(e) =>
+                      handleInputChange("transport", e.target.checked)
+                    }
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Has Transport?
+                  </span>
+                </label>
               </div>
 
               <div>

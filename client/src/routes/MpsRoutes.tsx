@@ -25,7 +25,11 @@ const mpColumns: TableColumn<Mp>[] = [
   },
   { key: "dbsExpiry", header: "DBS Expiry" },
   { key: "capacity", header: "Capacity?" },
-  { key: "transport", header: "Transport?" },
+  {
+    key: "transport",
+    header: "Transport?",
+    render: (item: Mp) => (item.transport ? "Yes" : "No"),
+  },
 ];
 
 export function MpsRoutes() {

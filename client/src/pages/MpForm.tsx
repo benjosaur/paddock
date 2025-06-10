@@ -23,7 +23,7 @@ export function MpForm() {
     dbsExpiry: "",
     servicesOffered: [],
     specialisms: [],
-    transport: "",
+    transport: false,
     capacity: "",
     trainingRecords: [],
   });
@@ -69,7 +69,10 @@ export function MpForm() {
     }
   }, [mpQuery.data]);
 
-  const handleInputChange = (field: keyof Mp, value: string | number) => {
+  const handleInputChange = (
+    field: keyof Mp,
+    value: string | number | boolean
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -322,14 +325,19 @@ export function MpForm() {
                 >
                   Transport
                 </label>
-                <Input
-                  id="transport"
-                  value={formData.transport || ""}
-                  onChange={(e) =>
-                    handleInputChange("transport", e.target.value)
-                  }
-                  placeholder="e.g., Own Car, Public Transport"
-                />
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.transport || false}
+                    onChange={(e) =>
+                      handleInputChange("transport", e.target.checked)
+                    }
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Has Transport?
+                  </span>
+                </label>
               </div>
 
               <div>

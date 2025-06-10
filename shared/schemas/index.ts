@@ -42,7 +42,7 @@ export const mpSchema = z.object({
   dbsExpiry: z.string(),
   servicesOffered: z.array(z.string()),
   specialisms: z.array(z.string()),
-  transport: z.string(),
+  transport: z.boolean(),
   capacity: z.string(),
   trainingRecords: z.array(trainingRecordItemSchema),
 });
@@ -60,7 +60,7 @@ export const volunteerSchema = z.object({
   dbsExpiry: z.string().optional(),
   servicesOffered: z.array(z.string()),
   needTypes: z.array(z.string()),
-  transport: z.string(),
+  transport: z.boolean(),
   capacity: z.string(),
   specialisms: z.array(z.string()).optional(),
   trainingRecords: z.array(trainingRecordItemSchema),
