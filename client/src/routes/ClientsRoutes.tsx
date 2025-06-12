@@ -100,6 +100,7 @@ export default function ClientsRoutes() {
               onDelete={handleDelete}
               onViewItem={handleViewClient as (item: unknown) => void}
               onAddNew={handleAddNew}
+              resource="clients"
             />
             {selectedClient && (
               <ClientDetailModal
