@@ -1,18 +1,23 @@
-import { ReactNode } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { hasPermission } from '../utils/permissions';
+import { ReactNode } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
 interface PermissionGateProps {
   resource: string;
-  action: 'read' | 'create' | 'update' | 'delete';
+  action: "read" | "create" | "update" | "delete";
   children: ReactNode;
   fallback?: ReactNode;
 }
 
-export function PermissionGate({ resource, action, children, fallback = null }: PermissionGateProps) {
-  const { userRole } = useAuth();
+export function PermissionGate({
+  resource,
+  action,
+  children,
+  fallback = null,
+}: PermissionGateProps) {
+  const { user } = useAuth();
 
-  if (!userRole || !hasPermission(userRole, resource, action)) {
+  if (!user || !hasPermission(user.role, resource, action)) {
     return <>{fallback}</>;
   }
 

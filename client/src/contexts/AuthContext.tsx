@@ -5,39 +5,24 @@ import {
   useState,
   ReactNode,
 } from "react";
-import {
-  getCurrentUser,
-  AuthUser,
-  signOut,
-  fetchUserAttributes,
-} from "aws-amplify/auth";
-import type { UserRole } from "../types";
-import { userRoleSchema } from "shared";
+import { fetchAuthSession, signOut } from "aws-amplify/auth";
+import { PaddockUser } from "@/types/auth";
+import { UserRole, userRoleSchema } from "shared";
 
 interface AuthContextType {
-  user: AuthUser | null;
-  userRole: UserRole | null;
+  user: PaddockUser | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-const getRoleFromUser = async (user: AuthUser): Promise<UserRole> => {
-  const attributes = await fetchUserAttributes();
-  if (!userRoleSchema.options.includes(user.signInDetails?.["custom:role"])) {
-    throw new Error(`Invalid or missing custom:role attribute`);
-  }
-  return customRole;
-};
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<PaddockUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,12 +31,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setUserRole(getRoleFromUser(currentUser));
+      const session = await fetchAuthSession();
+      const idTokenPayload = session.tokens?.idToken?.payload;
+
+      if (!idTokenPayload)
+        throw new Error(
+          `Missing Id Token. Session: ${JSON.stringify(session)}`
+        );
+
+      const givenName = idTokenPayload["given_name"] as string;
+      const familyName = idTokenPayload["family_name"] as string;
+      const email = idTokenPayload["email"] as string;
+      const role = Array.isArray(idTokenPayload["cognito:groups"])
+        ? (idTokenPayload["cognito:groups"][0] as UserRole)
+        : undefined;
+
+      if (!givenName || typeof givenName !== "string")
+        throw new Error(
+          `Error processing Given Name. Payload: ${JSON.stringify(
+            idTokenPayload
+          )}`
+        );
+      if (!familyName || typeof familyName !== "string")
+        throw new Error(
+          `Error processing Family Name. Payload: ${JSON.stringify(
+            idTokenPayload
+          )}`
+        );
+      if (!email || typeof email !== "string")
+        throw new Error(
+          `Error processing Email. Payload: ${JSON.stringify(idTokenPayload)}`
+        );
+      if (!role || !userRoleSchema.options.includes(role))
+        throw new Error(
+          `Error processing Role. Payload: ${JSON.stringify(idTokenPayload)}`
+        );
+
+      setUser({
+        givenName,
+        familyName,
+        email,
+        role,
+      });
     } catch (error) {
+      console.warn("Error fetching authenticated user:", error);
       setUser(null);
-      setUserRole(null);
     } finally {
       setIsLoading(false);
     }
@@ -61,16 +85,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await signOut();
       setUser(null);
-      setUserRole(null);
     } catch (error) {
       console.error("Error signing out:", error);
     }
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, userRole, isLoading, signOut: handleSignOut }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, signOut: handleSignOut }}>
       {children}
     </AuthContext.Provider>
   );

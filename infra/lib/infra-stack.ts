@@ -11,6 +11,7 @@ export class InfraStack extends cdk.Stack {
     super(scope, id, props);
 
     const domainName = "paddock.health";
+    const homeRoute = "/dashboard";
     const subdomainName = "www.paddock.health";
     const authDomainName = "auth.paddock.health";
 
@@ -80,6 +81,32 @@ export class InfraStack extends cdk.Stack {
       },
       generateSecret: false,
       preventUserExistenceErrors: true,
+      oAuth: {
+        callbackUrls: ["https://" + domainName + homeRoute],
+        logoutUrls: ["https://" + domainName],
+        flows: {
+          authorizationCodeGrant: true,
+        },
+      },
+    });
+
+    const groups = [
+      { id: "AdminGroup", name: "Admin", description: "Administrators group" },
+      {
+        id: "CoordinatorGroup",
+        name: "Coordinator",
+        description: "Coordinators group",
+      },
+      { id: "TrusteeGroup", name: "Trustee", description: "Trustees group" },
+      { id: "FinanceGroup", name: "Finance", description: "Finance group" },
+    ];
+
+    groups.forEach(({ id, name, description }) => {
+      new cognito.CfnUserPoolGroup(this, id, {
+        userPoolId: userPool.userPoolId,
+        groupName: name,
+        description,
+      });
     });
 
     const s3CorsRule: s3.CorsRule = {

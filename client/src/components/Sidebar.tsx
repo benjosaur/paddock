@@ -1,16 +1,16 @@
-import type { UserRole } from "../types";
 import { Link, useLocation } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { getVisibleMenuItems } from "../utils/permissions";
+import { PaddockUser } from "@/types/auth";
 
 interface SidebarProps {
-  userRole: UserRole;
+  user: PaddockUser;
   onSignOut: () => Promise<void>;
 }
 
-export function Sidebar({ userRole, onSignOut }: SidebarProps) {
+export function Sidebar({ user, onSignOut }: SidebarProps) {
   const location = useLocation();
-  const menuItems = getVisibleMenuItems(userRole);
+  const menuItems = getVisibleMenuItems(user.role);
 
   return (
     <div className="w-48 bg-gradient-to-b from-gray-50/90 to-gray-100/80 backdrop-blur-sm border-r border-gray-200/60 p-6 flex flex-col space-y-3">
@@ -18,7 +18,7 @@ export function Sidebar({ userRole, onSignOut }: SidebarProps) {
         Wivey Cares
       </div>
       <div className="font-semibold text-gray-800 mt-5 px-3 mb-4">
-        {userRole}
+        {user.role}
       </div>
 
       <nav className="flex flex-col space-y-1 flex-1">

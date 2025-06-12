@@ -9,7 +9,7 @@ export const userRoleSchema = z.enum([
   "Admin",
   "Trustee",
   "Coordinator",
-  "Fundraiser",
+  "Finance",
 ]);
 
 export const viewConfigSchema = z.object({

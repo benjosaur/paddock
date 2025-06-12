@@ -1,6 +1,8 @@
-import { AuthUser } from "aws-amplify/auth";
-import { UserRole } from "./index";
+import { UserRole } from "shared";
 
-export interface PaddockUser extends AuthUser {
-  "custom:role": UserRole;
+export interface PaddockUser {
+  givenName: string;
+  familyName: string;
+  email: string;
+  role: UserRole;
 }

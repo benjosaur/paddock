@@ -4,8 +4,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Authenticator } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
+import { Authenticator } from "@aws-amplify/ui-react";
+import "@aws-amplify/ui-react/styles.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Sidebar } from "./components/Sidebar";
 import ClientsRoutes from "./routes/ClientsRoutes";
@@ -21,7 +21,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function AppContent() {
-  const { userRole, isLoading, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ function AppContent() {
     );
   }
 
-  if (!userRole) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-gray-500">No role assigned</p>
@@ -43,7 +43,7 @@ function AppContent() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/30">
-          <Sidebar userRole={userRole} onSignOut={signOut} />
+          <Sidebar user={user} onSignOut={signOut} />
           <main className="flex-1 p-8 overflow-auto">
             <ErrorBoundary
               fallbackRender={(props) => {

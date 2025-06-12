@@ -7,7 +7,7 @@ const amplifyConfig: ResourcesConfig = {
       userPoolClientId: import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID || "",
       loginWith: {
         oauth: {
-          domain: "auth.paddock.health", // Your Cognito custom domain
+          domain: "auth.paddock.health",
           scopes: ["email", "openid", "profile"],
           redirectSignIn: [`${window.location.origin}/dashboard`],
           redirectSignOut: [`${window.location.origin}/`],
