@@ -20,6 +20,10 @@ export const createContext = async ({
   res,
 }: CreateExpressContextOptions) => {
   const getUser = async (): Promise<User | null> => {
+    if (process.env.NODE_ENV === "development") {
+      return { sub: process.env.DEV_SUB!, role: process.env.DEV_ROLE! };
+    }
+
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -36,7 +40,7 @@ export const createContext = async ({
         sub: payload.sub,
         role: payload["cognito:groups"]?.[0] || "",
       };
-
+      console.log(user);
       return user;
     } catch (error) {
       console.error("JWT verification failed:", error);

@@ -4,7 +4,6 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Sidebar } from "./components/Sidebar";
@@ -90,20 +89,22 @@ function AppContent() {
 
 const testCheckUser = async (): Promise<PaddockUser | null> => {
   return {
-    givenName: "Ben",
-    familyName: "Blaker",
-    email: "test@example.com",
-    role: "Admin",
+    givenName: import.meta.env.VITE_DEV_GIVEN_NAME,
+    familyName: import.meta.env.VITE_DEV_FAMILY_NAME,
+    email: import.meta.env.VITE_DEV_EMAIL,
+    role: import.meta.env.VITE_DEV_ROLE,
   };
 };
 
 function App() {
   return (
-    <Authenticator>
-      <AuthProvider testCheckUser={testCheckUser}>
-        <AppContent />
-      </AuthProvider>
-    </Authenticator>
+    <AuthProvider
+      testCheckUser={
+        process.env.NODE_ENV === "development" ? testCheckUser : undefined
+      }
+    >
+      <AppContent />
+    </AuthProvider>
   );
 }
 
