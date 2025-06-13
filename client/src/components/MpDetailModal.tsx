@@ -154,6 +154,7 @@ export function MpDetailModal({
                   columns={trainingRecordModalColumns}
                   title=""
                   searchPlaceholder="Search training records..."
+                  resource="mps"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
@@ -175,6 +176,7 @@ export function MpDetailModal({
                   columns={mpLogModalColumns}
                   title=""
                   searchPlaceholder="Search MP logs..."
+                  resource="mpLogs"
                 />
               ) : (
                 <p className="text-sm text-gray-500">

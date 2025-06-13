@@ -91,6 +91,7 @@ export function MpsRoutes() {
               onDelete={handleDelete}
               onViewItem={handleViewMp as (item: unknown) => void}
               onAddNew={handleAddNew}
+              resource="mps"
             />
             {selectedMp && (
               <MpDetailModal

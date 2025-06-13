@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc.ts";
+import { router, createProtectedProcedure } from "../trpc.ts";
 import {
   createMpSchema,
   updateMpSchema,
@@ -7,30 +7,30 @@ import {
 import type { Mp } from "shared/types/index.ts";
 
 export const mpsRouter = router({
-  getAll: publicProcedure.query(async ({ ctx }) => {
+  getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
     return await ctx.db.findAll<Mp>("mps");
   }),
 
-  getById: publicProcedure
+  getById: createProtectedProcedure("mps", "read")
     .input(idParamSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.db.findById<Mp>("mps", input.id);
     }),
 
-  create: publicProcedure
+  create: createProtectedProcedure("mps", "create")
     .input(createMpSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.create<Mp>("mps", input);
     }),
 
-  update: publicProcedure
+  update: createProtectedProcedure("mps", "update")
     .input(updateMpSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       return await ctx.db.update<Mp>("mps", id, data);
     }),
 
-  delete: publicProcedure
+  delete: createProtectedProcedure("mps", "delete")
     .input(idParamSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.delete("mps", input.id);

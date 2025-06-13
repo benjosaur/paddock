@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc.ts";
+import { router, createProtectedProcedure } from "../trpc.ts";
 import {
   createVolunteerLogSchema,
   updateVolunteerLogSchema,
@@ -9,17 +9,19 @@ import type { VolunteerLog } from "shared/types/index.ts";
 import { keysToCamel } from "../../utils/caseConverter.ts";
 
 export const volunteerLogsRouter = router({
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.db.findAll<VolunteerLog>("volunteer_logs");
-  }),
+  getAll: createProtectedProcedure("volunteerLogs", "read").query(
+    async ({ ctx }) => {
+      return await ctx.db.findAll<VolunteerLog>("volunteer_logs");
+    }
+  ),
 
-  getById: publicProcedure
+  getById: createProtectedProcedure("volunteerLogs", "read")
     .input(idParamSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.db.findById<VolunteerLog>("volunteer_logs", input.id);
     }),
 
-  getByVolunteerId: publicProcedure
+  getByVolunteerId: createProtectedProcedure("volunteerLogs", "read")
     .input(volunteerLogSchema.pick({ volunteerId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
@@ -29,7 +31,7 @@ export const volunteerLogsRouter = router({
       return keysToCamel(result.rows);
     }),
 
-  getByClientId: publicProcedure
+  getByClientId: createProtectedProcedure("volunteerLogs", "read")
     .input(volunteerLogSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.query(
@@ -39,20 +41,20 @@ export const volunteerLogsRouter = router({
       return keysToCamel(result.rows);
     }),
 
-  create: publicProcedure
+  create: createProtectedProcedure("volunteerLogs", "create")
     .input(createVolunteerLogSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.create<VolunteerLog>("volunteer_logs", input);
     }),
 
-  update: publicProcedure
+  update: createProtectedProcedure("volunteerLogs", "update")
     .input(updateVolunteerLogSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       return await ctx.db.update<VolunteerLog>("volunteer_logs", id, data);
     }),
 
-  delete: publicProcedure
+  delete: createProtectedProcedure("volunteerLogs", "delete")
     .input(idParamSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.delete("volunteer_logs", input.id);

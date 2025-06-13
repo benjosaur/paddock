@@ -72,6 +72,7 @@ export default function MagLogRoutes() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddNew={handleAddNew}
+            resource="magLogs"
           />
         }
       />

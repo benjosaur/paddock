@@ -4,13 +4,110 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
+import * as cognito from "aws-cdk-lib/aws-cognito";
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const domainName = "paddock.health";
+    const homeRoute = "/dashboard";
     const subdomainName = "www.paddock.health";
+    const authDomainName = "auth.paddock.health";
+
+    // SSL Certificate - Created in us-east-1 using cross-region reference
+    const certificate = certificatemanager.Certificate.fromCertificateArn(
+      this,
+      "Certificate",
+      `arn:aws:acm:us-east-1:${this.account}:certificate/53bbfbcd-cbc1-4568-83a6-cb1d74052461`
+    );
+
+    // Cognito User Pool
+    const userPool = new cognito.UserPool(this, "UserPool", {
+      userPoolName: "paddock-user-pool",
+      selfSignUpEnabled: false,
+      signInCaseSensitive: false,
+      userInvitation: {
+        emailSubject: "Your Paddock account has been created",
+        emailBody:
+          "Hello {username}, Your Paddock account has been created. Your temporary password is: {####}. Please log in and change your password.",
+      },
+      standardAttributes: {
+        email: {
+          required: true,
+          mutable: true,
+        },
+        givenName: {
+          required: true,
+          mutable: true,
+        },
+        familyName: {
+          required: true,
+          mutable: true,
+        },
+      },
+      signInAliases: {
+        email: true,
+      },
+      autoVerify: {
+        email: true,
+      },
+      passwordPolicy: {
+        minLength: 8,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: false,
+      },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    userPool.addDomain("CognitoDomain", {
+      customDomain: {
+        domainName: authDomainName,
+        certificate: certificate,
+      },
+    });
+
+    // Cognito User Pool Client
+    const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
+      userPool,
+      userPoolClientName: "paddock-web-client",
+      authFlows: {
+        userSrp: true,
+        userPassword: true,
+        custom: false,
+      },
+      generateSecret: false,
+      preventUserExistenceErrors: true,
+      oAuth: {
+        callbackUrls: ["https://" + domainName + homeRoute],
+        logoutUrls: ["https://" + domainName],
+        flows: {
+          authorizationCodeGrant: true,
+        },
+      },
+    });
+
+    const groups = [
+      { id: "AdminGroup", name: "Admin", description: "Administrators group" },
+      {
+        id: "CoordinatorGroup",
+        name: "Coordinator",
+        description: "Coordinators group",
+      },
+      { id: "TrusteeGroup", name: "Trustee", description: "Trustees group" },
+      { id: "FinanceGroup", name: "Finance", description: "Finance group" },
+    ];
+
+    groups.forEach(({ id, name, description }) => {
+      new cognito.CfnUserPoolGroup(this, id, {
+        userPoolId: userPool.userPoolId,
+        groupName: name,
+        description,
+      });
+    });
 
     const s3CorsRule: s3.CorsRule = {
       allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.HEAD],
@@ -29,14 +126,6 @@ export class InfraStack extends cdk.Stack {
 
     const oai = new cloudfront.OriginAccessIdentity(this, "OAI");
     s3Bucket.grantRead(oai);
-
-    // SSL Certificate - Created in us-east-1 using cross-region reference
-    const certificate = certificatemanager.Certificate.fromCertificateArn(
-      this,
-      "Certificate",
-      // You'll need to replace this with your actual certificate ARN after creating it
-      `arn:aws:acm:us-east-1:${this.account}:certificate/e4f64a88-53f6-4a87-ad97-441c1b238646`
-    );
 
     const distribution = new cloudfront.CloudFrontWebDistribution(
       this,
@@ -97,6 +186,21 @@ export class InfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, "DomainURL", {
       value: `https://${domainName}`,
       description: "Custom Domain URL",
+    });
+
+    new cdk.CfnOutput(this, "UserPoolId", {
+      value: userPool.userPoolId,
+      description: "Cognito User Pool ID",
+    });
+
+    new cdk.CfnOutput(this, "UserPoolClientId", {
+      value: userPoolClient.userPoolClientId,
+      description: "Cognito User Pool Client ID",
+    });
+
+    new cdk.CfnOutput(this, "Region", {
+      value: this.region,
+      description: "AWS Region",
     });
   }
 }

@@ -20,3 +20,5 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+export type AppRouterKeys = keyof typeof appRouter;

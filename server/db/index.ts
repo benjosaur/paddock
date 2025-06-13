@@ -47,7 +47,6 @@ export const db = {
     try {
       const query = `SELECT * FROM ${table}`;
       const result = await pool.query(query);
-      console.log(result.rows);
       console.log(keysToCamel(result.rows));
       return keysToCamel(result.rows);
     } catch (error) {

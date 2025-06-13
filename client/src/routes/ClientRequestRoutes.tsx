@@ -69,6 +69,7 @@ export default function ClientRequestRoutes() {
             onEdit={handleEditNavigation}
             onDelete={handleDelete}
             onAddNew={handleAddNew}
+            resource="clientRequests"
           />
         }
       />

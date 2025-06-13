@@ -17,8 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { Search, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
+import { PermissionGate } from "./PermissionGate";
 import type { TableColumn } from "../types";
+import { AppRouterKeys } from "shared";
 
 interface DataTableProps<T> {
   data: T[];
@@ -29,6 +31,7 @@ interface DataTableProps<T> {
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
   onAddNew?: () => void;
+  resource: AppRouterKeys;
 }
 
 export function DataTable<T extends { id: number }>({
@@ -40,6 +43,7 @@ export function DataTable<T extends { id: number }>({
   searchPlaceholder,
   onViewItem,
   onAddNew,
+  resource,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -92,11 +96,14 @@ export function DataTable<T extends { id: number }>({
               className="pl-10 w-72 shadow-sm"
             />
           </div>
-          {onAddNew && (
-            <Button className="shadow-sm" onClick={onAddNew}>
-              Add New
-            </Button>
-          )}
+          <PermissionGate resource={resource} action="create">
+            {onAddNew && (
+              <Button className="shadow-sm" onClick={onAddNew}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add New
+              </Button>
+            )}
+          </PermissionGate>
         </div>
       </div>
 
@@ -158,20 +165,24 @@ export function DataTable<T extends { id: number }>({
                             View
                           </DropdownMenuItem>
                         )}
-                        {onEdit && (
-                          <DropdownMenuItem onClick={() => onEdit(item.id)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                        )}
-                        {onDelete && (
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(item.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        )}
+                        <PermissionGate resource={resource} action="update">
+                          {onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="delete">
+                          {onDelete && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(item.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>

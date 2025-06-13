@@ -1,12 +1,12 @@
-import { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
+import "@aws-amplify/ui-react/styles.css";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Sidebar } from "./components/Sidebar";
-// import { TableSearchForm } from "./components/TableSearchForm";
 import ClientsRoutes from "./routes/ClientsRoutes";
 import MpsRoutes from "./routes/MpsRoutes";
 import MpLogRoutes from "./routes/MpLogRoutes";
@@ -15,19 +15,35 @@ import VolunteerLogRoutes from "./routes/VolunteerLogRoutes";
 import VolunteersRoutes from "./routes/VolunteersRoutes";
 import ClientRequestRoutes from "./routes/ClientRequestRoutes";
 import ExpiriesRoutes from "./routes/ExpiriesRoutes";
-import type { UserRole } from "./types";
 import { queryClient } from "./utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { PaddockUser } from "./types/auth";
 
-function App() {
-  const [userRole] = useState<UserRole>("Admin");
+function AppContent() {
+  const { user, isLoading, signOut } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">No role assigned</p>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/30">
-          <Sidebar userRole={userRole} />
+          <Sidebar user={user} onSignOut={signOut} />
           <main className="flex-1 p-8 overflow-auto">
             <ErrorBoundary
               fallbackRender={(props) => {
@@ -54,7 +70,6 @@ function App() {
                   path="/new-requests/*"
                   element={<ClientRequestRoutes />}
                 />
-                {/* <Route path="/table-search" element={<TableSearchForm />} /> */}
                 <Route
                   path="*"
                   element={
@@ -69,6 +84,27 @@ function App() {
         </div>
       </Router>
     </QueryClientProvider>
+  );
+}
+
+const testCheckUser = async (): Promise<PaddockUser | null> => {
+  return {
+    givenName: import.meta.env.VITE_DEV_GIVEN_NAME,
+    familyName: import.meta.env.VITE_DEV_FAMILY_NAME,
+    email: import.meta.env.VITE_DEV_EMAIL,
+    role: import.meta.env.VITE_DEV_ROLE,
+  };
+};
+
+function App() {
+  return (
+    <AuthProvider
+      testCheckUser={
+        process.env.NODE_ENV === "development" ? testCheckUser : undefined
+      }
+    >
+      <AppContent />
+    </AuthProvider>
   );
 }
 
