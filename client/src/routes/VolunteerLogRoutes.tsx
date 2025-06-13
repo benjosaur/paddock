@@ -76,6 +76,7 @@ export default function VolunteerLogRoutes() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddNew={handleAddNew}
+            resource="volunteerLogs"
           />
         }
       />

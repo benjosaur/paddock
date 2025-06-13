@@ -20,6 +20,7 @@ import {
 import { Search, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import type { TableColumn } from "../types";
+import { AppRouterKeys } from "shared";
 
 interface DataTableProps<T> {
   data: T[];
@@ -30,7 +31,7 @@ interface DataTableProps<T> {
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
   onAddNew?: () => void;
-  resource: string; // For permission checking
+  resource: AppRouterKeys;
 }
 
 export function DataTable<T extends { id: number }>({

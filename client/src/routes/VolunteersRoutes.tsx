@@ -97,6 +97,7 @@ export default function VolunteersRoutes() {
               onDelete={handleDelete}
               onViewItem={handleViewVolunteer as (item: unknown) => void}
               onAddNew={handleAddNew}
+              resource="volunteers"
             />
             {selectedVolunteer && (
               <VolunteerDetailModal

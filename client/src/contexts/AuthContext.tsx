@@ -17,68 +17,67 @@ interface AuthContextType {
 
 interface AuthProviderProps {
   children: ReactNode;
+  testCheckUser?: () => Promise<PaddockUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children, testCheckUser }: AuthProviderProps) {
   const [user, setUser] = useState<PaddockUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
+    const init = async () => {
+      setIsLoading(true);
+      try {
+        const user = testCheckUser ? await testCheckUser() : await checkUser();
+        setUser(user);
+      } catch (err) {
+        console.warn("Error in AuthProvider init:", err);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const checkUser = async () => {
-    try {
-      const session = await fetchAuthSession();
-      const idTokenPayload = session.tokens?.idToken?.payload;
+    const session = await fetchAuthSession();
+    const idTokenPayload = session.tokens?.idToken?.payload;
 
-      if (!idTokenPayload)
-        throw new Error(
-          `Missing Id Token. Session: ${JSON.stringify(session)}`
-        );
+    if (!idTokenPayload)
+      throw new Error(`Missing Id Token. Session: ${JSON.stringify(session)}`);
 
-      const givenName = idTokenPayload["given_name"] as string;
-      const familyName = idTokenPayload["family_name"] as string;
-      const email = idTokenPayload["email"] as string;
-      const role = Array.isArray(idTokenPayload["cognito:groups"])
-        ? (idTokenPayload["cognito:groups"][0] as UserRole)
-        : undefined;
+    const givenName = idTokenPayload["given_name"] as string;
+    const familyName = idTokenPayload["family_name"] as string;
+    const email = idTokenPayload["email"] as string;
+    const role = Array.isArray(idTokenPayload["cognito:groups"])
+      ? (idTokenPayload["cognito:groups"][0] as UserRole)
+      : undefined;
 
-      if (!givenName || typeof givenName !== "string")
-        throw new Error(
-          `Error processing Given Name. Payload: ${JSON.stringify(
-            idTokenPayload
-          )}`
-        );
-      if (!familyName || typeof familyName !== "string")
-        throw new Error(
-          `Error processing Family Name. Payload: ${JSON.stringify(
-            idTokenPayload
-          )}`
-        );
-      if (!email || typeof email !== "string")
-        throw new Error(
-          `Error processing Email. Payload: ${JSON.stringify(idTokenPayload)}`
-        );
-      if (!role || !userRoleSchema.options.includes(role))
-        throw new Error(
-          `Error processing Role. Payload: ${JSON.stringify(idTokenPayload)}`
-        );
+    if (!givenName || typeof givenName !== "string")
+      throw new Error(
+        `Error processing Given Name. Payload: ${JSON.stringify(
+          idTokenPayload
+        )}`
+      );
+    if (!familyName || typeof familyName !== "string")
+      throw new Error(
+        `Error processing Family Name. Payload: ${JSON.stringify(
+          idTokenPayload
+        )}`
+      );
+    if (!email || typeof email !== "string")
+      throw new Error(
+        `Error processing Email. Payload: ${JSON.stringify(idTokenPayload)}`
+      );
+    if (!role || !userRoleSchema.options.includes(role))
+      throw new Error(
+        `Error processing Role. Payload: ${JSON.stringify(idTokenPayload)}`
+      );
 
-      setUser({
-        givenName,
-        familyName,
-        email,
-        role,
-      });
-    } catch (error) {
-      console.warn("Error fetching authenticated user:", error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
+    return { givenName, familyName, email, role };
   };
 
   const handleSignOut = async () => {

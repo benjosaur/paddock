@@ -211,6 +211,7 @@ export function ClientDetailModal({
                     columns={mpLogModalColumns}
                     title=""
                     searchPlaceholder="Search MP logs..."
+                    resource="mpLogs"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
@@ -228,6 +229,7 @@ export function ClientDetailModal({
                     columns={volunteerLogModalColumns}
                     title=""
                     searchPlaceholder="Search volunteer logs..."
+                    resource="volunteerLogs"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
@@ -245,6 +247,7 @@ export function ClientDetailModal({
                     columns={magLogModalColumns}
                     title=""
                     searchPlaceholder="Search MAG logs..."
+                    resource="magLogs"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
@@ -267,6 +270,7 @@ export function ClientDetailModal({
                   columns={clientRequestModalColumns}
                   title=""
                   searchPlaceholder="Search requests..."
+                  resource="clientRequests"
                 />
               ) : (
                 <p className="text-sm text-gray-500">

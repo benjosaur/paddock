@@ -161,6 +161,7 @@ export function VolunteerDetailModal({
                   columns={trainingRecordModalColumns}
                   title=""
                   searchPlaceholder="Search training records..."
+                  resource="volunteers"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
@@ -182,6 +183,7 @@ export function VolunteerDetailModal({
                   columns={volunteerLogModalColumns}
                   title=""
                   searchPlaceholder="Search volunteer logs..."
+                  resource="volunteerLogs"
                 />
               ) : (
                 <p className="text-sm text-gray-500">

@@ -48,6 +48,7 @@ export default function ExpiriesRoutes() {
             searchPlaceholder="Search expiries..."
             data={expiries}
             columns={expiryColumns}
+            resource="expiries"
           />
         }
       />

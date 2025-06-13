@@ -19,6 +19,7 @@ import ExpiriesRoutes from "./routes/ExpiriesRoutes";
 import { queryClient } from "./utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { PaddockUser } from "./types/auth";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -87,10 +88,19 @@ function AppContent() {
   );
 }
 
+const testCheckUser = async (): Promise<PaddockUser | null> => {
+  return {
+    givenName: "Ben",
+    familyName: "Blaker",
+    email: "test@example.com",
+    role: "Admin",
+  };
+};
+
 function App() {
   return (
     <Authenticator>
-      <AuthProvider>
+      <AuthProvider testCheckUser={testCheckUser}>
         <AppContent />
       </AuthProvider>
     </Authenticator>

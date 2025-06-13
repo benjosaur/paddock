@@ -79,6 +79,7 @@ export default function MpLogRoutes() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddNew={handleAddNew}
+            resource="mpLogs"
           />
         }
       />
