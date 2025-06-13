@@ -18,6 +18,7 @@ import type {
   ClientRequest,
   TableColumn,
   Volunteer,
+  Mp,
 } from "../types";
 import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +46,7 @@ export function ClientDetailModal({
   const allClientRequestsQuery = useQuery(
     trpc.clientRequests.getAll.queryOptions()
   );
+  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 
   const allMpLogs = allMpLogsQuery.data || [];
@@ -63,6 +65,7 @@ export function ClientDetailModal({
   const clientRequests = allClientRequests.filter(
     (req: ClientRequest) => req.clientId === client.id
   );
+  const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
 
   // Update columns to use tRPC data
@@ -82,7 +85,12 @@ export function ClientDetailModal({
 
   const mpLogModalColumns: TableColumn<MpLog>[] = [
     { key: "date", header: "Date" },
-    { key: "mp", header: "MP" },
+    {
+      key: "mp",
+      header: "MP",
+      render: (item: MpLog) =>
+        mps.find((mp: Mp) => mp.id === item.mpId)?.name || item.mpId,
+    },
     {
       key: "services",
       header: "Service(s)",
