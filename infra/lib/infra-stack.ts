@@ -11,7 +11,7 @@ export class InfraStack extends cdk.Stack {
     super(scope, id, props);
 
     const domainName = "paddock.health";
-    const homeRoute = "/dashboard";
+    const homeRoute = "/";
     const subdomainName = "www.paddock.health";
     const authDomainName = "auth.paddock.health";
 
@@ -63,7 +63,7 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    userPool.addDomain("CognitoDomain", {
+    const cognitoDomain = userPool.addDomain("CognitoDomain", {
       customDomain: {
         domainName: authDomainName,
         certificate: certificate,
@@ -83,7 +83,7 @@ export class InfraStack extends cdk.Stack {
       preventUserExistenceErrors: true,
       oAuth: {
         callbackUrls: ["https://" + domainName + homeRoute],
-        logoutUrls: ["https://" + domainName],
+        logoutUrls: ["https://" + domainName + homeRoute],
         flows: {
           authorizationCodeGrant: true,
         },
@@ -183,11 +183,6 @@ export class InfraStack extends cdk.Stack {
       description: "CloudFront Distribution URL",
     });
 
-    new cdk.CfnOutput(this, "DomainURL", {
-      value: `https://${domainName}`,
-      description: "Custom Domain URL",
-    });
-
     new cdk.CfnOutput(this, "UserPoolId", {
       value: userPool.userPoolId,
       description: "Cognito User Pool ID",
@@ -198,9 +193,9 @@ export class InfraStack extends cdk.Stack {
       description: "Cognito User Pool Client ID",
     });
 
-    new cdk.CfnOutput(this, "Region", {
-      value: this.region,
-      description: "AWS Region",
+    new cdk.CfnOutput(this, "CognitoCloudFrontURL", {
+      value: cognitoDomain.cloudFrontEndpoint,
+      description: "Endpoint for Hosted Cognito UI",
     });
   }
 }

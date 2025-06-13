@@ -9,7 +9,7 @@ const amplifyConfig: ResourcesConfig = {
         oauth: {
           domain: "auth.paddock.health",
           scopes: ["email", "openid", "profile"],
-          redirectSignIn: [`${window.location.origin}/dashboard`],
+          redirectSignIn: [`${window.location.origin}/`],
           redirectSignOut: [`${window.location.origin}/`],
           responseType: "code",
         },
