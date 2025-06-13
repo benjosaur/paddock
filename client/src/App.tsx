@@ -7,6 +7,7 @@ import {
 import "@aws-amplify/ui-react/styles.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Sidebar } from "./components/Sidebar";
+import { LandingPage } from "./pages/LandingPage";
 import ClientsRoutes from "./routes/ClientsRoutes";
 import MpsRoutes from "./routes/MpsRoutes";
 import MpLogRoutes from "./routes/MpLogRoutes";
@@ -33,9 +34,14 @@ function AppContent() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500">No role assigned</p>
-      </div>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </QueryClientProvider>
     );
   }
 
@@ -55,7 +61,8 @@ function AppContent() {
               }}
             >
               <Routes>
-                <Route path="/" element={<Navigate to="/mp-logs" />} />
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+                <Route path="/dashboard" element={<Navigate to="/mp-logs" />} />
                 <Route path="/mp-logs/*" element={<MpLogRoutes />} />
                 <Route
                   path="/volunteer-logs/*"
@@ -100,7 +107,7 @@ function App() {
   return (
     <AuthProvider
       testCheckUser={
-        process.env.NODE_ENV === "development" ? testCheckUser : undefined
+        import.meta.env.MODE === "development" ? testCheckUser : undefined
       }
     >
       <AppContent />
