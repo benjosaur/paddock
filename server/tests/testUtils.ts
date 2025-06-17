@@ -1,7 +1,7 @@
 import { appRouter } from "../trpc/router.ts";
 import { Request, Response } from "express";
 import { createCallerFactory } from "../trpc/trpc.ts";
-import { db } from "../db/index.ts";
+import { db } from "../db/repository.ts";
 import { User } from "../trpc/context.ts";
 
 const mockRequest = {} as Request;

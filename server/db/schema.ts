@@ -1,238 +1,608 @@
-import { db } from "./index.ts";
-
-export async function initializeDatabase() {
-  try {
-    // Create updated_at trigger function
-    await db.query(`
-      CREATE OR REPLACE FUNCTION set_updated_at()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    // Create MPs table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS mps (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        address TEXT,
-        post_code VARCHAR(20),
-        phone VARCHAR(50),
-        email VARCHAR(255),
-        next_of_kin VARCHAR(255),
-        dbs_number VARCHAR(255),
-        dbs_expiry DATE,
-        dob DATE,
-        services_offered JSONB NOT NULL DEFAULT '{}',
-        specialisms JSONB NOT NULL DEFAULT '{}',
-        transport BOOLEAN NOT NULL DEFAULT FALSE,
-        capacity VARCHAR(255),
-        training_records JSONB NOT NULL DEFAULT '[]',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create Volunteers table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS volunteers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        dob DATE,
-        address TEXT,
-        post_code VARCHAR(20),
-        phone VARCHAR(50),
-        email VARCHAR(255),
-        next_of_kin VARCHAR(255) NOT NULL,
-        dbs_number VARCHAR(255),
-        dbs_expiry DATE,
-        services_offered JSONB NOT NULL DEFAULT '{}',
-        need_types JSONB NOT NULL DEFAULT '{}',
-        transport BOOLEAN NOT NULL DEFAULT FALSE,
-        capacity VARCHAR(255),
-        specialisms JSONB DEFAULT '{}',
-        training_records JSONB NOT NULL DEFAULT '[]',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create Clients table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS clients (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        dob DATE,
-        address TEXT,
-        post_code VARCHAR(20),
-        phone VARCHAR(50),
-        email VARCHAR(255),
-        next_of_kin VARCHAR(255),
-        referred_by VARCHAR(255),
-        client_agreement_date DATE,
-        client_agreement_comments TEXT,
-        risk_assessment_date DATE,
-        risk_assessment_comments TEXT,
-        needs JSONB NOT NULL DEFAULT '{}',
-        services_provided JSONB NOT NULL DEFAULT '{}',
-        has_mp BOOLEAN DEFAULT FALSE,
-        has_attendance_allowance BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create MP Logs table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS mp_logs (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        client_id INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        mp_id INT NOT NULL REFERENCES mps(id) ON DELETE CASCADE,
-        services JSONB NOT NULL DEFAULT '{}',
-        hours_logged DECIMAL(5,2) NOT NULL,
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create Volunteer Logs table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS volunteer_logs (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        client_id INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        volunteer_id INT NOT NULL REFERENCES volunteers(id) ON DELETE CASCADE,
-        activity TEXT,
-        hours_logged DECIMAL(5,2) NOT NULL,
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create MAG Logs table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS mag_logs (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        total INT NOT NULL,
-        attendees JSONB NOT NULL DEFAULT '{}',
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create Client Requests table
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS client_requests (
-        id SERIAL PRIMARY KEY,
-        client_id INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        request_type VARCHAR(20) NOT NULL CHECK (request_type IN ('MP', 'Volunteer')),
-        start_date DATE NOT NULL,
-        schedule VARCHAR(255),
-        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create triggers for updated_at columns
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_mps
-      BEFORE UPDATE ON mps
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_volunteers
-      BEFORE UPDATE ON volunteers
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_clients
-      BEFORE UPDATE ON clients
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_mp_logs
-      BEFORE UPDATE ON mp_logs
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_volunteer_logs
-      BEFORE UPDATE ON volunteer_logs
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_mag_logs
-      BEFORE UPDATE ON mag_logs
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    await db.query(`
-      CREATE TRIGGER trigger_set_updated_at_client_requests
-      BEFORE UPDATE ON client_requests
-      FOR EACH ROW
-      EXECUTE FUNCTION set_updated_at();
-    `);
-
-    // Create indexes for better performance
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_mp_logs_mp_id ON mp_logs(mp_id)"
-    );
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_mp_logs_client_id ON mp_logs(client_id)"
-    );
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_volunteer_id ON volunteer_logs(volunteer_id)"
-    );
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_volunteer_logs_client_id ON volunteer_logs(client_id)"
-    );
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_client_requests_client_id ON client_requests(client_id)"
-    );
-    await db.query(
-      "CREATE INDEX IF NOT EXISTS idx_client_requests_status ON client_requests(status)"
-    );
-
-    console.log("Database tables initialized successfully");
-  } catch (error) {
-    console.error("Error initializing database:", error);
-    throw error;
-  }
-}
-
-export async function dropAllTables() {
-  try {
-    await db.query("DROP TABLE IF EXISTS mp_logs CASCADE");
-    await db.query("DROP TABLE IF EXISTS volunteer_logs CASCADE");
-    await db.query("DROP TABLE IF EXISTS client_requests CASCADE");
-    await db.query("DROP TABLE IF EXISTS mag_logs CASCADE");
-    await db.query("DROP TABLE IF EXISTS mps CASCADE");
-    await db.query("DROP TABLE IF EXISTS volunteers CASCADE");
-    await db.query("DROP TABLE IF EXISTS clients CASCADE");
-    await db.query("DROP FUNCTION IF EXISTS set_updated_at() CASCADE");
-
-    console.log("All database tables dropped successfully");
-  } catch (error) {
-    console.error("Error dropping database tables:", error);
-    throw error;
-  }
-}
+const seededDataModel = {
+  ModelName: "WiveyCares",
+  ModelMetadata: {
+    Author: "",
+    DateCreated: "Jun 14, 2025, 02:29 PM",
+    DateLastModified: "Jun 17, 2025, 05:09 PM",
+    Description: "",
+    AWSService: "Amazon DynamoDB",
+    Version: "3.0",
+  },
+  DataModel: [
+    {
+      TableName: "Network",
+      KeyAttributes: {
+        PartitionKey: {
+          AttributeName: "pK",
+          AttributeType: "S",
+        },
+        SortKey: {
+          AttributeName: "sK",
+          AttributeType: "S",
+        },
+      },
+      NonKeyAttributes: [
+        {
+          AttributeName: "entityType",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "dateOfBirth",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "postCode",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "date",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "recordName",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "recordExpiry",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "details",
+          AttributeType: "M",
+        },
+      ],
+      TableFacets: [],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "GSI1",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "entityType",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+        {
+          IndexName: "GSI2",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "sK",
+              AttributeType: "S",
+            },
+            SortKey: {
+              AttributeName: "pK",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+        {
+          IndexName: "GSI3",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "entityType",
+              AttributeType: "S",
+            },
+            SortKey: {
+              AttributeName: "recordExpiry",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+        {
+          IndexName: "GSI4",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "entityType",
+              AttributeType: "S",
+            },
+            SortKey: {
+              AttributeName: "date",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+        {
+          IndexName: "GSI5",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "entityType",
+              AttributeType: "S",
+            },
+            SortKey: {
+              AttributeName: "postCode",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+      ],
+      TableData: [
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "c#1",
+          },
+          entityType: {
+            S: "client",
+          },
+          dateOfBirth: {
+            S: "2024-10-15T06:04:12.543Z",
+          },
+          postCode: {
+            S: "TA1 3PT",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+              address: {
+                S: "61626 Schmidt Divide",
+              },
+              phone: {
+                S: "+447449334336",
+              },
+              email: {
+                S: "hello@hello.com",
+              },
+              nextOfKin: {
+                S: "Neal Lehner",
+              },
+              referredBy: {
+                S: "Kari Thiel",
+              },
+              clientAgreementDate: {
+                S: "2026-03-08T02:50:13.086Z",
+              },
+              clientAgreementComments: {
+                S: "None",
+              },
+              riskAssessmentDate: {
+                S: "2026-03-08T02:50:13.086Z",
+              },
+              riskAssessmentComments: {
+                S: "None",
+              },
+              needs: {
+                L: [
+                  {
+                    S: "Cookies",
+                  },
+                  {
+                    S: "Befriending",
+                  },
+                ],
+              },
+              services: {
+                L: [
+                  {
+                    S: "Personal Care",
+                  },
+                  {
+                    S: "Washing",
+                  },
+                ],
+              },
+              attendanceAllowance: {
+                S: "Pending",
+              },
+              notes: {
+                S: "None",
+              },
+              createdAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedBy: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "mp#1",
+          },
+          sK: {
+            S: "mp#1",
+          },
+          entityType: {
+            S: "mp",
+          },
+          dateOfBirth: {
+            S: "2025-02-14T22:27:33.362Z",
+          },
+          postCode: {
+            S: "TA2 3PT",
+          },
+          recordName: {
+            S: "DBS#321321",
+          },
+          recordExpiry: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Richard Schamberger",
+              },
+              address: {
+                S: "76648 Sawayn Stravenue",
+              },
+              phone: {
+                S: "+447449334336",
+              },
+              email: {
+                S: "hello@hello.com",
+              },
+              nextOfKin: {
+                S: "Neal Lehner",
+              },
+              needs: {
+                L: [
+                  {
+                    S: "Cookies",
+                  },
+                  {
+                    S: "Befriending",
+                  },
+                ],
+              },
+              services: {
+                L: [
+                  {
+                    S: "Personal Care",
+                  },
+                  {
+                    S: "Washing",
+                  },
+                ],
+              },
+              specialisms: {
+                L: [
+                  {
+                    S: "Personal Care",
+                  },
+                  {
+                    S: "Washing",
+                  },
+                ],
+              },
+              transport: {
+                BOOL: true,
+              },
+              capacity: {
+                S: "1hr/week",
+              },
+              notes: {
+                S: "None",
+              },
+              createdAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedBy: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "v#1",
+          },
+          sK: {
+            S: "v#1",
+          },
+          entityType: {
+            S: "volunteer",
+          },
+          dateOfBirth: {
+            S: "2025-09-02T04:12:31.916Z",
+          },
+          postCode: {
+            S: "TA2 3PT",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Marilyn Prohaska",
+              },
+              address: {
+                S: "7159 Nelson Street",
+              },
+              phone: {
+                S: "+447449334336",
+              },
+              email: {
+                S: "hello@hello.com",
+              },
+              nextOfKin: {
+                S: "Neal Lehner",
+              },
+              needs: {
+                L: [
+                  {
+                    S: "Cookies",
+                  },
+                  {
+                    S: "Befriending",
+                  },
+                ],
+              },
+              dbsNumber: {
+                N: "321321",
+              },
+              services: {
+                L: [
+                  {
+                    S: "Personal Care",
+                  },
+                  {
+                    S: "Washing",
+                  },
+                ],
+              },
+              specialisms: {
+                L: [
+                  {
+                    S: "Personal Care",
+                  },
+                  {
+                    S: "Washing",
+                  },
+                ],
+              },
+              transport: {
+                BOOL: true,
+              },
+              capacity: {
+                S: "1hr/week",
+              },
+              notes: {
+                S: "None",
+              },
+              createdAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedAt: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+              updatedBy: {
+                S: "2025-03-31T19:10:09.364Z",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "mp#1",
+          },
+          sK: {
+            S: "tr#1",
+          },
+          entityType: {
+            S: "trainingRecord",
+          },
+          recordName: {
+            S: "Health&Safety",
+          },
+          recordExpiry: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Richard Schamberger",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "mag#1",
+          },
+          sK: {
+            S: "mag#1",
+          },
+          entityType: {
+            S: "magLog",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          details: {
+            M: {
+              totalAttendees: {
+                N: "10",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "mag#1",
+          },
+          entityType: {
+            S: "magClientLog",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "mplog#1",
+          },
+          sK: {
+            S: "mplog#1",
+          },
+          entityType: {
+            S: "mpLogMeta",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          details: {
+            M: {
+              hoursLogged: {
+                N: "1.5",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "mp#1",
+          },
+          sK: {
+            S: "mplog#1",
+          },
+          entityType: {
+            S: "mpLogMp",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Richard Schamberger",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "mplog#1",
+          },
+          entityType: {
+            S: "mpLogClient",
+          },
+          postCode: {
+            S: "TA1 3PT",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "vlog#1",
+          },
+          sK: {
+            S: "vlog#1",
+          },
+          entityType: {
+            S: "vLogMeta",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          details: {
+            M: {
+              hoursLogged: {
+                N: "1.5",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "v#1",
+          },
+          sK: {
+            S: "vlog#1",
+          },
+          entityType: {
+            S: "vLogVolunteer",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Marilyn Prohaska",
+              },
+            },
+          },
+        },
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "vlog#1",
+          },
+          entityType: {
+            S: "vLogClient",
+          },
+          postCode: {
+            S: "TA1 3PT",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+            },
+          },
+        },
+      ],
+      DataAccess: {
+        MySql: {},
+      },
+      SampleDataFormats: {
+        phone: ["identifiers", "Phone"],
+        email: ["identifiers", "Email"],
+        name: ["identifiers", "Full name"],
+        nextOfKin: ["identifiers", "Full name"],
+        dbsNumber: ["Int"],
+        dbsExpiry: ["date", "ISO 8601 date and time"],
+        dateOfBirth: ["date", "ISO 8601 date and time"],
+        address: ["identifiers", "Address"],
+        entityType: ["dataTypes", "String"],
+        referredBy: ["identifiers", "Full name"],
+        clientAgreementDate: ["date", "ISO 8601 date and time"],
+        riskAssessmentDate: ["date", "ISO 8601 date and time"],
+        createdAt: ["date", "ISO 8601 date and time"],
+        updatedAt: ["date", "ISO 8601 date and time"],
+        trainingExpiry: ["date", "ISO 8601 date and time"],
+        hours: ["Float"],
+        hoursLogged: ["Float"],
+        date: ["date", "ISO 8601 date and time"],
+        recordExpiry: ["date", "ISO 8601 date and time"],
+      },
+      BillingMode: "PAY_PER_REQUEST",
+    },
+  ],
+};

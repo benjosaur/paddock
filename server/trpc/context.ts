@@ -1,7 +1,7 @@
 import { inferAsyncReturnType } from "@trpc/server";
 import { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { db } from "../db/index.ts";
+import { db } from "../db/repository.ts";
 
 export interface User {
   role: string;
