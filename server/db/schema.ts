@@ -3,14 +3,14 @@ const seededDataModel = {
   ModelMetadata: {
     Author: "",
     DateCreated: "Jun 14, 2025, 02:29 PM",
-    DateLastModified: "Jun 17, 2025, 05:09 PM",
+    DateLastModified: "Jun 19, 2025, 07:26 PM",
     Description: "",
     AWSService: "Amazon DynamoDB",
     Version: "3.0",
   },
   DataModel: [
     {
-      TableName: "Network",
+      TableName: "WiveyCares",
       KeyAttributes: {
         PartitionKey: {
           AttributeName: "pK",
@@ -50,6 +50,22 @@ const seededDataModel = {
           AttributeName: "details",
           AttributeType: "M",
         },
+        {
+          AttributeName: "createdAt",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "updatedAt",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "updatedBy",
+          AttributeType: "S",
+        },
+        {
+          AttributeName: "entityOwner",
+          AttributeType: "S",
+        },
       ],
       TableFacets: [],
       GlobalSecondaryIndexes: [
@@ -57,6 +73,10 @@ const seededDataModel = {
           IndexName: "GSI1",
           KeyAttributes: {
             PartitionKey: {
+              AttributeName: "entityOwner",
+              AttributeType: "S",
+            },
+            SortKey: {
               AttributeName: "entityType",
               AttributeType: "S",
             },
@@ -202,19 +222,25 @@ const seededDataModel = {
               attendanceAllowance: {
                 S: "Pending",
               },
+              attendsMag: {
+                BOOL: false,
+              },
               notes: {
                 S: "None",
               },
-              createdAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedBy: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
           },
         },
         {
@@ -295,16 +321,19 @@ const seededDataModel = {
               notes: {
                 S: "None",
               },
-              createdAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedBy: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "mp",
           },
         },
         {
@@ -382,16 +411,19 @@ const seededDataModel = {
               notes: {
                 S: "None",
               },
-              createdAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedAt: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
-              updatedBy: {
-                S: "2025-03-31T19:10:09.364Z",
-              },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "volunteer",
           },
         },
         {
@@ -417,6 +449,18 @@ const seededDataModel = {
               },
             },
           },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "mp",
+          },
         },
         {
           pK: {
@@ -438,6 +482,18 @@ const seededDataModel = {
               },
             },
           },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "main",
+          },
         },
         {
           pK: {
@@ -447,14 +503,32 @@ const seededDataModel = {
             S: "mag#1",
           },
           entityType: {
-            S: "magClientLog",
+            S: "magLog",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
           },
           details: {
             M: {
               name: {
                 S: "Miss Sadie Batz",
               },
+              notes: {
+                S: "None",
+              },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
           },
         },
         {
@@ -465,7 +539,7 @@ const seededDataModel = {
             S: "mplog#1",
           },
           entityType: {
-            S: "mpLogMeta",
+            S: "mpLog",
           },
           date: {
             S: "2025-12-01T07:20:39.894Z",
@@ -476,6 +550,18 @@ const seededDataModel = {
                 N: "1.5",
               },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "main",
           },
         },
         {
@@ -486,7 +572,10 @@ const seededDataModel = {
             S: "mplog#1",
           },
           entityType: {
-            S: "mpLogMp",
+            S: "mpLog",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
           },
           details: {
             M: {
@@ -494,6 +583,18 @@ const seededDataModel = {
                 S: "Richard Schamberger",
               },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "mp",
           },
         },
         {
@@ -504,10 +605,13 @@ const seededDataModel = {
             S: "mplog#1",
           },
           entityType: {
-            S: "mpLogClient",
+            S: "mpLog",
           },
           postCode: {
             S: "TA1 3PT",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
           },
           details: {
             M: {
@@ -515,6 +619,18 @@ const seededDataModel = {
                 S: "Miss Sadie Batz",
               },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
           },
         },
         {
@@ -525,7 +641,7 @@ const seededDataModel = {
             S: "vlog#1",
           },
           entityType: {
-            S: "vLogMeta",
+            S: "volunteerLog",
           },
           date: {
             S: "2025-12-01T07:20:39.894Z",
@@ -537,6 +653,18 @@ const seededDataModel = {
               },
             },
           },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "main",
+          },
         },
         {
           pK: {
@@ -546,7 +674,10 @@ const seededDataModel = {
             S: "vlog#1",
           },
           entityType: {
-            S: "vLogVolunteer",
+            S: "volunteerLog",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
           },
           details: {
             M: {
@@ -554,6 +685,18 @@ const seededDataModel = {
                 S: "Marilyn Prohaska",
               },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "volunteer",
           },
         },
         {
@@ -564,10 +707,13 @@ const seededDataModel = {
             S: "vlog#1",
           },
           entityType: {
-            S: "vLogClient",
+            S: "volunteerLog",
           },
           postCode: {
             S: "TA1 3PT",
+          },
+          date: {
+            S: "2025-12-01T07:20:39.894Z",
           },
           details: {
             M: {
@@ -575,6 +721,90 @@ const seededDataModel = {
                 S: "Miss Sadie Batz",
               },
             },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
+          },
+        },
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "c#req#1",
+          },
+          entityType: {
+            S: "mpRequest",
+          },
+          date: {
+            S: "ASAP",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+              notes: {
+                S: "None",
+              },
+            },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
+          },
+        },
+        {
+          pK: {
+            S: "c#1",
+          },
+          sK: {
+            S: "c#req#2",
+          },
+          entityType: {
+            S: "volunteerRequest",
+          },
+          date: {
+            S: "ASAP",
+          },
+          details: {
+            M: {
+              name: {
+                S: "Miss Sadie Batz",
+              },
+              notes: {
+                S: "None",
+              },
+            },
+          },
+          createdAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedAt: {
+            S: "2025-12-01T07:20:39.894Z",
+          },
+          updatedBy: {
+            S: "me",
+          },
+          entityOwner: {
+            S: "client",
           },
         },
       ],

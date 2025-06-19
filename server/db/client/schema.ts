@@ -1,20 +1,69 @@
 import { z } from "zod";
-import { baseDetailsSchema, isoDate } from "../shared/baseSchemas";
+import { clientMetadataSchema } from "shared";
 
-export const clientReceiptSchema = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityType: z.literal("client"),
-  dateOfBirth: isoDate,
-  postCode: z.string(),
-  details: baseDetailsSchema.extend({
-    referredBy: z.string().optional(),
-    clientAgreementDate: isoDate.optional(),
-    clientAgreementComments: z.string().optional(),
-    riskAssessmentDate: isoDate.optional(),
-    riskAssessmentComments: z.string().optional(),
+export const dbClientMetadata = z.union([
+  clientMetadataSchema
+    .omit({
+      id: true,
+      mpRequests: true,
+      volunteerRequests: true,
+    })
+    .extend({
+      pK: z.string(),
+      sK: z.string(),
+      entityType: z.literal("client"),
+      entityOwner: z.literal("client"),
+    }),
+  //mprequest
+  z.object({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("clientMpRequest"),
+    date: z.string(),
+    details: z.object({ name: z.string(), notes: z.string().default("") }),
   }),
-});
+  //vrequest
+  z.object({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("clientVolunteerRequest"),
+    date: z.string(),
+    details: z.object({ name: z.string(), notes: z.string().default("") }),
+  }),
+]);
 
-export const clientUpdateSchema = clientReceiptSchema.partial();
-export const clientReceiptArraySchema = z.array(clientReceiptSchema);
+export const dbClientFull = z.union([
+  dbClientMetadata,
+  //mplog
+  z.object({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("mpLog"),
+    date: z.string(),
+    details: z.object({ name: z.string(), notes: z.string().default("") }),
+  }),
+  //vlog
+  z.object({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("volunteerLog"),
+    date: z.string(),
+    details: z.object({ name: z.string(), notes: z.string().default("") }),
+  }),
+  //maglog
+  z.object({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("magLog"),
+    date: z.string(),
+    details: z.object({ name: z.string(), notes: z.string().default("") }),
+  }),
+]);
+
+export type DbClientMetadata = z.infer<typeof dbClientMetadata>;
+export type DbClientFull = z.infer<typeof dbClientFull>;

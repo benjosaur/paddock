@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { isoDate, floatString } from "../shared/baseSchemas";
+import { isoDate, floatString } from "../shared/baseResponses";
 
-export const magLogSchema = z.object({
+export const magLogResponse = z.object({
   pK: z.string(),
   sK: z.string(),
   entityType: z.literal("magLog"),
@@ -11,7 +11,7 @@ export const magLogSchema = z.object({
   }),
 });
 
-export const magClientLogSchema = z.object({
+export const magClientLogResponse = z.object({
   pK: z.string(),
   sK: z.string(),
   entityType: z.literal("magClientLog"),
@@ -20,5 +20,5 @@ export const magClientLogSchema = z.object({
   }),
 });
 
-export const magLogArraySchema = z.array(magLogSchema);
-export const magClientLogArraySchema = z.array(magClientLogSchema);
+export const magLogArrayResponse = z.array(magLogResponse);
+export const magClientLogArrayResponse = z.array(magClientLogResponse);

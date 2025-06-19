@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isoDate, floatString, stringList } from "../shared/baseSchemas";
+import { isoDate, floatString, stringList } from "../shared/schema";
 
 export const mpLogMetaSchema = z.object({
   pK: z.string(),

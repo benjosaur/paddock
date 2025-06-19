@@ -2,11 +2,6 @@ import type { MpReceipt, MpUpdate } from "./types";
 import type { TrainingRecord } from "../training/types";
 import type { Mp, TrainingRecordItem } from "../../../shared/types";
 
-function extractIdFromPk(pk: string): number {
-  const parts = pk.split("#");
-  return parseInt(parts[parts.length - 1]);
-}
-
 function isEmptyValue(value: unknown): boolean {
   return (
     value === "" ||
@@ -28,7 +23,7 @@ export function transformMpFromDb(
   );
 
   return {
-    id: extractIdFromPk(dbMp.pK),
+    id: dbMp.pK,
     name: dbMp.details.name,
     dob: dbMp.dateOfBirth,
     address: dbMp.details.address,

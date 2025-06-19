@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { baseDetailsSchema, isoDate, stringList } from "../shared/baseSchemas";
+import { baseDetailsSchema, isoDate, stringList } from "../shared/schema";
 
 export const mpReceiptSchema = z.object({
   pK: z.string(),

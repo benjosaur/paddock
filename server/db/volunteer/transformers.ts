@@ -2,11 +2,6 @@ import type { VolunteerReceipt, VolunteerUpdate } from "./types";
 import type { TrainingRecord } from "../training/types";
 import type { Volunteer, TrainingRecordItem } from "../../../shared/types";
 
-function extractIdFromPk(pk: string): number {
-  const parts = pk.split("#");
-  return parseInt(parts[parts.length - 1]);
-}
-
 function isEmptyValue(value: unknown): boolean {
   return (
     value === "" ||
@@ -28,7 +23,7 @@ export function transformVolunteerFromDb(
   );
 
   return {
-    id: extractIdFromPk(dbVolunteer.pK),
+    id: dbVolunteer.pK,
     name: dbVolunteer.details.name,
     dob: dbVolunteer.dateOfBirth,
     address: dbVolunteer.details.address,

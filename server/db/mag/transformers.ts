@@ -1,11 +1,6 @@
 import type { MagLog as DbMagLog, MagClientLog } from "./types";
 import type { MagLog } from "../../../shared/types";
 
-function extractIdFromPk(pk: string): number {
-  const parts = pk.split("#");
-  return parseInt(parts[parts.length - 1]);
-}
-
 function isEmptyValue(value: unknown): boolean {
   return (
     value === "" ||
@@ -19,10 +14,10 @@ export function transformMagLogFromDb(
   dbMagLog: DbMagLog,
   clientLogs: MagClientLog[] = []
 ): MagLog {
-  const attendeeIds = clientLogs.map((log) => extractIdFromPk(log.pK));
+  const attendeeIds = clientLogs.map((log) => log.pK);
 
   return {
-    id: extractIdFromPk(dbMagLog.pK),
+    id: dbMagLog.pK,
     date: dbMagLog.date,
     total: parseFloat(dbMagLog.details.totalAttendees || "0"),
     attendees: attendeeIds,

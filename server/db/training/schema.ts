@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isoDate } from "../shared/baseSchemas";
+import { isoDate } from "../shared/schema";
 
 export const trainingRecordSchema = z.object({
   pK: z.string(),
