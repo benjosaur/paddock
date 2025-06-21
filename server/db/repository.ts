@@ -1,3 +1,6 @@
+// in repository schemas use default("") instead of shared nullable(), to give values to all optional fields.
+// but on way in these need to be stripped so drop null fields after parsing.
+
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 

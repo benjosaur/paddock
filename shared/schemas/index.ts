@@ -1,12 +1,9 @@
-// Nullable is used in favour of optional to force frontend to send in full data schema
-// Null will be stripped before entry into dynamoDB
-// On receipt from db Zod Schema Parsers will have .default("") to ensure present before passed back
-
 import { z } from "zod";
 
 export const trainingRecordItemSchema = z.object({
-  training: z.string(),
-  expiry: z.string(),
+  id: z.string(),
+  recordName: z.string(),
+  recordExpiry: z.union([z.string().datetime(), z.literal("never")]),
 });
 
 export const userRoleSchema = z.enum([
@@ -36,12 +33,12 @@ export const expiryItemSchema = z.object({
 const basePersonDetails = z.object({
   name: z.string(),
   address: z.string(),
-  phone: z.string().nullable(),
-  email: z.string().nullable(),
-  nextOfKin: z.string().nullable(),
-  needs: z.array(z.string()).nullable(),
-  services: z.array(z.string()).nullable(),
-  notes: z.string().nullable(),
+  phone: z.string().default(""),
+  email: z.string().default(""),
+  nextOfKin: z.string().default(""),
+  needs: z.array(z.string()).default([]),
+  services: z.array(z.string()).default([]),
+  notes: z.string().default(""),
 });
 
 export const clientMetadataSchema = z.object({
@@ -49,26 +46,26 @@ export const clientMetadataSchema = z.object({
   dateOfBirth: z.string().datetime(),
   postCode: z.string(),
   details: basePersonDetails.extend({
-    referredBy: z.string().nullable(),
-    clientAgreementDate: z.string().datetime().nullable(),
-    clientAgreementComments: z.string().nullable(),
-    riskAssessmentDate: z.string().datetime().nullable(),
-    riskAssessmentComments: z.string().nullable(),
-    attendanceAllowance: z.string().nullable(),
+    referredBy: z.string().default(""),
+    clientAgreementDate: z.string().datetime().default(""),
+    clientAgreementComments: z.string().default(""),
+    riskAssessmentDate: z.string().datetime().default(""),
+    riskAssessmentComments: z.string().default(""),
+    attendanceAllowance: z.string().default(""),
     attendsMag: z.boolean(),
   }),
   mpRequests: z.array(
     z.object({
       id: z.string(),
       date: z.string(),
-      details: z.object({ notes: z.string().nullable() }),
+      details: z.object({ notes: z.string().default("") }),
     })
   ),
   volunteerRequests: z.array(
     z.object({
       id: z.string(),
       date: z.string(),
-      details: z.object({ notes: z.string().nullable() }),
+      details: z.object({ notes: z.string().default("") }),
     })
   ),
 });
@@ -78,40 +75,46 @@ export const clientFullSchema = clientMetadataSchema.extend({
     z.object({
       id: z.string(),
       date: z.string().datetime(),
-      details: z.object({ notes: z.string().optional() }),
+      details: z.object({ notes: z.string().default("") }),
     })
   ),
   volunteerLogs: z.array(
     z.object({
       id: z.string(),
       date: z.string().datetime(),
-      details: z.object({ notes: z.string().optional() }),
+      details: z.object({ notes: z.string().default("") }),
     })
   ),
   magLogs: z.array(
     z.object({
       id: z.string(),
       date: z.string().datetime(),
-      details: z.object({ notes: z.string().optional() }),
+      details: z.object({ notes: z.string().default("") }),
     })
   ),
 });
 
-export const mpSchema = z.object({
+export const mpMetadataSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  dateOfBirth: z.string().optional(),
-  address: z.string(),
+  dateOfBirth: z.string().default(""),
   postCode: z.string(),
-  phone: z.string(),
-  email: z.string().email(),
-  nextOfKin: z.string(),
-  dbsNumber: z.string().optional(),
-  dbsExpiry: z.string(),
-  servicesOffered: z.array(z.string()),
-  specialisms: z.array(z.string()),
-  transport: z.boolean(),
-  capacity: z.string(),
+  recordName: z.string().default(""),
+  recordExpiry: z.string(),
+  details: basePersonDetails.extend({
+    specialisms: z.array(z.string()).default([]),
+    transport: z.boolean(),
+    capacity: z.string(),
+  }),
+});
+
+export const mpFullSchema = mpMetadataSchema.extend({
+  mpLogs: z.array(
+    z.object({
+      id: z.string(),
+      date: z.string().datetime(),
+      details: z.object({ notes: z.string().default("") }),
+    })
+  ),
   trainingRecords: z.array(trainingRecordItemSchema),
 });
 
@@ -171,39 +174,28 @@ export const clientRequestSchema = z.object({
   status: z.string(),
 });
 
-export const createMpSchema = mpSchema.omit({ id: true });
+export const createMpSchema = mpFullSchema.omit({ id: true });
 export const createVolunteerSchema = volunteerSchema.omit({ id: true });
-export const createClientSchema = clientMetadataSchema.omit({ id: true });
+export const createClientSchema = clientFullSchema.omit({ id: true });
 export const createMpLogSchema = mpLogSchema.omit({ id: true });
 export const createVolunteerLogSchema = volunteerLogSchema.omit({ id: true });
 export const createMagLogSchema = magLogSchema.omit({ id: true });
 export const createClientRequestSchema = clientRequestSchema.omit({ id: true });
 
-export const updateMpSchema = mpSchema.partial().extend({ id: z.string() });
-export const updateVolunteerSchema = volunteerSchema
-  .partial()
-  .extend({ id: z.string() });
-export const updateClientSchema = clientFullSchema
-  .partial()
-  .extend({ id: z.string() });
-export const updateMpLogSchema = mpLogSchema
-  .partial()
-  .extend({ id: z.string() });
-export const updateVolunteerLogSchema = volunteerLogSchema
-  .partial()
-  .extend({ id: z.string() });
-export const updateMagLogSchema = magLogSchema
-  .partial()
-  .extend({ id: z.string() });
-export const updateClientRequestSchema = clientRequestSchema
-  .partial()
-  .extend({ id: z.string() });
+export const updateMpSchema = mpFullSchema;
+export const updateVolunteerSchema = volunteerSchema;
+export const updateClientSchema = clientFullSchema;
+export const updateMpLogSchema = mpLogSchema;
+export const updateVolunteerLogSchema = volunteerLogSchema;
+export const updateMagLogSchema = magLogSchema;
+export const updateClientRequestSchema = clientRequestSchema;
 
 export const idParamSchema = z.object({
   id: z.string(),
 });
 
-export type Mp = z.infer<typeof mpSchema>;
+export type MpMetadata = z.infer<typeof mpMetadataSchema>;
+export type MpFull = z.infer<typeof mpFullSchema>;
 export type Volunteer = z.infer<typeof volunteerSchema>;
 export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
