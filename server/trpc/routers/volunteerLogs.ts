@@ -6,7 +6,7 @@ import {
   volunteerLogSchema,
 } from "shared/schemas/index.ts";
 import type { VolunteerLog } from "shared/types/index.ts";
-import { keysToCamel } from "../../utils/caseConverter.ts";
+import { keysToCamel } from "../../utils/helpers.ts";
 
 export const volunteerLogsRouter = router({
   getAll: createProtectedProcedure("volunteerLogs", "read").query(

@@ -137,11 +137,20 @@ export const volunteerFullSchema = mpFullSchema;
 export const mpLogSchema = z.object({
   id: z.string(),
   date: z.string(),
-  clientId: z.string(),
-  mpId: z.string(),
-  services: z.array(z.string()),
-  hoursLogged: z.number(),
-  notes: z.string(),
+  clients: z.array(
+    z.object({
+      id: z.string(),
+      postCode: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  mps: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ mpName: z.string() }),
+    })
+  ),
+  details: z.object({ hoursLogged: z.number(), notes: z.string().default("") }),
 });
 
 export const volunteerLogSchema = z.object({

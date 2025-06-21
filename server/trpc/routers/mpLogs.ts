@@ -6,7 +6,7 @@ import {
   mpLogSchema,
 } from "shared/schemas/index.ts";
 import type { MpLog } from "shared/types/index.ts";
-import { keysToCamel } from "../../utils/caseConverter.ts";
+import { keysToCamel } from "../../utils/helpers.ts";
 
 export const mpLogsRouter = router({
   getAll: createProtectedProcedure("mpLogs", "read").query(async ({ ctx }) => {

@@ -1,35 +1,34 @@
 import { z } from "zod";
-import { isoDate, floatString, stringList } from "../shared/schema";
+import { mpLogSchema } from "shared";
 
-export const mpLogMetaSchema = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityType: z.literal("mpLogMeta"),
-  date: isoDate,
-  details: z.object({
-    hoursLogged: floatString,
-    notes: z.string().optional(),
-    services: stringList.optional(),
+export const dbMpLog = z.union([
+  mpLogSchema
+    .omit({
+      id: true,
+      clients: true,
+      mps: true,
+    })
+    .extend({
+      pK: z.string(),
+      sK: z.string(),
+      entityType: z.literal("mpLog"),
+      entityOwner: z.literal("main"),
+    }),
+  //client
+  mpLogSchema.shape.clients.element.omit({ id: true }).extend({
+    pK: z.string(),
+    sK: z.string(),
+    entityType: z.literal("mpLog"),
+    entityOwner: z.literal("client"),
   }),
-});
-
-export const mpLogClientSchema = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityType: z.literal("mpLogClient"),
-  postCode: z.string(),
-  details: z.object({
-    name: z.string(),
+  //mp
+  mpLogSchema.shape.mps.element.omit({ id: true }).extend({
+    pK: z.string(),
+    sK: z.string(),
+    date: z.string().datetime(),
+    entityType: z.literal("mpLog"),
+    entityOwner: z.literal("mp"),
   }),
-});
+]);
 
-export const mpLogMpSchema = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityType: z.literal("mpLogMp"),
-  details: z.object({
-    name: z.string(),
-  }),
-});
-
-export const mpLogMetaArraySchema = z.array(mpLogMetaSchema);
+export type DbMpLog = z.infer<typeof dbMpLog>;
