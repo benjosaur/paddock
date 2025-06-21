@@ -29,8 +29,10 @@ export const dbMpFull = z.union([
     sK: z.string(),
     entityOwner: z.literal("mp"),
     entityType: z.literal("trainingRecord"),
-    recordName: z.string(),
-    recordExpiry: z.union([z.string().datetime(), z.literal("never")]),
+    recordName: z.string().default(""),
+    recordExpiry: z
+      .union([z.string().datetime(), z.literal("never")])
+      .default(""),
   }),
 ]);
 

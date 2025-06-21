@@ -2,8 +2,10 @@ import { z } from "zod";
 
 export const trainingRecordItemSchema = z.object({
   id: z.string(),
-  recordName: z.string(),
-  recordExpiry: z.union([z.string().datetime(), z.literal("never")]),
+  recordName: z.string().default(""),
+  recordExpiry: z
+    .union([z.string().datetime(), z.literal("n/a")])
+    .default("n/a"),
 });
 
 export const userRoleSchema = z.enum([
@@ -71,27 +73,33 @@ export const clientMetadataSchema = z.object({
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({
-  mpLogs: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string().datetime(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
-  volunteerLogs: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string().datetime(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
-  magLogs: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string().datetime(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
+  mpLogs: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string().datetime(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
+  volunteerLogs: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string().datetime(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
+  magLogs: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string().datetime(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
 });
 
 export const mpMetadataSchema = z.object({
@@ -99,7 +107,9 @@ export const mpMetadataSchema = z.object({
   dateOfBirth: z.string().default(""),
   postCode: z.string(),
   recordName: z.string().default(""),
-  recordExpiry: z.string(),
+  recordExpiry: z
+    .union([z.string().datetime(), z.literal("n/a")])
+    .default("n/a"),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),
     transport: z.boolean(),
@@ -108,34 +118,21 @@ export const mpMetadataSchema = z.object({
 });
 
 export const mpFullSchema = mpMetadataSchema.extend({
-  mpLogs: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string().datetime(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
-  trainingRecords: z.array(trainingRecordItemSchema),
+  mpLogs: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string().datetime(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
+  trainingRecords: z.array(trainingRecordItemSchema).default([]),
 });
 
-export const volunteerSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  dateOfBirth: z.string().optional(),
-  address: z.string(),
-  postCode: z.string(),
-  phone: z.string(),
-  email: z.string().email(),
-  nextOfKin: z.string(),
-  dbsNumber: z.string().optional(),
-  dbsExpiry: z.string().optional(),
-  servicesOffered: z.array(z.string()),
-  needTypes: z.array(z.string()),
-  transport: z.boolean(),
-  capacity: z.string(),
-  specialisms: z.array(z.string()).optional(),
-  trainingRecords: z.array(trainingRecordItemSchema),
-});
+export const volunteerMetadataSchema = mpMetadataSchema;
+
+export const volunteerFullSchema = mpFullSchema;
 
 export const mpLogSchema = z.object({
   id: z.string(),
@@ -175,7 +172,7 @@ export const clientRequestSchema = z.object({
 });
 
 export const createMpSchema = mpFullSchema.omit({ id: true });
-export const createVolunteerSchema = volunteerSchema.omit({ id: true });
+export const createVolunteerSchema = volunteerFullSchema.omit({ id: true });
 export const createClientSchema = clientFullSchema.omit({ id: true });
 export const createMpLogSchema = mpLogSchema.omit({ id: true });
 export const createVolunteerLogSchema = volunteerLogSchema.omit({ id: true });
@@ -183,7 +180,7 @@ export const createMagLogSchema = magLogSchema.omit({ id: true });
 export const createClientRequestSchema = clientRequestSchema.omit({ id: true });
 
 export const updateMpSchema = mpFullSchema;
-export const updateVolunteerSchema = volunteerSchema;
+export const updateVolunteerSchema = volunteerFullSchema;
 export const updateClientSchema = clientFullSchema;
 export const updateMpLogSchema = mpLogSchema;
 export const updateVolunteerLogSchema = volunteerLogSchema;
@@ -196,7 +193,8 @@ export const idParamSchema = z.object({
 
 export type MpMetadata = z.infer<typeof mpMetadataSchema>;
 export type MpFull = z.infer<typeof mpFullSchema>;
-export type Volunteer = z.infer<typeof volunteerSchema>;
+export type VolunteerMetadata = z.infer<typeof volunteerMetadataSchema>;
+export type VolunteerFull = z.infer<typeof volunteerFullSchema>;
 export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
 export type MpLog = z.infer<typeof mpLogSchema>;
