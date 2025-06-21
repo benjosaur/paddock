@@ -6,7 +6,6 @@ import {
 } from "./schema";
 import { client, TABLE_NAME } from "../repository";
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
-import type { ClientFull, ClientMetadata } from "../../../shared";
 
 export class ClientRepository {
   async getAll(): Promise<DbClientMetadata[]> {

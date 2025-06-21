@@ -15,7 +15,6 @@ export class ClientService {
       clients
     ) as ClientMetadata[];
     const parsedResult = clientMetadataSchema.array().parse(transformedResult);
-    console.log(parsedResult);
     return parsedResult;
   }
 
@@ -25,7 +24,6 @@ export class ClientService {
       client
     ) as ClientFull[];
     const parsedResult = clientFullSchema.array().parse(transformedResult);
-    console.log(parsedResult);
     return parsedResult;
   }
 
