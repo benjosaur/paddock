@@ -20,6 +20,30 @@ export class MpLogService {
     return parsedResult;
   }
 
+  async getBySubstring(string: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsBySubstring(string);
+    const idsToFetch = metaLogs.map((log) => log.sK);
+    const parsedResult: MpLog[] = [];
+    for (const id of idsToFetch) {
+      const fetchedLog = await this.mpLogRepository.getById(id);
+      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      parsedResult.push(parsedLog[0]);
+    }
+    return parsedResult;
+  }
+
+  async getByMpId(mpId: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsByMpId(mpId);
+    const idsToFetch = metaLogs.map((log) => log.sK);
+    const parsedResult: MpLog[] = [];
+    for (const id of idsToFetch) {
+      const fetchedLog = await this.mpLogRepository.getById(id);
+      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      parsedResult.push(parsedLog[0]);
+    }
+    return parsedResult;
+  }
+
   private groupAndTransformMpLogData(items: DbMpLog[]): MpLog[] {
     const mpLogsMap = new Map<string, Partial<MpLog>>();
 

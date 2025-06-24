@@ -25,7 +25,6 @@ export const dbMpLog = z.union([
   mpLogSchema.shape.mps.element.omit({ id: true }).extend({
     pK: z.string(),
     sK: z.string(),
-    date: z.string().datetime(),
     entityType: z.literal("mpLog"),
     entityOwner: z.literal("mp"),
   }),
