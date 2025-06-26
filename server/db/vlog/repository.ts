@@ -1,9 +1,7 @@
-// need to make sure write notes to all logs owned by clients and volunteers as well
-
 import { DbVolunteerLog, dbVolunteerLog } from "./schema";
 import { client, TABLE_NAME } from "../repository";
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { logZodError } from "../../utils/helpers";
+import { z } from "zod";
 
 export class VolunteerLogRepository {
   async getAll(): Promise<DbVolunteerLog[]> {
@@ -87,6 +85,43 @@ export class VolunteerLogRepository {
       return parsedResult;
     } catch (error) {
       console.error("Error getting volunteerLogs by volunteerId:", error);
+      throw error;
+    }
+  }
+
+  async getByDateInterval(input: {
+    startDate: string;
+    endDate: string;
+  }): Promise<DbVolunteerLog[]> {
+    const { startDate, endDate } = z
+      .object({
+        startDate: z.string().datetime(),
+        endDate: z.string().datetime(),
+      })
+      .parse(input);
+    const command = new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: "GSI4",
+      KeyConditionExpression:
+        "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
+      ExpressionAttributeNames: {
+        "#date": "date",
+      },
+      ExpressionAttributeValues: {
+        ":pk": "volunteerLog",
+        ":startDate": startDate,
+        ":endDate": endDate,
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbVolunteerLog.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Error getting volunteerLogs from db by date range:",
+        error
+      );
       throw error;
     }
   }

@@ -42,8 +42,7 @@ export const dbClientFull = z.union([
     sK: z.string(),
     entityOwner: z.literal("client"),
     entityType: z.literal("mpLog"),
-    date: z.string(),
-    details: z.object({ name: z.string(), notes: z.string().default("") }),
+    postCode: z.string(),
   }),
   //vlog
   z.object({
@@ -51,8 +50,7 @@ export const dbClientFull = z.union([
     sK: z.string(),
     entityOwner: z.literal("client"),
     entityType: z.literal("volunteerLog"),
-    date: z.string(),
-    details: z.object({ name: z.string(), notes: z.string().default("") }),
+    postCode: z.string(),
   }),
   //maglog
   z.object({
@@ -60,8 +58,6 @@ export const dbClientFull = z.union([
     sK: z.string(),
     entityOwner: z.literal("client"),
     entityType: z.literal("magLog"),
-    date: z.string(),
-    details: z.object({ name: z.string(), notes: z.string().default("") }),
   }),
 ]);
 

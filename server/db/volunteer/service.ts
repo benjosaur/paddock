@@ -2,78 +2,86 @@ import {
   VolunteerFull,
   volunteerFullSchema,
   VolunteerMetadata,
-  mpMetadataSchema,
+  volunteerMetadataSchema,
 } from "shared";
 import { VolunteerRepository } from "./repository";
 import { DbVolunteerFull, DbVolunteerMetadata } from "./schema";
+import { VolunteerLogService } from "../vlog/service";
 
 export class VolunteerService {
-  mpRepository = new VolunteerRepository();
+  volunteerRepository = new VolunteerRepository();
+  volunteerLogService = new VolunteerLogService();
+
   async getAll(): Promise<VolunteerMetadata[]> {
-    const mps = await this.mpRepository.getAll();
-    const transformedResult = this.groupAndTransformVolunteerData(
-      mps
+    const volunteers = await this.volunteerRepository.getAll();
+    const transformedResult = this.transformDbVolunteertoSharedMetaData(
+      volunteers
     ) as VolunteerMetadata[];
-    const parsedResult = mpMetadataSchema.array().parse(transformedResult);
+    const parsedResult = volunteerMetadataSchema
+      .array()
+      .parse(transformedResult);
     return parsedResult;
   }
 
-  async getById(mpId: string): Promise<VolunteerFull[]> {
-    const mp = await this.mpRepository.getById(mpId);
-    const transformedResult = this.groupAndTransformVolunteerData(
-      mp
-    ) as VolunteerFull[];
-    const parsedResult = volunteerFullSchema.array().parse(transformedResult);
-    return parsedResult;
+  async getById(volunteerId: string): Promise<VolunteerFull> {
+    const volunteer = await this.volunteerRepository.getById(volunteerId);
+    const volunteerLogIds = volunteer
+      .filter((dbResult) => dbResult.entityType == "volunteerLog")
+      .map((volunteerLog) => volunteerLog.sK);
+    const volunteerLogs = await Promise.all(
+      volunteerLogIds.map(
+        async (volunteerLogId) =>
+          await this.volunteerLogService.getById(volunteerLogId)
+      )
+    );
+    const volunteerMetadata =
+      this.transformDbVolunteertoSharedMetaData(volunteer);
+    const volunteerFull: VolunteerFull[] = [
+      { ...volunteerMetadata[0], volunteerLogs },
+    ];
+    const parsedResult = volunteerFullSchema.array().parse(volunteerFull);
+    return parsedResult[0];
   }
 
-  private groupAndTransformVolunteerData(
+  private transformDbVolunteertoSharedMetaData(
     items: DbVolunteerMetadata[] | DbVolunteerFull[]
-  ): VolunteerMetadata[] | VolunteerFull[] {
-    const mpsMap = new Map<string, Partial<VolunteerFull>>();
+  ): VolunteerMetadata[] {
+    const volunteersMap = new Map<string, Partial<VolunteerFull>>();
 
     for (const item of items) {
-      const mpId = item.pK;
+      const volunteerId = item.pK;
 
-      if (!mpsMap.has(mpId)) {
-        mpsMap.set(mpId, {
-          id: mpId,
+      if (!volunteersMap.has(volunteerId)) {
+        volunteersMap.set(volunteerId, {
+          id: volunteerId,
         });
       }
 
-      const mp = mpsMap.get(mpId)!;
+      const volunteer = volunteersMap.get(volunteerId)!;
 
       switch (item.entityType) {
         case "volunteer":
-          mp.dateOfBirth = item.dateOfBirth;
-          mp.postCode = item.postCode;
-          mp.details = item.details;
-          mp.recordName = item.recordName;
-          mp.recordExpiry = item.recordExpiry;
-          break;
-        case "volunteerLog":
-          if (!mp.mpLogs) mp.mpLogs = [];
-          mp.mpLogs.push({
-            id: item.sK,
-            date: item.date,
-            details: {
-              notes: item.details.notes,
-            },
-          });
+          volunteer.dateOfBirth = item.dateOfBirth;
+          volunteer.postCode = item.postCode;
+          volunteer.details = item.details;
+          volunteer.recordName = item.recordName;
+          volunteer.recordExpiry = item.recordExpiry;
           break;
         case "trainingRecord":
-          if (!mp.trainingRecords) mp.trainingRecords = [];
-          mp.trainingRecords.push({
+          if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
+          volunteer.trainingRecords.push({
             id: item.sK,
             recordName: item.recordName,
             recordExpiry: item.recordExpiry,
           });
+          break;
+        case "volunteerLog":
           break;
         default:
           throw new Error(`Undefined Case: ${item}`);
       }
     }
 
-    return Array.from(mpsMap.values()) as VolunteerMetadata[] | VolunteerFull[];
+    return Array.from(volunteersMap.values()) as VolunteerMetadata[];
   }
 }

@@ -13,11 +13,11 @@ export class MpLogService {
     return parsedResult;
   }
 
-  async getById(mpLogId: string): Promise<MpLog[]> {
+  async getById(mpLogId: string): Promise<MpLog> {
     const mp = await this.mpLogRepository.getById(mpLogId);
     const transformedResult = this.groupAndTransformMpLogData(mp) as MpLog[];
     const parsedResult = mpLogSchema.array().parse(transformedResult);
-    return parsedResult;
+    return parsedResult[0];
   }
 
   async getBySubstring(string: string): Promise<MpLog[]> {
@@ -41,6 +41,16 @@ export class MpLogService {
       const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
+    return parsedResult;
+  }
+
+  async getByDateInterval(input: {
+    startDate: string;
+    endDate: string;
+  }): Promise<MpLog[]> {
+    const mag = await this.mpLogRepository.getByDateInterval(input);
+    const transformedResult = this.groupAndTransformMpLogData(mag) as MpLog[];
+    const parsedResult = mpLogSchema.array().parse(transformedResult);
     return parsedResult;
   }
 

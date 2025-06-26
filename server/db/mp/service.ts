@@ -1,26 +1,37 @@
 import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
 import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata } from "./schema";
+import { MpLogService } from "../mplog/service";
 
 export class MpService {
   mpRepository = new MpRepository();
+  mpLogService = new MpLogService();
   async getAll(): Promise<MpMetadata[]> {
     const mps = await this.mpRepository.getAll();
-    const transformedResult = this.groupAndTransformMpData(mps) as MpMetadata[];
+    const transformedResult = this.transformDbMpToSharedMetaData(
+      mps
+    ) as MpMetadata[];
     const parsedResult = mpMetadataSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async getById(mpId: string): Promise<MpFull[]> {
+  async getById(mpId: string): Promise<MpFull> {
     const mp = await this.mpRepository.getById(mpId);
-    const transformedResult = this.groupAndTransformMpData(mp) as MpFull[];
-    const parsedResult = mpFullSchema.array().parse(transformedResult);
-    return parsedResult;
+    const mpLogIds = mp
+      .filter((dbResult) => dbResult.entityType == "mpLog")
+      .map((mpLog) => mpLog.sK);
+    const mpLogs = await Promise.all(
+      mpLogIds.map(async (mpLogId) => await this.mpLogService.getById(mpLogId))
+    );
+    const mpMetadata = this.transformDbMpToSharedMetaData(mp);
+    const fullMp: MpFull[] = [{ ...mpMetadata[0], mpLogs }];
+    const parsedResult = mpFullSchema.array().parse(fullMp);
+    return parsedResult[0];
   }
 
-  private groupAndTransformMpData(
+  private transformDbMpToSharedMetaData(
     items: DbMpMetadata[] | DbMpFull[]
-  ): MpMetadata[] | MpFull[] {
+  ): MpMetadata[] {
     const mpsMap = new Map<string, Partial<MpFull>>();
 
     for (const item of items) {
@@ -42,16 +53,6 @@ export class MpService {
           mp.recordName = item.recordName;
           mp.recordExpiry = item.recordExpiry;
           break;
-        case "mpLog":
-          if (!mp.mpLogs) mp.mpLogs = [];
-          mp.mpLogs.push({
-            id: item.sK,
-            date: item.date,
-            details: {
-              notes: item.details.notes,
-            },
-          });
-          break;
         case "trainingRecord":
           if (!mp.trainingRecords) mp.trainingRecords = [];
           mp.trainingRecords.push({
@@ -59,6 +60,8 @@ export class MpService {
             recordName: item.recordName,
             recordExpiry: item.recordExpiry,
           });
+          break;
+        case "mpLog":
           break;
         default:
           throw new Error(`Undefined Case: ${item}`);

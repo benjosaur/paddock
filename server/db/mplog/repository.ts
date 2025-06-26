@@ -1,9 +1,7 @@
-// need to make sure write notes to all logs owned by clients and mps as well
-
 import { DbMpLog, dbMpLog } from "./schema";
 import { client, TABLE_NAME } from "../repository";
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { logZodError } from "../../utils/helpers";
+import { z } from "zod";
 
 export class MpLogRepository {
   async getAll(): Promise<DbMpLog[]> {
@@ -85,6 +83,40 @@ export class MpLogRepository {
       return parsedResult;
     } catch (error) {
       console.error("Error getting mpLogs by mpId:", error);
+      throw error;
+    }
+  }
+
+  async getByDateInterval(input: {
+    startDate: string;
+    endDate: string;
+  }): Promise<DbMpLog[]> {
+    const { startDate, endDate } = z
+      .object({
+        startDate: z.string().datetime(),
+        endDate: z.string().datetime(),
+      })
+      .parse(input);
+    const command = new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: "GSI4",
+      KeyConditionExpression:
+        "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
+      ExpressionAttributeNames: {
+        "#date": "date",
+      },
+      ExpressionAttributeValues: {
+        ":pk": "mpLog",
+        ":startDate": startDate,
+        ":endDate": endDate,
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbMpLog.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting mpLogs from db by date range:", error);
       throw error;
     }
   }

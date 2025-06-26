@@ -6,21 +6,20 @@ export class VolunteerLogService {
   volunteerLogRepository = new VolunteerLogRepository();
   async getAll(): Promise<VolunteerLog[]> {
     const volunteerLogs = await this.volunteerLogRepository.getAll();
-    console.log(volunteerLogs);
-    const transformedResult = this.groupAndTransformVolunteerLogData(
+    const transformedResult = this.transformDbVolunteerLogToShared(
       volunteerLogs
     ) as VolunteerLog[];
     const parsedResult = volunteerLogSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async getById(volunteerLogId: string): Promise<VolunteerLog[]> {
+  async getById(volunteerLogId: string): Promise<VolunteerLog> {
     const volunteer = await this.volunteerLogRepository.getById(volunteerLogId);
-    const transformedResult = this.groupAndTransformVolunteerLogData(
+    const transformedResult = this.transformDbVolunteerLogToShared(
       volunteer
     ) as VolunteerLog[];
     const parsedResult = volunteerLogSchema.array().parse(transformedResult);
-    return parsedResult;
+    return parsedResult[0];
   }
 
   async getBySubstring(string: string): Promise<VolunteerLog[]> {
@@ -31,7 +30,7 @@ export class VolunteerLogService {
     const parsedResult: VolunteerLog[] = [];
     for (const id of idsToFetch) {
       const fetchedLog = await this.volunteerLogRepository.getById(id);
-      const parsedLog = this.groupAndTransformVolunteerLogData(fetchedLog);
+      const parsedLog = this.transformDbVolunteerLogToShared(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
@@ -45,13 +44,25 @@ export class VolunteerLogService {
     const parsedResult: VolunteerLog[] = [];
     for (const id of idsToFetch) {
       const fetchedLog = await this.volunteerLogRepository.getById(id);
-      const parsedLog = this.groupAndTransformVolunteerLogData(fetchedLog);
+      const parsedLog = this.transformDbVolunteerLogToShared(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  private groupAndTransformVolunteerLogData(
+  async getByDateInterval(input: {
+    startDate: string;
+    endDate: string;
+  }): Promise<VolunteerLog[]> {
+    const mag = await this.volunteerLogRepository.getByDateInterval(input);
+    const transformedResult = this.transformDbVolunteerLogToShared(
+      mag
+    ) as VolunteerLog[];
+    const parsedResult = volunteerLogSchema.array().parse(transformedResult);
+    return parsedResult;
+  }
+
+  private transformDbVolunteerLogToShared(
     items: DbVolunteerLog[]
   ): VolunteerLog[] {
     const volunteerLogsMap = new Map<string, Partial<VolunteerLog>>();

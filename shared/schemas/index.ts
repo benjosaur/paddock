@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zhCN } from "zod/v4/locales";
 
 export const trainingRecordItemSchema = z.object({
   id: z.string(),
@@ -30,6 +29,53 @@ export const expiryItemSchema = z.object({
     id: z.string(),
     name: z.string(),
     type: z.enum(["mp", "volunteer"]),
+  }),
+});
+
+export const mpLogSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  clients: z.array(
+    z.object({
+      id: z.string(),
+      postCode: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  mps: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  details: z.object({
+    hoursLogged: z.number(),
+    notes: z.string().default(""),
+    services: z.array(z.string()).default([]),
+  }),
+});
+
+export const volunteerLogSchema = mpLogSchema.omit({ mps: true }).extend({
+  volunteers: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+});
+
+export const magLogSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  clients: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  details: z.object({
+    total: z.number(),
+    notes: z.string().default(""),
   }),
 });
 
@@ -74,33 +120,9 @@ export const clientMetadataSchema = z.object({
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({
-  mpLogs: z
-    .array(
-      z.object({
-        id: z.string(),
-        date: z.string().datetime(),
-        details: z.object({ notes: z.string().default("") }),
-      })
-    )
-    .default([]),
-  volunteerLogs: z
-    .array(
-      z.object({
-        id: z.string(),
-        date: z.string().datetime(),
-        details: z.object({ notes: z.string().default("") }),
-      })
-    )
-    .default([]),
-  magLogs: z
-    .array(
-      z.object({
-        id: z.string(),
-        date: z.string().datetime(),
-        details: z.object({ notes: z.string().default("") }),
-      })
-    )
-    .default([]),
+  mpLogs: z.array(mpLogSchema).default([]),
+  volunteerLogs: z.array(volunteerLogSchema).default([]),
+  magLogs: z.array(magLogSchema).default([]),
 });
 
 export const mpMetadataSchema = z.object({
@@ -111,6 +133,7 @@ export const mpMetadataSchema = z.object({
   recordExpiry: z
     .union([z.string().datetime(), z.literal("n/a")])
     .default("n/a"),
+  trainingRecords: z.array(trainingRecordItemSchema).default([]),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),
     transport: z.boolean(),
@@ -119,70 +142,13 @@ export const mpMetadataSchema = z.object({
 });
 
 export const mpFullSchema = mpMetadataSchema.extend({
-  mpLogs: z
-    .array(
-      z.object({
-        id: z.string(),
-        date: z.string().datetime(),
-        details: z.object({ notes: z.string().default("") }),
-      })
-    )
-    .default([]),
-  trainingRecords: z.array(trainingRecordItemSchema).default([]),
+  mpLogs: z.array(mpLogSchema).default([]),
 });
 
 export const volunteerMetadataSchema = mpMetadataSchema;
 
 export const volunteerFullSchema = mpFullSchema.omit({ mpLogs: true }).extend({
-  volunteerLogs: z
-    .array(
-      z.object({
-        id: z.string(),
-        date: z.string().datetime(),
-        details: z.object({ notes: z.string().default("") }),
-      })
-    )
-    .default([]),
-});
-
-export const mpLogSchema = z.object({
-  id: z.string(),
-  date: z.string(),
-  clients: z.array(
-    z.object({
-      id: z.string(),
-      postCode: z.string(),
-      details: z.object({ name: z.string() }),
-    })
-  ),
-  mps: z.array(
-    z.object({
-      id: z.string(),
-      details: z.object({ name: z.string() }),
-    })
-  ),
-  details: z.object({
-    hoursLogged: z.number(),
-    notes: z.string().default(""),
-    services: z.array(z.string()).default([]),
-  }),
-});
-
-export const volunteerLogSchema = mpLogSchema.omit({ mps: true }).extend({
-  volunteers: z.array(
-    z.object({
-      id: z.string(),
-      details: z.object({ name: z.string() }),
-    })
-  ),
-});
-
-export const magLogSchema = z.object({
-  id: z.string(),
-  date: z.string(),
-  total: z.number(),
-  attendees: z.array(z.string()),
-  notes: z.string(),
+  volunteerLogs: z.array(volunteerLogSchema).default([]),
 });
 
 export const clientRequestSchema = z.object({
