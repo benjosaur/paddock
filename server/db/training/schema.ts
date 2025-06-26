@@ -1,14 +1,18 @@
+import { trainingRecordSchema } from "shared";
 import { z } from "zod";
 
-export const trainingRecordSchema = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityType: z.literal("trainingRecord"),
-  recordName: z.string(),
-  recordExpiry: isoDate,
-  details: z.object({
-    name: z.string(),
-  }),
-});
+export const dbTrainingRecordSchema = trainingRecordSchema
+  .omit({ id: true, owner: true })
+  .extend({
+    pK: z.string(),
+    sK: z.string(),
+    entityType: z.literal("trainingRecord"),
+    entityOwner: z.union([z.literal("mp"), z.literal("volunteer")]),
+    recordName: z.string(),
+    recordExpiry: z.string().datetime(),
+    details: z.object({
+      name: z.string(),
+    }),
+  });
 
-export const trainingRecordArraySchema = z.array(trainingRecordSchema);
+export type DbTrainingRecord = z.infer<typeof dbTrainingRecordSchema>;

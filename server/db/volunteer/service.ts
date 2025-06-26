@@ -71,6 +71,7 @@ export class VolunteerService {
           if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
           volunteer.trainingRecords.push({
             id: item.sK,
+            owner: "volunteer",
             recordName: item.recordName,
             recordExpiry: item.recordExpiry,
           });

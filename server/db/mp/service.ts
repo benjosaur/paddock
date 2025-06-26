@@ -57,6 +57,7 @@ export class MpService {
           if (!mp.trainingRecords) mp.trainingRecords = [];
           mp.trainingRecords.push({
             id: item.sK,
+            owner: "mp",
             recordName: item.recordName,
             recordExpiry: item.recordExpiry,
           });

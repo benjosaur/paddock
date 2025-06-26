@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const trainingRecordItemSchema = z.object({
+export const trainingRecordSchema = z.object({
   id: z.string(),
+  owner: z.union([z.literal("mp"), z.literal("volunteer")]),
   recordName: z.string().default(""),
   recordExpiry: z
     .union([z.string().datetime(), z.literal("n/a")])
@@ -133,7 +134,7 @@ export const mpMetadataSchema = z.object({
   recordExpiry: z
     .union([z.string().datetime(), z.literal("n/a")])
     .default("n/a"),
-  trainingRecords: z.array(trainingRecordItemSchema).default([]),
+  trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),
     transport: z.boolean(),
@@ -190,7 +191,7 @@ export type MpLog = z.infer<typeof mpLogSchema>;
 export type VolunteerLog = z.infer<typeof volunteerLogSchema>;
 export type MagLog = z.infer<typeof magLogSchema>;
 export type ClientRequest = z.infer<typeof clientRequestSchema>;
-export type TrainingRecordItem = z.infer<typeof trainingRecordItemSchema>;
+export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
 export type ExpiryItem = z.infer<typeof expiryItemSchema>;

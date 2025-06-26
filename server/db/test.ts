@@ -4,6 +4,7 @@ import { MpLogService } from "./mplog/service";
 import { VolunteerService } from "./volunteer/service";
 import { VolunteerLogService } from "./vlog/service";
 import { MagLogService } from "./mag/service";
+import { TrainingRecordService } from "./training/service";
 
 const clientService = new ClientService();
 const mpService = new MpService();
@@ -11,6 +12,7 @@ const volunteerService = new VolunteerService();
 const mpLogService = new MpLogService();
 const volunteerLogService = new VolunteerLogService();
 const magLogService = new MagLogService();
+const trainingRecordService = new TrainingRecordService();
 
 // console.dir(await clientService.getAll(), { depth: null });
 // console.dir(await clientService.getById("c#1"), { depth: null });
@@ -50,3 +52,8 @@ const magLogService = new MagLogService();
 //   }),
 //   { depth: null }
 // );
+// console.dir(await trainingRecordService.getAll(), { depth: null });
+console.dir(
+  await trainingRecordService.getByExpiringBefore("2026-01-31T23:59:59Z"),
+  { depth: null }
+);
