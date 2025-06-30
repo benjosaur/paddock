@@ -1,9 +1,19 @@
+// DUPLICATIONS TO MANUALLY KEEP CONSISTENT:
+// client postCode
+//    Source: c# c# Dupes: c# mplog#, c# vlog#
+// client details::name
+//    Source: c# c# Dupes: c# mplog#, c# vlog#, c# req#
+// mp details::name
+//    Source: mp# mp# Dupes: mp# mplog#, mp# tr#
+// volunteer details::name
+//    Source: v# v# Dupes: v# vlog#, v# tr#
+
 const seededDataModel = {
   ModelName: "WiveyCares",
   ModelMetadata: {
     Author: "",
     DateCreated: "Jun 14, 2025, 02:29 PM",
-    DateLastModified: "Jun 19, 2025, 07:26 PM",
+    DateLastModified: "Jun 26, 2025, 01:32 AM",
     Description: "",
     AWSService: "Amazon DynamoDB",
     Version: "3.0",
@@ -142,6 +152,22 @@ const seededDataModel = {
             },
             SortKey: {
               AttributeName: "postCode",
+              AttributeType: "S",
+            },
+          },
+          Projection: {
+            ProjectionType: "ALL",
+          },
+        },
+        {
+          IndexName: "GSI6",
+          KeyAttributes: {
+            PartitionKey: {
+              AttributeName: "entityType",
+              AttributeType: "S",
+            },
+            SortKey: {
+              AttributeName: "entityOwner",
               AttributeType: "S",
             },
           },
@@ -477,7 +503,7 @@ const seededDataModel = {
           },
           details: {
             M: {
-              totalAttendees: {
+              total: {
                 N: "10",
               },
             },
@@ -548,6 +574,16 @@ const seededDataModel = {
             M: {
               hoursLogged: {
                 N: "1.5",
+              },
+              notes: {
+                S: "hey baws",
+              },
+              services: {
+                L: [
+                  {
+                    S: "ey baws",
+                  },
+                ],
               },
             },
           },
@@ -740,10 +776,10 @@ const seededDataModel = {
             S: "c#1",
           },
           sK: {
-            S: "c#req#1",
+            S: "req#1",
           },
           entityType: {
-            S: "mpRequest",
+            S: "clientMpRequest",
           },
           date: {
             S: "ASAP",
@@ -776,10 +812,10 @@ const seededDataModel = {
             S: "c#1",
           },
           sK: {
-            S: "c#req#2",
+            S: "req#2",
           },
           entityType: {
-            S: "volunteerRequest",
+            S: "clientVolunteerRequest",
           },
           date: {
             S: "ASAP",

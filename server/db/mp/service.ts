@@ -1,32 +1,97 @@
 import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
 import { MpRepository } from "./repository";
-import { DbMpFull, DbMpMetadata } from "./schema";
+import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { MpLogService } from "../mplog/service";
 
 export class MpService {
   mpRepository = new MpRepository();
   mpLogService = new MpLogService();
+
   async getAll(): Promise<MpMetadata[]> {
-    const mps = await this.mpRepository.getAll();
-    const transformedResult = this.transformDbMpToSharedMetaData(
-      mps
-    ) as MpMetadata[];
-    const parsedResult = mpMetadataSchema.array().parse(transformedResult);
-    return parsedResult;
+    try {
+      const mps = await this.mpRepository.getAll();
+      const transformedResult = this.transformDbMpToSharedMetaData(
+        mps
+      ) as MpMetadata[];
+      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all MPs:", error);
+      throw error;
+    }
   }
 
   async getById(mpId: string): Promise<MpFull> {
-    const mp = await this.mpRepository.getById(mpId);
-    const mpLogIds = mp
-      .filter((dbResult) => dbResult.entityType == "mpLog")
-      .map((mpLog) => mpLog.sK);
-    const mpLogs = await Promise.all(
-      mpLogIds.map(async (mpLogId) => await this.mpLogService.getById(mpLogId))
-    );
-    const mpMetadata = this.transformDbMpToSharedMetaData(mp);
-    const fullMp: MpFull[] = [{ ...mpMetadata[0], mpLogs }];
-    const parsedResult = mpFullSchema.array().parse(fullMp);
-    return parsedResult[0];
+    try {
+      const mp = await this.mpRepository.getById(mpId);
+      const mpLogIds = mp
+        .filter((dbResult) => dbResult.entityType == "mpLog")
+        .map((mpLog) => mpLog.sK);
+      const mpLogs = await Promise.all(
+        mpLogIds.map(
+          async (mpLogId) => await this.mpLogService.getById(mpLogId)
+        )
+      );
+      const mpMetadata = this.transformDbMpToSharedMetaData(mp);
+      const fullMp: MpFull[] = [{ ...mpMetadata[0], mpLogs }];
+      const parsedResult = mpFullSchema.array().parse(fullMp);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error getting MP by ID:", error);
+      throw error;
+    }
+  }
+
+  async create(newMp: Omit<MpMetadata, "id">): Promise<MpFull> {
+    try {
+      const mpToCreate: Omit<DbMpEntity, "id" | "pK" | "sK"> = {
+        ...newMp,
+        entityType: "mp",
+        entityOwner: "mp",
+      };
+      const createdMp = await this.mpRepository.create(mpToCreate);
+      const transformedMp = this.transformDbMpToSharedMetaData(createdMp);
+      const parsedResult = mpFullSchema.array().parse(transformedMp);
+      // TODO: add any training records
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error creating MP:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedMp: MpMetadata): Promise<MpFull> {
+    try {
+      const dbMp: DbMpEntity = {
+        pK: updatedMp.id,
+        sK: updatedMp.id,
+        entityType: "mp",
+        entityOwner: "mp",
+        dateOfBirth: updatedMp.dateOfBirth,
+        postCode: updatedMp.postCode,
+        recordName: updatedMp.recordName,
+        recordExpiry: updatedMp.recordExpiry,
+        details: updatedMp.details,
+      };
+
+      await this.mpRepository.update(dbMp);
+      // TODO: Update associated logs & TRs (duplicated details::name)
+      const updatedMpData = await this.getById(updatedMp.id);
+      return updatedMpData;
+    } catch (error) {
+      console.error("Service Layer Error updating MP:", error);
+      throw error;
+    }
+  }
+
+  async delete(mpId: string): Promise<number[]> {
+    try {
+      const deletedCount = await this.mpRepository.delete(mpId);
+      return deletedCount;
+    } catch (error) {
+      console.error("Service Layer Error deleting MP:", error);
+      throw error;
+    }
   }
 
   private transformDbMpToSharedMetaData(

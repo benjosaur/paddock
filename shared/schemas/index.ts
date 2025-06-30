@@ -104,20 +104,24 @@ export const clientMetadataSchema = z.object({
     attendanceAllowance: z.string().default(""),
     attendsMag: z.boolean(),
   }),
-  mpRequests: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
-  volunteerRequests: z.array(
-    z.object({
-      id: z.string(),
-      date: z.string(),
-      details: z.object({ notes: z.string().default("") }),
-    })
-  ),
+  mpRequests: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
+  volunteerRequests: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: z.string(),
+        details: z.object({ notes: z.string().default("") }),
+      })
+    )
+    .default([]),
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({

@@ -3,9 +3,12 @@ import {
   DbClientMetadata,
   DbClientFull,
   dbClientFull,
+  DbClientEntity,
+  dbClientEntity,
 } from "./schema";
 import { client, TABLE_NAME } from "../repository";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
   async getAll(): Promise<DbClientMetadata[]> {
@@ -24,7 +27,7 @@ export class ClientRepository {
       const parsedResult = dbClientMetadata.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting item:", error);
+      console.error("Repository Layer Error getting item:", error);
       throw error;
     }
   }
@@ -43,7 +46,70 @@ export class ClientRepository {
       const parsedResult = dbClientFull.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting client by ID:", error);
+      console.error("Repository Layer Error getting client by ID:", error);
+      throw error;
+    }
+  }
+
+  async create(
+    newClient: Omit<DbClientEntity, "pK" | "sK">
+  ): Promise<DbClientFull[]> {
+    const uuid = uuidv4();
+    const key = `c#${uuid}`;
+    const fullClient: DbClientEntity = { pK: key, sK: key, ...newClient };
+    const validatedFullClient = dbClientEntity.parse(fullClient);
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: validatedFullClient,
+    });
+
+    try {
+      await client.send(command);
+      const createdClient = await this.getById(key);
+      return dbClientFull.array().parse(createdClient);
+    } catch (error) {
+      console.error("Repository Layer Error creating client:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedClient: DbClientEntity): Promise<DbClientFull[]> {
+    const validatedFullClient = dbClientEntity.parse(updatedClient);
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: validatedFullClient,
+    });
+
+    try {
+      await client.send(command);
+      const updatedClientData = await this.getById(updatedClient.pK);
+      return updatedClientData;
+    } catch (error) {
+      console.error("Repository Layer Error updating client:", error);
+      throw error;
+    }
+  }
+
+  async delete(clientId: string): Promise<number[]> {
+    try {
+      const clientData = await this.getById(clientId);
+      let deletedCount = 0;
+
+      for (const item of clientData) {
+        const command = new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            pK: item.pK,
+            sK: item.sK,
+          },
+        });
+        await client.send(command);
+        deletedCount++;
+      }
+
+      return [deletedCount];
+    } catch (error) {
+      console.error("Repository Layer Error deleting client:", error);
       throw error;
     }
   }

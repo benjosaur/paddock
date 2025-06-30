@@ -1,6 +1,14 @@
-import { dbMpMetadata, DbMpMetadata, DbMpFull, dbMpFull } from "./schema";
+import {
+  dbMpMetadata,
+  DbMpMetadata,
+  DbMpFull,
+  dbMpFull,
+  DbMpEntity,
+  dbMpEntity,
+} from "./schema";
 import { client, TABLE_NAME } from "../repository";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 export class MpRepository {
   async getAll(): Promise<DbMpMetadata[]> {
@@ -38,6 +46,67 @@ export class MpRepository {
       return parsedResult;
     } catch (error) {
       console.error("Error getting mp by ID:", error);
+      throw error;
+    }
+  }
+
+  async create(newMp: Omit<DbMpEntity, "pK" | "sK">): Promise<DbMpFull[]> {
+    const uuid = uuidv4();
+    const key = `mp#${uuid}`;
+    const fullMp: DbMpEntity = { pK: key, sK: key, ...newMp };
+    const validatedFullMp = dbMpEntity.parse(fullMp);
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: validatedFullMp,
+    });
+
+    try {
+      await client.send(command);
+      const createdMp = await this.getById(key);
+      return dbMpFull.array().parse(createdMp);
+    } catch (error) {
+      console.error("Repository Layer Error creating mp:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedMp: DbMpEntity): Promise<DbMpFull[]> {
+    const validatedFullMp = dbMpEntity.parse(updatedMp);
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: validatedFullMp,
+    });
+
+    try {
+      await client.send(command);
+      const updatedMpData = await this.getById(updatedMp.pK);
+      return updatedMpData;
+    } catch (error) {
+      console.error("Repository Layer Error updating mp:", error);
+      throw error;
+    }
+  }
+
+  async delete(mpId: string): Promise<number[]> {
+    try {
+      const mpData = await this.getById(mpId);
+      let deletedCount = 0;
+
+      for (const item of mpData) {
+        const command = new DeleteCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            pK: item.pK,
+            sK: item.sK,
+          },
+        });
+        await client.send(command);
+        deletedCount++;
+      }
+
+      return [deletedCount];
+    } catch (error) {
+      console.error("Repository Layer Error deleting mp:", error);
       throw error;
     }
   }

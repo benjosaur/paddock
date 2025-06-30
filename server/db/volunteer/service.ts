@@ -5,7 +5,11 @@ import {
   volunteerMetadataSchema,
 } from "shared";
 import { VolunteerRepository } from "./repository";
-import { DbVolunteerFull, DbVolunteerMetadata } from "./schema";
+import {
+  DbVolunteerFull,
+  DbVolunteerMetadata,
+  DbVolunteerEntity,
+} from "./schema";
 import { VolunteerLogService } from "../vlog/service";
 
 export class VolunteerService {
@@ -13,34 +17,103 @@ export class VolunteerService {
   volunteerLogService = new VolunteerLogService();
 
   async getAll(): Promise<VolunteerMetadata[]> {
-    const volunteers = await this.volunteerRepository.getAll();
-    const transformedResult = this.transformDbVolunteertoSharedMetaData(
-      volunteers
-    ) as VolunteerMetadata[];
-    const parsedResult = volunteerMetadataSchema
-      .array()
-      .parse(transformedResult);
-    return parsedResult;
+    try {
+      const volunteers = await this.volunteerRepository.getAll();
+      const transformedResult = this.transformDbVolunteertoSharedMetaData(
+        volunteers
+      ) as VolunteerMetadata[];
+      const parsedResult = volunteerMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all volunteers:", error);
+      throw error;
+    }
   }
 
   async getById(volunteerId: string): Promise<VolunteerFull> {
-    const volunteer = await this.volunteerRepository.getById(volunteerId);
-    const volunteerLogIds = volunteer
-      .filter((dbResult) => dbResult.entityType == "volunteerLog")
-      .map((volunteerLog) => volunteerLog.sK);
-    const volunteerLogs = await Promise.all(
-      volunteerLogIds.map(
-        async (volunteerLogId) =>
-          await this.volunteerLogService.getById(volunteerLogId)
-      )
-    );
-    const volunteerMetadata =
-      this.transformDbVolunteertoSharedMetaData(volunteer);
-    const volunteerFull: VolunteerFull[] = [
-      { ...volunteerMetadata[0], volunteerLogs },
-    ];
-    const parsedResult = volunteerFullSchema.array().parse(volunteerFull);
-    return parsedResult[0];
+    try {
+      const volunteer = await this.volunteerRepository.getById(volunteerId);
+      const volunteerLogIds = volunteer
+        .filter((dbResult) => dbResult.entityType == "volunteerLog")
+        .map((volunteerLog) => volunteerLog.sK);
+      const volunteerLogs = await Promise.all(
+        volunteerLogIds.map(
+          async (volunteerLogId) =>
+            await this.volunteerLogService.getById(volunteerLogId)
+        )
+      );
+      const volunteerMetadata =
+        this.transformDbVolunteertoSharedMetaData(volunteer);
+      const volunteerFull: VolunteerFull[] = [
+        { ...volunteerMetadata[0], volunteerLogs },
+      ];
+      const parsedResult = volunteerFullSchema.array().parse(volunteerFull);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error getting volunteer by ID:", error);
+      throw error;
+    }
+  }
+
+  async create(
+    newVolunteer: Omit<VolunteerMetadata, "id">
+  ): Promise<VolunteerFull> {
+    try {
+      const volunteerToCreate: Omit<DbVolunteerEntity, "id" | "pK" | "sK"> = {
+        ...newVolunteer,
+        entityType: "volunteer",
+        entityOwner: "volunteer",
+      };
+      const createdVolunteer = await this.volunteerRepository.create(
+        volunteerToCreate
+      );
+      // TODO: add any training records
+      const transformedVolunteer =
+        this.transformDbVolunteertoSharedMetaData(createdVolunteer);
+      const parsedResult = volunteerFullSchema
+        .array()
+        .parse(transformedVolunteer);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error creating volunteer:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedVolunteer: VolunteerMetadata): Promise<VolunteerFull> {
+    try {
+      const dbVolunteer: DbVolunteerEntity = {
+        pK: updatedVolunteer.id,
+        sK: updatedVolunteer.id,
+        entityType: "volunteer",
+        entityOwner: "volunteer",
+        dateOfBirth: updatedVolunteer.dateOfBirth,
+        postCode: updatedVolunteer.postCode,
+        recordName: updatedVolunteer.recordName,
+        recordExpiry: updatedVolunteer.recordExpiry,
+        details: updatedVolunteer.details,
+      };
+      // TODO: Update associated logs & TRs (duplicated details::name)
+
+      await this.volunteerRepository.update(dbVolunteer);
+      const updatedVolunteerData = await this.getById(updatedVolunteer.id);
+      return updatedVolunteerData;
+    } catch (error) {
+      console.error("Service Layer Error updating volunteer:", error);
+      throw error;
+    }
+  }
+
+  async delete(volunteerId: string): Promise<number[]> {
+    try {
+      const deletedCount = await this.volunteerRepository.delete(volunteerId);
+      return deletedCount;
+    } catch (error) {
+      console.error("Service Layer Error deleting volunteer:", error);
+      throw error;
+    }
   }
 
   private transformDbVolunteertoSharedMetaData(
