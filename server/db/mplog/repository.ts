@@ -1,7 +1,8 @@
 import { DbMpLog, dbMpLog } from "./schema";
 import { client, TABLE_NAME } from "../repository";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
 
 export class MpLogRepository {
   async getAll(): Promise<DbMpLog[]> {
@@ -117,6 +118,72 @@ export class MpLogRepository {
       return parsedResult;
     } catch (error) {
       console.error("Error getting mpLogs from db by date range:", error);
+      throw error;
+    }
+  }
+
+  async create(
+    newMpLogs: (Omit<DbMpLog, "pK" | "sK"> | Omit<DbMpLog, "sK">)[]
+  ): Promise<DbMpLog[]> {
+    const uuid = uuidv4();
+    const key = `mplog#${uuid}`;
+    const newItems = newMpLogs.map((mpLog) =>
+      mpLog.entityOwner == "main"
+        ? { pK: key, sK: key, ...mpLog }
+        : {
+            sK: key,
+            ...mpLog,
+          }
+    );
+    const validatedItems = dbMpLog.array().parse(newItems);
+    try {
+      await Promise.all(
+        validatedItems.map((newItem) =>
+          client.send(new PutCommand({ TableName: TABLE_NAME, Item: newItem }))
+        )
+      );
+      const createdMpLogs = await this.getById(key);
+      return dbMpLog.array().parse(createdMpLogs);
+    } catch (error) {
+      console.error("Repository Layer Error creating mpLogs:", error);
+      throw error;
+    }
+  }
+  async update(updatedMpLogs: DbMpLog[]): Promise<DbMpLog[]> {
+    //update by first delete all associated, then add as new
+    const mpLogKey = updatedMpLogs[0].sK;
+    await this.delete(mpLogKey);
+
+    const validatedLogs = dbMpLog.array().parse(updatedMpLogs);
+    try {
+      await Promise.all(
+        validatedLogs.map((log) =>
+          client.send(new PutCommand({ TableName: TABLE_NAME, Item: log }))
+        )
+      );
+      const fetchedLogs = await this.getById(mpLogKey);
+      return fetchedLogs;
+    } catch (error) {
+      console.error("Repository Layer Error updating mpLogs:", error);
+      throw error;
+    }
+  }
+  async delete(mpLogId: string): Promise<number[]> {
+    const existingLogs = await this.getById(mpLogId);
+    try {
+      await Promise.all(
+        existingLogs.map((log) =>
+          client.send(
+            new DeleteCommand({
+              TableName: TABLE_NAME,
+              Key: { pK: log.pK, sK: log.sK },
+            })
+          )
+        )
+      );
+      return [existingLogs.length];
+    } catch (error) {
+      console.error("Repository Layer Error deleting mpLogs:", error);
       throw error;
     }
   }

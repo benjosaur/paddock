@@ -1,7 +1,8 @@
 import { DbVolunteerLog, dbVolunteerLog } from "./schema";
 import { client, TABLE_NAME } from "../repository";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
 
 export class VolunteerLogRepository {
   async getAll(): Promise<DbVolunteerLog[]> {
@@ -122,6 +123,78 @@ export class VolunteerLogRepository {
         "Error getting volunteerLogs from db by date range:",
         error
       );
+      throw error;
+    }
+  }
+
+  async create(
+    newVolunteerLogs: (
+      | Omit<DbVolunteerLog, "pK" | "sK">
+      | Omit<DbVolunteerLog, "sK">
+    )[]
+  ): Promise<DbVolunteerLog[]> {
+    const uuid = uuidv4();
+    const key = `vlog#${uuid}`;
+    const newItems = newVolunteerLogs.map((volunteerLog) =>
+      volunteerLog.entityOwner == "main"
+        ? { pK: key, sK: key, ...volunteerLog }
+        : {
+            sK: key,
+            ...volunteerLog,
+          }
+    );
+    const validatedItems = dbVolunteerLog.array().parse(newItems);
+    try {
+      await Promise.all(
+        validatedItems.map((newItem) =>
+          client.send(new PutCommand({ TableName: TABLE_NAME, Item: newItem }))
+        )
+      );
+      const createdVolunteerLogs = await this.getById(key);
+      return dbVolunteerLog.array().parse(createdVolunteerLogs);
+    } catch (error) {
+      console.error("Repository Layer Error creating volunteerLogs:", error);
+      throw error;
+    }
+  }
+
+  async update(
+    updatedVolunteerLogs: DbVolunteerLog[]
+  ): Promise<DbVolunteerLog[]> {
+    const volunteerLogKey = updatedVolunteerLogs[0].sK;
+    await this.delete(volunteerLogKey);
+
+    const validatedLogs = dbVolunteerLog.array().parse(updatedVolunteerLogs);
+    try {
+      await Promise.all(
+        validatedLogs.map((log) =>
+          client.send(new PutCommand({ TableName: TABLE_NAME, Item: log }))
+        )
+      );
+      const fetchedLogs = await this.getById(volunteerLogKey);
+      return fetchedLogs;
+    } catch (error) {
+      console.error("Repository Layer Error updating volunteerLogs:", error);
+      throw error;
+    }
+  }
+
+  async delete(volunteerLogId: string): Promise<number[]> {
+    const existingLogs = await this.getById(volunteerLogId);
+    try {
+      await Promise.all(
+        existingLogs.map((log) =>
+          client.send(
+            new DeleteCommand({
+              TableName: TABLE_NAME,
+              Key: { pK: log.pK, sK: log.sK },
+            })
+          )
+        )
+      );
+      return [existingLogs.length];
+    } catch (error) {
+      console.error("Repository Layer Error deleting volunteerLogs:", error);
       throw error;
     }
   }

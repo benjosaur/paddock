@@ -1,6 +1,6 @@
 import { MpLog, mpLogSchema } from "shared";
 import { MpLogRepository } from "./repository";
-import { DbMpLog } from "./schema";
+import { DbMpLog, DbMpLogClient, DbMpLogEntity, DbMpLogMp } from "./schema";
 
 export class MpLogService {
   mpLogRepository = new MpLogRepository();
@@ -52,6 +52,92 @@ export class MpLogService {
     const transformedResult = this.groupAndTransformMpLogData(mag) as MpLog[];
     const parsedResult = mpLogSchema.array().parse(transformedResult);
     return parsedResult;
+  }
+
+  async create(newMpLog: Omit<MpLog, "id">): Promise<MpLog> {
+    // one main log can own many mps & clients
+    const mpLogMain: Omit<DbMpLogEntity, "pK" | "sK"> = {
+      ...newMpLog,
+      entityType: "mpLog",
+      entityOwner: "main",
+    };
+    const mpLogMps: Omit<DbMpLogMp, "sK">[] = newMpLog.mps.map((mp) => ({
+      date: newMpLog.date,
+      entityType: "mpLog",
+      entityOwner: "mp",
+      pK: mp.id,
+      ...mp,
+    }));
+    const mpLogClients: Omit<DbMpLogClient, "sK">[] = newMpLog.clients.map(
+      (client) => ({
+        date: newMpLog.date,
+        entityType: "mpLog",
+        entityOwner: "client",
+        pK: client.id,
+        ...client,
+      })
+    );
+    try {
+      const createdLogs = await this.mpLogRepository.create([
+        mpLogMain,
+        ...mpLogMps,
+        ...mpLogClients,
+      ]);
+      const collatedLogs = this.groupAndTransformMpLogData(createdLogs);
+      const validatedLog = mpLogSchema.parse(collatedLogs[0]);
+      return validatedLog;
+    } catch (error) {
+      console.error("Service Layer Error creating mpLogs:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedMpLog: MpLog): Promise<MpLog> {
+    // one main log can own many mps & clients
+    const mpLogKey = updatedMpLog.id;
+    const mpLogMain: DbMpLogEntity = {
+      ...updatedMpLog,
+      pK: mpLogKey,
+      sK: mpLogKey,
+      entityType: "mpLog",
+      entityOwner: "main",
+    };
+    const mpLogMps: DbMpLogMp[] = updatedMpLog.mps.map((mp) => ({
+      pK: mp.id,
+      sK: mpLogKey,
+      date: updatedMpLog.date,
+      entityType: "mpLog",
+      entityOwner: "mp",
+      ...mp,
+    }));
+    const mpLogClients: DbMpLogClient[] = updatedMpLog.clients.map(
+      (client) => ({
+        pK: client.id,
+        sK: mpLogKey,
+        date: updatedMpLog.date,
+        entityType: "mpLog",
+        entityOwner: "client",
+        ...client,
+      })
+    );
+    try {
+      const updatedLogs = await this.mpLogRepository.update([
+        mpLogMain,
+        ...mpLogMps,
+        ...mpLogClients,
+      ]);
+      const collatedLogs = this.groupAndTransformMpLogData(updatedLogs);
+      const validatedLog = mpLogSchema.parse(collatedLogs[0]);
+      return validatedLog;
+    } catch (error) {
+      console.error("Service Layer Error creating mpLogs:", error);
+      throw error;
+    }
+  }
+
+  async delete(mpLogId: string): Promise<number> {
+    const numDeleted = await this.mpLogRepository.delete(mpLogId);
+    return numDeleted[0];
   }
 
   private groupAndTransformMpLogData(items: DbMpLog[]): MpLog[] {

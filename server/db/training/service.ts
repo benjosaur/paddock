@@ -1,6 +1,6 @@
 import { TrainingRecord, trainingRecordSchema } from "shared";
 import { TrainingRecordRepository } from "./repository";
-import { DbTrainingRecord } from "./schema";
+import { DbTrainingRecordEntity } from "./schema";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
@@ -23,8 +23,80 @@ export class TrainingRecordService {
     return parsedResult;
   }
 
+  async create(
+    ownerId: string,
+    ownerName: string,
+    record: Omit<TrainingRecord, "id">
+  ): Promise<TrainingRecord> {
+    try {
+      const recordToCreate: Omit<DbTrainingRecordEntity, "sK"> = {
+        pK: ownerId,
+        entityType: "trainingRecord",
+        entityOwner: record.owner,
+        recordName: record.recordName,
+        recordExpiry: record.recordExpiry,
+        details: { name: ownerName },
+      };
+      const createdRecord = await this.trainingRecordRepository.create(
+        recordToCreate
+      );
+      const transformedRecord =
+        this.transformDbTrainingRecordToShared(createdRecord);
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecord);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error creating training record:", error);
+      throw error;
+    }
+  }
+  async update(
+    ownerId: string,
+    ownerName: string,
+    record: TrainingRecord
+  ): Promise<TrainingRecord> {
+    try {
+      const dbRecord: DbTrainingRecordEntity = {
+        pK: ownerId,
+        sK: record.id,
+        entityType: "trainingRecord",
+        entityOwner: record.owner,
+        recordName: record.recordName,
+        recordExpiry: record.recordExpiry,
+        details: { name: ownerName },
+      };
+
+      const updatedRecord = await this.trainingRecordRepository.update(
+        dbRecord
+      );
+      const transformedRecord =
+        this.transformDbTrainingRecordToShared(updatedRecord);
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecord);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error updating training record:", error);
+      throw error;
+    }
+  }
+
+  async delete(ownerId: string, recordId: string): Promise<number[]> {
+    try {
+      const deletedCount = await this.trainingRecordRepository.delete(
+        ownerId,
+        recordId
+      );
+      return deletedCount;
+    } catch (error) {
+      console.error("Service Layer Error deleting training record:", error);
+      throw error;
+    }
+  }
+
   private transformDbTrainingRecordToShared(
-    items: DbTrainingRecord[]
+    items: DbTrainingRecordEntity[]
   ): TrainingRecord[] {
     const trainingRecordsMap = new Map<string, Partial<TrainingRecord>>();
 

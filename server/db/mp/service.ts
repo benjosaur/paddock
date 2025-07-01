@@ -2,10 +2,12 @@ import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
 import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { MpLogService } from "../mplog/service";
+import { TrainingRecordService } from "../training/service";
 
 export class MpService {
   mpRepository = new MpRepository();
   mpLogService = new MpLogService();
+  trainingRecordService = new TrainingRecordService();
 
   async getAll(): Promise<MpMetadata[]> {
     try {
@@ -61,6 +63,7 @@ export class MpService {
   }
 
   async update(updatedMp: MpMetadata): Promise<MpFull> {
+    // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const dbMp: DbMpEntity = {
         pK: updatedMp.id,
@@ -75,11 +78,42 @@ export class MpService {
       };
 
       await this.mpRepository.update(dbMp);
-      // TODO: Update associated logs & TRs (duplicated details::name)
       const updatedMpData = await this.getById(updatedMp.id);
-      return updatedMpData;
+      const parsedResult = mpFullSchema.parse(updatedMpData);
+      return parsedResult;
     } catch (error) {
       console.error("Service Layer Error updating MP:", error);
+      throw error;
+    }
+  }
+
+  async updateName(updatedMp: MpFull): Promise<MpFull> {
+    // Update name and return new Full Mp
+    try {
+      await this.update(updatedMp);
+      await Promise.all(
+        updatedMp.trainingRecords.map((record) =>
+          this.trainingRecordService.update(
+            updatedMp.id,
+            updatedMp.details.name,
+            record
+          )
+        )
+      );
+      // await Promise.all(
+      //   updatedMp.logs.map((logs) =>
+      //     this.mpLogService.update(
+      //       updatedMp.id,
+      //       updatedMp.details.name,
+      //       log
+      //     )
+      //   )
+      // );
+      const fetchedMp = await this.getById(updatedMp.id);
+      const parsedResult = mpFullSchema.parse(fetchedMp);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error updating MP Name:", error);
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { mpMetadataSchema } from "shared";
+import { dbTrainingRecordEntity } from "../training/schema";
 
 export const dbMpEntity = mpMetadataSchema
   .omit({
@@ -13,16 +14,13 @@ export const dbMpEntity = mpMetadataSchema
     entityOwner: z.literal("mp"),
   });
 
-export const dbMpTrainingRecordEntity = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("mp"),
-  entityType: z.literal("trainingRecord"),
-  recordName: z.string().default(""),
-  recordExpiry: z
-    .union([z.string().datetime(), z.literal("never")])
-    .default(""),
-});
+export const dbMpTrainingRecordEntity = dbTrainingRecordEntity
+  .omit({
+    entityOwner: true,
+  })
+  .extend({
+    entityOwner: z.literal("mp"),
+  });
 
 export const dbMpMetadata = z.union([dbMpEntity, dbMpTrainingRecordEntity]);
 

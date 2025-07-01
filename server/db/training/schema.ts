@@ -1,7 +1,7 @@
 import { trainingRecordSchema } from "shared";
 import { z } from "zod";
 
-export const dbTrainingRecordSchema = trainingRecordSchema
+export const dbTrainingRecordEntity = trainingRecordSchema
   .omit({ id: true, owner: true })
   .extend({
     pK: z.string(),
@@ -15,4 +15,4 @@ export const dbTrainingRecordSchema = trainingRecordSchema
     }),
   });
 
-export type DbTrainingRecord = z.infer<typeof dbTrainingRecordSchema>;
+export type DbTrainingRecordEntity = z.infer<typeof dbTrainingRecordEntity>;

@@ -1,10 +1,11 @@
 import { client, TABLE_NAME } from "../repository";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
-import { DbTrainingRecord, dbTrainingRecordSchema } from "./schema";
+import { DbTrainingRecordEntity, dbTrainingRecordEntity } from "./schema";
+import { v4 as uuidv4 } from "uuid";
 
 export class TrainingRecordRepository {
-  async getAll(): Promise<DbTrainingRecord[]> {
+  async getAll(): Promise<DbTrainingRecordEntity[]> {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
       IndexName: "GSI3",
@@ -15,7 +16,7 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbTrainingRecordSchema.array().parse(result.Items);
+      const parsedResult = dbTrainingRecordEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting training record:", error);
@@ -23,7 +24,9 @@ export class TrainingRecordRepository {
     }
   }
 
-  async getByExpiringBefore(expiryDate: string): Promise<DbTrainingRecord[]> {
+  async getByExpiringBefore(
+    expiryDate: string
+  ): Promise<DbTrainingRecordEntity[]> {
     const validatedExpiryDate = z.string().datetime().parse(expiryDate);
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -36,10 +39,70 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbTrainingRecordSchema.array().parse(result.Items);
+      const parsedResult = dbTrainingRecordEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting training records by expiry date:", error);
+      throw error;
+    }
+  }
+
+  async create(
+    newRecord: Omit<DbTrainingRecordEntity, "sK">
+  ): Promise<DbTrainingRecordEntity[]> {
+    try {
+      const uuid = uuidv4();
+      const recordKey = `tr#${uuid}`;
+      const fullRecord: DbTrainingRecordEntity = {
+        sK: recordKey,
+        ...newRecord,
+      };
+      const validatedRecord = dbTrainingRecordEntity.parse(fullRecord);
+      const command = new PutCommand({
+        TableName: TABLE_NAME,
+        Item: validatedRecord,
+      });
+
+      await client.send(command);
+      return [validatedRecord];
+    } catch (error) {
+      console.error("Repository Layer Error creating training record:", error);
+      throw error;
+    }
+  }
+
+  async update(
+    updatedRecord: DbTrainingRecordEntity
+  ): Promise<DbTrainingRecordEntity[]> {
+    try {
+      const validatedRecord = dbTrainingRecordEntity.parse(updatedRecord);
+      const command = new PutCommand({
+        TableName: TABLE_NAME,
+        Item: validatedRecord,
+      });
+
+      await client.send(command);
+      return [validatedRecord];
+    } catch (error) {
+      console.error("Repository Layer Error updating training record:", error);
+      throw error;
+    }
+  }
+
+  async delete(ownerId: string, recordId: string): Promise<number[]> {
+    try {
+      const command = new DeleteCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          pK: ownerId,
+          sK: recordId,
+        },
+      });
+
+      await client.send(command);
+      return [1];
+    } catch (error) {
+      console.error("Repository Layer Error deleting training record:", error);
       throw error;
     }
   }
