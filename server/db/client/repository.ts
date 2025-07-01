@@ -6,7 +6,12 @@ import {
   DbClientEntity,
   dbClientEntity,
 } from "./schema";
-import { client, TABLE_NAME } from "../repository";
+import {
+  client,
+  TABLE_NAME,
+  addCreateMiddleware,
+  addUpdateMiddleware,
+} from "../repository";
 import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
@@ -60,7 +65,7 @@ export class ClientRepository {
     const validatedFullClient = dbClientEntity.parse(fullClient);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: validatedFullClient,
+      Item: addCreateMiddleware(validatedFullClient),
     });
 
     try {
@@ -77,7 +82,7 @@ export class ClientRepository {
     const validatedFullClient = dbClientEntity.parse(updatedClient);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: validatedFullClient,
+      Item: addUpdateMiddleware(validatedFullClient),
     });
 
     try {

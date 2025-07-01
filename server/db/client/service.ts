@@ -155,21 +155,10 @@ export class ClientService {
         this.volunteerLogService.update(log)
       );
       const mpRequestUpdates = updatedClient.mpRequests.map((request) =>
-        this.requestService.update(
-          updatedClient.id,
-          updatedClient.details.name,
-          request,
-          "clientMpRequest"
-        )
+        this.requestService.update(request)
       );
       const volunteerRequestUpdates = updatedClient.volunteerRequests.map(
-        (request) =>
-          this.requestService.update(
-            updatedClient.id,
-            updatedClient.details.name,
-            request,
-            "clientVolunteerRequest"
-          )
+        (request) => this.requestService.update(request)
       );
       await Promise.all([
         clientEntityUpdate,
@@ -224,20 +213,20 @@ export class ClientService {
           if (!client.mpRequests) client.mpRequests = [];
           client.mpRequests.push({
             id: item.sK,
-            date: item.date,
-            details: {
-              notes: item.details.notes,
-            },
+            clientId: item.pK,
+            requestType: "mp",
+            startDate: item.date,
+            details: item.details,
           });
           break;
         case "clientVolunteerRequest":
           if (!client.volunteerRequests) client.volunteerRequests = [];
           client.volunteerRequests.push({
             id: item.sK,
-            date: item.date,
-            details: {
-              notes: item.details.notes,
-            },
+            clientId: item.pK,
+            requestType: "volunteer",
+            startDate: item.date,
+            details: item.details,
           });
           break;
         case "mpLog":

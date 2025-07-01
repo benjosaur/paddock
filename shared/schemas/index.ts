@@ -2,11 +2,12 @@ import { z } from "zod";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),
-  owner: z.union([z.literal("mp"), z.literal("volunteer")]),
+  ownerId: z.string(),
   recordName: z.string().default(""),
   recordExpiry: z
     .union([z.string().datetime(), z.literal("n/a")])
     .default("n/a"),
+  details: z.object({ name: z.string() }),
 });
 
 export const userRoleSchema = z.enum([
@@ -21,24 +22,16 @@ export const viewConfigSchema = z.object({
   availableViews: z.array(z.string()),
 });
 
-export const expiryItemSchema = z.object({
-  id: z.string(),
-  date: z.string(),
-  type: z.enum(["training", "dbs"]),
-  name: z.string(),
-  person: z.object({
-    id: z.string(),
-    name: z.string(),
-    type: z.enum(["mp", "volunteer"]),
-  }),
-});
-
 export const clientRequestSchema = z.object({
   id: z.string(),
   clientId: z.string(),
   requestType: z.enum(["mp", "volunteer"]),
-  startDate: z.string(),
-  status: z.string(),
+  startDate: z.string().datetime(),
+  details: z.object({
+    name: z.string(),
+    notes: z.string().default(""),
+    status: z.enum(["pending", "urgent"]).default("pending"),
+  }),
 });
 
 export const mpLogSchema = z.object({
@@ -193,7 +186,6 @@ export type ClientRequest = z.infer<typeof clientRequestSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
-export type ExpiryItem = z.infer<typeof expiryItemSchema>;
 
 export type CreateMpRequest = z.infer<typeof createMpSchema>;
 export type CreateVolunteerRequest = z.infer<typeof createVolunteerSchema>;

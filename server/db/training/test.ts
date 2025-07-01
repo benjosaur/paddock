@@ -4,13 +4,13 @@ import { TrainingRecord } from "shared";
 const trainingRecordService = new TrainingRecordService();
 
 const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
-  owner: "mp",
+  ownerId: "mp#test-owner-123",
   recordName: "First Aid Certification",
   recordExpiry: "2025-12-31T23:59:59.000Z",
+  details: { name: "Robert Branson" },
 };
 
 const ownerId = "mp#test-owner-123";
-const ownerName = "Josh Walker";
 
 async function testTrainingRecordService() {
   try {
@@ -18,8 +18,6 @@ async function testTrainingRecordService() {
 
     console.log("1. Creating training record...");
     const createdRecord = await trainingRecordService.create(
-      ownerId,
-      ownerName,
       sampleTrainingRecord
     );
     console.log("Created training record:", createdRecord);
@@ -30,11 +28,7 @@ async function testTrainingRecordService() {
       recordName: "Updated First Aid Certification",
       recordExpiry: "2026-12-31T23:59:59.000Z",
     };
-    const updatedRecord = await trainingRecordService.update(
-      ownerId,
-      ownerName,
-      updatedRecordData
-    );
+    const updatedRecord = await trainingRecordService.update(updatedRecordData);
     console.log("Updated training record:", updatedRecord);
 
     console.log("3. Getting all training records...");

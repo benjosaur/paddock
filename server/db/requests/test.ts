@@ -1,16 +1,28 @@
 import { RequestService } from "./service";
-import type { ClientRequest } from "./service";
+import { ClientRequest } from "shared";
 
 const requestService = new RequestService();
 
 const sampleMpRequest: Omit<ClientRequest, "id"> = {
-  date: "ASAP",
-  details: { notes: "Urgent MP support needed" },
+  clientId: "c#test-client-123",
+  requestType: "mp",
+  startDate: "2025-01-10T10:00:00.000Z",
+  details: {
+    name: "Test Client",
+    notes: "Urgent MP support needed",
+    status: "urgent",
+  },
 };
 
 const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
-  date: "2025-01-15",
-  details: { notes: "Weekly volunteer visit requested" },
+  clientId: "c#test-client-123",
+  requestType: "volunteer",
+  startDate: "2025-01-15T10:00:00.000Z",
+  details: {
+    name: "Test Client",
+    notes: "Weekly volunteer visit requested",
+    status: "pending",
+  },
 };
 
 const clientId = "c#test-client-123";
@@ -21,20 +33,12 @@ async function testRequestService() {
     console.log("Testing Request Service...");
 
     console.log("1. Creating MP request...");
-    const createdMpRequest = await requestService.create(
-      clientId,
-      clientName,
-      sampleMpRequest,
-      "clientMpRequest"
-    );
+    const createdMpRequest = await requestService.create(sampleMpRequest);
     console.log("Created MP request:", createdMpRequest);
 
     console.log("2. Creating volunteer request...");
     const createdVolunteerRequest = await requestService.create(
-      clientId,
-      clientName,
-      sampleVolunteerRequest,
-      "clientVolunteerRequest"
+      sampleVolunteerRequest
     );
     console.log("Created volunteer request:", createdVolunteerRequest);
 
@@ -45,14 +49,13 @@ async function testRequestService() {
     console.log("4. Updating MP request...");
     const updatedMpRequestData: ClientRequest = {
       ...createdMpRequest,
-      details: { notes: "Updated MP support requirements" },
+      details: {
+        name: "Test Client",
+        notes: "Updated MP support requirements",
+        status: "pending",
+      },
     };
-    const updatedMpRequest = await requestService.update(
-      clientId,
-      clientName,
-      updatedMpRequestData,
-      "clientMpRequest"
-    );
+    const updatedMpRequest = await requestService.update(updatedMpRequestData);
     console.log("Updated MP request:", updatedMpRequest);
 
     console.log("5. Getting all requests...");
@@ -61,7 +64,7 @@ async function testRequestService() {
 
     console.log("6. Getting requests before 2025-02-01...");
     const requestsBefore = await requestService.getByStartDateBefore(
-      "2025-02-01"
+      "2025-02-01T00:00:00.000Z"
     );
     console.log("Requests before 2025-02-01:", requestsBefore);
 

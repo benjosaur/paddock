@@ -2,23 +2,25 @@ import { z } from "zod";
 
 import { clientRequestSchema } from "shared";
 
-export const dbClientMpRequestEntity = clientRequestSchema..object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("client"),
-  entityType: z.literal("clientMpRequest"),
-  date: z.string(),
-  details: z.object({ name: z.string(), notes: z.string().default("") }),
-});
+export const dbClientMpRequestEntity = clientRequestSchema
+  .omit({ id: true, clientId: true, requestType: true, startDate: true })
+  .extend({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("clientMpRequest"),
+    date: z.string().datetime(),
+  });
 
-export const dbClientVolunteerRequestEntity = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("client"),
-  entityType: z.literal("clientVolunteerRequest"),
-  date: z.string(),
-  details: z.object({ name: z.string(), notes: z.string().default("") }),
-});
+export const dbClientVolunteerRequestEntity = clientRequestSchema
+  .omit({ id: true, clientId: true, requestType: true, startDate: true })
+  .extend({
+    pK: z.string(),
+    sK: z.string(),
+    entityOwner: z.literal("client"),
+    entityType: z.literal("clientVolunteerRequest"),
+    date: z.string().datetime(),
+  });
 
 export const dbClientRequestEntity = z.union([
   dbClientMpRequestEntity,

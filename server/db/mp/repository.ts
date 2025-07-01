@@ -6,7 +6,12 @@ import {
   DbMpEntity,
   dbMpEntity,
 } from "./schema";
-import { client, TABLE_NAME } from "../repository";
+import {
+  client,
+  TABLE_NAME,
+  addCreateMiddleware,
+  addUpdateMiddleware,
+} from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
@@ -57,7 +62,7 @@ export class MpRepository {
     const validatedFullMp = dbMpEntity.parse(fullMp);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: validatedFullMp,
+      Item: addCreateMiddleware(validatedFullMp),
     });
 
     try {
@@ -74,7 +79,7 @@ export class MpRepository {
     const validatedFullMp = dbMpEntity.parse(updatedMp);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: validatedFullMp,
+      Item: addUpdateMiddleware(validatedFullMp),
     });
 
     try {

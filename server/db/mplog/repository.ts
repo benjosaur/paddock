@@ -1,5 +1,10 @@
 import { DbMpLog, dbMpLog } from "./schema";
-import { client, TABLE_NAME } from "../repository";
+import {
+  client,
+  TABLE_NAME,
+  addCreateMiddleware,
+  addUpdateMiddleware,
+} from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
@@ -139,7 +144,12 @@ export class MpLogRepository {
     try {
       await Promise.all(
         validatedItems.map((newItem) =>
-          client.send(new PutCommand({ TableName: TABLE_NAME, Item: newItem }))
+          client.send(
+            new PutCommand({
+              TableName: TABLE_NAME,
+              Item: addCreateMiddleware(newItem),
+            })
+          )
         )
       );
       const createdMpLogs = await this.getById(key);
@@ -158,7 +168,12 @@ export class MpLogRepository {
     try {
       await Promise.all(
         validatedLogs.map((log) =>
-          client.send(new PutCommand({ TableName: TABLE_NAME, Item: log }))
+          client.send(
+            new PutCommand({
+              TableName: TABLE_NAME,
+              Item: addUpdateMiddleware(log),
+            })
+          )
         )
       );
       const fetchedLogs = await this.getById(mpLogKey);

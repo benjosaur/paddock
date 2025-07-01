@@ -23,19 +23,15 @@ export class TrainingRecordService {
     return parsedResult;
   }
 
-  async create(
-    ownerId: string,
-    ownerName: string,
-    record: Omit<TrainingRecord, "id">
-  ): Promise<TrainingRecord> {
+  async create(record: Omit<TrainingRecord, "id">): Promise<TrainingRecord> {
     try {
       const recordToCreate: Omit<DbTrainingRecordEntity, "sK"> = {
-        pK: ownerId,
+        pK: record.ownerId,
         entityType: "trainingRecord",
-        entityOwner: record.owner,
+        entityOwner: record.ownerId[0] == "v" ? "volunteer" : "mp",
         recordName: record.recordName,
         recordExpiry: record.recordExpiry,
-        details: { name: ownerName },
+        details: record.details,
       };
       const createdRecord = await this.trainingRecordRepository.create(
         recordToCreate
@@ -51,20 +47,16 @@ export class TrainingRecordService {
       throw error;
     }
   }
-  async update(
-    ownerId: string,
-    ownerName: string,
-    record: TrainingRecord
-  ): Promise<TrainingRecord> {
+  async update(record: TrainingRecord): Promise<TrainingRecord> {
     try {
       const dbRecord: DbTrainingRecordEntity = {
-        pK: ownerId,
+        pK: record.ownerId,
         sK: record.id,
         entityType: "trainingRecord",
-        entityOwner: record.owner,
+        entityOwner: record.ownerId[0] == "v" ? "volunteer" : "mp",
         recordName: record.recordName,
         recordExpiry: record.recordExpiry,
-        details: { name: ownerName },
+        details: record.details,
       };
 
       const updatedRecord = await this.trainingRecordRepository.update(
@@ -114,9 +106,10 @@ export class TrainingRecordService {
       switch (item.entityType) {
         case "trainingRecord":
           trainingRecord.id = item.sK;
-          trainingRecord.owner = item.entityOwner;
+          trainingRecord.ownerId = item.pK;
           trainingRecord.recordName = item.recordName;
           trainingRecord.recordExpiry = item.recordExpiry;
+          trainingRecord.details = item.details;
           break;
         default:
           throw new Error(`Undefined Case: ${item}`);

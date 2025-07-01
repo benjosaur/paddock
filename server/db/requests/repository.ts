@@ -1,4 +1,9 @@
-import { client, TABLE_NAME } from "../repository";
+import {
+  client,
+  TABLE_NAME,
+  addCreateMiddleware,
+  addUpdateMiddleware,
+} from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { DbClientRequestEntity, dbClientRequestEntity } from "./schema";
 import { v4 as uuidv4 } from "uuid";
@@ -75,7 +80,7 @@ export class RequestRepository {
       const validatedRequest = dbClientRequestEntity.parse(fullRequest);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: validatedRequest,
+        Item: addCreateMiddleware(validatedRequest),
       });
 
       await client.send(command);
@@ -93,7 +98,7 @@ export class RequestRepository {
       const validatedRequest = dbClientRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: validatedRequest,
+        Item: addUpdateMiddleware(validatedRequest),
       });
 
       await client.send(command);

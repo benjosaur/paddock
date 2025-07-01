@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { volunteerMetadataSchema } from "shared";
+import { dbTrainingRecordEntity } from "../training/schema";
 
 export const dbVolunteerEntity = volunteerMetadataSchema
   .omit({
@@ -13,16 +14,13 @@ export const dbVolunteerEntity = volunteerMetadataSchema
     entityOwner: z.literal("volunteer"),
   });
 
-export const dbVolunteerTrainingRecordEntity = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("volunteer"),
-  entityType: z.literal("trainingRecord"),
-  recordName: z.string().default(""),
-  recordExpiry: z
-    .union([z.string().datetime(), z.literal("never")])
-    .default(""),
-});
+export const dbVolunteerTrainingRecordEntity = dbTrainingRecordEntity
+  .omit({
+    entityOwner: true,
+  })
+  .extend({
+    entityOwner: z.literal("volunteer"),
+  });
 
 export const dbVolunteerMetadata = z.union([
   dbVolunteerEntity,

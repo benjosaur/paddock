@@ -94,11 +94,7 @@ export class MpService {
       await this.update(updatedMp);
       await Promise.all(
         updatedMp.trainingRecords.map((record) =>
-          this.trainingRecordService.update(
-            updatedMp.id,
-            updatedMp.details.name,
-            record
-          )
+          this.trainingRecordService.update(record)
         )
       );
       await Promise.all(
@@ -152,9 +148,10 @@ export class MpService {
           if (!mp.trainingRecords) mp.trainingRecords = [];
           mp.trainingRecords.push({
             id: item.sK,
-            owner: "mp",
+            ownerId: item.pK,
             recordName: item.recordName,
             recordExpiry: item.recordExpiry,
+            details: item.details,
           });
           break;
         case "mpLog":

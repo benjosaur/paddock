@@ -1,8 +1,12 @@
 // in repository schemas use default("") instead of shared nullable(), to give values to all optional fields.
 // but on way in these need to be stripped so drop null fields after parsing.
 
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DeleteCommand,
+  DynamoDBDocumentClient,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const rawClient = new DynamoDBClient({
   region: "eu-west-2",
@@ -13,10 +17,32 @@ const rawClient = new DynamoDBClient({
   },
 });
 
-// Create DynamoDB Document client for easier operations
+export const TABLE_NAME = "WiveyCares";
+
 export const client = DynamoDBDocumentClient.from(rawClient);
 
-export const TABLE_NAME = "WiveyCares";
+export function addCreateMiddleware<T>(
+  input: T
+): T & { createdAt: string; updatedAt: string; updatedBy: string } {
+  const now = new Date().toISOString();
+  return dropNullFields({
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: "placeholder",
+  });
+}
+
+export function addUpdateMiddleware<T>(
+  input: T
+): T & { updatedAt: string; updatedBy: string } {
+  const now = new Date().toISOString();
+  return dropNullFields({
+    ...input,
+    updatedAt: now,
+    updatedBy: "placeholder",
+  });
+}
 
 function dropNullFields<T>(input: T): T {
   if (Array.isArray(input)) {

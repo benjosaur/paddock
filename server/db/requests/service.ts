@@ -25,19 +25,17 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async create(
-    clientId: string,
-    clientName: string,
-    request: Omit<ClientRequest, "id">,
-    entityType: "clientMpRequest" | "clientVolunteerRequest"
-  ): Promise<ClientRequest> {
+  async create(request: Omit<ClientRequest, "id">): Promise<ClientRequest> {
     try {
       const requestToCreate: Omit<DbClientRequestEntity, "sK"> = {
-        pK: clientId,
-        entityType,
+        pK: request.clientId,
+        entityType:
+          request.requestType == "mp"
+            ? "clientMpRequest"
+            : "clientVolunteerRequest",
         entityOwner: "client",
-        date: request.date,
-        details: { name: clientName, notes: request.details.notes },
+        date: request.startDate,
+        details: request.details,
       };
       const createdRequest = await this.requestRepository.create(
         requestToCreate
@@ -51,20 +49,18 @@ export class RequestService {
     }
   }
 
-  async update(
-    clientId: string,
-    clientName: string,
-    request: ClientRequest,
-    entityType: "clientMpRequest" | "clientVolunteerRequest"
-  ): Promise<ClientRequest> {
+  async update(request: ClientRequest): Promise<ClientRequest> {
     try {
       const dbRequest: DbClientRequestEntity = {
-        pK: clientId,
+        pK: request.clientId,
         sK: request.id,
-        entityType,
+        entityType:
+          request.requestType == "mp"
+            ? "clientMpRequest"
+            : "clientVolunteerRequest",
         entityOwner: "client",
-        date: request.date,
-        details: { name: clientName, notes: request.details.notes },
+        date: request.startDate,
+        details: request.details,
       };
 
       const updatedRequest = await this.requestRepository.update(dbRequest);
@@ -95,8 +91,10 @@ export class RequestService {
   ): ClientRequest[] {
     return items.map((item) => ({
       id: item.sK,
-      date: item.date,
-      details: { notes: item.details.notes },
+      clientId: item.pK,
+      requestType: item.entityType == "clientMpRequest" ? "mp" : "volunteer",
+      startDate: item.date,
+      details: item.details,
     }));
   }
 }
