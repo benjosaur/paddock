@@ -1,9 +1,9 @@
 import { ClientService } from "./service";
-import { ClientMetadata } from "shared";
+import { ClientFull } from "shared";
 
 const clientService = new ClientService();
 
-const sampleClient: Omit<ClientMetadata, "id"> = {
+const sampleClient: Omit<ClientFull, "id"> = {
   dateOfBirth: "1990-01-15T00:00:00.000Z",
   postCode: "SW1A 1AA",
   details: {
@@ -25,6 +25,9 @@ const sampleClient: Omit<ClientMetadata, "id"> = {
   },
   mpRequests: [],
   volunteerRequests: [],
+  mpLogs: [],
+  volunteerLogs: [],
+  magLogs: [],
 };
 
 async function testClientService() {
@@ -44,7 +47,7 @@ async function testClientService() {
     console.log("Total clients:", allClients.length);
 
     console.log("\n4. Updating client...");
-    const updatedClientData: ClientMetadata = {
+    const updatedClientData: ClientFull = {
       ...retrievedClient,
       details: {
         ...retrievedClient.details,

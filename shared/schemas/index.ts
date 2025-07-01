@@ -33,6 +33,14 @@ export const expiryItemSchema = z.object({
   }),
 });
 
+export const clientRequestSchema = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  requestType: z.enum(["mp", "volunteer"]),
+  startDate: z.string(),
+  status: z.string(),
+});
+
 export const mpLogSchema = z.object({
   id: z.string(),
   date: z.string(),
@@ -106,20 +114,16 @@ export const clientMetadataSchema = z.object({
   }),
   mpRequests: z
     .array(
-      z.object({
-        id: z.string(),
-        date: z.string(),
-        details: z.object({ notes: z.string().default("") }),
-      })
+      clientRequestSchema
+        .omit({ requestType: true })
+        .extend({ requestType: z.literal("mp") })
     )
     .default([]),
   volunteerRequests: z
     .array(
-      z.object({
-        id: z.string(),
-        date: z.string(),
-        details: z.object({ notes: z.string().default("") }),
-      })
+      clientRequestSchema
+        .omit({ requestType: true })
+        .extend({ requestType: z.literal("volunteer") })
     )
     .default([]),
 });
@@ -154,15 +158,6 @@ export const volunteerMetadataSchema = mpMetadataSchema;
 
 export const volunteerFullSchema = mpFullSchema.omit({ mpLogs: true }).extend({
   volunteerLogs: z.array(volunteerLogSchema).default([]),
-});
-
-export const clientRequestSchema = z.object({
-  id: z.string(),
-  clientId: z.string(),
-  requestType: z.enum(["mp", "volunteer"]),
-  startDate: z.string(),
-  schedule: z.string(),
-  status: z.string(),
 });
 
 export const createMpSchema = mpFullSchema.omit({ id: true });

@@ -3,6 +3,7 @@ import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { MpLogService } from "../mplog/service";
 import { TrainingRecordService } from "../training/service";
+import assert from "assert";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -88,7 +89,7 @@ export class MpService {
   }
 
   async updateName(updatedMp: MpFull): Promise<MpFull> {
-    // Update name and return new Full Mp
+    // Must update also duplicated name field in mplog details and training log details
     try {
       await this.update(updatedMp);
       await Promise.all(
@@ -100,17 +101,12 @@ export class MpService {
           )
         )
       );
-      // await Promise.all(
-      //   updatedMp.logs.map((logs) =>
-      //     this.mpLogService.update(
-      //       updatedMp.id,
-      //       updatedMp.details.name,
-      //       log
-      //     )
-      //   )
-      // );
+      await Promise.all(
+        updatedMp.mpLogs.map((log) => this.mpLogService.update(log))
+      );
       const fetchedMp = await this.getById(updatedMp.id);
       const parsedResult = mpFullSchema.parse(fetchedMp);
+      assert.deepStrictEqual(updatedMp, parsedResult);
       return parsedResult;
     } catch (error) {
       console.error("Service Layer Error updating MP Name:", error);

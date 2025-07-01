@@ -9,12 +9,15 @@ import { DbClientEntity, DbClientFull, DbClientMetadata } from "./schema";
 import { MpLogService } from "../mplog/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
+import { RequestService } from "../requests/service";
+import assert from "assert";
 
 export class ClientService {
   clientRepository = new ClientRepository();
   mpLogService = new MpLogService();
   volunteerLogService = new VolunteerLogService();
   magLogService = new MagLogService();
+  requestService = new RequestService();
 
   async getAll(): Promise<ClientMetadata[]> {
     try {
@@ -78,7 +81,7 @@ export class ClientService {
     }
   }
 
-  async create(newClient: Omit<ClientMetadata, "id">): Promise<ClientFull> {
+  async create(newClient: Omit<ClientFull, "id">): Promise<ClientFull> {
     try {
       const clientToCreate: Omit<DbClientEntity, "id" | "pK" | "sK"> = {
         ...newClient,
@@ -96,7 +99,8 @@ export class ClientService {
     }
   }
 
-  async update(updatedClient: ClientMetadata): Promise<ClientFull> {
+  async update(updatedClient: ClientFull): Promise<ClientFull> {
+    //note for name or postcode (only metachanges)
     try {
       const dbClient: DbClientEntity = {
         pK: updatedClient.id,
@@ -109,11 +113,76 @@ export class ClientService {
       };
 
       await this.clientRepository.update(dbClient);
-      const updatedClientData = await this.getById(updatedClient.id);
-      // TODO: Update associated logs (duplicated details::name)
-      return updatedClientData;
+      const fetchedClient = await this.getById(updatedClient.id);
+      assert.deepStrictEqual(updatedClient, fetchedClient);
+      return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
+      throw error;
+    }
+  }
+
+  async updateName(updatedClient: ClientFull): Promise<ClientFull> {
+    try {
+      const clientEntityUpdate = this.update(updatedClient);
+      const mpLogUpdates = updatedClient.mpLogs.map((log) =>
+        this.mpLogService.update(log)
+      );
+      const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
+        this.volunteerLogService.update(log)
+      );
+      await Promise.all([
+        clientEntityUpdate,
+        ...mpLogUpdates,
+        ...volunteerLogUpdates,
+      ]);
+      const fetchedClient = await this.getById(updatedClient.id);
+      assert.deepStrictEqual(updatedClient, fetchedClient);
+      return fetchedClient;
+    } catch (error) {
+      console.error("Service Layer Error updating Client Name:", error);
+      throw error;
+    }
+  }
+
+  async updatePostCode(updatedClient: ClientFull): Promise<ClientFull> {
+    try {
+      const clientEntityUpdate = this.update(updatedClient);
+      const mpLogUpdates = updatedClient.mpLogs.map((log) =>
+        this.mpLogService.update(log)
+      );
+      const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
+        this.volunteerLogService.update(log)
+      );
+      const mpRequestUpdates = updatedClient.mpRequests.map((request) =>
+        this.requestService.update(
+          updatedClient.id,
+          updatedClient.details.name,
+          request,
+          "clientMpRequest"
+        )
+      );
+      const volunteerRequestUpdates = updatedClient.volunteerRequests.map(
+        (request) =>
+          this.requestService.update(
+            updatedClient.id,
+            updatedClient.details.name,
+            request,
+            "clientVolunteerRequest"
+          )
+      );
+      await Promise.all([
+        clientEntityUpdate,
+        ...mpLogUpdates,
+        ...volunteerLogUpdates,
+        ...mpRequestUpdates,
+        ...volunteerRequestUpdates,
+      ]);
+      const fetchedClient = await this.getById(updatedClient.id);
+      assert.deepStrictEqual(updatedClient, fetchedClient);
+      return fetchedClient;
+    } catch (error) {
+      console.error("Service Layer Error updating MP Name:", error);
       throw error;
     }
   }

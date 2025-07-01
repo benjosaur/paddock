@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { clientMetadataSchema } from "shared";
+import {
+  dbClientMpRequestEntity,
+  dbClientVolunteerRequestEntity,
+} from "../requests/schema";
 
 export const dbClientEntity = clientMetadataSchema
   .omit({
@@ -13,24 +17,6 @@ export const dbClientEntity = clientMetadataSchema
     entityType: z.literal("client"),
     entityOwner: z.literal("client"),
   });
-
-export const dbClientMpRequestEntity = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("client"),
-  entityType: z.literal("clientMpRequest"),
-  date: z.string(),
-  details: z.object({ name: z.string(), notes: z.string().default("") }),
-});
-
-export const dbClientVolunteerRequestEntity = z.object({
-  pK: z.string(),
-  sK: z.string(),
-  entityOwner: z.literal("client"),
-  entityType: z.literal("clientVolunteerRequest"),
-  date: z.string(),
-  details: z.object({ name: z.string(), notes: z.string().default("") }),
-});
 
 export const dbClientMetadata = z.union([
   dbClientEntity,
@@ -69,10 +55,6 @@ export const dbClientFull = z.union([
 
 export type DbClientMetadata = z.infer<typeof dbClientMetadata>;
 export type DbClientEntity = z.infer<typeof dbClientEntity>;
-export type DbClientMpRequestEntity = z.infer<typeof dbClientMpRequestEntity>;
-export type DbClientVolunteerRequestEntity = z.infer<
-  typeof dbClientVolunteerRequestEntity
->;
 export type DbClientFull = z.infer<typeof dbClientFull>;
 export type DbClientMpLogEntity = z.infer<typeof dbClientMpLogEntity>;
 export type DbClientVolunteerLogEntity = z.infer<

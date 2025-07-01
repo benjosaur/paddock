@@ -11,10 +11,13 @@ import {
   DbVolunteerEntity,
 } from "./schema";
 import { VolunteerLogService } from "../vlog/service";
+import { TrainingRecordService } from "../training/service";
+import assert from "assert";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
   volunteerLogService = new VolunteerLogService();
+  trainingRecordService = new TrainingRecordService();
 
   async getAll(): Promise<VolunteerMetadata[]> {
     try {
@@ -95,13 +98,39 @@ export class VolunteerService {
         recordExpiry: updatedVolunteer.recordExpiry,
         details: updatedVolunteer.details,
       };
-      // TODO: Update associated logs & TRs (duplicated details::name)
 
       await this.volunteerRepository.update(dbVolunteer);
-      const updatedVolunteerData = await this.getById(updatedVolunteer.id);
-      return updatedVolunteerData;
+      const fetchedVolunteer = await this.getById(updatedVolunteer.id);
+      return fetchedVolunteer;
     } catch (error) {
       console.error("Service Layer Error updating volunteer:", error);
+      throw error;
+    }
+  }
+
+  async updateName(updatedVolunteer: VolunteerFull): Promise<VolunteerFull> {
+    try {
+      await this.update(updatedVolunteer);
+      await Promise.all(
+        updatedVolunteer.trainingRecords.map((record) =>
+          this.trainingRecordService.update(
+            updatedVolunteer.id,
+            updatedVolunteer.details.name,
+            record
+          )
+        )
+      );
+      await Promise.all(
+        updatedVolunteer.volunteerLogs.map((log) =>
+          this.volunteerLogService.update(log)
+        )
+      );
+      const fetchedVolunteer = await this.getById(updatedVolunteer.id);
+      const parsedResult = volunteerFullSchema.parse(fetchedVolunteer);
+      assert.deepStrictEqual(updatedVolunteer, parsedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error updating Volunteer Name:", error);
       throw error;
     }
   }
