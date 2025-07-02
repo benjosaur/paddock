@@ -3,38 +3,43 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Client } from "../types";
+import type { ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function ClientForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<Client, "id">>({
-    name: "",
-    dob: "",
-    address: "",
+  const [formData, setFormData] = useState<Omit<ClientMetadata, "id">>({
+    dateOfBirth: "",
     postCode: "",
-    phone: "",
-    email: "",
-    nextOfKin: "",
-    referredBy: "",
-    clientAgreementDate: "",
-    clientAgreementComments: "",
-    riskAssessmentDate: "",
-    riskAssessmentComments: "",
-    needs: [],
-    servicesProvided: [],
-    hasMp: false,
-    hasAttendanceAllowance: false,
+    details: {
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      nextOfKin: "",
+      referredBy: "",
+      clientAgreementDate: "",
+      clientAgreementComments: "",
+      riskAssessmentDate: "",
+      riskAssessmentComments: "",
+      needs: [],
+      services: [],
+      attendanceAllowance: "pending",
+      attendsMag: false,
+      notes: "",
+    },
+    mpRequests: [],
+    volunteerRequests: [],
   });
 
   const queryClient = useQueryClient();
 
   const clientQuery = useQuery({
     ...trpc.clients.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    enabled: isEditing,
   });
   const clientQueryKey = trpc.clients.getAll.queryKey();
 
@@ -62,29 +67,63 @@ export function ClientForm() {
     }
   }, [clientQuery.data]);
 
-  const handleInputChange = (field: keyof Client, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    let value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+
+    // Special case for attendance allowance checkbox
+    if (
+      field === "details.attendanceAllowance" &&
+      e.target.type === "checkbox"
+    ) {
+      value = e.target.checked ? "approved" : "pending";
+    }
+
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...(prev[parent as keyof typeof prev] as Record<string, any>),
+          [child]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
-  const handleArrayInputChange = (
-    field: "needs" | "servicesProvided",
-    value: string
-  ) => {
+  const handleArrayInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    const value = e.target.value;
     const array = value
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item !== "");
-    setFormData((prev) => ({ ...prev, [field]: array }));
+
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...(prev[parent as keyof typeof prev] as Record<string, any>),
+          [child]: array,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: array }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateClientMutation.mutate({ ...formData, id } as Client & {
+      updateClientMutation.mutate({ ...formData, id } as ClientMetadata & {
         id: number;
       });
     } else {
-      createClientMutation.mutate(formData as Omit<Client, "id">);
+      createClientMutation.mutate(formData as Omit<ClientMetadata, "id">);
     }
   };
 
@@ -110,7 +149,6 @@ export function ClientForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Contact Information
               </h3>
-
               <div>
                 <label
                   htmlFor="name"
@@ -120,12 +158,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="name"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  name="details.name"
+                  value={formData.details.name || ""}
+                  onChange={handleInputChange}
                   required
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="dob"
@@ -135,12 +173,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="dob"
+                  name="dateOfBirth"
                   type="date"
-                  value={formData.dob || ""}
-                  onChange={(e) => handleInputChange("dob", e.target.value)}
+                  value={formData.dateOfBirth || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="address"
@@ -150,11 +188,11 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="address"
-                  value={formData.address || ""}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  name="details.address"
+                  value={formData.details.address || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="postCode"
@@ -164,13 +202,11 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="postCode"
+                  name="postCode"
                   value={formData.postCode || ""}
-                  onChange={(e) =>
-                    handleInputChange("postCode", e.target.value)
-                  }
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="phone"
@@ -180,12 +216,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="phone"
+                  name="details.phone"
                   type="tel"
-                  value={formData.phone || ""}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.details.phone || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="email"
@@ -196,11 +232,10 @@ export function ClientForm() {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  value={formData.details.email || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="nextOfKin"
@@ -210,13 +245,10 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="nextOfKin"
-                  value={formData.nextOfKin || ""}
-                  onChange={(e) =>
-                    handleInputChange("nextOfKin", e.target.value)
-                  }
+                  value={formData.details.nextOfKin || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="referredBy"
@@ -226,10 +258,8 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="referredBy"
-                  value={formData.referredBy || ""}
-                  onChange={(e) =>
-                    handleInputChange("referredBy", e.target.value)
-                  }
+                  value={formData.details.referredBy || ""}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -237,8 +267,7 @@ export function ClientForm() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
                 Services & Assessments
-              </h3>
-
+              </h3>{" "}
               <div>
                 <label
                   htmlFor="clientAgreementDate"
@@ -249,13 +278,10 @@ export function ClientForm() {
                 <Input
                   id="clientAgreementDate"
                   type="date"
-                  value={formData.clientAgreementDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementDate", e.target.value)
-                  }
+                  value={formData.details.clientAgreementDate || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="clientAgreementComments"
@@ -265,13 +291,10 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="clientAgreementComments"
-                  value={formData.clientAgreementComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementComments", e.target.value)
-                  }
+                  value={formData.details.clientAgreementComments || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="riskAssessmentDate"
@@ -282,13 +305,10 @@ export function ClientForm() {
                 <Input
                   id="riskAssessmentDate"
                   type="date"
-                  value={formData.riskAssessmentDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentDate", e.target.value)
-                  }
+                  value={formData.details.riskAssessmentDate || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="riskAssessmentComments"
@@ -298,13 +318,10 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="riskAssessmentComments"
-                  value={formData.riskAssessmentComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentComments", e.target.value)
-                  }
+                  value={formData.details.riskAssessmentComments || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="needs"
@@ -314,39 +331,50 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="needs"
-                  value={formData.needs?.join(", ") || ""}
-                  onChange={(e) =>
-                    handleArrayInputChange("needs", e.target.value)
-                  }
+                  name="details.needs"
+                  value={formData.details.needs?.join(", ") || ""}
+                  onChange={handleArrayInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
-                  htmlFor="servicesProvided"
+                  htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Services Provided (comma-separated)
                 </label>
                 <Input
-                  id="servicesProvided"
-                  value={formData.servicesProvided?.join(", ") || ""}
-                  onChange={(e) =>
-                    handleArrayInputChange("servicesProvided", e.target.value)
-                  }
+                  id="services"
+                  name="details.services"
+                  value={formData.details.services?.join(", ") || ""}
+                  onChange={handleArrayInputChange}
                   placeholder="e.g., Home Care, Meal Preparation"
                 />
-              </div>
-
+              </div>{" "}
               <div className="space-y-3">
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={formData.hasMp || false}
-                    onChange={(e) =>
-                      handleInputChange("hasMp", e.target.checked)
-                    }
+                    name="hasMp"
+                    checked={formData.mpRequests?.length > 0 || false}
+                    onChange={(e) => {
+                      // This needs custom handling for the array
+                      if (
+                        e.target.checked &&
+                        formData.mpRequests?.length === 0
+                      ) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          mpRequests: [{ requestType: "mp" } as any],
+                        }));
+                      } else if (!e.target.checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          mpRequests: [],
+                        }));
+                      }
+                    }}
                     className="rounded border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-700">
@@ -357,13 +385,11 @@ export function ClientForm() {
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={formData.hasAttendanceAllowance || false}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "hasAttendanceAllowance",
-                        e.target.checked
-                      )
+                    name="details.attendanceAllowance"
+                    checked={
+                      formData.details.attendanceAllowance === "approved"
                     }
+                    onChange={handleInputChange}
                     className="rounded border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-700">

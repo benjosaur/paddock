@@ -25,8 +25,8 @@ import { AppRouterKeys } from "shared";
 interface DataTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
-  onEdit?: (id: number) => void;
-  onDelete?: (id: number) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
@@ -34,7 +34,7 @@ interface DataTableProps<T> {
   resource: AppRouterKeys;
 }
 
-export function DataTable<T extends { id: number }>({
+export function DataTable<T extends { id: string }>({
   data,
   columns,
   onEdit,
@@ -47,7 +47,7 @@ export function DataTable<T extends { id: number }>({
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const filteredData = data.filter((item) =>
     Object.values(item).some((value) =>
@@ -57,7 +57,7 @@ export function DataTable<T extends { id: number }>({
     )
   );
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
     setDeleteDialogOpen(true);
   };

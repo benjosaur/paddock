@@ -2,7 +2,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { ClientRequestForm } from "../pages/ClientRequestForm";
 import { trpc } from "../utils/trpc";
-import type { ClientRequest, TableColumn, Client } from "../types";
+import type { ClientRequest, TableColumn, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function ClientRequestRoutes() {
@@ -34,7 +34,7 @@ export default function ClientRequestRoutes() {
       key: "clientId",
       header: "Client Name",
       render: (item: ClientRequest) =>
-        clients.find((c: Client) => c.id === item.clientId)?.name ||
+        clients.find((c: ClientMetadata) => c.id === item.clientId)?.name ||
         item.clientId,
     },
     { key: "requestType", header: "Type" },
