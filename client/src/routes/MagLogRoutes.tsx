@@ -50,11 +50,12 @@ export default function MagLogRoutes() {
     navigate("/mag-logs/new");
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/mag-logs/edit/${id}`);
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/mag-logs/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteMagLogMutation.mutate({ id });
   };
 

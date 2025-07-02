@@ -54,11 +54,12 @@ export function MpsRoutes() {
     navigate("/mps/create");
   };
 
-  const handleEditNavigation = (id: number) => {
-    navigate(`/mps/edit/${id}`);
+  const handleEditNavigation = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/mps/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteMpMutation.mutate({ id });
   };
 

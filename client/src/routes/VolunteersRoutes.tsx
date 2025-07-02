@@ -63,8 +63,9 @@ export default function VolunteersRoutes() {
     navigate("/volunteers/create");
   };
 
-  const handleEditNavigation = (id: number) => {
-    navigate(`/volunteers/edit/${id}`);
+  const handleEditNavigation = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/volunteers/edit/${encodedId}`);
   };
 
   const handleViewVolunteer = (volunteer: Volunteer) => {

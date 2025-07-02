@@ -54,11 +54,12 @@ export default function VolunteerLogRoutes() {
     navigate("/volunteer-logs/create");
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/volunteer-logs/edit/${id}`);
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/volunteer-logs/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteVolunteerLogMutation.mutate({ id });
   };
 

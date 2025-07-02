@@ -31,11 +31,12 @@ export default function MpLogRoutes() {
     navigate("/mp-logs/create");
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/mp-logs/edit/${id}`);
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/mp-logs/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteMpLogMutation.mutate({ id });
   };
 

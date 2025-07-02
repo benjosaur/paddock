@@ -48,10 +48,11 @@ export default function ClientRequestRoutes() {
   };
 
   const handleEditNavigation = (id: string) => {
-    navigate(`/new-requests/edit/${id}`);
+    const encodedId = encodeURIComponent(id);
+    navigate(`/new-requests/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteClientRequestMutation.mutate({ id });
   };
 
