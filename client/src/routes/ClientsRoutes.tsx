@@ -51,9 +51,7 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
 
 export default function ClientsRoutes() {
   const navigate = useNavigate();
-  const [selectedClient, setSelectedClient] = useState<ClientMetadata | null>(
-    null
-  );
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -82,13 +80,13 @@ export default function ClientsRoutes() {
   };
 
   const handleViewClient = (client: ClientMetadata) => {
-    setSelectedClient(client);
+    setSelectedClientId(client.id);
     setIsClientModalOpen(true);
   };
 
   const handleCloseClientModal = () => {
     setIsClientModalOpen(false);
-    setSelectedClient(null);
+    setSelectedClientId(null);
   };
 
   if (clientsQuery.isLoading) return <div>Loading...</div>;
@@ -112,9 +110,9 @@ export default function ClientsRoutes() {
               onAddNew={handleAddNew}
               resource="clients"
             />
-            {selectedClient && (
+            {selectedClientId && (
               <ClientDetailModal
-                client={selectedClient}
+                clientId={selectedClientId}
                 isOpen={isClientModalOpen}
                 onClose={handleCloseClientModal}
                 onEdit={handleEdit}
