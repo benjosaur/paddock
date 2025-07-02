@@ -40,7 +40,7 @@ export function ClientDetailModal({
   >[] = [
     { key: "date", header: "Date" },
     {
-      key: "volunteerId",
+      key: "volunteer",
       header: "Volunteer",
       render: (item) =>
         item.volunteers.map((volunteer) => volunteer.details.name).join(", "),
@@ -79,8 +79,6 @@ export function ClientDetailModal({
     { key: "status", header: "Status" },
   ];
 
-  if (!client) return null;
-
   const renderDetailItem = (
     label: string,
     value?: string | string[] | number
@@ -101,6 +99,8 @@ export function ClientDetailModal({
       </div>
     );
   };
+
+  if (!client) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

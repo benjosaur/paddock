@@ -2,7 +2,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MpLogForm } from "../pages/MpLogForm";
 import { trpc } from "../utils/trpc";
-import type { MpLog, TableColumn, Client, Mp } from "../types";
+import type { MpMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function MpLogRoutes() {

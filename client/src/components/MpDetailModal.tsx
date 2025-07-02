@@ -10,58 +10,49 @@ import {
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type {
-  Mp,
-  MpLog,
-  TableColumn,
-  TrainingRecordItem,
-  Client,
-} from "../types";
+import type { MpFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
 
 interface MpDetailModalProps {
-  mp: Mp;
+  mpId: string;
   isOpen: boolean;
   onClose: () => void;
-  onEdit?: (id: number) => void;
-  onDelete?: (id: number) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MpDetailModal({
-  mp,
+  mpId,
   isOpen,
   onClose,
   onEdit,
   onDelete,
 }: MpDetailModalProps) {
-  const allMpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
+  const mp = mpQuery.data;
 
-  const allMpLogs = allMpLogsQuery.data || [];
-  const mpLogs = allMpLogs.filter((log: MpLog) => log.mpId === mp.id);
-  const clients = clientsQuery.data || [];
-
-  const mpLogModalColumns: TableColumn<MpLog>[] = [
+  const mpLogModalColumns: TableColumn<MpFull["mpLogs"][number]>[] = [
     { key: "date", header: "Date" },
     {
-      key: "clientId",
+      key: "client",
       header: "Client",
-      render: (item: MpLog) =>
-        clients.find((c: Client) => c.id === item.clientId)?.name ||
-        item.clientId,
+      render: (item) =>
+        item.clients.map((client) => client.details.name).join(", "),
     },
     {
       key: "services",
       header: "Service(s)",
-      render: (item) => item.services.join(", "),
+      render: (item) => item.details.services.join(", "),
     },
     { key: "notes", header: "Notes" },
   ];
 
-  const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
-    { key: "training", header: "Training" },
-    { key: "expiry", header: "Expiry" },
+  const trainingRecordModalColumns: TableColumn<
+    MpFull["trainingRecords"][number]
+  >[] = [
+    { key: "recordName", header: "Title" },
+    { key: "recordExpiry", header: "Expiry" },
   ];
 
   const renderDetailItem = (
@@ -85,12 +76,14 @@ export function MpDetailModal({
     );
   };
 
+  if (!mp) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            MP Details: {mp.name}
+            MP Details: {mp.details.name}
           </DialogTitle>
           <DialogDescription>
             View and manage detailed information for this MP including contact
@@ -114,15 +107,15 @@ export function MpDetailModal({
                 Contact Information
               </h3>
               {renderDetailItem("ID", mp.id)}
-              {renderDetailItem("Name", mp.name)}
-              {renderDetailItem("Address", mp.address)}
+              {renderDetailItem("Name", mp.details.name)}
+              {renderDetailItem("Address", mp.details.address)}
               {renderDetailItem("Post Code", mp.postCode)}
-              {renderDetailItem("Phone", mp.phone)}
-              {renderDetailItem("Email", mp.email)}
-              {renderDetailItem("Next of Kin", mp.nextOfKin)}
-              {renderDetailItem("DBS Number", mp.dbsNumber)}
-              {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
-              {renderDetailItem("Date of Birth", mp.dob)}
+              {renderDetailItem("Phone", mp.details.phone)}
+              {renderDetailItem("Email", mp.details.email)}
+              {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
+              {renderDetailItem("DBS Number", mp.recordName)}
+              {renderDetailItem("DBS Expiry", mp.recordExpiry)}
+              {renderDetailItem("Date of Birth", mp.dateOfBirth)}
             </TabsContent>
 
             <TabsContent
@@ -132,10 +125,13 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Offerings
               </h3>
-              {renderDetailItem("Services Offered", mp.servicesOffered)}
-              {renderDetailItem("Specialisms", mp.specialisms)}
-              {renderDetailItem("Transport", mp.transport ? "Yes" : "No")}
-              {renderDetailItem("Capacity", mp.capacity)}
+              {renderDetailItem("Services", mp.details.services)}
+              {renderDetailItem("Specialisms", mp.details.specialisms)}
+              {renderDetailItem(
+                "Transport",
+                mp.details.transport ? "Yes" : "No"
+              )}
+              {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 
             <TabsContent
@@ -147,10 +143,7 @@ export function MpDetailModal({
               </h3>
               {mp.trainingRecords.length > 0 ? (
                 <DataTable
-                  data={mp.trainingRecords.map((tr, index) => ({
-                    ...tr,
-                    id: index,
-                  }))}
+                  data={mp.trainingRecords}
                   columns={trainingRecordModalColumns}
                   title=""
                   searchPlaceholder="Search training records..."
@@ -170,9 +163,9 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 MP Logs
               </h3>
-              {mpLogs.length > 0 ? (
+              {mp.mpLogs.length > 0 ? (
                 <DataTable
-                  data={mpLogs}
+                  data={mp.mpLogs}
                   columns={mpLogModalColumns}
                   title=""
                   searchPlaceholder="Search MP logs..."

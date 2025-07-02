@@ -90,9 +90,7 @@ export class MpService {
       await this.mpRepository.update(dbMp, userId);
       const fetchedMp = await this.getById(updatedMp.id);
 
-      const { mpLogs, trainingRecords, ...restFetched } = fetchedMp;
-
-      if (JSON.stringify(updatedMp) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(updatedMp) !== JSON.stringify(fetchedMp)) {
         throw new Error("Updated mp does not match expected values");
       }
 

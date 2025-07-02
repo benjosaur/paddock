@@ -349,7 +349,7 @@ export function ClientForm() {
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Provided (comma-separated)
+                  Services Requested (comma-separated)
                 </label>
                 <Input
                   id="services"
