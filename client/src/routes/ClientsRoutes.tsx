@@ -72,7 +72,8 @@ export default function ClientsRoutes() {
   };
 
   const handleEdit = (id: string) => {
-    navigate(`/clients/edit/${id}`);
+    const encodedId = encodeURIComponent(id);
+    navigate(`/clients/edit/${encodedId}`);
   };
 
   const handleDelete = (id: string) => {

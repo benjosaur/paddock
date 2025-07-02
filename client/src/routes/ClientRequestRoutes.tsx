@@ -47,7 +47,7 @@ export default function ClientRequestRoutes() {
     navigate("/new-requests/create");
   };
 
-  const handleEditNavigation = (id: number) => {
+  const handleEditNavigation = (id: string) => {
     navigate(`/new-requests/edit/${id}`);
   };
 

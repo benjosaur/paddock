@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export function ClientForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
+  console.log(id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<ClientMetadata, "id">>({
