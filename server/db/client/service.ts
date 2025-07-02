@@ -101,10 +101,11 @@ export class ClientService {
         throw new Error("Failed to fetch created client");
       }
 
-      const { id, mpLogs, volunteerLogs, magLogs, ...restFetched } =
-        fetchedClient;
+      const { id, ...restFetched } = fetchedClient;
 
       if (JSON.stringify(newClient) !== JSON.stringify(restFetched)) {
+        console.log(newClient);
+        console.log(restFetched);
         throw new Error("Created client does not match expected values");
       }
 

@@ -21,7 +21,7 @@ export const dbVolunteerLogClient = volunteerLogSchema.shape.clients.element
     sK: z.string(),
     entityType: z.literal("volunteerLog"),
     entityOwner: z.literal("client"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbVolunteerLogVolunteer =
@@ -30,7 +30,7 @@ export const dbVolunteerLogVolunteer =
     sK: z.string(),
     entityType: z.literal("volunteerLog"),
     entityOwner: z.literal("volunteer"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbVolunteerLog = z.union([

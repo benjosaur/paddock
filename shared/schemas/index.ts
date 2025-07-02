@@ -4,9 +4,7 @@ export const trainingRecordSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   recordName: z.string().default(""),
-  recordExpiry: z
-    .union([z.string().datetime(), z.literal("n/a")])
-    .default("n/a"),
+  recordExpiry: z.union([z.string().date(), z.literal("n/a")]).default("n/a"),
   details: z.object({ name: z.string() }),
 });
 
@@ -26,7 +24,7 @@ export const clientRequestSchema = z.object({
   id: z.string(),
   clientId: z.string(),
   requestType: z.enum(["mp", "volunteer"]),
-  startDate: z.string().datetime(),
+  startDate: z.string().date(),
   details: z.object({
     name: z.string(),
     notes: z.string().default(""),
@@ -94,13 +92,13 @@ const basePersonDetails = z.object({
 
 export const clientMetadataSchema = z.object({
   id: z.string(),
-  dateOfBirth: z.string().datetime(),
+  dateOfBirth: z.string().date(),
   postCode: z.string(),
   details: basePersonDetails.extend({
     referredBy: z.string().default(""),
-    clientAgreementDate: z.string().datetime().default(""),
+    clientAgreementDate: z.string().date().default(""),
     clientAgreementComments: z.string().default(""),
-    riskAssessmentDate: z.string().datetime().default(""),
+    riskAssessmentDate: z.string().date().default(""),
     riskAssessmentComments: z.string().default(""),
     attendanceAllowance: z.string().default(""),
     attendsMag: z.boolean(),
@@ -132,9 +130,7 @@ export const mpMetadataSchema = z.object({
   dateOfBirth: z.string().default(""),
   postCode: z.string(),
   recordName: z.string().default(""),
-  recordExpiry: z
-    .union([z.string().datetime(), z.literal("n/a")])
-    .default("n/a"),
+  recordExpiry: z.union([z.string().date(), z.literal("n/a")]).default("n/a"),
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),

@@ -21,7 +21,7 @@ export const dbMpLogClient = mpLogSchema.shape.clients.element
     sK: z.string(),
     entityType: z.literal("mpLog"),
     entityOwner: z.literal("client"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbMpLogMp = mpLogSchema.shape.mps.element
@@ -31,7 +31,7 @@ export const dbMpLogMp = mpLogSchema.shape.mps.element
     sK: z.string(),
     entityType: z.literal("mpLog"),
     entityOwner: z.literal("mp"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbMpLog = z.union([dbMpLogEntity, dbMpLogClient, dbMpLogMp]);

@@ -99,8 +99,8 @@ export class MpLogRepository {
   }): Promise<DbMpLog[]> {
     const { startDate, endDate } = z
       .object({
-        startDate: z.string().datetime(),
-        endDate: z.string().datetime(),
+        startDate: z.string().date(),
+        endDate: z.string().date(),
       })
       .parse(input);
     const command = new QueryCommand({

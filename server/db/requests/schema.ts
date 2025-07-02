@@ -9,7 +9,7 @@ export const dbClientMpRequestEntity = clientRequestSchema
     sK: z.string(),
     entityOwner: z.literal("client"),
     entityType: z.literal("clientMpRequest"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbClientVolunteerRequestEntity = clientRequestSchema
@@ -19,7 +19,7 @@ export const dbClientVolunteerRequestEntity = clientRequestSchema
     sK: z.string(),
     entityOwner: z.literal("client"),
     entityType: z.literal("clientVolunteerRequest"),
-    date: z.string().datetime(),
+    date: z.string().date(),
   });
 
 export const dbClientRequestEntity = z.union([

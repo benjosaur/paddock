@@ -32,7 +32,7 @@ export class TrainingRecordRepository {
   async getByExpiringBefore(
     expiryDate: string
   ): Promise<DbTrainingRecordEntity[]> {
-    const validatedExpiryDate = z.string().datetime().parse(expiryDate);
+    const validatedExpiryDate = z.string().date().parse(expiryDate);
     const command = new QueryCommand({
       TableName: TABLE_NAME,
       IndexName: "GSI3",

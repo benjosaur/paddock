@@ -9,7 +9,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export function ClientForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
-  console.log(id);
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<ClientMetadata, "id">>({
@@ -232,6 +231,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="email"
+                  name="details.email"
                   type="email"
                   value={formData.details.email || ""}
                   onChange={handleInputChange}
@@ -246,6 +246,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="nextOfKin"
+                  name="details.nextOfKin"
                   value={formData.details.nextOfKin || ""}
                   onChange={handleInputChange}
                 />
@@ -259,6 +260,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="referredBy"
+                  name="details.referredBy"
                   value={formData.details.referredBy || ""}
                   onChange={handleInputChange}
                 />
@@ -278,6 +280,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="clientAgreementDate"
+                  name="details.clientAgreementDate"
                   type="date"
                   value={formData.details.clientAgreementDate || ""}
                   onChange={handleInputChange}
@@ -292,6 +295,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="clientAgreementComments"
+                  name="details.clientAgreementComments"
                   value={formData.details.clientAgreementComments || ""}
                   onChange={handleInputChange}
                 />
@@ -305,6 +309,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="riskAssessmentDate"
+                  name="details.riskAssessmentDate"
                   type="date"
                   value={formData.details.riskAssessmentDate || ""}
                   onChange={handleInputChange}
@@ -319,6 +324,7 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="riskAssessmentComments"
+                  name="details.riskAssessmentComments"
                   value={formData.details.riskAssessmentComments || ""}
                   onChange={handleInputChange}
                 />
