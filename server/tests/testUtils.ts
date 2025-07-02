@@ -1,8 +1,8 @@
 import { appRouter } from "../trpc/router.ts";
 import { Request, Response } from "express";
 import { createCallerFactory } from "../trpc/trpc.ts";
-import { db } from "../db/repository.ts";
 import { User } from "../trpc/context.ts";
+import { createServices } from "../db/service.ts";
 
 const mockRequest = {} as Request;
 const mockResponse = {} as Response;
@@ -14,7 +14,12 @@ const testUser: User = {
 
 export const createTestCaller = async () => {
   const caller = createCallerFactory(appRouter);
-  const ctx = { req: mockRequest, res: mockResponse, db, user: testUser };
+  const ctx = {
+    req: mockRequest,
+    res: mockResponse,
+    services: createServices(),
+    user: testUser,
+  };
   return caller(ctx);
 };
 

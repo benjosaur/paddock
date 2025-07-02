@@ -1,62 +1,35 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createClientRequestSchema,
-  updateClientRequestSchema,
-  idParamSchema,
-  clientRequestSchema,
-} from "shared/schemas/index.ts";
-import type { ClientRequest } from "shared/schemas/index.ts";
-import { keysToCamel } from "../../utils/helpers.ts";
+import { clientRequestSchema } from "shared/schemas/index.ts";
 
 export const clientRequestsRouter = router({
   getAll: createProtectedProcedure("clientRequests", "read").query(
     async ({ ctx }) => {
-      return await ctx.db.findAll<ClientRequest>("client_requests");
+      return await ctx.services.requests.getAll();
     }
   ),
-
-  getById: createProtectedProcedure("clientRequests", "read")
-    .input(idParamSchema)
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<ClientRequest>("client_requests", input.id);
-    }),
 
   getByClientId: createProtectedProcedure("clientRequests", "read")
     .input(clientRequestSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM client_requests WHERE client_id = $1 ORDER BY start_date DESC",
-        [input.clientId]
-      );
-      return keysToCamel(result.rows);
-    }),
-
-  getByStatus: createProtectedProcedure("clientRequests", "read")
-    .input(clientRequestSchema.pick({ status: true }))
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM client_requests WHERE status = $1 ORDER BY start_date DESC",
-        [input.status]
-      );
-      return keysToCamel(result.rows);
+      const result = await ctx.services.requests.getByClientId(input.clientId);
+      return result;
     }),
 
   create: createProtectedProcedure("clientRequests", "create")
-    .input(createClientRequestSchema)
+    .input(clientRequestSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<ClientRequest>("client_requests", input);
+      return await ctx.services.requests.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("clientRequests", "update")
-    .input(updateClientRequestSchema)
+    .input(clientRequestSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<ClientRequest>("client_requests", id, data);
+      return await ctx.services.requests.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("clientRequests", "delete")
-    .input(idParamSchema)
+    .input(clientRequestSchema.pick({ clientId: true, id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("client_requests", input.id);
+      return await ctx.services.requests.delete(input.clientId, input.id);
     }),
 });

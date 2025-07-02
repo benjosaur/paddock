@@ -6,7 +6,7 @@ import { mpLogsRouter } from "./routers/mpLogs.ts";
 import { volunteerLogsRouter } from "./routers/volunteerLogs.ts";
 import { magLogsRouter } from "./routers/magLogs.ts";
 import { clientRequestsRouter } from "./routers/clientRequests.ts";
-import { expiriesRouter } from "./routers/expiries.ts";
+import { trainingRecordsRouter } from "./routers/trainingRecords.ts";
 
 export const appRouter = router({
   mps: mpsRouter,
@@ -16,7 +16,7 @@ export const appRouter = router({
   volunteerLogs: volunteerLogsRouter,
   magLogs: magLogsRouter,
   clientRequests: clientRequestsRouter,
-  expiries: expiriesRouter,
+  trainingRecords: trainingRecordsRouter,
 });
 
 export type AppRouter = typeof appRouter;

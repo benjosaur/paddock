@@ -1,38 +1,32 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createMagLogSchema,
-  updateMagLogSchema,
-  idParamSchema,
-} from "shared/schemas/index.ts";
-import type { MagLog } from "shared/types/index.ts";
+import { magLogSchema } from "shared/schemas/index.ts";
 
 export const magLogsRouter = router({
   getAll: createProtectedProcedure("magLogs", "read").query(async ({ ctx }) => {
-    return await ctx.db.findAll<MagLog>("mag_logs");
+    return await ctx.services.magLog.getAll();
   }),
 
   getById: createProtectedProcedure("magLogs", "read")
-    .input(idParamSchema)
+    .input(magLogSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<MagLog>("mag_logs", input.id);
+      return await ctx.services.magLog.getById(input.id);
     }),
 
   create: createProtectedProcedure("magLogs", "create")
-    .input(createMagLogSchema)
+    .input(magLogSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<MagLog>("mag_logs", input);
+      return await ctx.services.magLog.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("magLogs", "update")
-    .input(updateMagLogSchema)
+    .input(magLogSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<MagLog>("mag_logs", id, data);
+      return await ctx.services.magLog.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("magLogs", "delete")
-    .input(idParamSchema)
+    .input(magLogSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("mag_logs", input.id);
+      return await ctx.services.magLog.delete(input.id);
     }),
 });

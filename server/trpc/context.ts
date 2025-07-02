@@ -1,8 +1,7 @@
 import { inferAsyncReturnType } from "@trpc/server";
 import { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { db } from "../db/repository.ts";
-
+import { createServices } from "../db/service";
 export interface User {
   role: string;
   sub: string; // Cognito user ID
@@ -51,8 +50,8 @@ export const createContext = async ({
   return {
     req,
     res,
-    db,
     user: await getUser(),
+    services: createServices(),
   };
 };
 

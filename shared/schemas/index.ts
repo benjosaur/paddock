@@ -153,26 +153,6 @@ export const volunteerFullSchema = mpFullSchema.omit({ mpLogs: true }).extend({
   volunteerLogs: z.array(volunteerLogSchema).default([]),
 });
 
-export const createMpSchema = mpFullSchema.omit({ id: true });
-export const createVolunteerSchema = volunteerFullSchema.omit({ id: true });
-export const createClientSchema = clientFullSchema.omit({ id: true });
-export const createMpLogSchema = mpLogSchema.omit({ id: true });
-export const createVolunteerLogSchema = volunteerLogSchema.omit({ id: true });
-export const createMagLogSchema = magLogSchema.omit({ id: true });
-export const createClientRequestSchema = clientRequestSchema.omit({ id: true });
-
-export const updateMpSchema = mpFullSchema;
-export const updateVolunteerSchema = volunteerFullSchema;
-export const updateClientSchema = clientFullSchema;
-export const updateMpLogSchema = mpLogSchema;
-export const updateVolunteerLogSchema = volunteerLogSchema;
-export const updateMagLogSchema = magLogSchema;
-export const updateClientRequestSchema = clientRequestSchema;
-
-export const idParamSchema = z.object({
-  id: z.string(),
-});
-
 export type MpMetadata = z.infer<typeof mpMetadataSchema>;
 export type MpFull = z.infer<typeof mpFullSchema>;
 export type VolunteerMetadata = z.infer<typeof volunteerMetadataSchema>;
@@ -186,15 +166,3 @@ export type ClientRequest = z.infer<typeof clientRequestSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
-
-export type CreateMpRequest = z.infer<typeof createMpSchema>;
-export type CreateVolunteerRequest = z.infer<typeof createVolunteerSchema>;
-export type CreateClientRequest = z.infer<typeof createClientSchema>;
-export type CreateMpLogRequest = z.infer<typeof createMpLogSchema>;
-export type CreateVolunteerLogRequest = z.infer<
-  typeof createVolunteerLogSchema
->;
-export type CreateMagLogRequest = z.infer<typeof createMagLogSchema>;
-export type CreateClientRequestRequest = z.infer<
-  typeof createClientRequestSchema
->;
