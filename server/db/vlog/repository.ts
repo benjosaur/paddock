@@ -136,8 +136,9 @@ export class VolunteerLogRepository {
     newVolunteerLogs: (
       | Omit<DbVolunteerLog, "pK" | "sK">
       | Omit<DbVolunteerLog, "sK">
-    )[]
-  ): Promise<DbVolunteerLog[]> {
+    )[],
+    userId: string
+  ): Promise<string> {
     const uuid = uuidv4();
     const key = `vlog#${uuid}`;
     const newItems = newVolunteerLogs.map((volunteerLog) =>
@@ -155,13 +156,12 @@ export class VolunteerLogRepository {
           client.send(
             new PutCommand({
               TableName: TABLE_NAME,
-              Item: addCreateMiddleware(newItem),
+              Item: addCreateMiddleware(newItem, userId),
             })
           )
         )
       );
-      const createdVolunteerLogs = await this.getById(key);
-      return dbVolunteerLog.array().parse(createdVolunteerLogs);
+      return key;
     } catch (error) {
       console.error("Repository Layer Error creating volunteerLogs:", error);
       throw error;
@@ -169,8 +169,9 @@ export class VolunteerLogRepository {
   }
 
   async update(
-    updatedVolunteerLogs: DbVolunteerLog[]
-  ): Promise<DbVolunteerLog[]> {
+    updatedVolunteerLogs: DbVolunteerLog[],
+    userId: string
+  ): Promise<void> {
     const volunteerLogKey = updatedVolunteerLogs[0].sK;
     await this.delete(volunteerLogKey);
 
@@ -181,13 +182,11 @@ export class VolunteerLogRepository {
           client.send(
             new PutCommand({
               TableName: TABLE_NAME,
-              Item: addUpdateMiddleware(log),
+              Item: addUpdateMiddleware(log, userId),
             })
           )
         )
       );
-      const fetchedLogs = await this.getById(volunteerLogKey);
-      return fetchedLogs;
     } catch (error) {
       console.error("Repository Layer Error updating volunteerLogs:", error);
       throw error;

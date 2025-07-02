@@ -12,13 +12,14 @@ const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
 
 const ownerId = "mp#test-owner-123";
 
-async function testTrainingRecordService() {
+export async function testTrainingRecordService() {
   try {
     console.log("Testing Training Record Service...");
 
     console.log("1. Creating training record...");
     const createdRecord = await trainingRecordService.create(
-      sampleTrainingRecord
+      sampleTrainingRecord,
+      "test-user-123"
     );
     console.log("Created training record:", createdRecord);
 
@@ -28,7 +29,10 @@ async function testTrainingRecordService() {
       recordName: "Updated First Aid Certification",
       recordExpiry: "2026-12-31T23:59:59.000Z",
     };
-    const updatedRecord = await trainingRecordService.update(updatedRecordData);
+    const updatedRecord = await trainingRecordService.update(
+      updatedRecordData,
+      "test-user-123"
+    );
     console.log("Updated training record:", updatedRecord);
 
     console.log("3. Getting all training records...");
@@ -53,5 +57,3 @@ async function testTrainingRecordService() {
     console.error("Test failed:", error);
   }
 }
-
-testTrainingRecordService();

@@ -30,12 +30,15 @@ const sampleClient: Omit<ClientFull, "id"> = {
   magLogs: [],
 };
 
-async function testClientService() {
+export async function testClientService() {
   try {
     console.log("Testing Client Service...\n");
 
     console.log("1. Creating client...");
-    const createdClient = await clientService.create(sampleClient);
+    const createdClient = await clientService.create(
+      sampleClient,
+      "test-user-123"
+    );
     console.log("Created client:", createdClient.id);
 
     console.log("\n2. Getting client by ID...");
@@ -54,7 +57,10 @@ async function testClientService() {
         phone: "07999888777",
       },
     };
-    const updatedClient = await clientService.update(updatedClientData);
+    const updatedClient = await clientService.update(
+      updatedClientData,
+      "test-user-123"
+    );
     console.log("Updated client phone:", updatedClient.details.phone);
 
     console.log("\n5. Deleting client...");
@@ -65,8 +71,4 @@ async function testClientService() {
   } catch (error) {
     console.error("Test failed:", error);
   }
-}
-
-if (import.meta.main) {
-  testClientService();
 }

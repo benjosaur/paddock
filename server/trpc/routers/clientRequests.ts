@@ -5,7 +5,7 @@ import {
   idParamSchema,
   clientRequestSchema,
 } from "shared/schemas/index.ts";
-import type { ClientRequest } from "shared/types/index.ts";
+import type { ClientRequest } from "shared/schemas/index.ts";
 import { keysToCamel } from "../../utils/helpers.ts";
 
 export const clientRequestsRouter = router({

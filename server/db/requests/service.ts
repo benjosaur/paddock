@@ -25,7 +25,25 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async create(request: Omit<ClientRequest, "id">): Promise<ClientRequest> {
+  async getById(
+    clientId: string,
+    requestId: string
+  ): Promise<ClientRequest | null> {
+    const requestFromDb = await this.requestRepository.getById(
+      clientId,
+      requestId
+    );
+    if (!requestFromDb) {
+      return null;
+    }
+    const transformedRequest = this.transformDbRequestToShared([requestFromDb]);
+    return transformedRequest[0];
+  }
+
+  async create(
+    request: Omit<ClientRequest, "id">,
+    userId: string
+  ): Promise<ClientRequest> {
     try {
       const requestToCreate: Omit<DbClientRequestEntity, "sK"> = {
         pK: request.clientId,
@@ -37,19 +55,35 @@ export class RequestService {
         date: request.startDate,
         details: request.details,
       };
-      const createdRequest = await this.requestRepository.create(
-        requestToCreate
+      const createdRequestId = await this.requestRepository.create(
+        requestToCreate,
+        userId
       );
-      const transformedRequest =
-        this.transformDbRequestToShared(createdRequest);
-      return transformedRequest[0];
+
+      const fetchedRequest = await this.getById(
+        request.clientId,
+        createdRequestId
+      );
+      if (!fetchedRequest) {
+        throw new Error("Failed to fetch created client request");
+      }
+
+      const { id, ...restFetched } = fetchedRequest;
+
+      if (JSON.stringify(request) !== JSON.stringify(restFetched)) {
+        throw new Error(
+          "Created client request does not match expected values"
+        );
+      }
+
+      return fetchedRequest;
     } catch (error) {
       console.error("Service Layer Error creating client request:", error);
       throw error;
     }
   }
 
-  async update(request: ClientRequest): Promise<ClientRequest> {
+  async update(request: ClientRequest, userId: string): Promise<ClientRequest> {
     try {
       const dbRequest: DbClientRequestEntity = {
         pK: request.clientId,
@@ -63,10 +97,20 @@ export class RequestService {
         details: request.details,
       };
 
-      const updatedRequest = await this.requestRepository.update(dbRequest);
-      const transformedRequest =
-        this.transformDbRequestToShared(updatedRequest);
-      return transformedRequest[0];
+      await this.requestRepository.update(dbRequest, userId);
+
+      const fetchedRequest = await this.getById(request.clientId, request.id);
+      if (!fetchedRequest) {
+        throw new Error("Failed to fetch updated client request");
+      }
+
+      if (JSON.stringify(request) !== JSON.stringify(fetchedRequest)) {
+        throw new Error(
+          "Updated client request does not match expected values"
+        );
+      }
+
+      return fetchedRequest;
     } catch (error) {
       console.error("Service Layer Error updating client request:", error);
       throw error;

@@ -61,7 +61,8 @@ export class VolunteerService {
   }
 
   async create(
-    newVolunteer: Omit<VolunteerMetadata, "id">
+    newVolunteer: Omit<VolunteerMetadata, "id">,
+    userId: string
   ): Promise<VolunteerFull> {
     try {
       const volunteerToCreate: Omit<DbVolunteerEntity, "id" | "pK" | "sK"> = {
@@ -69,23 +70,34 @@ export class VolunteerService {
         entityType: "volunteer",
         entityOwner: "volunteer",
       };
-      const createdVolunteer = await this.volunteerRepository.create(
-        volunteerToCreate
+      const createdVolunteerId = await this.volunteerRepository.create(
+        volunteerToCreate,
+        userId
       );
-      // TODO: add any training records
-      const transformedVolunteer =
-        this.transformDbVolunteertoSharedMetaData(createdVolunteer);
-      const parsedResult = volunteerFullSchema
-        .array()
-        .parse(transformedVolunteer);
-      return parsedResult[0];
+
+      const fetchedVolunteer = await this.getById(createdVolunteerId);
+      if (!fetchedVolunteer) {
+        throw new Error("Failed to fetch created volunteer");
+      }
+
+      const { id, volunteerLogs, trainingRecords, ...restFetched } =
+        fetchedVolunteer;
+
+      if (JSON.stringify(newVolunteer) !== JSON.stringify(restFetched)) {
+        throw new Error("Created volunteer does not match expected values");
+      }
+
+      return fetchedVolunteer;
     } catch (error) {
       console.error("Service Layer Error creating volunteer:", error);
       throw error;
     }
   }
 
-  async update(updatedVolunteer: VolunteerMetadata): Promise<VolunteerFull> {
+  async update(
+    updatedVolunteer: VolunteerMetadata,
+    userId: string
+  ): Promise<VolunteerFull> {
     try {
       const dbVolunteer: DbVolunteerEntity = {
         pK: updatedVolunteer.id,
@@ -99,8 +111,16 @@ export class VolunteerService {
         details: updatedVolunteer.details,
       };
 
-      await this.volunteerRepository.update(dbVolunteer);
+      await this.volunteerRepository.update(dbVolunteer, userId);
       const fetchedVolunteer = await this.getById(updatedVolunteer.id);
+
+      const { volunteerLogs, trainingRecords, ...restFetched } =
+        fetchedVolunteer;
+
+      if (JSON.stringify(updatedVolunteer) !== JSON.stringify(restFetched)) {
+        throw new Error("Updated volunteer does not match expected values");
+      }
+
       return fetchedVolunteer;
     } catch (error) {
       console.error("Service Layer Error updating volunteer:", error);
@@ -108,17 +128,20 @@ export class VolunteerService {
     }
   }
 
-  async updateName(updatedVolunteer: VolunteerFull): Promise<VolunteerFull> {
+  async updateName(
+    updatedVolunteer: VolunteerFull,
+    userId: string
+  ): Promise<VolunteerFull> {
     try {
-      await this.update(updatedVolunteer);
+      await this.update(updatedVolunteer, userId);
       await Promise.all(
         updatedVolunteer.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record)
+          this.trainingRecordService.update(record, userId)
         )
       );
       await Promise.all(
         updatedVolunteer.volunteerLogs.map((log) =>
-          this.volunteerLogService.update(log)
+          this.volunteerLogService.update(log, userId)
         )
       );
       const fetchedVolunteer = await this.getById(updatedVolunteer.id);

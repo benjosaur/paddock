@@ -1,6 +1,7 @@
 import { VolunteerLog, volunteerLogSchema } from "shared";
 import { VolunteerLogRepository } from "./repository";
 import {
+  dbVolunteerLog,
   DbVolunteerLog,
   DbVolunteerLogClient,
   DbVolunteerLogEntity,
@@ -68,7 +69,8 @@ export class VolunteerLogService {
   }
 
   async create(
-    newVolunteerLog: Omit<VolunteerLog, "id">
+    newVolunteerLog: Omit<VolunteerLog, "id">,
+    userId: string
   ): Promise<VolunteerLog> {
     const volunteerLogMain: Omit<DbVolunteerLogEntity, "pK" | "sK"> = {
       ...newVolunteerLog,
@@ -92,21 +94,40 @@ export class VolunteerLogService {
         ...client,
       }));
     try {
-      const createdLogs = await this.volunteerLogRepository.create([
-        volunteerLogMain,
-        ...volunteerLogVolunteers,
-        ...volunteerLogClients,
-      ]);
-      const collatedLogs = this.groupAndTransformVolunteerLogData(createdLogs);
-      const validatedLog = volunteerLogSchema.parse(collatedLogs[0]);
-      return validatedLog;
+      const validatedLogs = dbVolunteerLog
+        .array()
+        .parse([
+          volunteerLogMain,
+          ...volunteerLogVolunteers,
+          ...volunteerLogClients,
+        ]);
+      const createdLogId = await this.volunteerLogRepository.create(
+        validatedLogs,
+        userId
+      );
+
+      const fetchedLog = await this.getById(createdLogId);
+      if (!fetchedLog) {
+        throw new Error("Failed to fetch created volunteer log");
+      }
+
+      const { id, ...restFetched } = fetchedLog;
+
+      if (JSON.stringify(newVolunteerLog) !== JSON.stringify(restFetched)) {
+        throw new Error("Created volunteer log does not match expected values");
+      }
+
+      return fetchedLog;
     } catch (error) {
       console.error("Service Layer Error creating volunteerLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedVolunteerLog: VolunteerLog): Promise<VolunteerLog> {
+  async update(
+    updatedVolunteerLog: VolunteerLog,
+    userId: string
+  ): Promise<VolunteerLog> {
     const volunteerLogKey = updatedVolunteerLog.id;
     const volunteerLogMain: DbVolunteerLogEntity = {
       ...updatedVolunteerLog,
@@ -134,14 +155,25 @@ export class VolunteerLogService {
         ...client,
       }));
     try {
-      const updatedLogs = await this.volunteerLogRepository.update([
-        volunteerLogMain,
-        ...volunteerLogVolunteers,
-        ...volunteerLogClients,
-      ]);
-      const collatedLogs = this.groupAndTransformVolunteerLogData(updatedLogs);
-      const validatedLog = volunteerLogSchema.parse(collatedLogs[0]);
-      return validatedLog;
+      const validatedLogs = dbVolunteerLog
+        .array()
+        .parse([
+          volunteerLogMain,
+          ...volunteerLogVolunteers,
+          ...volunteerLogClients,
+        ]);
+      await this.volunteerLogRepository.update(validatedLogs, userId);
+
+      const fetchedLog = await this.getById(updatedVolunteerLog.id);
+      if (!fetchedLog) {
+        throw new Error("Failed to fetch updated volunteer log");
+      }
+
+      if (JSON.stringify(updatedVolunteerLog) !== JSON.stringify(fetchedLog)) {
+        throw new Error("Updated volunteer log does not match expected values");
+      }
+
+      return fetchedLog;
     } catch (error) {
       console.error("Service Layer Error updating volunteerLogs:", error);
       throw error;

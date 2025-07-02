@@ -128,8 +128,9 @@ export class MpLogRepository {
   }
 
   async create(
-    newMpLogs: (Omit<DbMpLog, "pK" | "sK"> | Omit<DbMpLog, "sK">)[]
-  ): Promise<DbMpLog[]> {
+    newMpLogs: (Omit<DbMpLog, "pK" | "sK"> | Omit<DbMpLog, "sK">)[],
+    userId: string
+  ): Promise<string> {
     const uuid = uuidv4();
     const key = `mplog#${uuid}`;
     const newItems = newMpLogs.map((mpLog) =>
@@ -147,20 +148,18 @@ export class MpLogRepository {
           client.send(
             new PutCommand({
               TableName: TABLE_NAME,
-              Item: addCreateMiddleware(newItem),
+              Item: addCreateMiddleware(newItem, userId),
             })
           )
         )
       );
-      const createdMpLogs = await this.getById(key);
-      return dbMpLog.array().parse(createdMpLogs);
+      return key;
     } catch (error) {
       console.error("Repository Layer Error creating mpLogs:", error);
       throw error;
     }
   }
-  async update(updatedMpLogs: DbMpLog[]): Promise<DbMpLog[]> {
-    //update by first delete all associated, then add as new
+  async update(updatedMpLogs: DbMpLog[], userId: string): Promise<void> {
     const mpLogKey = updatedMpLogs[0].sK;
     await this.delete(mpLogKey);
 
@@ -171,13 +170,11 @@ export class MpLogRepository {
           client.send(
             new PutCommand({
               TableName: TABLE_NAME,
-              Item: addUpdateMiddleware(log),
+              Item: addUpdateMiddleware(log, userId),
             })
           )
         )
       );
-      const fetchedLogs = await this.getById(mpLogKey);
-      return fetchedLogs;
     } catch (error) {
       console.error("Repository Layer Error updating mpLogs:", error);
       throw error;

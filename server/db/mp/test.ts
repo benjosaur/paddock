@@ -24,12 +24,12 @@ const sampleMp: Omit<MpMetadata, "id"> = {
   },
 };
 
-async function testMpService() {
+export async function testMpService() {
   try {
     console.log("Testing MP Service...");
 
     console.log("1. Creating MP...");
-    const createdMp = await mpService.create(sampleMp);
+    const createdMp = await mpService.create(sampleMp, "test-user-123");
     console.log("Created MP:", createdMp);
 
     console.log("2. Getting MP by ID...");
@@ -44,7 +44,7 @@ async function testMpService() {
         notes: "Updated MP for Westminster",
       },
     };
-    const updatedMp = await mpService.update(updatedMpData);
+    const updatedMp = await mpService.update(updatedMpData, "test-user-123");
     console.log("Updated MP:", updatedMp);
 
     console.log("4. Getting all MPs...");
@@ -60,5 +60,3 @@ async function testMpService() {
     console.error("Test failed:", error);
   }
 }
-
-testMpService();

@@ -81,25 +81,41 @@ export class ClientService {
     }
   }
 
-  async create(newClient: Omit<ClientFull, "id">): Promise<ClientFull> {
+  async create(
+    newClient: Omit<ClientFull, "id">,
+    userId: string
+  ): Promise<ClientFull> {
     try {
       const clientToCreate: Omit<DbClientEntity, "id" | "pK" | "sK"> = {
         ...newClient,
         entityType: "client",
         entityOwner: "client",
       };
-      const createdClient = await this.clientRepository.create(clientToCreate);
-      const transformedClient =
-        this.transformDbClientToSharedMetaData(createdClient);
-      const parsedResult = clientFullSchema.array().parse(transformedClient);
-      return parsedResult[0];
+      const createdClientId = await this.clientRepository.create(
+        clientToCreate,
+        userId
+      );
+
+      const fetchedClient = await this.getById(createdClientId);
+      if (!fetchedClient) {
+        throw new Error("Failed to fetch created client");
+      }
+
+      const { id, mpLogs, volunteerLogs, magLogs, ...restFetched } =
+        fetchedClient;
+
+      if (JSON.stringify(newClient) !== JSON.stringify(restFetched)) {
+        throw new Error("Created client does not match expected values");
+      }
+
+      return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error creating client:", error);
       throw error;
     }
   }
 
-  async update(updatedClient: ClientFull): Promise<ClientFull> {
+  async update(updatedClient: ClientFull, userId: string): Promise<ClientFull> {
     //note for name or postcode (only metachanges)
     try {
       const dbClient: DbClientEntity = {
@@ -112,9 +128,13 @@ export class ClientService {
         details: updatedClient.details,
       };
 
-      await this.clientRepository.update(dbClient);
+      await this.clientRepository.update(dbClient, userId);
       const fetchedClient = await this.getById(updatedClient.id);
-      assert.deepStrictEqual(updatedClient, fetchedClient);
+
+      if (JSON.stringify(updatedClient) !== JSON.stringify(fetchedClient)) {
+        throw new Error("Updated client does not match expected values");
+      }
+
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
@@ -122,14 +142,17 @@ export class ClientService {
     }
   }
 
-  async updateName(updatedClient: ClientFull): Promise<ClientFull> {
+  async updateName(
+    updatedClient: ClientFull,
+    userId: string
+  ): Promise<ClientFull> {
     try {
-      const clientEntityUpdate = this.update(updatedClient);
+      const clientEntityUpdate = this.update(updatedClient, userId);
       const mpLogUpdates = updatedClient.mpLogs.map((log) =>
-        this.mpLogService.update(log)
+        this.mpLogService.update(log, userId)
       );
       const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log)
+        this.volunteerLogService.update(log, userId)
       );
       await Promise.all([
         clientEntityUpdate,
@@ -145,20 +168,23 @@ export class ClientService {
     }
   }
 
-  async updatePostCode(updatedClient: ClientFull): Promise<ClientFull> {
+  async updatePostCode(
+    updatedClient: ClientFull,
+    userId: string
+  ): Promise<ClientFull> {
     try {
-      const clientEntityUpdate = this.update(updatedClient);
+      const clientEntityUpdate = this.update(updatedClient, userId);
       const mpLogUpdates = updatedClient.mpLogs.map((log) =>
-        this.mpLogService.update(log)
+        this.mpLogService.update(log, userId)
       );
       const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log)
+        this.volunteerLogService.update(log, userId)
       );
       const mpRequestUpdates = updatedClient.mpRequests.map((request) =>
-        this.requestService.update(request)
+        this.requestService.update(request, userId)
       );
       const volunteerRequestUpdates = updatedClient.volunteerRequests.map(
-        (request) => this.requestService.update(request)
+        (request) => this.requestService.update(request, userId)
       );
       await Promise.all([
         clientEntityUpdate,

@@ -52,9 +52,34 @@ export class TrainingRecordRepository {
     }
   }
 
+  async getById(
+    ownerId: string,
+    recordId: string
+  ): Promise<DbTrainingRecordEntity | null> {
+    const command = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: "pK = :pk AND sK = :sk",
+      ExpressionAttributeValues: {
+        ":pk": ownerId,
+        ":sk": recordId,
+      },
+    });
+    try {
+      const result = await client.send(command);
+      if (!result.Items || result.Items.length === 0) {
+        return null;
+      }
+      return dbTrainingRecordEntity.parse(result.Items[0]);
+    } catch (error) {
+      console.error("Error getting training record by id:", error);
+      throw error;
+    }
+  }
+
   async create(
-    newRecord: Omit<DbTrainingRecordEntity, "sK">
-  ): Promise<DbTrainingRecordEntity[]> {
+    newRecord: Omit<DbTrainingRecordEntity, "sK">,
+    userId: string
+  ): Promise<string> {
     try {
       const uuid = uuidv4();
       const recordKey = `tr#${uuid}`;
@@ -65,11 +90,11 @@ export class TrainingRecordRepository {
       const validatedRecord = dbTrainingRecordEntity.parse(fullRecord);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: addCreateMiddleware(validatedRecord),
+        Item: addCreateMiddleware(validatedRecord, userId),
       });
 
       await client.send(command);
-      return [validatedRecord];
+      return recordKey;
     } catch (error) {
       console.error("Repository Layer Error creating training record:", error);
       throw error;
@@ -77,17 +102,17 @@ export class TrainingRecordRepository {
   }
 
   async update(
-    updatedRecord: DbTrainingRecordEntity
-  ): Promise<DbTrainingRecordEntity[]> {
+    updatedRecord: DbTrainingRecordEntity,
+    userId: string
+  ): Promise<void> {
     try {
       const validatedRecord = dbTrainingRecordEntity.parse(updatedRecord);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: addUpdateMiddleware(validatedRecord),
+        Item: addUpdateMiddleware(validatedRecord, userId),
       });
 
       await client.send(command);
-      return [validatedRecord];
     } catch (error) {
       console.error("Repository Layer Error updating training record:", error);
       throw error;

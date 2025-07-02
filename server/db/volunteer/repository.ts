@@ -56,8 +56,9 @@ export class VolunteerRepository {
   }
 
   async create(
-    newVolunteer: Omit<DbVolunteerEntity, "pK" | "sK">
-  ): Promise<DbVolunteerFull[]> {
+    newVolunteer: Omit<DbVolunteerEntity, "pK" | "sK">,
+    userId: string
+  ): Promise<string> {
     const uuid = uuidv4();
     const key = `v#${uuid}`;
     const fullVolunteer: DbVolunteerEntity = {
@@ -68,13 +69,12 @@ export class VolunteerRepository {
     const validatedFullVolunteer = dbVolunteerEntity.parse(fullVolunteer);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullVolunteer),
+      Item: addCreateMiddleware(validatedFullVolunteer, userId),
     });
 
     try {
       await client.send(command);
-      const createdVolunteer = await this.getById(key);
-      return dbVolunteerFull.array().parse(createdVolunteer);
+      return key;
     } catch (error) {
       console.error("Repository Layer Error creating volunteer:", error);
       throw error;
@@ -82,18 +82,17 @@ export class VolunteerRepository {
   }
 
   async update(
-    updatedVolunteer: DbVolunteerEntity
-  ): Promise<DbVolunteerFull[]> {
+    updatedVolunteer: DbVolunteerEntity,
+    userId: string
+  ): Promise<void> {
     const validatedFullVolunteer = dbVolunteerEntity.parse(updatedVolunteer);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullVolunteer),
+      Item: addUpdateMiddleware(validatedFullVolunteer, userId),
     });
 
     try {
       await client.send(command);
-      const updatedVolunteerData = await this.getById(updatedVolunteer.pK);
-      return updatedVolunteerData;
     } catch (error) {
       console.error("Repository Layer Error updating volunteer:", error);
       throw error;

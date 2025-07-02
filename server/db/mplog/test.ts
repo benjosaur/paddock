@@ -30,12 +30,12 @@ const sampleMpLog: Omit<MpLog, "id"> = {
   },
 };
 
-async function testMpLogService() {
+export async function testMpLogService() {
   try {
     console.log("Testing MP Log Service...");
 
     console.log("1. Creating MP log...");
-    const createdLog = await mpLogService.create(sampleMpLog);
+    const createdLog = await mpLogService.create(sampleMpLog, "test-user-123");
     console.log("Created MP log:", createdLog);
 
     console.log("2. Getting MP log by ID...");
@@ -51,7 +51,10 @@ async function testMpLogService() {
         services: ["advice", "support", "advocacy"],
       },
     };
-    const updatedLog = await mpLogService.update(updatedLogData);
+    const updatedLog = await mpLogService.update(
+      updatedLogData,
+      "test-user-123"
+    );
     console.log("Updated MP log:", updatedLog);
 
     console.log("4. Getting all MP logs...");
@@ -82,5 +85,3 @@ async function testMpLogService() {
     console.error("Test failed:", error);
   }
 }
-
-testMpLogService();

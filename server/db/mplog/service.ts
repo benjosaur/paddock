@@ -1,6 +1,12 @@
 import { MpLog, mpLogSchema } from "shared";
 import { MpLogRepository } from "./repository";
-import { DbMpLog, DbMpLogClient, DbMpLogEntity, DbMpLogMp } from "./schema";
+import {
+  dbMpLog,
+  DbMpLog,
+  DbMpLogClient,
+  DbMpLogEntity,
+  DbMpLogMp,
+} from "./schema";
 
 export class MpLogService {
   mpLogRepository = new MpLogRepository();
@@ -54,8 +60,7 @@ export class MpLogService {
     return parsedResult;
   }
 
-  async create(newMpLog: Omit<MpLog, "id">): Promise<MpLog> {
-    // one main log can own many mps & clients
+  async create(newMpLog: Omit<MpLog, "id">, userId: string): Promise<MpLog> {
     const mpLogMain: Omit<DbMpLogEntity, "pK" | "sK"> = {
       ...newMpLog,
       entityType: "mpLog",
@@ -78,22 +83,33 @@ export class MpLogService {
       })
     );
     try {
-      const createdLogs = await this.mpLogRepository.create([
-        mpLogMain,
-        ...mpLogMps,
-        ...mpLogClients,
-      ]);
-      const collatedLogs = this.groupAndTransformMpLogData(createdLogs);
-      const validatedLog = mpLogSchema.parse(collatedLogs[0]);
-      return validatedLog;
+      const validatedLogs = dbMpLog
+        .array()
+        .parse([mpLogMain, ...mpLogMps, ...mpLogClients]);
+      const createdLogId = await this.mpLogRepository.create(
+        validatedLogs,
+        userId
+      );
+
+      const fetchedLog = await this.getById(createdLogId);
+      if (!fetchedLog) {
+        throw new Error("Failed to fetch created mp log");
+      }
+
+      const { id, ...restFetched } = fetchedLog;
+
+      if (JSON.stringify(newMpLog) !== JSON.stringify(restFetched)) {
+        throw new Error("Created mp log does not match expected values");
+      }
+
+      return fetchedLog;
     } catch (error) {
       console.error("Service Layer Error creating mpLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLog: MpLog): Promise<MpLog> {
-    // one main log can own many mps & clients
+  async update(updatedMpLog: MpLog, userId: string): Promise<MpLog> {
     const mpLogKey = updatedMpLog.id;
     const mpLogMain: DbMpLogEntity = {
       ...updatedMpLog,
@@ -121,16 +137,23 @@ export class MpLogService {
       })
     );
     try {
-      const updatedLogs = await this.mpLogRepository.update([
-        mpLogMain,
-        ...mpLogMps,
-        ...mpLogClients,
-      ]);
-      const collatedLogs = this.groupAndTransformMpLogData(updatedLogs);
-      const validatedLog = mpLogSchema.parse(collatedLogs[0]);
-      return validatedLog;
+      const validatedLogs = dbMpLog
+        .array()
+        .parse([mpLogMain, ...mpLogMps, ...mpLogClients]);
+      await this.mpLogRepository.update(validatedLogs, userId);
+
+      const fetchedLog = await this.getById(updatedMpLog.id);
+      if (!fetchedLog) {
+        throw new Error("Failed to fetch updated mp log");
+      }
+
+      if (JSON.stringify(updatedMpLog) !== JSON.stringify(fetchedLog)) {
+        throw new Error("Updated mp log does not match expected values");
+      }
+
+      return fetchedLog;
     } catch (error) {
-      console.error("Service Layer Error creating mpLogs:", error);
+      console.error("Service Layer Error updating mpLogs:", error);
       throw error;
     }
   }

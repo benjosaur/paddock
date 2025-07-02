@@ -67,9 +67,34 @@ export class RequestRepository {
     }
   }
 
+  async getById(
+    clientId: string,
+    requestId: string
+  ): Promise<DbClientRequestEntity | null> {
+    const command = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: "pK = :pk AND sK = :sk",
+      ExpressionAttributeValues: {
+        ":pk": clientId,
+        ":sk": requestId,
+      },
+    });
+    try {
+      const result = await client.send(command);
+      if (!result.Items || result.Items.length === 0) {
+        return null;
+      }
+      return dbClientRequestEntity.parse(result.Items[0]);
+    } catch (error) {
+      console.error("Error getting client request by id:", error);
+      throw error;
+    }
+  }
+
   async create(
-    newRequest: Omit<DbClientRequestEntity, "sK">
-  ): Promise<DbClientRequestEntity[]> {
+    newRequest: Omit<DbClientRequestEntity, "sK">,
+    userId: string
+  ): Promise<string> {
     try {
       const uuid = uuidv4();
       const requestKey = `req#${uuid}`;
@@ -80,11 +105,11 @@ export class RequestRepository {
       const validatedRequest = dbClientRequestEntity.parse(fullRequest);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: addCreateMiddleware(validatedRequest),
+        Item: addCreateMiddleware(validatedRequest, userId),
       });
 
       await client.send(command);
-      return [validatedRequest];
+      return requestKey;
     } catch (error) {
       console.error("Repository Layer Error creating client request:", error);
       throw error;
@@ -92,17 +117,17 @@ export class RequestRepository {
   }
 
   async update(
-    updatedRequest: DbClientRequestEntity
-  ): Promise<DbClientRequestEntity[]> {
+    updatedRequest: DbClientRequestEntity,
+    userId: string
+  ): Promise<void> {
     try {
       const validatedRequest = dbClientRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
         TableName: TABLE_NAME,
-        Item: addUpdateMiddleware(validatedRequest),
+        Item: addUpdateMiddleware(validatedRequest, userId),
       });
 
       await client.send(command);
-      return [validatedRequest];
     } catch (error) {
       console.error("Repository Layer Error updating client request:", error);
       throw error;

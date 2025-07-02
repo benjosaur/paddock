@@ -45,25 +45,34 @@ export class MpService {
     }
   }
 
-  async create(newMp: Omit<MpMetadata, "id">): Promise<MpFull> {
+  async create(newMp: Omit<MpMetadata, "id">, userId: string): Promise<MpFull> {
     try {
       const mpToCreate: Omit<DbMpEntity, "id" | "pK" | "sK"> = {
         ...newMp,
         entityType: "mp",
         entityOwner: "mp",
       };
-      const createdMp = await this.mpRepository.create(mpToCreate);
-      const transformedMp = this.transformDbMpToSharedMetaData(createdMp);
-      const parsedResult = mpFullSchema.array().parse(transformedMp);
-      // TODO: add any training records
-      return parsedResult[0];
+      const createdMpId = await this.mpRepository.create(mpToCreate, userId);
+
+      const fetchedMp = await this.getById(createdMpId);
+      if (!fetchedMp) {
+        throw new Error("Failed to fetch created mp");
+      }
+
+      const { id, mpLogs, trainingRecords, ...restFetched } = fetchedMp;
+
+      if (JSON.stringify(newMp) !== JSON.stringify(restFetched)) {
+        throw new Error("Created mp does not match expected values");
+      }
+
+      return fetchedMp;
     } catch (error) {
       console.error("Service Layer Error creating MP:", error);
       throw error;
     }
   }
 
-  async update(updatedMp: MpMetadata): Promise<MpFull> {
+  async update(updatedMp: MpMetadata, userId: string): Promise<MpFull> {
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const dbMp: DbMpEntity = {
@@ -78,27 +87,33 @@ export class MpService {
         details: updatedMp.details,
       };
 
-      await this.mpRepository.update(dbMp);
-      const updatedMpData = await this.getById(updatedMp.id);
-      const parsedResult = mpFullSchema.parse(updatedMpData);
-      return parsedResult;
+      await this.mpRepository.update(dbMp, userId);
+      const fetchedMp = await this.getById(updatedMp.id);
+
+      const { mpLogs, trainingRecords, ...restFetched } = fetchedMp;
+
+      if (JSON.stringify(updatedMp) !== JSON.stringify(restFetched)) {
+        throw new Error("Updated mp does not match expected values");
+      }
+
+      return fetchedMp;
     } catch (error) {
       console.error("Service Layer Error updating MP:", error);
       throw error;
     }
   }
 
-  async updateName(updatedMp: MpFull): Promise<MpFull> {
+  async updateName(updatedMp: MpFull, userId: string): Promise<MpFull> {
     // Must update also duplicated name field in mplog details and training log details
     try {
-      await this.update(updatedMp);
+      await this.update(updatedMp, userId);
       await Promise.all(
         updatedMp.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record)
+          this.trainingRecordService.update(record, userId)
         )
       );
       await Promise.all(
-        updatedMp.mpLogs.map((log) => this.mpLogService.update(log))
+        updatedMp.mpLogs.map((log) => this.mpLogService.update(log, userId))
       );
       const fetchedMp = await this.getById(updatedMp.id);
       const parsedResult = mpFullSchema.parse(fetchedMp);

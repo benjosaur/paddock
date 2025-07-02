@@ -24,12 +24,15 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
   },
 };
 
-async function testVolunteerService() {
+export async function testVolunteerService() {
   try {
     console.log("Testing Volunteer Service...");
 
     console.log("1. Creating volunteer...");
-    const createdVolunteer = await volunteerService.create(sampleVolunteer);
+    const createdVolunteer = await volunteerService.create(
+      sampleVolunteer,
+      "test-user-123"
+    );
     console.log("Created volunteer:", createdVolunteer);
 
     console.log("2. Getting volunteer by ID...");
@@ -47,7 +50,8 @@ async function testVolunteerService() {
       },
     };
     const updatedVolunteer = await volunteerService.update(
-      updatedVolunteerData
+      updatedVolunteerData,
+      "test-user-123"
     );
     console.log("Updated volunteer:", updatedVolunteer);
 
@@ -64,5 +68,3 @@ async function testVolunteerService() {
     console.error("Test failed:", error);
   }
 }
-
-testVolunteerService();

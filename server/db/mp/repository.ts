@@ -37,6 +37,7 @@ export class MpRepository {
   }
 
   async getById(mpId: string): Promise<DbMpFull[]> {
+    //mp's mplog record only useful here to simply get id of mplogs to fetch later in service
     const command = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: "pK = :pk",
@@ -55,37 +56,37 @@ export class MpRepository {
     }
   }
 
-  async create(newMp: Omit<DbMpEntity, "pK" | "sK">): Promise<DbMpFull[]> {
+  async create(
+    newMp: Omit<DbMpEntity, "pK" | "sK">,
+    userId: string
+  ): Promise<string> {
     const uuid = uuidv4();
     const key = `mp#${uuid}`;
     const fullMp: DbMpEntity = { pK: key, sK: key, ...newMp };
     const validatedFullMp = dbMpEntity.parse(fullMp);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullMp),
+      Item: addCreateMiddleware(validatedFullMp, userId),
     });
 
     try {
       await client.send(command);
-      const createdMp = await this.getById(key);
-      return dbMpFull.array().parse(createdMp);
+      return key;
     } catch (error) {
       console.error("Repository Layer Error creating mp:", error);
       throw error;
     }
   }
 
-  async update(updatedMp: DbMpEntity): Promise<DbMpFull[]> {
+  async update(updatedMp: DbMpEntity, userId: string): Promise<void> {
     const validatedFullMp = dbMpEntity.parse(updatedMp);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullMp),
+      Item: addUpdateMiddleware(validatedFullMp, userId),
     });
 
     try {
       await client.send(command);
-      const updatedMpData = await this.getById(updatedMp.pK);
-      return updatedMpData;
     } catch (error) {
       console.error("Repository Layer Error updating mp:", error);
       throw error;

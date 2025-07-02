@@ -72,7 +72,7 @@ export const magLogSchema = z.object({
   clients: z.array(
     z.object({
       id: z.string(),
-      details: z.object({ name: z.string() }),
+      details: z.object({ name: z.string(), notes: z.string().default("") }),
     })
   ),
   details: z.object({

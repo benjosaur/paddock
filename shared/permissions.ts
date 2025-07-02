@@ -1,4 +1,4 @@
-import { UserRole } from "./types";
+import { UserRole } from "./schemas";
 
 export interface Permission {
   read: boolean;

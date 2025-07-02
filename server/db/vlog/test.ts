@@ -30,12 +30,15 @@ const sampleVolunteerLog: Omit<VolunteerLog, "id"> = {
   },
 };
 
-async function testVolunteerLogService() {
+export async function testVolunteerLogService() {
   try {
     console.log("Testing Volunteer Log Service...");
 
     console.log("1. Creating volunteer log...");
-    const createdLog = await volunteerLogService.create(sampleVolunteerLog);
+    const createdLog = await volunteerLogService.create(
+      sampleVolunteerLog,
+      "test-user-123"
+    );
     console.log("Created volunteer log:", createdLog);
 
     console.log("2. Getting volunteer log by ID...");
@@ -51,7 +54,10 @@ async function testVolunteerLogService() {
         services: ["advice", "support", "advocacy"],
       },
     };
-    const updatedLog = await volunteerLogService.update(updatedLogData);
+    const updatedLog = await volunteerLogService.update(
+      updatedLogData,
+      "test-user-123"
+    );
     console.log("Updated volunteer log:", updatedLog);
 
     console.log("4. Getting all volunteer logs...");
@@ -84,5 +90,3 @@ async function testVolunteerLogService() {
     console.error("Test failed:", error);
   }
 }
-
-testVolunteerLogService();

@@ -28,17 +28,21 @@ const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
 const clientId = "c#test-client-123";
 const clientName = "Test Client";
 
-async function testRequestService() {
+export async function testRequestService() {
   try {
     console.log("Testing Request Service...");
 
     console.log("1. Creating MP request...");
-    const createdMpRequest = await requestService.create(sampleMpRequest);
+    const createdMpRequest = await requestService.create(
+      sampleMpRequest,
+      "test-user-123"
+    );
     console.log("Created MP request:", createdMpRequest);
 
     console.log("2. Creating volunteer request...");
     const createdVolunteerRequest = await requestService.create(
-      sampleVolunteerRequest
+      sampleVolunteerRequest,
+      "test-user-123"
     );
     console.log("Created volunteer request:", createdVolunteerRequest);
 
@@ -55,7 +59,10 @@ async function testRequestService() {
         status: "pending",
       },
     };
-    const updatedMpRequest = await requestService.update(updatedMpRequestData);
+    const updatedMpRequest = await requestService.update(
+      updatedMpRequestData,
+      "test-user-123"
+    );
     console.log("Updated MP request:", updatedMpRequest);
 
     console.log("5. Getting all requests...");
@@ -87,5 +94,3 @@ async function testRequestService() {
     console.error("Test failed:", error);
   }
 }
-
-testRequestService();

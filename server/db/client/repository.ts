@@ -57,38 +57,36 @@ export class ClientRepository {
   }
 
   async create(
-    newClient: Omit<DbClientEntity, "pK" | "sK">
-  ): Promise<DbClientFull[]> {
+    newClient: Omit<DbClientEntity, "pK" | "sK">,
+    userId: string
+  ): Promise<string> {
     const uuid = uuidv4();
     const key = `c#${uuid}`;
     const fullClient: DbClientEntity = { pK: key, sK: key, ...newClient };
     const validatedFullClient = dbClientEntity.parse(fullClient);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullClient),
+      Item: addCreateMiddleware(validatedFullClient, userId),
     });
 
     try {
       await client.send(command);
-      const createdClient = await this.getById(key);
-      return dbClientFull.array().parse(createdClient);
+      return key;
     } catch (error) {
       console.error("Repository Layer Error creating client:", error);
       throw error;
     }
   }
 
-  async update(updatedClient: DbClientEntity): Promise<DbClientFull[]> {
+  async update(updatedClient: DbClientEntity, userId: string): Promise<void> {
     const validatedFullClient = dbClientEntity.parse(updatedClient);
     const command = new PutCommand({
       TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullClient),
+      Item: addUpdateMiddleware(validatedFullClient, userId),
     });
 
     try {
       await client.send(command);
-      const updatedClientData = await this.getById(updatedClient.pK);
-      return updatedClientData;
     } catch (error) {
       console.error("Repository Layer Error updating client:", error);
       throw error;

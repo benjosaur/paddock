@@ -5,6 +5,14 @@ import { VolunteerService } from "./volunteer/service";
 import { VolunteerLogService } from "./vlog/service";
 import { MagLogService } from "./mag/service";
 import { TrainingRecordService } from "./training/service";
+import { testClientService } from "./client/test";
+import { testMpService } from "./mp/test";
+import { testMpLogService } from "./mplog/test";
+import { testVolunteerService } from "./volunteer/test";
+import { testVolunteerLogService } from "./vlog/test";
+import { testMagLogService } from "./mag/test";
+import { testTrainingRecordService } from "./training/test";
+import { testRequestService } from "./requests/test";
 
 const clientService = new ClientService();
 const mpService = new MpService();
@@ -13,6 +21,30 @@ const mpLogService = new MpLogService();
 const volunteerLogService = new VolunteerLogService();
 const magLogService = new MagLogService();
 const trainingRecordService = new TrainingRecordService();
+
+async function runAllTests() {
+  console.log("🚀 Starting all database tests...\n");
+
+  try {
+    await testClientService();
+    await testMpService();
+    await testMpLogService();
+    await testVolunteerService();
+    await testVolunteerLogService();
+    await testMagLogService();
+    await testTrainingRecordService();
+    await testRequestService();
+
+    console.log("\n✅ All tests completed successfully!");
+  } catch (error) {
+    console.error("\n❌ Test suite failed:", error);
+    process.exit(1);
+  }
+}
+
+runAllTests();
+
+// Manual Reads
 
 console.dir(await clientService.getAll(), { depth: null });
 console.dir(await clientService.getById("c#1"), { depth: null });
