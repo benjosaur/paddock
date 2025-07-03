@@ -65,8 +65,12 @@ export class VolunteerService {
     userId: string
   ): Promise<VolunteerFull> {
     try {
+      const validatedInput = volunteerMetadataSchema
+        .omit({ id: true })
+        .parse(newVolunteer);
+
       const volunteerToCreate: Omit<DbVolunteerEntity, "id" | "pK" | "sK"> = {
-        ...newVolunteer,
+        ...validatedInput,
         entityType: "volunteer",
         entityOwner: "volunteer",
       };
@@ -83,7 +87,7 @@ export class VolunteerService {
       const { id, volunteerLogs, trainingRecords, ...restFetched } =
         fetchedVolunteer;
 
-      if (JSON.stringify(newVolunteer) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created volunteer does not match expected values");
       }
 
@@ -99,24 +103,24 @@ export class VolunteerService {
     userId: string
   ): Promise<VolunteerFull> {
     try {
+      const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
+
       const dbVolunteer: DbVolunteerEntity = {
-        pK: updatedVolunteer.id,
-        sK: updatedVolunteer.id,
+        pK: validatedInput.id,
+        sK: validatedInput.id,
         entityType: "volunteer",
         entityOwner: "volunteer",
-        dateOfBirth: updatedVolunteer.dateOfBirth,
-        postCode: updatedVolunteer.postCode,
-        recordName: updatedVolunteer.recordName,
-        recordExpiry: updatedVolunteer.recordExpiry,
-        details: updatedVolunteer.details,
+        dateOfBirth: validatedInput.dateOfBirth,
+        postCode: validatedInput.postCode,
+        recordName: validatedInput.recordName,
+        recordExpiry: validatedInput.recordExpiry,
+        details: validatedInput.details,
       };
 
       await this.volunteerRepository.update(dbVolunteer, userId);
-      const fetchedVolunteer = await this.getById(updatedVolunteer.id);
+      const fetchedVolunteer = await this.getById(validatedInput.id);
 
-      if (
-        JSON.stringify(updatedVolunteer) !== JSON.stringify(fetchedVolunteer)
-      ) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
         throw new Error("Updated volunteer does not match expected values");
       }
 
@@ -132,21 +136,27 @@ export class VolunteerService {
     userId: string
   ): Promise<VolunteerFull> {
     try {
-      await this.update(updatedVolunteer, userId);
+      const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
+
+      await this.update(validatedInput, userId);
       await Promise.all(
-        updatedVolunteer.trainingRecords.map((record) =>
+        validatedInput.trainingRecords.map((record) =>
           this.trainingRecordService.update(record, userId)
         )
       );
       await Promise.all(
-        updatedVolunteer.volunteerLogs.map((log) =>
+        validatedInput.volunteerLogs.map((log) =>
           this.volunteerLogService.update(log, userId)
         )
       );
-      const fetchedVolunteer = await this.getById(updatedVolunteer.id);
-      const parsedResult = volunteerFullSchema.parse(fetchedVolunteer);
-      assert.deepStrictEqual(updatedVolunteer, parsedResult);
-      return parsedResult;
+      const fetchedVolunteer = await this.getById(validatedInput.id);
+
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
+        throw new Error(
+          "Updated volunteer name does not match expected values"
+        );
+      }
+      return fetchedVolunteer;
     } catch (error) {
       console.error("Service Layer Error updating Volunteer Name:", error);
       throw error;

@@ -31,26 +31,24 @@ export class MagLogService {
   }
 
   async create(newMagLog: Omit<MagLog, "id">, userId: string): Promise<MagLog> {
+    const validatedInput = magLogSchema.omit({ id: true }).parse(newMagLog);
+
     const magLogMain: Omit<DbMagLogEntity, "pK" | "sK"> = {
-      ...newMagLog,
+      ...validatedInput,
       entityType: "magLog",
       entityOwner: "main",
     };
-    const magLogClients: Omit<DbMagLogClient, "sK">[] = newMagLog.clients.map(
-      (client) => ({
-        date: newMagLog.date,
+    const magLogClients: Omit<DbMagLogClient, "sK">[] =
+      validatedInput.clients.map((client) => ({
+        date: validatedInput.date,
         entityType: "magLog",
         entityOwner: "client",
         pK: client.id,
         ...client,
-      })
-    );
+      }));
     try {
-      const validatedLogs = dbMagLog
-        .array()
-        .parse([magLogMain, ...magLogClients]);
       const createdLogId = await this.magLogRepository.create(
-        validatedLogs,
+        [magLogMain, ...magLogClients],
         userId
       );
 
@@ -73,29 +71,31 @@ export class MagLogService {
   }
 
   async update(updatedMpLog: MagLog, userId: string): Promise<MagLog> {
-    const magLogKey = updatedMpLog.id;
+    const validatedInput = magLogSchema.parse(updatedMpLog);
+    const magLogKey = validatedInput.id;
+
     const magLogMain: DbMagLogEntity = {
-      ...updatedMpLog,
+      ...validatedInput,
       pK: magLogKey,
       sK: magLogKey,
       entityType: "magLog",
       entityOwner: "main",
     };
-    const magLogClients: DbMagLogClient[] = updatedMpLog.clients.map(
+    const magLogClients: DbMagLogClient[] = validatedInput.clients.map(
       (client) => ({
         pK: client.id,
         sK: magLogKey,
-        date: updatedMpLog.date,
+        date: validatedInput.date,
         entityType: "magLog",
         entityOwner: "client",
         ...client,
       })
     );
     try {
-      const validatedLogs = dbMagLog
-        .array()
-        .parse([magLogMain, ...magLogClients]);
-      await this.magLogRepository.update(validatedLogs, userId);
+      await this.magLogRepository.update(
+        [magLogMain, ...magLogClients],
+        userId
+      );
 
       const fetchedLog = await this.getById(updatedMpLog.id);
       if (!fetchedLog) {

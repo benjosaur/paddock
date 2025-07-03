@@ -86,8 +86,12 @@ export class ClientService {
     userId: string
   ): Promise<ClientFull> {
     try {
+      const validatedInput = clientFullSchema
+        .omit({ id: true })
+        .parse(newClient);
+
       const clientToCreate: Omit<DbClientEntity, "id" | "pK" | "sK"> = {
-        ...newClient,
+        ...validatedInput,
         entityType: "client",
         entityOwner: "client",
       };
@@ -103,8 +107,8 @@ export class ClientService {
 
       const { id, ...restFetched } = fetchedClient;
 
-      if (JSON.stringify(newClient) !== JSON.stringify(restFetched)) {
-        console.log(newClient);
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
+        console.log(validatedInput);
         console.log(restFetched);
         throw new Error("Created client does not match expected values");
       }
@@ -119,20 +123,22 @@ export class ClientService {
   async update(updatedClient: ClientFull, userId: string): Promise<ClientFull> {
     //note for name or postcode (only metachanges)
     try {
+      const validatedInput = clientFullSchema.parse(updatedClient);
+
       const dbClient: DbClientEntity = {
-        pK: updatedClient.id,
-        sK: updatedClient.id,
+        pK: validatedInput.id,
+        sK: validatedInput.id,
         entityType: "client",
         entityOwner: "client",
-        dateOfBirth: updatedClient.dateOfBirth,
-        postCode: updatedClient.postCode,
-        details: updatedClient.details,
+        dateOfBirth: validatedInput.dateOfBirth,
+        postCode: validatedInput.postCode,
+        details: validatedInput.details,
       };
 
       await this.clientRepository.update(dbClient, userId);
-      const fetchedClient = await this.getById(updatedClient.id);
+      const fetchedClient = await this.getById(validatedInput.id);
 
-      if (JSON.stringify(updatedClient) !== JSON.stringify(fetchedClient)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
         throw new Error("Updated client does not match expected values");
       }
 
@@ -148,11 +154,13 @@ export class ClientService {
     userId: string
   ): Promise<ClientFull> {
     try {
-      const clientEntityUpdate = this.update(updatedClient, userId);
-      const mpLogUpdates = updatedClient.mpLogs.map((log) =>
+      const validatedInput = clientFullSchema.parse(updatedClient);
+
+      const clientEntityUpdate = this.update(validatedInput, userId);
+      const mpLogUpdates = validatedInput.mpLogs.map((log) =>
         this.mpLogService.update(log, userId)
       );
-      const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
+      const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
         this.volunteerLogService.update(log, userId)
       );
       await Promise.all([
@@ -160,8 +168,11 @@ export class ClientService {
         ...mpLogUpdates,
         ...volunteerLogUpdates,
       ]);
-      const fetchedClient = await this.getById(updatedClient.id);
-      assert.deepStrictEqual(updatedClient, fetchedClient);
+      const fetchedClient = await this.getById(validatedInput.id);
+
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
+        throw new Error("Updated client name does not match expected values");
+      }
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
@@ -174,17 +185,19 @@ export class ClientService {
     userId: string
   ): Promise<ClientFull> {
     try {
-      const clientEntityUpdate = this.update(updatedClient, userId);
-      const mpLogUpdates = updatedClient.mpLogs.map((log) =>
+      const validatedInput = clientFullSchema.parse(updatedClient);
+
+      const clientEntityUpdate = this.update(validatedInput, userId);
+      const mpLogUpdates = validatedInput.mpLogs.map((log) =>
         this.mpLogService.update(log, userId)
       );
-      const volunteerLogUpdates = updatedClient.volunteerLogs.map((log) =>
+      const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
         this.volunteerLogService.update(log, userId)
       );
-      const mpRequestUpdates = updatedClient.mpRequests.map((request) =>
+      const mpRequestUpdates = validatedInput.mpRequests.map((request) =>
         this.requestService.update(request, userId)
       );
-      const volunteerRequestUpdates = updatedClient.volunteerRequests.map(
+      const volunteerRequestUpdates = validatedInput.volunteerRequests.map(
         (request) => this.requestService.update(request, userId)
       );
       await Promise.all([
@@ -194,8 +207,13 @@ export class ClientService {
         ...mpRequestUpdates,
         ...volunteerRequestUpdates,
       ]);
-      const fetchedClient = await this.getById(updatedClient.id);
-      assert.deepStrictEqual(updatedClient, fetchedClient);
+      const fetchedClient = await this.getById(validatedInput.id);
+
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
+        throw new Error(
+          "Updated client postcode does not match expected values"
+        );
+      }
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating MP Name:", error);

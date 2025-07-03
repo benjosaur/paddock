@@ -1,4 +1,4 @@
-import { ClientRequest } from "shared";
+import { ClientRequest, clientRequestSchema } from "shared";
 import { RequestRepository } from "./repository";
 import { DbClientRequestEntity } from "./schema";
 
@@ -45,15 +45,19 @@ export class RequestService {
     userId: string
   ): Promise<ClientRequest> {
     try {
+      const validatedInput = clientRequestSchema
+        .omit({ id: true })
+        .parse(request);
+
       const requestToCreate: Omit<DbClientRequestEntity, "sK"> = {
-        pK: request.clientId,
+        pK: validatedInput.clientId,
         entityType:
-          request.requestType == "mp"
+          validatedInput.requestType == "mp"
             ? "clientMpRequest"
             : "clientVolunteerRequest",
         entityOwner: "client",
-        date: request.startDate,
-        details: request.details,
+        date: validatedInput.startDate,
+        details: validatedInput.details,
       };
       const createdRequestId = await this.requestRepository.create(
         requestToCreate,
@@ -61,7 +65,7 @@ export class RequestService {
       );
 
       const fetchedRequest = await this.getById(
-        request.clientId,
+        validatedInput.clientId,
         createdRequestId
       );
       if (!fetchedRequest) {
@@ -70,7 +74,7 @@ export class RequestService {
 
       const { id, ...restFetched } = fetchedRequest;
 
-      if (JSON.stringify(request) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error(
           "Created client request does not match expected values"
         );
@@ -85,26 +89,31 @@ export class RequestService {
 
   async update(request: ClientRequest, userId: string): Promise<ClientRequest> {
     try {
+      const validatedInput = clientRequestSchema.parse(request);
+
       const dbRequest: DbClientRequestEntity = {
-        pK: request.clientId,
-        sK: request.id,
+        pK: validatedInput.clientId,
+        sK: validatedInput.id,
         entityType:
-          request.requestType == "mp"
+          validatedInput.requestType == "mp"
             ? "clientMpRequest"
             : "clientVolunteerRequest",
         entityOwner: "client",
-        date: request.startDate,
-        details: request.details,
+        date: validatedInput.startDate,
+        details: validatedInput.details,
       };
 
       await this.requestRepository.update(dbRequest, userId);
 
-      const fetchedRequest = await this.getById(request.clientId, request.id);
+      const fetchedRequest = await this.getById(
+        validatedInput.clientId,
+        validatedInput.id
+      );
       if (!fetchedRequest) {
         throw new Error("Failed to fetch updated client request");
       }
 
-      if (JSON.stringify(request) !== JSON.stringify(fetchedRequest)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedRequest)) {
         throw new Error(
           "Updated client request does not match expected values"
         );

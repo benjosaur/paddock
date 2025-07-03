@@ -72,37 +72,34 @@ export class VolunteerLogService {
     newVolunteerLog: Omit<VolunteerLog, "id">,
     userId: string
   ): Promise<VolunteerLog> {
+    const validatedInput = volunteerLogSchema
+      .omit({ id: true })
+      .parse(newVolunteerLog);
+
     const volunteerLogMain: Omit<DbVolunteerLogEntity, "pK" | "sK"> = {
-      ...newVolunteerLog,
+      ...validatedInput,
       entityType: "volunteerLog",
       entityOwner: "main",
     };
     const volunteerLogVolunteers: Omit<DbVolunteerLogVolunteer, "sK">[] =
-      newVolunteerLog.volunteers.map((volunteer) => ({
-        date: newVolunteerLog.date,
+      validatedInput.volunteers.map((volunteer) => ({
+        date: validatedInput.date,
         entityType: "volunteerLog",
         entityOwner: "volunteer",
         pK: volunteer.id,
         ...volunteer,
       }));
     const volunteerLogClients: Omit<DbVolunteerLogClient, "sK">[] =
-      newVolunteerLog.clients.map((client) => ({
-        date: newVolunteerLog.date,
+      validatedInput.clients.map((client) => ({
+        date: validatedInput.date,
         entityType: "volunteerLog",
         entityOwner: "client",
         pK: client.id,
         ...client,
       }));
     try {
-      const validatedLogs = dbVolunteerLog
-        .array()
-        .parse([
-          volunteerLogMain,
-          ...volunteerLogVolunteers,
-          ...volunteerLogClients,
-        ]);
       const createdLogId = await this.volunteerLogRepository.create(
-        validatedLogs,
+        [volunteerLogMain, ...volunteerLogVolunteers, ...volunteerLogClients],
         userId
       );
 
@@ -113,7 +110,7 @@ export class VolunteerLogService {
 
       const { id, ...restFetched } = fetchedLog;
 
-      if (JSON.stringify(newVolunteerLog) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created volunteer log does not match expected values");
       }
 
@@ -128,48 +125,46 @@ export class VolunteerLogService {
     updatedVolunteerLog: VolunteerLog,
     userId: string
   ): Promise<VolunteerLog> {
-    const volunteerLogKey = updatedVolunteerLog.id;
+    const validatedInput = volunteerLogSchema.parse(updatedVolunteerLog);
+    const volunteerLogKey = validatedInput.id;
+
     const volunteerLogMain: DbVolunteerLogEntity = {
-      ...updatedVolunteerLog,
+      ...validatedInput,
       pK: volunteerLogKey,
       sK: volunteerLogKey,
       entityType: "volunteerLog",
       entityOwner: "main",
     };
     const volunteerLogVolunteers: DbVolunteerLogVolunteer[] =
-      updatedVolunteerLog.volunteers.map((volunteer) => ({
+      validatedInput.volunteers.map((volunteer) => ({
         pK: volunteer.id,
         sK: volunteerLogKey,
-        date: updatedVolunteerLog.date,
+        date: validatedInput.date,
         entityType: "volunteerLog",
         entityOwner: "volunteer",
         ...volunteer,
       }));
     const volunteerLogClients: DbVolunteerLogClient[] =
-      updatedVolunteerLog.clients.map((client) => ({
+      validatedInput.clients.map((client) => ({
         pK: client.id,
         sK: volunteerLogKey,
-        date: updatedVolunteerLog.date,
+        date: validatedInput.date,
         entityType: "volunteerLog",
         entityOwner: "client",
         ...client,
       }));
     try {
-      const validatedLogs = dbVolunteerLog
-        .array()
-        .parse([
-          volunteerLogMain,
-          ...volunteerLogVolunteers,
-          ...volunteerLogClients,
-        ]);
-      await this.volunteerLogRepository.update(validatedLogs, userId);
+      await this.volunteerLogRepository.update(
+        [volunteerLogMain, ...volunteerLogVolunteers, ...volunteerLogClients],
+        userId
+      );
 
       const fetchedLog = await this.getById(updatedVolunteerLog.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated volunteer log");
       }
 
-      if (JSON.stringify(updatedVolunteerLog) !== JSON.stringify(fetchedLog)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedLog)) {
         throw new Error("Updated volunteer log does not match expected values");
       }
 

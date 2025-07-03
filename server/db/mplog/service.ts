@@ -61,33 +61,31 @@ export class MpLogService {
   }
 
   async create(newMpLog: Omit<MpLog, "id">, userId: string): Promise<MpLog> {
+    const validatedInput = mpLogSchema.omit({ id: true }).parse(newMpLog);
+
     const mpLogMain: Omit<DbMpLogEntity, "pK" | "sK"> = {
-      ...newMpLog,
+      ...validatedInput,
       entityType: "mpLog",
       entityOwner: "main",
     };
-    const mpLogMps: Omit<DbMpLogMp, "sK">[] = newMpLog.mps.map((mp) => ({
-      date: newMpLog.date,
+    const mpLogMps: Omit<DbMpLogMp, "sK">[] = validatedInput.mps.map((mp) => ({
+      date: validatedInput.date,
       entityType: "mpLog",
       entityOwner: "mp",
       pK: mp.id,
       ...mp,
     }));
-    const mpLogClients: Omit<DbMpLogClient, "sK">[] = newMpLog.clients.map(
-      (client) => ({
-        date: newMpLog.date,
+    const mpLogClients: Omit<DbMpLogClient, "sK">[] =
+      validatedInput.clients.map((client) => ({
+        date: validatedInput.date,
         entityType: "mpLog",
         entityOwner: "client",
         pK: client.id,
         ...client,
-      })
-    );
+      }));
     try {
-      const validatedLogs = dbMpLog
-        .array()
-        .parse([mpLogMain, ...mpLogMps, ...mpLogClients]);
       const createdLogId = await this.mpLogRepository.create(
-        validatedLogs,
+        [mpLogMain, ...mpLogMps, ...mpLogClients],
         userId
       );
 
@@ -98,7 +96,7 @@ export class MpLogService {
 
       const { id, ...restFetched } = fetchedLog;
 
-      if (JSON.stringify(newMpLog) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created mp log does not match expected values");
       }
 
@@ -110,44 +108,46 @@ export class MpLogService {
   }
 
   async update(updatedMpLog: MpLog, userId: string): Promise<MpLog> {
-    const mpLogKey = updatedMpLog.id;
+    const validatedInput = mpLogSchema.parse(updatedMpLog);
+    const mpLogKey = validatedInput.id;
+
     const mpLogMain: DbMpLogEntity = {
-      ...updatedMpLog,
+      ...validatedInput,
       pK: mpLogKey,
       sK: mpLogKey,
       entityType: "mpLog",
       entityOwner: "main",
     };
-    const mpLogMps: DbMpLogMp[] = updatedMpLog.mps.map((mp) => ({
+    const mpLogMps: DbMpLogMp[] = validatedInput.mps.map((mp) => ({
       pK: mp.id,
       sK: mpLogKey,
-      date: updatedMpLog.date,
+      date: validatedInput.date,
       entityType: "mpLog",
       entityOwner: "mp",
       ...mp,
     }));
-    const mpLogClients: DbMpLogClient[] = updatedMpLog.clients.map(
+    const mpLogClients: DbMpLogClient[] = validatedInput.clients.map(
       (client) => ({
         pK: client.id,
         sK: mpLogKey,
-        date: updatedMpLog.date,
+        date: validatedInput.date,
         entityType: "mpLog",
         entityOwner: "client",
         ...client,
       })
     );
     try {
-      const validatedLogs = dbMpLog
-        .array()
-        .parse([mpLogMain, ...mpLogMps, ...mpLogClients]);
-      await this.mpLogRepository.update(validatedLogs, userId);
+      await this.mpLogRepository.update(
+        [mpLogMain, ...mpLogMps, ...mpLogClients],
+        userId
+      );
 
       const fetchedLog = await this.getById(updatedMpLog.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated mp log");
       }
 
-      if (JSON.stringify(updatedMpLog) !== JSON.stringify(fetchedLog)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedLog)) {
         throw new Error("Updated mp log does not match expected values");
       }
 

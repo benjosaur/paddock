@@ -47,8 +47,10 @@ export class MpService {
 
   async create(newMp: Omit<MpMetadata, "id">, userId: string): Promise<MpFull> {
     try {
+      const validatedInput = mpMetadataSchema.omit({ id: true }).parse(newMp);
+
       const mpToCreate: Omit<DbMpEntity, "id" | "pK" | "sK"> = {
-        ...newMp,
+        ...validatedInput,
         entityType: "mp",
         entityOwner: "mp",
       };
@@ -61,7 +63,7 @@ export class MpService {
 
       const { id, mpLogs, trainingRecords, ...restFetched } = fetchedMp;
 
-      if (JSON.stringify(newMp) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created mp does not match expected values");
       }
 
@@ -75,22 +77,24 @@ export class MpService {
   async update(updatedMp: MpMetadata, userId: string): Promise<MpFull> {
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
+      const validatedInput = mpMetadataSchema.parse(updatedMp);
+
       const dbMp: DbMpEntity = {
-        pK: updatedMp.id,
-        sK: updatedMp.id,
+        pK: validatedInput.id,
+        sK: validatedInput.id,
         entityType: "mp",
         entityOwner: "mp",
-        dateOfBirth: updatedMp.dateOfBirth,
-        postCode: updatedMp.postCode,
-        recordName: updatedMp.recordName,
-        recordExpiry: updatedMp.recordExpiry,
-        details: updatedMp.details,
+        dateOfBirth: validatedInput.dateOfBirth,
+        postCode: validatedInput.postCode,
+        recordName: validatedInput.recordName,
+        recordExpiry: validatedInput.recordExpiry,
+        details: validatedInput.details,
       };
 
       await this.mpRepository.update(dbMp, userId);
-      const fetchedMp = await this.getById(updatedMp.id);
+      const fetchedMp = await this.getById(validatedInput.id);
 
-      if (JSON.stringify(updatedMp) !== JSON.stringify(fetchedMp)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
         throw new Error("Updated mp does not match expected values");
       }
 
@@ -104,19 +108,25 @@ export class MpService {
   async updateName(updatedMp: MpFull, userId: string): Promise<MpFull> {
     // Must update also duplicated name field in mplog details and training log details
     try {
-      await this.update(updatedMp, userId);
+      const validatedInput = mpFullSchema.parse(updatedMp);
+
+      await this.update(validatedInput, userId);
       await Promise.all(
-        updatedMp.trainingRecords.map((record) =>
+        validatedInput.trainingRecords.map((record) =>
           this.trainingRecordService.update(record, userId)
         )
       );
       await Promise.all(
-        updatedMp.mpLogs.map((log) => this.mpLogService.update(log, userId))
+        validatedInput.mpLogs.map((log) =>
+          this.mpLogService.update(log, userId)
+        )
       );
-      const fetchedMp = await this.getById(updatedMp.id);
-      const parsedResult = mpFullSchema.parse(fetchedMp);
-      assert.deepStrictEqual(updatedMp, parsedResult);
-      return parsedResult;
+      const fetchedMp = await this.getById(validatedInput.id);
+
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
+        throw new Error("Updated mp name does not match expected values");
+      }
+      return fetchedMp;
     } catch (error) {
       console.error("Service Layer Error updating MP Name:", error);
       throw error;

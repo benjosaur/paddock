@@ -46,26 +46,33 @@ export class TrainingRecordService {
     userId: string
   ): Promise<TrainingRecord> {
     try {
+      const validatedInput = trainingRecordSchema
+        .omit({ id: true })
+        .parse(record);
+
       const recordToCreate: Omit<DbTrainingRecordEntity, "sK"> = {
-        pK: record.ownerId,
+        pK: validatedInput.ownerId,
         entityType: "trainingRecord",
-        entityOwner: record.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: record.recordName,
-        recordExpiry: record.recordExpiry,
-        details: record.details,
+        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
+        recordName: validatedInput.recordName,
+        recordExpiry: validatedInput.recordExpiry,
+        details: validatedInput.details,
       };
       const createdRecordId = await this.trainingRecordRepository.create(
         recordToCreate,
         userId
       );
-      const fetchedRecord = await this.getById(record.ownerId, createdRecordId);
+      const fetchedRecord = await this.getById(
+        validatedInput.ownerId,
+        createdRecordId
+      );
       if (!fetchedRecord) {
         throw new Error("Failed to fetch created training record");
       }
 
       const { id, ...restFetched } = fetchedRecord;
 
-      if (JSON.stringify(record) !== JSON.stringify(restFetched)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created record does not match expected values");
       }
 
@@ -80,25 +87,30 @@ export class TrainingRecordService {
     userId: string
   ): Promise<TrainingRecord> {
     try {
+      const validatedInput = trainingRecordSchema.parse(record);
+
       const dbRecord: DbTrainingRecordEntity = {
-        pK: record.ownerId,
-        sK: record.id,
+        pK: validatedInput.ownerId,
+        sK: validatedInput.id,
         entityType: "trainingRecord",
-        entityOwner: record.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: record.recordName,
-        recordExpiry: record.recordExpiry,
-        details: record.details,
+        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
+        recordName: validatedInput.recordName,
+        recordExpiry: validatedInput.recordExpiry,
+        details: validatedInput.details,
       };
 
       await this.trainingRecordRepository.update(dbRecord, userId);
 
-      const fetchedRecord = await this.getById(record.ownerId, record.id);
+      const fetchedRecord = await this.getById(
+        validatedInput.ownerId,
+        validatedInput.id
+      );
       if (!fetchedRecord) {
         throw new Error("Failed to fetch updated training record");
       }
 
       // Assert exact equality for update
-      if (JSON.stringify(record) !== JSON.stringify(fetchedRecord)) {
+      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedRecord)) {
         throw new Error("Updated record does not match expected values");
       }
 
