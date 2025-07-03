@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { MpMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -68,32 +69,22 @@ export function MpForm() {
     const field = e.target.name;
     let value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
 
-    // Special case for attendance allowance checkbox
-    if (
-      field === "details.attendanceAllowance" &&
-      e.target.type === "checkbox"
-    ) {
-      value = e.target.checked ? "approved" : "pending";
-    }
-
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as Record<string, any>),
-          [child]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    }
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
+      console.log(formData);
       updateMpMutation.mutate({ id, ...formData });
     } else {
       createMpMutation.mutate(formData);
@@ -268,10 +259,25 @@ export function MpForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Services & Capacity
               </h3>
+              <div>
+                <label
+                  htmlFor="needs"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Needs Offered (comma-separated)
+                </label>
+                <Input
+                  id="needs"
+                  name="details.needs"
+                  value={formData.details.needs}
+                  onChange={handleCSVInputChange}
+                  placeholder="e.g., Personal Care, Domestic Support"
+                />
+              </div>
 
               <div>
                 <label
-                  htmlFor="servicesOffered"
+                  htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Services Offered (comma-separated)
@@ -280,7 +286,7 @@ export function MpForm() {
                   id="services"
                   name="details.services"
                   value={formData.details.services}
-                  onChange={handleInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>
@@ -296,7 +302,7 @@ export function MpForm() {
                   id="specialisms"
                   name="details.specialisms"
                   value={formData.details.specialisms}
-                  onChange={handleInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
               </div>

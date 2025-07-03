@@ -17,16 +17,23 @@ const mpLogColumns: TableColumn<MpLog>[] = [
   {
     key: "mps",
     header: "MPs",
-    render: (item: MpLog) =>
-      mps.find((mp: Mp) => mp.id === item.mpId)?.name || item.mpId,
+    render: (item: MpLog) => item.mps.map((mp) => mp.details.name).join(", "),
   },
   {
     key: "services",
     header: "Service(s)",
-    render: (item: MpLog) => item.services.join(", "),
+    render: (item: MpLog) => item.details.services.join(", "),
   },
-  { key: "hoursLogged", header: "Hours Logged" },
-  { key: "notes", header: "Notes" },
+  {
+    key: "hoursLogged",
+    header: "Hours Logged",
+    render: (item: MpLog) => item.details.hoursLogged,
+  },
+  {
+    key: "notes",
+    header: "Notes",
+    render: (item: MpLog) => item.details.notes,
+  },
 ];
 
 export default function MpLogRoutes() {
@@ -60,6 +67,9 @@ export default function MpLogRoutes() {
   const handleDelete = (id: string) => {
     deleteMpLogMutation.mutate({ id });
   };
+
+  if (mpLogsQuery.isLoading) return <div>Loading...</div>;
+  if (mpLogsQuery.error) return <div>Error loading MP Logs</div>;
 
   return (
     <Routes>

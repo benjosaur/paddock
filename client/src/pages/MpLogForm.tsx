@@ -4,32 +4,30 @@ import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { MpLog, Client, Mp } from "../types";
+import type { MpLog, ClientMetadata, MpMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function MpLogForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<MpLog>>({
+  const [formData, setFormData] = useState<Omit<MpLog, "id">>({
     date: "",
-    clientId: undefined,
-    mpId: undefined,
-    services: [],
-    hoursLogged: undefined,
-    notes: "",
+    clients: [],
+    mps: [],
+    details: { services: [], hoursLogged: 1, notes: "" },
   });
-
-  const [servicesInput, setServicesInput] = useState("");
 
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+
   const mpLogQuery = useQuery({
     ...trpc.mpLogs.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    enabled: isEditing,
   });
   const mpLogQueryKey = trpc.mpLogs.getAll.queryKey();
 
@@ -54,41 +52,36 @@ export function MpLogForm() {
   // Load existing data when editing
   useEffect(() => {
     if (mpLogQuery.data) {
-      const existingLog = mpLogQuery.data;
-      setFormData(existingLog);
-      setServicesInput(existingLog.services.join(", "));
+      setFormData(mpLogQuery.data);
     }
   }, [mpLogQuery.data]);
 
-  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
-    value: client.id,
-    label: client.name,
-  }));
+  const clientOptions = (clientsQuery.data || []).map(
+    (client: ClientMetadata) => ({
+      value: client.id,
+      label: client.details.name,
+    })
+  );
 
-  const mpOptions = (mpsQuery.data || []).map((mp: Mp) => ({
+  const mpOptions = (mpsQuery.data || []).map((mp: MpMetadata) => ({
     value: mp.id,
-    label: mp.name,
+    label: mp.details.name,
   }));
 
-  const handleInputChange = (
-    field: keyof MpLog,
-    value: string | number | undefined
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    let value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleNumericInputChange = (field: keyof MpLog, value: string) => {
-    const numericValue = value === "" ? undefined : parseFloat(value);
-    setFormData((prev) => ({ ...prev, [field]: numericValue }));
-  };
-
-  const handleArrayInputChange = (value: string) => {
-    const array = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-    setFormData((prev) => ({ ...prev, services: array }));
-    setServicesInput(value);
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -134,9 +127,10 @@ export function MpLogForm() {
                 </label>
                 <Input
                   id="date"
+                  name="date"
                   type="date"
                   value={formData.date || ""}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -152,18 +146,19 @@ export function MpLogForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option: { value: number; label: string }) =>
-                        option.value === formData.clientId
+                      (option: { value: string; label: string }) =>
+                        formData.clients
+                          ?.map((client) => client.id)
+                          .includes(option.value)
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value)
-                  }
+                  onChange={handleInputChange}
                   placeholder="Select a client..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
                   required
+                  isMulti
                 />
               </div>
 
@@ -177,19 +172,17 @@ export function MpLogForm() {
                 <Select
                   options={mpOptions}
                   value={
-                    mpOptions.find(
-                      (option: { value: number; label: string }) =>
-                        option.value === formData.mpId
+                    mpOptions.find((option: { value: string; label: string }) =>
+                      formData.mps?.map((mp) => mp.id).includes(option.value)
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleInputChange("mpId", selectedOption?.value)
-                  }
+                  onChange={handleInputChange}
                   placeholder="Select an MP..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
                   required
+                  isMulti
                 />
               </div>
             </div>
@@ -208,7 +201,8 @@ export function MpLogForm() {
                 </label>
                 <Input
                   id="services"
-                  value={servicesInput}
+                  name="details.services"
+                  value={formData.details.services}
                   onChange={(e) => handleArrayInputChange(e.target.value)}
                   placeholder="e.g., Consultation, Document Review"
                   required

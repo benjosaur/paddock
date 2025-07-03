@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { VolunteerMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -69,27 +70,16 @@ export function VolunteerForm() {
     const field = e.target.name;
     let value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
 
-    // Special case for attendance allowance checkbox
-    if (
-      field === "details.attendanceAllowance" &&
-      e.target.type === "checkbox"
-    ) {
-      value = e.target.checked ? "approved" : "pending";
-    }
-
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as Record<string, any>),
-          [child]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    }
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -273,7 +263,23 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="servicesOffered"
+                  htmlFor="needs"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Needs Offered (comma-separated)
+                </label>
+                <Input
+                  id="needs"
+                  name="details.needs"
+                  value={formData.details.needs}
+                  onChange={handleCSVInputChange}
+                  placeholder="e.g., Personal Care, Domestic Support"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Services Offered (comma-separated)
@@ -282,7 +288,7 @@ export function VolunteerForm() {
                   id="services"
                   name="details.services"
                   value={formData.details.services}
-                  onChange={handleInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>
@@ -298,7 +304,7 @@ export function VolunteerForm() {
                   id="specialisms"
                   name="details.specialisms"
                   value={formData.details.specialisms}
-                  onChange={handleInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
               </div>

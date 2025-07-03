@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function ClientForm() {
   const navigate = useNavigate();
@@ -71,49 +72,16 @@ export function ClientForm() {
     const field = e.target.name;
     let value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
-
-    // Special case for attendance allowance checkbox
-    if (
-      field === "details.attendanceAllowance" &&
-      e.target.type === "checkbox"
-    ) {
-      value = e.target.checked ? "approved" : "pending";
-    }
-
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as Record<string, any>),
-          [child]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    }
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleArrayInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name;
-    const value = e.target.value;
-    const array = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as Record<string, any>),
-          [child]: array,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: array }));
-    }
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -340,7 +308,7 @@ export function ClientForm() {
                   id="needs"
                   name="details.needs"
                   value={formData.details.needs?.join(", ") || ""}
-                  onChange={handleArrayInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>{" "}
@@ -355,47 +323,14 @@ export function ClientForm() {
                   id="services"
                   name="details.services"
                   value={formData.details.services?.join(", ") || ""}
-                  onChange={handleArrayInputChange}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Home Care, Meal Preparation"
-                />
-              </div>{" "}
-              <div className="space-y-3">
+                />{" "}
                 <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="hasMp"
-                    checked={formData.mpRequests?.length > 0 || false}
-                    onChange={(e) => {
-                      // This needs custom handling for the array
-                      if (
-                        e.target.checked &&
-                        formData.mpRequests?.length === 0
-                      ) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          mpRequests: [{ requestType: "mp" } as any],
-                        }));
-                      } else if (!e.target.checked) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          mpRequests: [],
-                        }));
-                      }
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has MP?
-                  </span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Input
+                    id="attendance"
                     name="details.attendanceAllowance"
-                    checked={
-                      formData.details.attendanceAllowance === "approved"
-                    }
+                    value={formData.details.attendanceAllowance || ""}
                     onChange={handleInputChange}
                     className="rounded border-gray-300"
                   />
