@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Select from "react-select";
+import Select, { MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
@@ -68,10 +68,14 @@ export function MpLogForm() {
     label: mp.details.name,
   }));
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const field = e.target.name;
     let value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
@@ -82,6 +86,20 @@ export function MpLogForm() {
       | "details.specialisms";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    options: ({ id: string } & Record<string, any>)[],
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const matchedOptions = options.filter((option) =>
+      newValues.map((value) => value.value).includes(option.id)
+    );
+    setFormData((prev) => updateNestedValue(field, matchedOptions, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,14 +163,20 @@ export function MpLogForm() {
                 <Select
                   options={clientOptions}
                   value={
-                    clientOptions.find(
+                    clientOptions.filter(
                       (option: { value: string; label: string }) =>
                         formData.clients
                           ?.map((client) => client.id)
                           .includes(option.value)
                     ) || null
                   }
-                  onChange={handleInputChange}
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "clients",
+                      clientsQuery.data ?? [],
+                      newValues
+                    )
+                  }
                   placeholder="Select a client..."
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -172,11 +196,18 @@ export function MpLogForm() {
                 <Select
                   options={mpOptions}
                   value={
-                    mpOptions.find((option: { value: string; label: string }) =>
-                      formData.mps?.map((mp) => mp.id).includes(option.value)
+                    mpOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.mps?.map((mp) => mp.id).includes(option.value)
                     ) || null
                   }
-                  onChange={handleInputChange}
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "mps",
+                      mpsQuery.data ?? [],
+                      newValues
+                    )
+                  }
                   placeholder="Select an MP..."
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -203,7 +234,7 @@ export function MpLogForm() {
                   id="services"
                   name="details.services"
                   value={formData.details.services}
-                  onChange={(e) => handleArrayInputChange(e.target.value)}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Consultation, Document Review"
                   required
                 />
@@ -218,13 +249,12 @@ export function MpLogForm() {
                 </label>
                 <Input
                   id="hoursLogged"
+                  name="details.hoursLogged"
                   type="number"
                   step="0.5"
                   min="0"
-                  value={formData.hoursLogged || ""}
-                  onChange={(e) =>
-                    handleNumericInputChange("hoursLogged", e.target.value)
-                  }
+                  value={formData.details.hoursLogged || ""}
+                  onChange={handleInputChange}
                   placeholder="e.g., 2.5"
                   required
                 />
@@ -239,8 +269,9 @@ export function MpLogForm() {
                 </label>
                 <textarea
                   id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  name="details.notes"
+                  value={formData.details.notes || ""}
+                  onChange={handleInputChange}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Additional notes about the service provided..."
