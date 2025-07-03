@@ -3,45 +3,40 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Volunteer } from "../types";
+import type { VolunteerMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<Volunteer>>({
-    name: "",
-    dob: "",
-    address: "",
+  const [formData, setFormData] = useState<Omit<VolunteerMetadata, "id">>({
+    dateOfBirth: "",
     postCode: "",
-    phone: "",
-    email: "",
-    nextOfKin: "",
-    dbsNumber: "",
-    dbsExpiry: "",
-    servicesOffered: [],
-    needTypes: [],
-    transport: false,
-    capacity: "",
-    specialisms: [],
+    recordName: "",
+    recordExpiry: "",
+    details: {
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      nextOfKin: "",
+      needs: [],
+      services: [],
+      specialisms: [],
+      transport: false,
+      capacity: "",
+      notes: "",
+    },
     trainingRecords: [],
-  });
-
-  const [servicesInput, setServicesInput] = useState("");
-  const [needTypesInput, setNeedTypesInput] = useState("");
-  const [specialismsInput, setSpecialismsInput] = useState("");
-  const [trainingInput, setTrainingInput] = useState({
-    training: "",
-    expiry: "",
   });
 
   const queryClient = useQueryClient();
 
   const volunteerQuery = useQuery({
     ...trpc.volunteers.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    enabled: isEditing,
   });
   const volunteerQueryKey = trpc.volunteers.getAll.queryKey();
 
@@ -67,56 +62,42 @@ export function VolunteerForm() {
     if (volunteerQuery.data) {
       const volunteer = volunteerQuery.data;
       setFormData(volunteer);
-      setServicesInput(volunteer.servicesOffered.join(", "));
-      setNeedTypesInput(volunteer.needTypes.join(", "));
-      setSpecialismsInput((volunteer.specialisms || []).join(", "));
     }
   }, [volunteerQuery.data]);
 
-  const handleInputChange = (
-    field: keyof Volunteer,
-    value: string | number | boolean
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    let value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
 
-  const handleArrayInputChange = (
-    field: "servicesOffered" | "needTypes" | "specialisms",
-    value: string
-  ) => {
-    const array = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-    setFormData((prev) => ({ ...prev, [field]: array }));
-  };
+    // Special case for attendance allowance checkbox
+    if (
+      field === "details.attendanceAllowance" &&
+      e.target.type === "checkbox"
+    ) {
+      value = e.target.checked ? "approved" : "pending";
+    }
 
-  const addTrainingRecord = () => {
-    if (trainingInput.training && trainingInput.expiry) {
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
       setFormData((prev) => ({
         ...prev,
-        trainingRecords: [...(prev.trainingRecords || []), trainingInput],
+        [parent]: {
+          ...(prev[parent as keyof typeof prev] as Record<string, any>),
+          [child]: value,
+        },
       }));
-      setTrainingInput({ training: "", expiry: "" });
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
     }
-  };
-
-  const removeTrainingRecord = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      trainingRecords:
-        prev.trainingRecords?.filter((_, i) => i !== index) || [],
-    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateVolunteerMutation.mutate({ ...formData, id } as Volunteer & {
-        id: number;
-      });
+      updateVolunteerMutation.mutate({ ...formData, id });
     } else {
-      createVolunteerMutation.mutate(formData as Omit<Volunteer, "id">);
+      createVolunteerMutation.mutate(formData);
     }
   };
 
@@ -153,8 +134,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="name"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  name="details.name"
+                  value={formData.details.name || ""}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -168,9 +150,10 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="dob"
+                  name="dateOfBirth"
                   type="date"
-                  value={formData.dob || ""}
-                  onChange={(e) => handleInputChange("dob", e.target.value)}
+                  value={formData.dateOfBirth || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -183,8 +166,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="address"
-                  value={formData.address || ""}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  name="details.address"
+                  value={formData.details.address || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -197,10 +181,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="postCode"
+                  name="postCode"
                   value={formData.postCode || ""}
-                  onChange={(e) =>
-                    handleInputChange("postCode", e.target.value)
-                  }
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -213,9 +196,10 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="phone"
+                  name="details.phone"
                   type="tel"
-                  value={formData.phone || ""}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.details.phone || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -228,9 +212,10 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="email"
+                  name="details.email"
                   type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  value={formData.details.email || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -243,10 +228,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="nextOfKin"
-                  value={formData.nextOfKin || ""}
-                  onChange={(e) =>
-                    handleInputChange("nextOfKin", e.target.value)
-                  }
+                  name="details.nextOfKin"
+                  value={formData.details.nextOfKin || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -259,10 +243,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="dbsNumber"
-                  value={formData.dbsNumber || ""}
-                  onChange={(e) =>
-                    handleInputChange("dbsNumber", e.target.value)
-                  }
+                  name="recordName"
+                  value={formData.recordName || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -276,10 +259,9 @@ export function VolunteerForm() {
                 <Input
                   id="dbsExpiry"
                   type="date"
-                  value={formData.dbsExpiry || ""}
-                  onChange={(e) =>
-                    handleInputChange("dbsExpiry", e.target.value)
-                  }
+                  name="recordExpiry"
+                  value={formData.recordExpiry || ""}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -297,31 +279,11 @@ export function VolunteerForm() {
                   Services Offered (comma-separated)
                 </label>
                 <Input
-                  id="servicesOffered"
-                  value={servicesInput}
-                  onChange={(e) => {
-                    setServicesInput(e.target.value);
-                    handleArrayInputChange("servicesOffered", e.target.value);
-                  }}
+                  id="services"
+                  name="details.services"
+                  value={formData.details.services}
+                  onChange={handleInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="needTypes"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Need Types (comma-separated)
-                </label>
-                <Input
-                  id="needTypes"
-                  value={needTypesInput}
-                  onChange={(e) => {
-                    setNeedTypesInput(e.target.value);
-                    handleArrayInputChange("needTypes", e.target.value);
-                  }}
-                  placeholder="e.g., Elderly Care, Disability Support"
                 />
               </div>
 
@@ -334,11 +296,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="specialisms"
-                  value={specialismsInput}
-                  onChange={(e) => {
-                    setSpecialismsInput(e.target.value);
-                    handleArrayInputChange("specialisms", e.target.value);
-                  }}
+                  name="details.specialisms"
+                  value={formData.details.specialisms}
+                  onChange={handleInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
               </div>
@@ -352,11 +312,10 @@ export function VolunteerForm() {
                 </label>
                 <label className="flex items-center space-x-2">
                   <input
+                    name="details.transport"
                     type="checkbox"
-                    checked={formData.transport || false}
-                    onChange={(e) =>
-                      handleInputChange("transport", e.target.checked)
-                    }
+                    checked={formData.details.transport || false}
+                    onChange={handleInputChange}
                     className="rounded border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-700">
@@ -374,10 +333,9 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="capacity"
-                  value={formData.capacity || ""}
-                  onChange={(e) =>
-                    handleInputChange("capacity", e.target.value)
-                  }
+                  name="details.capacity"
+                  value={formData.details.capacity || ""}
+                  onChange={handleInputChange}
                   placeholder="e.g., Full Time, Part Time"
                 />
               </div>
@@ -386,33 +344,10 @@ export function VolunteerForm() {
                 <h4 className="text-md font-medium text-gray-700">
                   Training Records
                 </h4>
-
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Training name"
-                    value={trainingInput.training}
-                    onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        training: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    type="date"
-                    placeholder="Expiry date"
-                    value={trainingInput.expiry}
-                    onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        expiry: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button type="button" onClick={addTrainingRecord} size="sm">
-                    Add
-                  </Button>
-                </div>
+                {/* TODO */}
+                <Button type="button" onClick={() => {}} size="sm">
+                  Edit Records
+                </Button>
 
                 {formData.trainingRecords &&
                   formData.trainingRecords.length > 0 && (
@@ -423,16 +358,8 @@ export function VolunteerForm() {
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span className="text-sm">
-                            {record.training} - {record.expiry}
+                            {record.recordName} - Expires: {record.recordExpiry}
                           </span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeTrainingRecord(index)}
-                          >
-                            Remove
-                          </Button>
                         </div>
                       ))}
                     </div>

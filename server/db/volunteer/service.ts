@@ -114,10 +114,9 @@ export class VolunteerService {
       await this.volunteerRepository.update(dbVolunteer, userId);
       const fetchedVolunteer = await this.getById(updatedVolunteer.id);
 
-      const { volunteerLogs, trainingRecords, ...restFetched } =
-        fetchedVolunteer;
-
-      if (JSON.stringify(updatedVolunteer) !== JSON.stringify(restFetched)) {
+      if (
+        JSON.stringify(updatedVolunteer) !== JSON.stringify(fetchedVolunteer)
+      ) {
         throw new Error("Updated volunteer does not match expected values");
       }
 

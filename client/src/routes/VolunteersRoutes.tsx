@@ -4,42 +4,57 @@ import { DataTable } from "../components/DataTable";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
-import type { Volunteer, TableColumn } from "../types";
+import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket } from "@/utils/helpers";
+import { calculateAgeBracket } from "../utils/helpers";
 
-const volunteerColumns: TableColumn<Volunteer>[] = [
+const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
+  {
+    key: "name",
+    header: "Name",
+    render: (item: VolunteerMetadata) => item.details.name,
+  },
   {
     key: "dob",
     header: "Age",
-    render: (item: Volunteer) =>
-      item.dob ? calculateAgeBracket(item.dob) + " years" : "Unknown",
+    render: (item: VolunteerMetadata) =>
+      item.dateOfBirth
+        ? calculateAgeBracket(item.dateOfBirth) + " years"
+        : "Unknown",
   },
   { key: "postCode", header: "Post Code" },
   {
-    key: "servicesOffered",
+    key: "services",
     header: "Services",
-    render: (item: Volunteer) => item.servicesOffered.join(", "),
+    render: (item: VolunteerMetadata) => item.details.services.join(", "),
   },
   {
     key: "needTypes",
     header: "Need Types",
-    render: (item: Volunteer) => item.needTypes.join(", "),
+    render: (item: VolunteerMetadata) => item.details.needs.join(", "),
   },
-  { key: "dbsExpiry", header: "DBS" },
-  { key: "capacity", header: "Capacity?" },
+  {
+    key: "dbsExpiry",
+    header: "DBS Expiry",
+    render: (item: VolunteerMetadata) => item.recordExpiry,
+  },
+  {
+    key: "capacity",
+    header: "Capacity?",
+    render: (item: VolunteerMetadata) => item.details.capacity,
+  },
   {
     key: "transport",
     header: "Transport?",
-    render: (item: Volunteer) => (item.transport ? "Yes" : "No"),
+    render: (item: VolunteerMetadata) =>
+      item.details.transport ? "Yes" : "No",
   },
 ];
 
-export default function VolunteersRoutes() {
+export function VolunteersRoutes() {
   const navigate = useNavigate();
-  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<string | null>(
     null
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
@@ -48,8 +63,6 @@ export default function VolunteersRoutes() {
 
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
   const volunteersQueryKey = trpc.volunteers.getAll.queryKey();
-
-  const volunteers = volunteersQuery.data || [];
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -68,19 +81,22 @@ export default function VolunteersRoutes() {
     navigate(`/volunteers/edit/${encodedId}`);
   };
 
-  const handleViewVolunteer = (volunteer: Volunteer) => {
-    setSelectedVolunteer(volunteer);
+  const handleViewVolunteer = (volunteer: VolunteerMetadata) => {
+    setSelectedVolunteerId(volunteer.id);
     setIsVolunteerModalOpen(true);
   };
 
   const handleCloseVolunteerModal = () => {
     setIsVolunteerModalOpen(false);
-    setSelectedVolunteer(null);
+    setSelectedVolunteerId(null);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteVolunteerMutation.mutate({ id });
   };
+
+  if (volunteersQuery.isLoading) return <div>Loading...</div>;
+  if (volunteersQuery.error) return <div>Error loading Volunteers</div>;
 
   return (
     <Routes>
@@ -92,7 +108,7 @@ export default function VolunteersRoutes() {
               key="volunteers"
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
-              data={volunteers}
+              data={volunteersQuery.data || []}
               columns={volunteerColumns}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
@@ -100,9 +116,9 @@ export default function VolunteersRoutes() {
               onAddNew={handleAddNew}
               resource="volunteers"
             />
-            {selectedVolunteer && (
+            {selectedVolunteerId && (
               <VolunteerDetailModal
-                volunteer={selectedVolunteer}
+                volunteerId={selectedVolunteerId}
                 isOpen={isVolunteerModalOpen}
                 onClose={handleCloseVolunteerModal}
                 onEdit={handleEditNavigation}
@@ -117,3 +133,5 @@ export default function VolunteersRoutes() {
     </Routes>
   );
 }
+
+export default VolunteersRoutes;
