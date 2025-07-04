@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { requestStatuses, requestTypes, userRoles } from "../options";
+import {
+  attendanceAllowanceStatus,
+  requestStatus,
+  requestTypes,
+  userRoles,
+} from "../options";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),
@@ -25,7 +30,7 @@ export const clientRequestSchema = z.object({
     name: z.string(),
     notes: z.string().default(""),
     schedule: z.string().default(""),
-    status: z.enum(requestStatuses).default("pending"),
+    status: z.enum(requestStatus).default("pending"),
   }),
 });
 
@@ -99,7 +104,7 @@ export const clientMetadataSchema = z.object({
     clientAgreementComments: z.string().default(""),
     riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
-    attendanceAllowance: z.string().default(""),
+    attendanceAllowance: z.enum(attendanceAllowanceStatus),
     attendsMag: z.boolean().default(false),
   }),
   mpRequests: z

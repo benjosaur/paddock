@@ -6,8 +6,8 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { ClientRequest, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateNestedValue } from "@/utils/helpers";
-import { requestStatuses, requestTypes } from "shared/options";
+import { capitalise, updateNestedValue } from "@/utils/helpers";
+import { requestStatus, requestTypes } from "shared/options";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
@@ -67,12 +67,12 @@ export function ClientRequestForm() {
 
   const requestTypeOptions = requestTypes.map((option) => ({
     value: option,
-    label: option,
+    label: capitalise(option),
   }));
 
-  const requestStatusOptions = requestStatuses.map((option) => ({
+  const requestStatusOptions = requestStatus.map((option) => ({
     value: option,
-    label: option,
+    label: capitalise(option),
   }));
 
   useEffect(() => {

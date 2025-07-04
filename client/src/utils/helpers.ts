@@ -31,6 +31,10 @@ export const updateNestedValue = <
   }
 };
 
+export const capitalise = (string: string): string => {
+  return string[0].toUpperCase() + string.slice(1);
+};
+
 export const calculateTimeToDate = (expiryDate: string) => {
   const today = new Date();
   const expiry = new Date(expiryDate);

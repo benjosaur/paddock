@@ -5,7 +5,9 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateNestedValue } from "@/utils/helpers";
+import { capitalise, updateNestedValue } from "@/utils/helpers";
+import Select from "react-select";
+import { attendanceAllowanceStatus } from "shared/options";
 
 export function ClientForm() {
   const navigate = useNavigate();
@@ -88,6 +90,17 @@ export function ClientForm() {
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
+  const handleSelectChange = (
+    field: string,
+    newValue: {
+      label: string;
+      value: string;
+    } | null
+  ) => {
+    if (!newValue) return null;
+    setFormData((prev) => updateNestedValue(field, newValue.value, prev));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
@@ -102,6 +115,13 @@ export function ClientForm() {
   const handleCancel = () => {
     navigate("/clients");
   };
+
+  const attendanceAllowanceOptions = attendanceAllowanceStatus.map(
+    (option) => ({
+      value: option,
+      label: capitalise(option),
+    })
+  );
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -134,6 +154,7 @@ export function ClientForm() {
                   value={formData.details.name || ""}
                   onChange={handleInputChange}
                   required
+                  disabled={isEditing}
                 />
               </div>{" "}
               <div>
@@ -179,6 +200,7 @@ export function ClientForm() {
                   value={formData.postCode || ""}
                   onChange={handleInputChange}
                   required
+                  disabled={isEditing}
                 />
               </div>{" "}
               <div>
@@ -332,18 +354,30 @@ export function ClientForm() {
                   onChange={handleCSVInputChange}
                   placeholder="e.g., Home Care, Meal Preparation"
                 />{" "}
-                <label className="flex items-center space-x-2">
-                  <Input
-                    id="attendance"
-                    name="details.attendanceAllowance"
-                    value={formData.details.attendanceAllowance || ""}
-                    onChange={handleInputChange}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has Attendance Allowance?
-                  </span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Attendance Allowance?
                 </label>
+                <Select
+                  options={attendanceAllowanceOptions}
+                  value={
+                    attendanceAllowanceOptions.find(
+                      (option) =>
+                        option.value === formData.details.attendanceAllowance
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleSelectChange(
+                      "details.attendanceAllowance",
+                      selectedOption
+                    )
+                  }
+                  placeholder="Select request type..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  required
+                />
               </div>
             </div>
           </div>

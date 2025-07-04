@@ -6,7 +6,7 @@ import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket } from "@/utils/helpers";
+import { calculateAgeBracket, capitalise } from "@/utils/helpers";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
   { key: "id", header: "ID" },
@@ -45,7 +45,7 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     key: "attendanceAllowance",
     header: "Has AA?",
     render: (item: ClientMetadata) =>
-      item.details.attendanceAllowance ? "Yes" : "No",
+      capitalise(item.details.attendanceAllowance),
   },
 ];
 

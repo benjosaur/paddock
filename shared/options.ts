@@ -5,4 +5,5 @@ export const userRoles = [
   "Finance",
 ] as const;
 export const requestTypes = ["mp", "volunteer"] as const;
-export const requestStatuses = ["pending", "urgent"] as const;
+export const requestStatus = ["pending", "urgent"] as const;
+export const attendanceAllowanceStatus = ["no", "pending", "yes"] as const;
