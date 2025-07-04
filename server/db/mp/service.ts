@@ -47,7 +47,7 @@ export class MpService {
 
   async create(newMp: Omit<MpMetadata, "id">, userId: string): Promise<MpFull> {
     try {
-      const validatedInput = mpMetadataSchema.omit({ id: true }).parse(newMp);
+      const validatedInput = mpFullSchema.omit({ id: true }).parse(newMp);
 
       const mpToCreate: Omit<DbMpEntity, "id" | "pK" | "sK"> = {
         ...validatedInput,
@@ -61,7 +61,7 @@ export class MpService {
         throw new Error("Failed to fetch created mp");
       }
 
-      const { id, mpLogs, trainingRecords, ...restFetched } = fetchedMp;
+      const { id, ...restFetched } = fetchedMp;
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created mp does not match expected values");
@@ -77,7 +77,7 @@ export class MpService {
   async update(updatedMp: MpMetadata, userId: string): Promise<MpFull> {
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
-      const validatedInput = mpMetadataSchema.parse(updatedMp);
+      const validatedInput = mpFullSchema.parse(updatedMp);
 
       const dbMp: DbMpEntity = {
         pK: validatedInput.id,

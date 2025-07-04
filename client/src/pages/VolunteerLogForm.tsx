@@ -1,24 +1,23 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import Select from "react-select";
+import Select, { MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Client, VolunteerLog, Volunteer } from "../types";
+import type { ClientMetadata, VolunteerLog, VolunteerMetadata } from "../types";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function VolunteerLogForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<VolunteerLog>>({
+  const [formData, setFormData] = useState<Omit<VolunteerLog, "id">>({
     date: "",
-    clientId: undefined,
-    volunteerId: undefined,
-    activity: "",
-    hoursLogged: 0,
-    notes: "",
+    clients: [],
+    volunteers: [],
+    details: { services: [], hoursLogged: 1, notes: "" },
   });
 
   const queryClient = useQueryClient();
@@ -56,23 +55,53 @@ export function VolunteerLogForm() {
     }
   }, [volunteerLogQuery.data]);
 
-  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
-    value: client.id,
-    label: client.name,
-  }));
+  const clientOptions = (clientsQuery.data || []).map(
+    (client: ClientMetadata) => ({
+      value: client.id,
+      label: client.details.name,
+    })
+  );
 
   const volunteerOptions = (volunteersQuery.data || []).map(
-    (volunteer: Volunteer) => ({
+    (volunteer: VolunteerMetadata) => ({
       value: volunteer.id,
-      label: volunteer.name,
+      label: volunteer.details.name,
     })
   );
 
   const handleInputChange = (
-    field: keyof VolunteerLog,
-    value: string | number | undefined
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const field = e.target.name;
+    let value =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    options: ({ id: string } & Record<string, any>)[],
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    // finds the whole client object to put into mplog -> excess will be parsed away server-side
+    const matchedOptions = options.filter((option) =>
+      newValues.map((value) => value.value).includes(option.id)
+    );
+    setFormData((prev) => updateNestedValue(field, matchedOptions, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -121,9 +150,10 @@ export function VolunteerLogForm() {
                 </label>
                 <Input
                   id="date"
+                  name="date"
                   type="date"
                   value={formData.date || ""}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -138,19 +168,25 @@ export function VolunteerLogForm() {
                 <Select
                   options={clientOptions}
                   value={
-                    clientOptions.find(
-                      (option: { value: number; label: string }) =>
-                        option.value === formData.clientId
+                    clientOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.clients
+                          ?.map((client) => client.id)
+                          .includes(option.value)
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value)
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "clients",
+                      clientsQuery.data ?? [],
+                      newValues
+                    )
                   }
                   placeholder="Select a client..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
-                  isClearable
+                  isMulti
                 />
               </div>
 
@@ -164,18 +200,42 @@ export function VolunteerLogForm() {
                 <Select
                   options={volunteerOptions}
                   value={
-                    volunteerOptions.find(
-                      (option: { value: number; label: string }) =>
-                        option.value === formData.volunteerId
+                    volunteerOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.volunteers
+                          ?.map((volunteer) => volunteer.id)
+                          .includes(option.value)
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleInputChange("volunteerId", selectedOption?.value)
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "volunteers",
+                      volunteersQuery.data ?? [],
+                      newValues
+                    )
                   }
                   placeholder="Select a volunteer..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
+                  isMulti
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="services"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Services (comma-separated) *
+                </label>
+                <Input
+                  id="services"
+                  name="details.services"
+                  value={formData.details.services}
+                  onChange={handleCSVInputChange}
+                  placeholder="e.g., Consultation, Document Review"
                   required
                 />
               </div>
@@ -189,59 +249,32 @@ export function VolunteerLogForm() {
                 </label>
                 <Input
                   id="hoursLogged"
+                  name="details.hoursLogged"
                   type="number"
-                  min="0"
                   step="0.5"
-                  value={formData.hoursLogged || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "hoursLogged",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="e.g., 4.5"
+                  min="0"
+                  value={formData.details.hoursLogged || ""}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 2.5"
                   required
                 />
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700">
-                Activity Details
-              </h3>
 
               <div>
                 <label
-                  htmlFor="activity"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Activity *
-                </label>
-                <Input
-                  id="activity"
-                  value={formData.activity || ""}
-                  onChange={(e) =>
-                    handleInputChange("activity", e.target.value)
-                  }
-                  placeholder="e.g., Admin Support, Event Planning"
-                  required
-                />
-              </div>
-
-              <div className="select-none">
-                <label
                   htmlFor="notes"
-                  className="block select-text text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Notes
                 </label>
                 <textarea
                   id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  name="details.notes"
+                  value={formData.details.notes || ""}
+                  onChange={handleInputChange}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Additional notes about the volunteer activity..."
+                  placeholder="Additional notes about the service provided..."
                 />
               </div>
             </div>

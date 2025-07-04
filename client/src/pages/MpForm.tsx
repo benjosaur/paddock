@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { MpMetadata } from "../types";
+import type { MpFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -12,7 +12,7 @@ export function MpForm() {
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<MpMetadata, "id">>({
+  const [formData, setFormData] = useState<Omit<MpFull, "id">>({
     dateOfBirth: "",
     postCode: "",
     recordName: "",
@@ -31,6 +31,8 @@ export function MpForm() {
       notes: "",
     },
     trainingRecords: [],
+    //below not edited here
+    mpLogs: [],
   });
 
   const queryClient = useQueryClient();
@@ -135,7 +137,7 @@ export function MpForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth
+                  Date of Birth *
                 </label>
                 <Input
                   id="dob"
@@ -143,6 +145,7 @@ export function MpForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 
@@ -166,13 +169,14 @@ export function MpForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
                 <Input
                   id="postCode"
                   name="postCode"
                   value={formData.postCode || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 

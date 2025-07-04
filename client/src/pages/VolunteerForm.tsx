@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { VolunteerMetadata } from "../types";
+import type { VolunteerFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -12,7 +12,7 @@ export function VolunteerForm() {
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<VolunteerMetadata, "id">>({
+  const [formData, setFormData] = useState<Omit<VolunteerFull, "id">>({
     dateOfBirth: "",
     postCode: "",
     recordName: "",
@@ -31,6 +31,8 @@ export function VolunteerForm() {
       notes: "",
     },
     trainingRecords: [],
+    // below not edited here
+    volunteerLogs: [],
   });
 
   const queryClient = useQueryClient();
@@ -136,7 +138,7 @@ export function VolunteerForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth
+                  Date of Birth *
                 </label>
                 <Input
                   id="dob"
@@ -144,6 +146,7 @@ export function VolunteerForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 
@@ -167,13 +170,14 @@ export function VolunteerForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
                 <Input
                   id="postCode"
                   name="postCode"
                   value={formData.postCode || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 

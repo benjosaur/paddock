@@ -129,12 +129,12 @@ export const mpMetadataSchema = z.object({
   dateOfBirth: z.string().default(""),
   postCode: z.string(),
   recordName: z.string().default(""),
-  recordExpiry: z.union([z.string().date(), z.literal("n/a")]).default("n/a"),
+  recordExpiry: z.union([z.string().date(), z.literal("")]).default(""),
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),
-    transport: z.boolean(),
-    capacity: z.string(),
+    transport: z.boolean().default(false),
+    capacity: z.string().default(""),
   }),
 });
 

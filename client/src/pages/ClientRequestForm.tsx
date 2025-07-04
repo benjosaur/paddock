@@ -257,6 +257,7 @@ export function ClientRequestForm() {
                   placeholder="Select status..."
                   className="react-select-container"
                   classNamePrefix="react-select"
+                  required
                 />
               </div>
             </div>

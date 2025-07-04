@@ -12,7 +12,6 @@ import {
 } from "./schema";
 import { VolunteerLogService } from "../vlog/service";
 import { TrainingRecordService } from "../training/service";
-import assert from "assert";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -65,7 +64,7 @@ export class VolunteerService {
     userId: string
   ): Promise<VolunteerFull> {
     try {
-      const validatedInput = volunteerMetadataSchema
+      const validatedInput = volunteerFullSchema
         .omit({ id: true })
         .parse(newVolunteer);
 
@@ -84,8 +83,7 @@ export class VolunteerService {
         throw new Error("Failed to fetch created volunteer");
       }
 
-      const { id, volunteerLogs, trainingRecords, ...restFetched } =
-        fetchedVolunteer;
+      const { id, ...restFetched } = fetchedVolunteer;
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
         throw new Error("Created volunteer does not match expected values");
@@ -103,7 +101,7 @@ export class VolunteerService {
     userId: string
   ): Promise<VolunteerFull> {
     try {
-      const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
+      const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
 
       const dbVolunteer: DbVolunteerEntity = {
         pK: validatedInput.id,

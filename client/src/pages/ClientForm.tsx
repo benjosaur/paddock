@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import { ClientMetadata } from "../types";
+import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -12,7 +12,7 @@ export function ClientForm() {
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<ClientMetadata, "id">>({
+  const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
     dateOfBirth: "",
     postCode: "",
     details: {
@@ -34,6 +34,10 @@ export function ClientForm() {
     },
     mpRequests: [],
     volunteerRequests: [],
+    // below not edited here.
+    mpLogs: [],
+    volunteerLogs: [],
+    magLogs: [],
   });
 
   const queryClient = useQueryClient();
@@ -87,11 +91,11 @@ export function ClientForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateClientMutation.mutate({ ...formData, id } as ClientMetadata & {
+      updateClientMutation.mutate({ ...formData, id } as ClientFull & {
         id: number;
       });
     } else {
-      createClientMutation.mutate(formData as Omit<ClientMetadata, "id">);
+      createClientMutation.mutate(formData as Omit<ClientFull, "id">);
     }
   };
 
