@@ -96,7 +96,7 @@ export function MpLogForm() {
       value: string;
     }>
   ) => {
-    // finds the whole client object to put into mplog but excess will be parsed
+    // finds the whole client object to put into mplog -> excess will be parsed away server-side
     const matchedOptions = options.filter((option) =>
       newValues.map((value) => value.value).includes(option.id)
     );

@@ -57,3 +57,5 @@ export async function testTrainingRecordService() {
     console.error("Test failed:", error);
   }
 }
+
+testTrainingRecordService();

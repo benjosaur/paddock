@@ -85,3 +85,5 @@ export async function testMpLogService() {
     console.error("Test failed:", error);
   }
 }
+
+testMpLogService();

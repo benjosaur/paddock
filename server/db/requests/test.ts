@@ -97,3 +97,5 @@ export async function testRequestService() {
     console.error("Test failed:", error);
   }
 }
+
+testRequestService();

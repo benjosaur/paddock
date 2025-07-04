@@ -68,3 +68,5 @@ export async function testVolunteerService() {
     console.error("Test failed:", error);
   }
 }
+
+testVolunteerService();

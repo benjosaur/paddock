@@ -90,3 +90,5 @@ export async function testVolunteerLogService() {
     console.error("Test failed:", error);
   }
 }
+
+testVolunteerLogService();

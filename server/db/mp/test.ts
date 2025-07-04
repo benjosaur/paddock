@@ -60,3 +60,5 @@ export async function testMpService() {
     console.error("Test failed:", error);
   }
 }
+
+testMpService();

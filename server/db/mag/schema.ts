@@ -18,6 +18,7 @@ export const dbMagLogClient = magLogSchema.shape.clients.element
   .extend({
     pK: z.string(),
     sK: z.string(),
+    date: z.string().date(),
     entityType: z.literal("magLog"),
     entityOwner: z.literal("client"),
   });

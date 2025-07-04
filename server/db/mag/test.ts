@@ -8,11 +8,11 @@ const sampleMagLog: Omit<MagLog, "id"> = {
   clients: [
     {
       id: "client#test-client-123",
-      details: { name: "John Smith", notes: "First visit" },
+      details: { name: "John Smith" },
     },
     {
       id: "client#test-client-456",
-      details: { name: "Jane Doe", notes: "Regular check-in" },
+      details: { name: "Jane Doe" },
     },
   ],
   details: {
@@ -70,3 +70,5 @@ export async function testMagLogService() {
     console.error("Test failed:", error);
   }
 }
+
+testMagLogService();

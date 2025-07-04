@@ -72,3 +72,5 @@ export async function testClientService() {
     console.error("Test failed:", error);
   }
 }
+
+testClientService();
