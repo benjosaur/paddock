@@ -20,7 +20,12 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteerLogs: { read: true, create: true, update: true, delete: true },
     magLogs: { read: true, create: true, update: true, delete: true },
     clientRequests: { read: true, create: true, update: true, delete: true },
-    expiries: { read: true, create: false, update: false, delete: false },
+    trainingRecords: {
+      read: true,
+      create: false,
+      update: false,
+      delete: false,
+    },
   },
   Trustee: {
     clients: { read: true, create: false, update: false, delete: false },
@@ -30,7 +35,12 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteerLogs: { read: true, create: false, update: false, delete: false },
     magLogs: { read: true, create: false, update: false, delete: false },
     clientRequests: { read: true, create: false, update: true, delete: false },
-    expiries: { read: true, create: false, update: false, delete: false },
+    trainingRecords: {
+      read: true,
+      create: false,
+      update: false,
+      delete: false,
+    },
   },
   Coordinator: {
     clients: { read: true, create: true, update: true, delete: false },
@@ -40,7 +50,12 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteerLogs: { read: true, create: true, update: true, delete: false },
     magLogs: { read: true, create: true, update: true, delete: false },
     clientRequests: { read: true, create: true, update: true, delete: false },
-    expiries: { read: true, create: false, update: false, delete: false },
+    trainingRecords: {
+      read: true,
+      create: false,
+      update: false,
+      delete: false,
+    },
   },
   Finance: {
     clients: { read: true, create: false, update: false, delete: false },
@@ -50,6 +65,11 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteerLogs: { read: true, create: false, update: false, delete: false },
     magLogs: { read: true, create: false, update: false, delete: false },
     clientRequests: { read: true, create: false, update: false, delete: false },
-    expiries: { read: false, create: false, update: false, delete: false },
+    trainingRecords: {
+      read: false,
+      create: false,
+      update: false,
+      delete: false,
+    },
   },
 };

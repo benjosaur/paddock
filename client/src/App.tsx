@@ -15,11 +15,11 @@ import MagLogRoutes from "./routes/MagLogRoutes";
 import VolunteerLogRoutes from "./routes/VolunteerLogRoutes";
 import VolunteersRoutes from "./routes/VolunteersRoutes";
 import ClientRequestRoutes from "./routes/ClientRequestRoutes";
-import ExpiriesRoutes from "./routes/ExpiriesRoutes";
 import { queryClient } from "./utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PaddockUser } from "./types/auth";
+import RecordsRoutes from "./routes/RecordsRoutes";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -72,7 +72,7 @@ function AppContent() {
                 <Route path="/clients/*" element={<ClientsRoutes />} />
                 <Route path="/mps/*" element={<MpsRoutes />} />
                 <Route path="/volunteers/*" element={<VolunteersRoutes />} />
-                <Route path="/expiries/*" element={<ExpiriesRoutes />} />
+                <Route path="/records/*" element={<RecordsRoutes />} />
                 <Route
                   path="/new-requests/*"
                   element={<ClientRequestRoutes />}

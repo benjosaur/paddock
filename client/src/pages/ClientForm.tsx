@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { ClientMetadata } from "../types";
+import { ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -137,7 +137,7 @@ export function ClientForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth
+                  Date of Birth *
                 </label>
                 <Input
                   id="dob"
@@ -145,6 +145,7 @@ export function ClientForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>{" "}
               <div>
@@ -166,13 +167,14 @@ export function ClientForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
                 <Input
                   id="postCode"
                   name="postCode"
                   value={formData.postCode || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>{" "}
               <div>

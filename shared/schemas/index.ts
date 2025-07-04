@@ -78,7 +78,7 @@ export const magLogSchema = z.object({
 
 const basePersonDetails = z.object({
   name: z.string(),
-  address: z.string(),
+  address: z.string().default(""),
   phone: z.string().default(""),
   email: z.string().default(""),
   nextOfKin: z.string().default(""),
@@ -93,12 +93,14 @@ export const clientMetadataSchema = z.object({
   postCode: z.string(),
   details: basePersonDetails.extend({
     referredBy: z.string().default(""),
-    clientAgreementDate: z.string().date().default(""),
+    clientAgreementDate: z
+      .union([z.string().date(), z.literal("")])
+      .default(""),
     clientAgreementComments: z.string().default(""),
-    riskAssessmentDate: z.string().date().default(""),
+    riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
     attendanceAllowance: z.string().default(""),
-    attendsMag: z.boolean(),
+    attendsMag: z.boolean().default(false),
   }),
   mpRequests: z
     .array(
