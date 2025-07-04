@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requestStatuses, requestTypes, userRoles } from "../options";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),
@@ -8,12 +9,7 @@ export const trainingRecordSchema = z.object({
   details: z.object({ name: z.string() }),
 });
 
-export const userRoleSchema = z.enum([
-  "Admin",
-  "Trustee",
-  "Coordinator",
-  "Finance",
-]);
+export const userRoleSchema = z.enum(userRoles);
 
 export const viewConfigSchema = z.object({
   role: userRoleSchema,
@@ -23,12 +19,13 @@ export const viewConfigSchema = z.object({
 export const clientRequestSchema = z.object({
   id: z.string(),
   clientId: z.string(),
-  requestType: z.enum(["mp", "volunteer"]),
+  requestType: z.enum(requestTypes),
   startDate: z.string().date(),
   details: z.object({
     name: z.string(),
     notes: z.string().default(""),
-    status: z.enum(["pending", "urgent"]).default("pending"),
+    schedule: z.string().default(""),
+    status: z.enum(requestStatuses).default("pending"),
   }),
 });
 

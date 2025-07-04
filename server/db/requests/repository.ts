@@ -13,7 +13,7 @@ export class RequestRepository {
     // Get MP requests
     const mpRequestCommand = new QueryCommand({
       TableName: TABLE_NAME,
-      IndexName: "GSI3",
+      IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "clientMpRequest",
@@ -23,7 +23,7 @@ export class RequestRepository {
     // Get volunteer requests
     const volunteerRequestCommand = new QueryCommand({
       TableName: TABLE_NAME,
-      IndexName: "GSI3",
+      IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "clientVolunteerRequest",

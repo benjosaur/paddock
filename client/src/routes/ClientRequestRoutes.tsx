@@ -10,12 +10,19 @@ const clientRequestColumns: TableColumn<ClientRequest>[] = [
   {
     key: "clientId",
     header: "Client Name",
-    render: (item: ClientRequest) => item.details.name,
+    render: (item) => item.details.name,
   },
   { key: "requestType", header: "Type" },
-  { key: "startDate", header: "Start Date" },
-  { key: "schedule", header: "Schedule" },
-  { key: "status", header: "Status" },
+  {
+    key: "startDate",
+    header: "Start Date",
+  },
+  {
+    key: "schedule",
+    header: "Schedule",
+    render: (item) => item.details.schedule,
+  },
+  { key: "status", header: "Status", render: (item) => item.details.status },
 ];
 
 export default function ClientRequestRoutes() {
@@ -39,21 +46,30 @@ export default function ClientRequestRoutes() {
     })
   );
 
+  const getClientId = (trainingRecordId: string): string => {
+    const selectedRequest = clientRequests.find(
+      (req) => (req.id = trainingRecordId)
+    );
+    if (!selectedRequest) {
+      throw new Error(`Request not found with id: ${trainingRecordId}`);
+    }
+    return selectedRequest.clientId;
+  };
+
   const handleAddNew = () => {
     navigate("/new-requests/create");
   };
 
   const handleEditNavigation = (id: string) => {
-    const encodedId = encodeURIComponent(id);
-    navigate(`/new-requests/edit/${encodedId}`);
+    const clientId = getClientId(id);
+    const params = new URLSearchParams();
+    params.set("id", id);
+    params.set("clientId", clientId);
+    navigate(`/new-requests/edit?${params.toString()}`);
   };
 
   const handleDelete = (id: string) => {
-    const selectedRequest = clientRequests.find((req) => (req.id = id));
-    if (!selectedRequest) {
-      throw new Error(`Request not found with id: ${id}`);
-    }
-    const clientId = selectedRequest.clientId;
+    const clientId = getClientId(id);
     deleteClientRequestMutation.mutate({ id, clientId });
   };
 
@@ -76,7 +92,7 @@ export default function ClientRequestRoutes() {
         }
       />
       <Route path="create" element={<ClientRequestForm />} />
-      <Route path="edit/:id" element={<ClientRequestForm />} />
+      <Route path="edit" element={<ClientRequestForm />} />
     </Routes>
   );
 }

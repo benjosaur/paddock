@@ -10,6 +10,7 @@ const sampleMpRequest: Omit<ClientRequest, "id"> = {
   details: {
     name: "Test Client",
     notes: "Urgent MP support needed",
+    schedule: "Once a week",
     status: "urgent",
   },
 };
@@ -21,6 +22,7 @@ const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
   details: {
     name: "Test Client",
     notes: "Weekly volunteer visit requested",
+    schedule: "Once a week",
     status: "pending",
   },
 };
@@ -56,6 +58,7 @@ export async function testRequestService() {
       details: {
         name: "Test Client",
         notes: "Updated MP support requirements",
+        schedule: "Once a week",
         status: "pending",
       },
     };

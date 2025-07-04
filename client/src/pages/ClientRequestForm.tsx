@@ -1,41 +1,47 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { ClientRequest, Client } from "../types";
+import type { ClientRequest, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
+import { requestStatuses, requestTypes } from "shared/options";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id") || "";
+  const clientId = searchParams.get("clientId") || "";
+
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<ClientRequest>>({
-    clientId: undefined,
-    requestType: "volunteer",
+  const [formData, setFormData] = useState<Omit<ClientRequest, "id">>({
+    clientId: "",
+    requestType: "mp",
     startDate: "",
-    schedule: "",
-    status: "pending",
+    details: {
+      name: "",
+      status: "pending",
+      schedule: "",
+      notes: "",
+    },
   });
 
-  // tRPC queries
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+
   const clientRequestQuery = useQuery({
-    ...trpc.clientRequests.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    ...trpc.clientRequests.getById.queryOptions({ id, clientId }),
+    enabled: isEditing,
   });
   const clientRequestQueryKey = trpc.clientRequests.getAll.queryKey();
 
   const clients = clientsQuery.data || [];
   const clientRequest = clientRequestQuery.data;
-  const clientsLoading = clientsQuery.isLoading;
-  const requestLoading = clientRequestQuery.isLoading;
 
-  // tRPC mutations
   const createMutation = useMutation(
     trpc.clientRequests.create.mutationOptions({
       onSuccess: () => {
@@ -54,21 +60,20 @@ export function ClientRequestForm() {
     })
   );
 
-  const clientOptions = clients.map((client: Client) => ({
+  const clientOptions = clients.map((client: ClientMetadata) => ({
     value: client.id,
-    label: client.name,
+    label: client.details.name,
   }));
 
-  const requestTypeOptions = [
-    { value: "volunteer", label: "Volunteer" },
-    { value: "paid", label: "Paid" },
-  ];
+  const requestTypeOptions = requestTypes.map((option) => ({
+    value: option,
+    label: option,
+  }));
 
-  const statusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "approved", label: "Approved" },
-    { value: "rejected", label: "Rejected" },
-  ];
+  const requestStatusOptions = requestStatuses.map((option) => ({
+    value: option,
+    label: option,
+  }));
 
   useEffect(() => {
     if (isEditing && clientRequest) {
@@ -77,38 +82,55 @@ export function ClientRequestForm() {
   }, [isEditing, clientRequest]);
 
   const handleInputChange = (
-    field: keyof ClientRequest,
-    value: string | number | undefined
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const field = e.target.name;
+    let value =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSelectClientChange = (
+    newValue: {
+      label: string;
+      value: string;
+    } | null
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      clientId: newValue?.value ?? "",
+      details: { ...prev.details, name: newValue?.label ?? "" },
+    }));
+  };
 
-    const requestData = formData as ClientRequest;
-
-    if (isEditing) {
-      updateMutation.mutate({ ...requestData, id });
-    } else {
-      createMutation.mutate(requestData);
-    }
+  const handleSelectChange = (
+    field: string,
+    newValue: {
+      label: string;
+      value: string;
+    } | null
+  ) => {
+    if (!newValue) return null;
+    setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
   const handleCancel = () => {
     navigate("/new-requests");
   };
 
-  // Show loading state
-  if (isEditing && (requestLoading || clientsLoading)) {
-    return (
-      <div className="space-y-6 animate-in">
-        <div className="flex justify-center items-center py-12">
-          <div className="text-lg text-gray-600">Loading client request...</div>
-        </div>
-      </div>
-    );
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isEditing) {
+      updateMutation.mutate({ ...formData, id });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  if (isEditing && clientsQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && clientsQuery.error) return <div>Error loading client</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -137,19 +159,17 @@ export function ClientRequestForm() {
                   options={clientOptions}
                   value={
                     clientOptions.find(
-                      (option: { value: number; label: string }) =>
-                        option.value === formData.clientId
+                      (option) => option.value === formData.clientId
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleInputChange("clientId", selectedOption?.value)
-                  }
+                  onChange={handleSelectClientChange}
                   placeholder="Select a client..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
-                  isLoading={clientsLoading}
+                  isLoading={clientsQuery.isLoading}
                   required
+                  isDisabled={isEditing}
                 />
               </div>
 
@@ -168,10 +188,7 @@ export function ClientRequestForm() {
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange(
-                      "requestType",
-                      selectedOption?.value || ""
-                    )
+                    handleSelectChange("requestType", selectedOption)
                   }
                   placeholder="Select request type..."
                   className="react-select-container"
@@ -189,11 +206,10 @@ export function ClientRequestForm() {
                 </label>
                 <Input
                   id="startDate"
+                  name="startDate"
                   type="date"
                   value={formData.startDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("startDate", e.target.value)
-                  }
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -213,10 +229,9 @@ export function ClientRequestForm() {
                 </label>
                 <Input
                   id="schedule"
-                  value={formData.schedule || ""}
-                  onChange={(e) =>
-                    handleInputChange("schedule", e.target.value)
-                  }
+                  name="details.schedule"
+                  value={formData.details.schedule || ""}
+                  onChange={handleInputChange}
                   placeholder="e.g., Mon, Wed, Fri at 10:00 AM"
                   required
                 />
@@ -230,14 +245,14 @@ export function ClientRequestForm() {
                   Status
                 </label>
                 <Select
-                  options={statusOptions}
+                  options={requestStatusOptions}
                   value={
-                    statusOptions.find(
-                      (option) => option.value === formData.status
+                    requestStatusOptions.find(
+                      (option) => option.value === formData.details.status
                     ) || null
                   }
                   onChange={(selectedOption) =>
-                    handleInputChange("status", selectedOption?.value || "")
+                    handleSelectChange("details.status", selectedOption)
                   }
                   placeholder="Select status..."
                   className="react-select-container"

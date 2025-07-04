@@ -8,6 +8,16 @@ export const clientRequestsRouter = router({
     }
   ),
 
+  getById: createProtectedProcedure("clientRequests", "read")
+    .input(clientRequestSchema.pick({ id: true, clientId: true }))
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.services.requests.getById(
+        input.clientId,
+        input.id
+      );
+      return result;
+    }),
+
   getByClientId: createProtectedProcedure("clientRequests", "read")
     .input(clientRequestSchema.pick({ clientId: true }))
     .query(async ({ ctx, input }) => {
