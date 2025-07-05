@@ -3,12 +3,25 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { AppRouter } from "../../../shared/index.ts";
+import toast from "react-hot-toast";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 10, // 10 minutes
+    },
+    mutations: {
+      onSuccess: () => {
+        toast.success("Operation completed successfully");
+      },
+      onError: (error) => {
+        toast.error(
+          `Error: ${
+            error instanceof Error ? error.message : "Something went wrong"
+          }`
+        );
+      },
     },
   },
 });

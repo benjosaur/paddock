@@ -20,6 +20,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PaddockUser } from "./types/auth";
 import RecordsRoutes from "./routes/RecordsRoutes";
+import { Toaster } from "./components/ui/Toaster";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -111,6 +112,7 @@ function App() {
       }
     >
       <AppContent />
+      <Toaster />
     </AuthProvider>
   );
 }
