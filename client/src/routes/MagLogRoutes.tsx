@@ -55,8 +55,6 @@ export default function MagLogRoutes() {
     deleteMagLogMutation.mutate({ id });
   };
 
-  console.log(magLogsQuery.data);
-
   if (magLogsQuery.isLoading) return <div>Loading...</div>;
   if (magLogsQuery.error) return <div>Error loading MP Logs</div>;
 

@@ -29,4 +29,16 @@ export const clientsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.delete(input.id);
     }),
+
+  updateName: createProtectedProcedure("clients", "update")
+    .input(clientFullSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.updateName(input, ctx.user.sub);
+    }),
+
+  updatePostCode: createProtectedProcedure("clients", "update")
+    .input(clientFullSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.updatePostCode(input, ctx.user.sub);
+    }),
 });

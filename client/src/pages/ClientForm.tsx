@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import Select from "react-select";
 import { attendanceAllowanceStatus } from "shared/options";
+import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {
   const navigate = useNavigate();
@@ -48,12 +49,14 @@ export function ClientForm() {
     ...trpc.clients.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const clientQueryKey = trpc.clients.getAll.queryKey();
+
+  const thisClientQueryKey = trpc.clients.getById.queryKey();
+  const allClientsQueryKey = trpc.clients.getAll.queryKey();
 
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
         navigate("/clients");
       },
     })
@@ -62,7 +65,7 @@ export function ClientForm() {
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
         navigate("/clients");
       },
     })
@@ -116,6 +119,22 @@ export function ClientForm() {
     navigate("/clients");
   };
 
+  const handleFieldChangeSubmit = (field: string, newValue: string) => {
+    if (!isEditing) return;
+
+    const updateNameMutation = useMutation(
+      trpc.clients.updateName.mutationOptions({
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
+        },
+      })
+    );
+    updateNameMutation.mutate({
+      id,
+      ...updateNestedValue(field, newValue, formData),
+    });
+  };
+
   const attendanceAllowanceOptions = attendanceAllowanceStatus.map(
     (option) => ({
       value: option,
@@ -148,14 +167,24 @@ export function ClientForm() {
                 >
                   Name *
                 </label>
-                <Input
-                  id="name"
-                  name="details.name"
-                  value={formData.details.name || ""}
-                  onChange={handleInputChange}
-                  required
-                  disabled={isEditing}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    name="details.name"
+                    value={formData.details.name || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.name"
+                      currentValue={formData.details.name}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
               </div>{" "}
               <div>
                 <label
@@ -194,14 +223,24 @@ export function ClientForm() {
                 >
                   Post Code *
                 </label>
-                <Input
-                  id="postCode"
-                  name="postCode"
-                  value={formData.postCode || ""}
-                  onChange={handleInputChange}
-                  required
-                  disabled={isEditing}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="postCode"
+                    name="postCode"
+                    value={formData.postCode || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !clientQuery.isLoading && clientQuery.data && (
+                    <FieldEditModal
+                      field="postCode"
+                      currentValue={formData.postCode}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
               </div>{" "}
               <div>
                 <label
