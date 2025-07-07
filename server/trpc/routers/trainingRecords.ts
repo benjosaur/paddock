@@ -1,6 +1,5 @@
-import { router, createProtectedProcedure } from "../trpc.ts";
-import { trainingRecordSchema } from "shared/schemas/index.ts";
-import { z } from "zod";
+import { router, createProtectedProcedure } from "../trpc";
+import { trainingRecordSchema } from "shared/schemas/index";
 
 export const trainingRecordsRouter = router({
   getAll: createProtectedProcedure("trainingRecords", "read").query(

@@ -1,2 +1,2 @@
-export * from "./schemas/index.ts";
-export type { AppRouter, AppRouterKeys } from "../server/trpc/router.ts";
+export * from "./schemas/index";
+export type { AppRouter, AppRouterKeys } from "../server/trpc/router";

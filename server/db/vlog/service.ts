@@ -1,7 +1,6 @@
 import { VolunteerLog, volunteerLogSchema } from "shared";
 import { VolunteerLogRepository } from "./repository";
 import {
-  dbVolunteerLog,
   DbVolunteerLog,
   DbVolunteerLogClient,
   DbVolunteerLogEntity,

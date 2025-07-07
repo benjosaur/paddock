@@ -3,7 +3,6 @@ import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { MpLogService } from "../mplog/service";
 import { TrainingRecordService } from "../training/service";
-import assert from "assert";
 
 export class MpService {
   mpRepository = new MpRepository();

@@ -8,7 +8,7 @@
 // volunteer details::name
 //    Source: v# v# Dupes: v# vlog#, v# tr#
 
-const seededDataModel = {
+export const seededDataModel = {
   ModelName: "WiveyCares",
   ModelMetadata: {
     Author: "",

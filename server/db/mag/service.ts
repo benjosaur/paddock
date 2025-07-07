@@ -1,6 +1,6 @@
 import { MagLog, magLogSchema } from "shared";
 import { MagLogRepository } from "./repository";
-import { dbMagLog, DbMagLog, DbMagLogClient, DbMagLogEntity } from "./schema";
+import { DbMagLog, DbMagLogClient, DbMagLogEntity } from "./schema";
 
 export class MagLogService {
   magLogRepository = new MagLogRepository();

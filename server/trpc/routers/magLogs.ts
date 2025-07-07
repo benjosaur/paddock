@@ -1,5 +1,5 @@
-import { router, createProtectedProcedure } from "../trpc.ts";
-import { magLogSchema } from "shared/schemas/index.ts";
+import { router, createProtectedProcedure } from "../trpc";
+import { magLogSchema } from "shared/schemas/index";
 
 export const magLogsRouter = router({
   getAll: createProtectedProcedure("magLogs", "read").query(async ({ ctx }) => {

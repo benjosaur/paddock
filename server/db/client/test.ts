@@ -20,7 +20,7 @@ const sampleClient: Omit<ClientFull, "id"> = {
     clientAgreementComments: "All terms agreed",
     riskAssessmentDate: "2024-01-01T00:00:00.000Z",
     riskAssessmentComments: "Low risk assessment completed",
-    attendanceAllowance: "Yes",
+    attendanceAllowance: "yes",
     attendsMag: true,
   },
   mpRequests: [],

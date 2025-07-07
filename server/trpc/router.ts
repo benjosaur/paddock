@@ -1,12 +1,12 @@
-import { router } from "./trpc.ts";
-import { mpsRouter } from "./routers/mps.ts";
-import { volunteersRouter } from "./routers/volunteers.ts";
-import { clientsRouter } from "./routers/clients.ts";
-import { mpLogsRouter } from "./routers/mpLogs.ts";
-import { volunteerLogsRouter } from "./routers/volunteerLogs.ts";
-import { magLogsRouter } from "./routers/magLogs.ts";
-import { clientRequestsRouter } from "./routers/clientRequests.ts";
-import { trainingRecordsRouter } from "./routers/trainingRecords.ts";
+import { router } from "./trpc";
+import { mpsRouter } from "./routers/mps";
+import { volunteersRouter } from "./routers/volunteers";
+import { clientsRouter } from "./routers/clients";
+import { mpLogsRouter } from "./routers/mpLogs";
+import { volunteerLogsRouter } from "./routers/volunteerLogs";
+import { magLogsRouter } from "./routers/magLogs";
+import { clientRequestsRouter } from "./routers/clientRequests";
+import { trainingRecordsRouter } from "./routers/trainingRecords";
 
 export const appRouter = router({
   mps: mpsRouter,

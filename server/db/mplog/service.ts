@@ -1,12 +1,6 @@
 import { MpLog, mpLogSchema } from "shared";
 import { MpLogRepository } from "./repository";
-import {
-  dbMpLog,
-  DbMpLog,
-  DbMpLogClient,
-  DbMpLogEntity,
-  DbMpLogMp,
-} from "./schema";
+import { DbMpLog, DbMpLogClient, DbMpLogEntity, DbMpLogMp } from "./schema";
 
 export class MpLogService {
   mpLogRepository = new MpLogRepository();

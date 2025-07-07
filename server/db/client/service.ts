@@ -10,7 +10,6 @@ import { MpLogService } from "../mplog/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
-import assert from "assert";
 
 export class ClientService {
   clientRepository = new ClientRepository();

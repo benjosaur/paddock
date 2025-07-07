@@ -1,5 +1,5 @@
-import { router, createProtectedProcedure } from "../trpc.ts";
-import { clientRequestSchema } from "shared/schemas/index.ts";
+import { router, createProtectedProcedure } from "../trpc";
+import { clientRequestSchema } from "shared/schemas/index";
 
 export const clientRequestsRouter = router({
   getAll: createProtectedProcedure("clientRequests", "read").query(

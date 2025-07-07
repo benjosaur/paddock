@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { ZodError } from "zod";
-import { rolePermissions } from "shared/permissions.ts";
-import type { Context } from "./context.ts";
+import { rolePermissions } from "shared/permissions";
+import type { Context } from "./context";
 
 const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {

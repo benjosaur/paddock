@@ -28,7 +28,6 @@ const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
 };
 
 const clientId = "c#test-client-123";
-const clientName = "Test Client";
 
 export async function testRequestService() {
   try {

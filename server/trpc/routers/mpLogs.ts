@@ -1,5 +1,5 @@
-import { router, createProtectedProcedure } from "../trpc.ts";
-import { mpLogSchema } from "shared/schemas/index.ts";
+import { router, createProtectedProcedure } from "../trpc";
+import { mpLogSchema } from "shared/schemas/index";
 
 export const mpLogsRouter = router({
   getAll: createProtectedProcedure("mpLogs", "read").query(async ({ ctx }) => {

@@ -1,5 +1,5 @@
-import { router, createProtectedProcedure } from "../trpc.ts";
-import { mpFullSchema } from "shared/schemas/index.ts";
+import { router, createProtectedProcedure } from "../trpc";
+import { mpFullSchema } from "shared/schemas/index";
 
 export const mpsRouter = router({
   getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
