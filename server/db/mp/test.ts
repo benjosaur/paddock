@@ -1,3 +1,4 @@
+import { sampleUser } from "../test";
 import { MpService } from "./service";
 import { MpMetadata } from "shared";
 
@@ -7,7 +8,7 @@ const sampleMp: Omit<MpMetadata, "id"> = {
   dateOfBirth: "1990-01-01",
   postCode: "SW1A 1AA",
   recordName: "First Aid",
-  recordExpiry: "2025-12-31T00:00:00.000Z",
+  recordExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "John Smith",
@@ -29,11 +30,11 @@ export async function testMpService() {
     console.log("Testing MP Service...");
 
     console.log("1. Creating MP...");
-    const createdMp = await mpService.create(sampleMp, "test-user-123");
+    const createdMp = await mpService.create(sampleMp, sampleUser);
     console.log("Created MP:", createdMp);
 
     console.log("2. Getting MP by ID...");
-    const retrievedMp = await mpService.getById(user:User, createdMp.id);
+    const retrievedMp = await mpService.getById(sampleUser, createdMp.id);
     console.log("Retrieved MP:", retrievedMp);
 
     console.log("3. Updating MP...");
@@ -44,15 +45,15 @@ export async function testMpService() {
         notes: "Updated MP for Westminster",
       },
     };
-    const updatedMp = await mpService.update(updatedMpData, "test-user-123");
+    const updatedMp = await mpService.update(updatedMpData, sampleUser);
     console.log("Updated MP:", updatedMp);
 
     console.log("4. Getting all MPs...");
-    const allMps = await mpService.getAll();
+    const allMps = await mpService.getAll(sampleUser);
     console.log("All MPs:", allMps);
 
     console.log("5. Deleting MP...");
-    const deletedCount = await mpService.delete(user:User, createdMp.id);
+    const deletedCount = await mpService.delete(sampleUser, createdMp.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("MP Service tests completed successfully!");

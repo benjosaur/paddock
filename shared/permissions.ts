@@ -12,6 +12,21 @@ interface RolePermissions {
 }
 
 export const rolePermissions: Record<UserRole, RolePermissions> = {
+  Test: {
+    clients: { read: true, create: true, update: true, delete: true },
+    mps: { read: true, create: true, update: true, delete: true },
+    volunteers: { read: true, create: true, update: true, delete: true },
+    mpLogs: { read: true, create: true, update: true, delete: true },
+    volunteerLogs: { read: true, create: true, update: true, delete: true },
+    magLogs: { read: true, create: true, update: true, delete: true },
+    clientRequests: { read: true, create: true, update: true, delete: true },
+    trainingRecords: {
+      read: true,
+      create: true,
+      update: true,
+      delete: true,
+    },
+  },
   Admin: {
     clients: { read: true, create: true, update: true, delete: true },
     mps: { read: true, create: true, update: true, delete: true },
@@ -22,9 +37,9 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     clientRequests: { read: true, create: true, update: true, delete: true },
     trainingRecords: {
       read: true,
-      create: false,
-      update: false,
-      delete: false,
+      create: true,
+      update: true,
+      delete: true,
     },
   },
   Trustee: {

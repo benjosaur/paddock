@@ -1,3 +1,4 @@
+import { sampleUser } from "../test";
 import { VolunteerService } from "./service";
 import { VolunteerMetadata } from "shared";
 
@@ -7,7 +8,7 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
   dateOfBirth: "1985-05-15",
   postCode: "E1 6AN",
   recordName: "First Aid",
-  recordExpiry: "2025-12-31T00:00:00.000Z",
+  recordExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "Sarah Johnson",
@@ -31,12 +32,13 @@ export async function testVolunteerService() {
     console.log("1. Creating volunteer...");
     const createdVolunteer = await volunteerService.create(
       sampleVolunteer,
-      "test-user-123"
+      sampleUser
     );
     console.log("Created volunteer:", createdVolunteer);
 
     console.log("2. Getting volunteer by ID...");
-    const retrievedVolunteer = await volunteerService.getById(user:User, 
+    const retrievedVolunteer = await volunteerService.getById(
+      sampleUser,
       createdVolunteer.id
     );
     console.log("Retrieved volunteer:", retrievedVolunteer);
@@ -51,16 +53,19 @@ export async function testVolunteerService() {
     };
     const updatedVolunteer = await volunteerService.update(
       updatedVolunteerData,
-      "test-user-123"
+      sampleUser
     );
     console.log("Updated volunteer:", updatedVolunteer);
 
     console.log("4. Getting all volunteers...");
-    const allVolunteers = await volunteerService.getAll();
+    const allVolunteers = await volunteerService.getAll(sampleUser);
     console.log("All volunteers:", allVolunteers);
 
     console.log("5. Deleting volunteer...");
-    const deletedCount = await volunteerService.delete(user:User, createdVolunteer.id);
+    const deletedCount = await volunteerService.delete(
+      sampleUser,
+      createdVolunteer.id
+    );
     console.log("Deleted count:", deletedCount);
 
     console.log("Volunteer Service tests completed successfully!");

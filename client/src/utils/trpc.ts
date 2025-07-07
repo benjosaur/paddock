@@ -4,6 +4,7 @@ import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { AppRouter } from "../../../shared/index.ts";
 import toast from "react-hot-toast";
+import { getApiUrl } from "./config.ts";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +30,7 @@ export const queryClient = new QueryClient({
 const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: "http://localhost:3001/trpc",
+      url: (await getApiUrl()) || "http://localhost:3001/trpc",
       headers: async () => {
         try {
           const session = await fetchAuthSession();

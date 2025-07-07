@@ -36,7 +36,7 @@ export class MpRepository {
     }
   }
 
-  async getById(user:User, mpId: string): Promise<DbMpFull[]> {
+  async getById(user: User, mpId: string): Promise<DbMpFull[]> {
     //mp's mplog record only useful here to simply get id of mplogs to fetch later in service
     const command = new QueryCommand({
       TableName: getTableName(user),
@@ -93,9 +93,9 @@ export class MpRepository {
     }
   }
 
-  async delete(user:User, mpId: string): Promise<number[]> {
+  async delete(user: User, mpId: string): Promise<number[]> {
     try {
-      const mpData = await this.getById(user:User, mpId);
+      const mpData = await this.getById(user, mpId);
       let deletedCount = 0;
 
       for (const item of mpData) {
