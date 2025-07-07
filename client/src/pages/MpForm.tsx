@@ -3,43 +3,43 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Mp } from "../types";
+import type { MpFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function MpForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<Mp>>({
-    name: "",
-    dob: "",
-    address: "",
+  const [formData, setFormData] = useState<Omit<MpFull, "id">>({
+    dateOfBirth: "",
     postCode: "",
-    phone: "",
-    email: "",
-    nextOfKin: "",
-    dbsNumber: "",
-    dbsExpiry: "",
-    servicesOffered: [],
-    specialisms: [],
-    transport: false,
-    capacity: "",
+    recordName: "",
+    recordExpiry: "",
+    details: {
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      nextOfKin: "",
+      needs: [],
+      services: [],
+      specialisms: [],
+      transport: false,
+      capacity: "",
+      notes: "",
+    },
     trainingRecords: [],
-  });
-
-  const [servicesInput, setServicesInput] = useState("");
-  const [specialismsInput, setSpecialismsInput] = useState("");
-  const [trainingInput, setTrainingInput] = useState({
-    training: "",
-    expiry: "",
+    //below not edited here
+    mpLogs: [],
   });
 
   const queryClient = useQueryClient();
 
   const mpQuery = useQuery({
     ...trpc.mps.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    enabled: isEditing,
   });
   const mpQueryKey = trpc.mps.getAll.queryKey();
 
@@ -64,53 +64,32 @@ export function MpForm() {
   useEffect(() => {
     if (mpQuery.data) {
       setFormData(mpQuery.data);
-      setServicesInput(mpQuery.data.servicesOffered.join(", "));
-      setSpecialismsInput(mpQuery.data.specialisms.join(", "));
     }
   }, [mpQuery.data]);
 
-  const handleInputChange = (
-    field: keyof Mp,
-    value: string | number | boolean
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    let value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleArrayInputChange = (
-    field: "servicesOffered" | "specialisms",
-    value: string
-  ) => {
-    const array = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-    setFormData((prev) => ({ ...prev, [field]: array }));
-  };
-
-  const addTrainingRecord = () => {
-    if (trainingInput.training && trainingInput.expiry) {
-      setFormData((prev) => ({
-        ...prev,
-        trainingRecords: [...(prev.trainingRecords || []), trainingInput],
-      }));
-      setTrainingInput({ training: "", expiry: "" });
-    }
-  };
-
-  const removeTrainingRecord = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      trainingRecords:
-        prev.trainingRecords?.filter((_, i) => i !== index) || [],
-    }));
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateMpMutation.mutate({ ...formData, id } as Mp & { id: number });
+      console.log(formData);
+      updateMpMutation.mutate({ id, ...formData });
     } else {
-      createMpMutation.mutate(formData as Omit<Mp, "id">);
+      createMpMutation.mutate(formData);
     }
   };
 
@@ -146,8 +125,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="name"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  name="details.name"
+                  value={formData.details.name || ""}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -157,13 +137,15 @@ export function MpForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth
+                  Date of Birth *
                 </label>
                 <Input
                   id="dob"
+                  name="dateOfBirth"
                   type="date"
-                  value={formData.dob || ""}
-                  onChange={(e) => handleInputChange("dob", e.target.value)}
+                  value={formData.dateOfBirth || ""}
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
 
@@ -176,8 +158,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="address"
-                  value={formData.address || ""}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  name="details.address"
+                  value={formData.details.address || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -186,14 +169,14 @@ export function MpForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
                 <Input
                   id="postCode"
+                  name="postCode"
                   value={formData.postCode || ""}
-                  onChange={(e) =>
-                    handleInputChange("postCode", e.target.value)
-                  }
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
 
@@ -206,9 +189,10 @@ export function MpForm() {
                 </label>
                 <Input
                   id="phone"
+                  name="details.phone"
                   type="tel"
-                  value={formData.phone || ""}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.details.phone || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -221,9 +205,10 @@ export function MpForm() {
                 </label>
                 <Input
                   id="email"
+                  name="details.email"
                   type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  value={formData.details.email || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -236,10 +221,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="nextOfKin"
-                  value={formData.nextOfKin || ""}
-                  onChange={(e) =>
-                    handleInputChange("nextOfKin", e.target.value)
-                  }
+                  name="details.nextOfKin"
+                  value={formData.details.nextOfKin || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -252,10 +236,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="dbsNumber"
-                  value={formData.dbsNumber || ""}
-                  onChange={(e) =>
-                    handleInputChange("dbsNumber", e.target.value)
-                  }
+                  name="recordName"
+                  value={formData.recordName || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
@@ -269,10 +252,9 @@ export function MpForm() {
                 <Input
                   id="dbsExpiry"
                   type="date"
-                  value={formData.dbsExpiry || ""}
-                  onChange={(e) =>
-                    handleInputChange("dbsExpiry", e.target.value)
-                  }
+                  name="recordExpiry"
+                  value={formData.recordExpiry || ""}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -281,21 +263,34 @@ export function MpForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Services & Capacity
               </h3>
+              <div>
+                <label
+                  htmlFor="needs"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Needs Offered (comma-separated)
+                </label>
+                <Input
+                  id="needs"
+                  name="details.needs"
+                  value={formData.details.needs}
+                  onChange={handleCSVInputChange}
+                  placeholder="e.g., Personal Care, Domestic Support"
+                />
+              </div>
 
               <div>
                 <label
-                  htmlFor="servicesOffered"
+                  htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Services Offered (comma-separated)
                 </label>
                 <Input
-                  id="servicesOffered"
-                  value={servicesInput}
-                  onChange={(e) => {
-                    setServicesInput(e.target.value);
-                    handleArrayInputChange("servicesOffered", e.target.value);
-                  }}
+                  id="services"
+                  name="details.services"
+                  value={formData.details.services}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
               </div>
@@ -309,11 +304,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="specialisms"
-                  value={specialismsInput}
-                  onChange={(e) => {
-                    setSpecialismsInput(e.target.value);
-                    handleArrayInputChange("specialisms", e.target.value);
-                  }}
+                  name="details.specialisms"
+                  value={formData.details.specialisms}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
               </div>
@@ -327,11 +320,10 @@ export function MpForm() {
                 </label>
                 <label className="flex items-center space-x-2">
                   <input
+                    name="details.transport"
                     type="checkbox"
-                    checked={formData.transport || false}
-                    onChange={(e) =>
-                      handleInputChange("transport", e.target.checked)
-                    }
+                    checked={formData.details.transport || false}
+                    onChange={handleInputChange}
                     className="rounded border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-700">
@@ -349,10 +341,9 @@ export function MpForm() {
                 </label>
                 <Input
                   id="capacity"
-                  value={formData.capacity || ""}
-                  onChange={(e) =>
-                    handleInputChange("capacity", e.target.value)
-                  }
+                  name="details.capacity"
+                  value={formData.details.capacity || ""}
+                  onChange={handleInputChange}
                   placeholder="e.g., Full Time, Part Time"
                 />
               </div>
@@ -361,33 +352,10 @@ export function MpForm() {
                 <h4 className="text-md font-medium text-gray-700">
                   Training Records
                 </h4>
-
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Training name"
-                    value={trainingInput.training}
-                    onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        training: e.target.value,
-                      }))
-                    }
-                  />
-                  <Input
-                    type="date"
-                    placeholder="Expiry date"
-                    value={trainingInput.expiry}
-                    onChange={(e) =>
-                      setTrainingInput((prev) => ({
-                        ...prev,
-                        expiry: e.target.value,
-                      }))
-                    }
-                  />
-                  <Button type="button" onClick={addTrainingRecord} size="sm">
-                    Add
-                  </Button>
-                </div>
+                {/* TODO */}
+                <Button type="button" onClick={() => {}} size="sm">
+                  Edit Records
+                </Button>
 
                 {formData.trainingRecords &&
                   formData.trainingRecords.length > 0 && (
@@ -398,16 +366,8 @@ export function MpForm() {
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span className="text-sm">
-                            {record.training} - {record.expiry}
+                            {record.recordName} - Expires: {record.recordExpiry}
                           </span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeTrainingRecord(index)}
-                          >
-                            Remove
-                          </Button>
                         </div>
                       ))}
                     </div>

@@ -1,62 +1,40 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createVolunteerLogSchema,
-  updateVolunteerLogSchema,
-  idParamSchema,
-  volunteerLogSchema,
-} from "shared/schemas/index.ts";
-import type { VolunteerLog } from "shared/types/index.ts";
-import { keysToCamel } from "../../utils/caseConverter.ts";
+import { volunteerLogSchema } from "shared/schemas/index.ts";
 
 export const volunteerLogsRouter = router({
   getAll: createProtectedProcedure("volunteerLogs", "read").query(
     async ({ ctx }) => {
-      return await ctx.db.findAll<VolunteerLog>("volunteer_logs");
+      return await ctx.services.volunteerLog.getAll();
     }
   ),
 
   getById: createProtectedProcedure("volunteerLogs", "read")
-    .input(idParamSchema)
+    .input(volunteerLogSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<VolunteerLog>("volunteer_logs", input.id);
+      return await ctx.services.volunteerLog.getById(input.id);
     }),
 
   getByVolunteerId: createProtectedProcedure("volunteerLogs", "read")
-    .input(volunteerLogSchema.pick({ volunteerId: true }))
+    .input(volunteerLogSchema.shape.volunteers.element.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM volunteer_logs WHERE volunteer_id = $1 ORDER BY date DESC",
-        [input.volunteerId]
-      );
-      return keysToCamel(result.rows);
-    }),
-
-  getByClientId: createProtectedProcedure("volunteerLogs", "read")
-    .input(volunteerLogSchema.pick({ clientId: true }))
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM volunteer_logs WHERE client_id = $1 ORDER BY date DESC",
-        [input.clientId]
-      );
-      return keysToCamel(result.rows);
+      return await ctx.services.volunteerLog.getByVolunteerId(input.id);
     }),
 
   create: createProtectedProcedure("volunteerLogs", "create")
-    .input(createVolunteerLogSchema)
+    .input(volunteerLogSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<VolunteerLog>("volunteer_logs", input);
+      return await ctx.services.volunteerLog.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("volunteerLogs", "update")
-    .input(updateVolunteerLogSchema)
+    .input(volunteerLogSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<VolunteerLog>("volunteer_logs", id, data);
+      return await ctx.services.volunteerLog.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("volunteerLogs", "delete")
-    .input(idParamSchema)
+    .input(volunteerLogSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("volunteer_logs", input.id);
+      return await ctx.services.volunteerLog.delete(input.id);
     }),
 });

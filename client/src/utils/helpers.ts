@@ -1,3 +1,40 @@
+type PathValue<
+  T extends Record<string, any>,
+  K extends string
+> = K extends `${infer P}.${infer R}`
+  ? P extends keyof T
+    ? PathValue<T[P], R>
+    : any
+  : K extends keyof T
+  ? T[K]
+  : any;
+
+export const updateNestedValue = <
+  T extends Record<string, any>,
+  K extends string
+>(
+  dotSeparatedField: K,
+  value: PathValue<T, K>,
+  record: T
+): T => {
+  if (dotSeparatedField.includes(".")) {
+    const [parent, ...children] = dotSeparatedField.split(".");
+    return {
+      ...record,
+      [parent]: updateNestedValue(children.join("."), value, record[parent]),
+    };
+  } else {
+    return {
+      ...record,
+      [dotSeparatedField]: value,
+    };
+  }
+};
+
+export const capitalise = (string: string): string => {
+  return string[0].toUpperCase() + string.slice(1);
+};
+
 export const calculateTimeToDate = (expiryDate: string) => {
   const today = new Date();
   const expiry = new Date(expiryDate);

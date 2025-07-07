@@ -1,38 +1,44 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createClientSchema,
-  updateClientSchema,
-  idParamSchema,
-} from "shared/schemas/index.ts";
-import type { Client } from "shared/types/index.ts";
+import { clientFullSchema } from "shared/schemas/index.ts";
 
 export const clientsRouter = router({
   getAll: createProtectedProcedure("clients", "read").query(async ({ ctx }) => {
-    return await ctx.db.findAll<Client>("clients");
+    return await ctx.services.client.getAll();
   }),
 
   getById: createProtectedProcedure("clients", "read")
-    .input(idParamSchema)
+    .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<Client>("clients", input.id);
+      return await ctx.services.client.getById(input.id);
     }),
 
   create: createProtectedProcedure("clients", "create")
-    .input(createClientSchema)
+    .input(clientFullSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<Client>("clients", input);
+      return await ctx.services.client.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("clients", "update")
-    .input(updateClientSchema)
+    .input(clientFullSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<Client>("clients", id, data);
+      return await ctx.services.client.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("clients", "delete")
-    .input(idParamSchema)
+    .input(clientFullSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("clients", input.id);
+      return await ctx.services.client.delete(input.id);
+    }),
+
+  updateName: createProtectedProcedure("clients", "update")
+    .input(clientFullSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.updateName(input, ctx.user.sub);
+    }),
+
+  updatePostCode: createProtectedProcedure("clients", "update")
+    .input(clientFullSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.updatePostCode(input, ctx.user.sub);
     }),
 });

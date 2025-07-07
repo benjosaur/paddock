@@ -1,38 +1,32 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createMpSchema,
-  updateMpSchema,
-  idParamSchema,
-} from "shared/schemas/index.ts";
-import type { Mp } from "shared/types/index.ts";
+import { mpFullSchema } from "shared/schemas/index.ts";
 
 export const mpsRouter = router({
   getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
-    return await ctx.db.findAll<Mp>("mps");
+    return await ctx.services.mp.getAll();
   }),
 
   getById: createProtectedProcedure("mps", "read")
-    .input(idParamSchema)
+    .input(mpFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<Mp>("mps", input.id);
+      return await ctx.services.mp.getById(input.id);
     }),
 
   create: createProtectedProcedure("mps", "create")
-    .input(createMpSchema)
+    .input(mpFullSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<Mp>("mps", input);
+      return await ctx.services.mp.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("mps", "update")
-    .input(updateMpSchema)
+    .input(mpFullSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<Mp>("mps", id, data);
+      return await ctx.services.mp.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("mps", "delete")
-    .input(idParamSchema)
+    .input(mpFullSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("mps", input.id);
+      return await ctx.services.mp.delete(input.id);
     }),
 });

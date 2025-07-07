@@ -4,37 +4,51 @@ import { DataTable } from "../components/DataTable";
 import { MpForm } from "../pages/MpForm";
 import { MpDetailModal } from "../components/MpDetailModal";
 import { trpc } from "../utils/trpc";
-import type { Mp, TableColumn } from "../types";
+import type { MpMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket } from "../utils/helpers";
 
-const mpColumns: TableColumn<Mp>[] = [
+const mpColumns: TableColumn<MpMetadata>[] = [
   { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
+  {
+    key: "name",
+    header: "Name",
+    render: (item: MpMetadata) => item.details.name,
+  },
   {
     key: "dob",
     header: "Age",
-    render: (item: Mp) =>
-      item.dob ? calculateAgeBracket(item.dob) + " years" : "Unknown",
+    render: (item: MpMetadata) =>
+      item.dateOfBirth
+        ? calculateAgeBracket(item.dateOfBirth) + " years"
+        : "Unknown",
   },
   { key: "postCode", header: "Post Code" },
   {
-    key: "servicesOffered",
+    key: "services",
     header: "Services",
-    render: (item: Mp) => item.servicesOffered.join(", "),
+    render: (item: MpMetadata) => item.details.services.join(", "),
   },
-  { key: "dbsExpiry", header: "DBS Expiry" },
-  { key: "capacity", header: "Capacity?" },
+  {
+    key: "dbsExpiry",
+    header: "DBS Expiry",
+    render: (item: MpMetadata) => item.recordExpiry,
+  },
+  {
+    key: "capacity",
+    header: "Capacity?",
+    render: (item: MpMetadata) => item.details.capacity,
+  },
   {
     key: "transport",
     header: "Transport?",
-    render: (item: Mp) => (item.transport ? "Yes" : "No"),
+    render: (item: MpMetadata) => (item.details.transport ? "Yes" : "No"),
   },
 ];
 
 export function MpsRoutes() {
   const navigate = useNavigate();
-  const [selectedMp, setSelectedMp] = useState<Mp | null>(null);
+  const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -54,22 +68,23 @@ export function MpsRoutes() {
     navigate("/mps/create");
   };
 
-  const handleEditNavigation = (id: number) => {
-    navigate(`/mps/edit/${id}`);
+  const handleEditNavigation = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/mps/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteMpMutation.mutate({ id });
   };
 
-  const handleViewMp = (mp: Mp) => {
-    setSelectedMp(mp);
+  const handleViewMp = (mp: MpMetadata) => {
+    setSelectedMpId(mp.id);
     setIsMpModalOpen(true);
   };
 
   const handleCloseMpModal = () => {
     setIsMpModalOpen(false);
-    setSelectedMp(null);
+    setSelectedMpId(null);
   };
 
   if (mpsQuery.isLoading) return <div>Loading...</div>;
@@ -93,9 +108,9 @@ export function MpsRoutes() {
               onAddNew={handleAddNew}
               resource="mps"
             />
-            {selectedMp && (
+            {selectedMpId && (
               <MpDetailModal
-                mp={selectedMp}
+                mpId={selectedMpId}
                 isOpen={isMpModalOpen}
                 onClose={handleCloseMpModal}
                 onEdit={handleEditNavigation}

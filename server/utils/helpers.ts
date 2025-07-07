@@ -1,3 +1,17 @@
+import { z } from "zod";
+
+export function logZodError(error: Error) {
+  if (error instanceof z.ZodError) {
+    error.issues.forEach((issue, index) => {
+      console.log(`Error ${index + 1}:`);
+      console.log(`  Path: ${issue.path.join(".")}`);
+      console.log(`  Message: ${issue.message}`);
+      console.log(`  Code: ${issue.code}`);
+      console.log("---");
+    });
+  }
+}
+
 function snakeToCamel(text: string): string {
   return text.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }

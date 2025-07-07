@@ -1,60 +1,50 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createMpLogSchema,
-  updateMpLogSchema,
-  idParamSchema,
-  mpLogSchema,
-} from "shared/schemas/index.ts";
-import type { MpLog } from "shared/types/index.ts";
-import { keysToCamel } from "../../utils/caseConverter.ts";
+import { mpLogSchema } from "shared/schemas/index.ts";
 
 export const mpLogsRouter = router({
   getAll: createProtectedProcedure("mpLogs", "read").query(async ({ ctx }) => {
-    return await ctx.db.findAll<MpLog>("mp_logs");
+    return await ctx.services.mpLog.getAll();
   }),
 
   getById: createProtectedProcedure("mpLogs", "read")
-    .input(idParamSchema)
+    .input(mpLogSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<MpLog>("mp_logs", input.id);
+      return await ctx.services.mpLog.getById(input.id);
     }),
 
   getByMpId: createProtectedProcedure("mpLogs", "read")
-    .input(mpLogSchema.pick({ mpId: true }))
+    .input(mpLogSchema.pick({ mps: true }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM mp_logs WHERE mp_id = $1 ORDER BY date DESC",
-        [input.mpId]
-      );
-      return keysToCamel(result.rows);
+      // Assuming the first MP in the array is the one we want logs for
+      return await ctx.services.mpLog.getByMpId(input.mps[0].id);
     }),
 
   getByClientId: createProtectedProcedure("mpLogs", "read")
-    .input(mpLogSchema.pick({ clientId: true }))
+    .input(mpLogSchema.pick({ clients: true }))
     .query(async ({ ctx, input }) => {
-      const result = await ctx.db.query(
-        "SELECT * FROM mp_logs WHERE client_id = $1 ORDER BY date DESC",
-        [input.clientId]
+      // Getting logs for the first client in the array
+      const clientId = input.clients[0].id;
+      const allLogs = await ctx.services.mpLog.getAll();
+      return allLogs.filter((log) =>
+        log.clients.some((client) => client.id === clientId)
       );
-      return keysToCamel(result.rows);
     }),
 
   create: createProtectedProcedure("mpLogs", "create")
-    .input(createMpLogSchema)
+    .input(mpLogSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<MpLog>("mp_logs", input);
+      return await ctx.services.mpLog.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("mpLogs", "update")
-    .input(updateMpLogSchema)
+    .input(mpLogSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<MpLog>("mp_logs", id, data);
+      return await ctx.services.mpLog.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("mpLogs", "delete")
-    .input(idParamSchema)
+    .input(mpLogSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("mp_logs", input.id);
+      return await ctx.services.mpLog.delete(input.id);
     }),
 });

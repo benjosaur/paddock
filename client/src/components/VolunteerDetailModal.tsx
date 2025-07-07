@@ -10,61 +10,53 @@ import {
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type {
-  Volunteer,
-  VolunteerLog,
-  TableColumn,
-  TrainingRecordItem,
-  Client,
-} from "../types";
+import type { VolunteerFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
 
 interface VolunteerDetailModalProps {
-  volunteer: Volunteer;
+  volunteerId: string;
   isOpen: boolean;
   onClose: () => void;
-  onEdit?: (id: number) => void;
-  onDelete?: (id: number) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function VolunteerDetailModal({
-  volunteer,
+  volunteerId,
   isOpen,
   onClose,
   onEdit,
   onDelete,
 }: VolunteerDetailModalProps) {
-  const allVolunteerLogsQuery = useQuery(
-    trpc.volunteerLogs.getAll.queryOptions()
+  const volunteerQuery = useQuery(
+    trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const volunteer = volunteerQuery.data;
 
-  const allVolunteerLogs = allVolunteerLogsQuery.data || [];
-  const volunteerLogs = allVolunteerLogs.filter(
-    (log: VolunteerLog) => log.volunteerId === volunteer.id
-  );
-
-  const clients = clientsQuery.data || [];
-
-  // Update columns to use tRPC data
-  const volunteerLogModalColumns: TableColumn<VolunteerLog>[] = [
+  const volunteerLogModalColumns: TableColumn<
+    VolunteerFull["volunteerLogs"][number]
+  >[] = [
     { key: "date", header: "Date" },
     {
-      key: "clientId",
+      key: "client",
       header: "Client",
-      render: (item: VolunteerLog) =>
-        clients.find((c: Client) => c.id === item.clientId)?.name ||
-        item.clientId,
+      render: (item) =>
+        item.clients.map((client) => client.details.name).join(", "),
     },
-    { key: "activity", header: "Activity" },
-    { key: "hoursLogged", header: "Hours Logged" },
+    {
+      key: "services",
+      header: "Service(s)",
+      render: (item) => item.details.services.join(", "),
+    },
     { key: "notes", header: "Notes" },
   ];
 
-  const trainingRecordModalColumns: TableColumn<TrainingRecordItem>[] = [
-    { key: "training", header: "Training" },
-    { key: "expiry", header: "Expiry" },
+  const trainingRecordModalColumns: TableColumn<
+    VolunteerFull["trainingRecords"][number]
+  >[] = [
+    { key: "recordName", header: "Title" },
+    { key: "recordExpiry", header: "Expiry" },
   ];
 
   const renderDetailItem = (
@@ -88,12 +80,14 @@ export function VolunteerDetailModal({
     );
   };
 
+  if (!volunteer) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            Volunteer Details: {volunteer.name}
+            Volunteer Details: {volunteer.details.name}
           </DialogTitle>
           <DialogDescription>
             View and manage detailed information for this volunteer including
@@ -117,15 +111,15 @@ export function VolunteerDetailModal({
                 Contact Information
               </h3>
               {renderDetailItem("ID", volunteer.id)}
-              {renderDetailItem("Name", volunteer.name)}
-              {renderDetailItem("Date of Birth", volunteer.dob)}
-              {renderDetailItem("Address", volunteer.address)}
+              {renderDetailItem("Name", volunteer.details.name)}
+              {renderDetailItem("Address", volunteer.details.address)}
               {renderDetailItem("Post Code", volunteer.postCode)}
-              {renderDetailItem("Phone", volunteer.phone)}
-              {renderDetailItem("Email", volunteer.email)}
-              {renderDetailItem("Next of Kin", volunteer.nextOfKin)}
-              {renderDetailItem("DBS Number", volunteer.dbsNumber)}
-              {renderDetailItem("DBS Expiry", volunteer.dbsExpiry)}
+              {renderDetailItem("Phone", volunteer.details.phone)}
+              {renderDetailItem("Email", volunteer.details.email)}
+              {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
+              {renderDetailItem("DBS Number", volunteer.recordName)}
+              {renderDetailItem("DBS Expiry", volunteer.recordExpiry)}
+              {renderDetailItem("Date of Birth", volunteer.dateOfBirth)}
             </TabsContent>
 
             <TabsContent
@@ -135,14 +129,13 @@ export function VolunteerDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Offerings
               </h3>
-              {renderDetailItem("Services Offered", volunteer.servicesOffered)}
-              {renderDetailItem("Need Types", volunteer.needTypes)}
-              {renderDetailItem("Specialisms", volunteer.specialisms)}
+              {renderDetailItem("Services", volunteer.details.services)}
+              {renderDetailItem("Specialisms", volunteer.details.specialisms)}
               {renderDetailItem(
                 "Transport",
-                volunteer.transport ? "Yes" : "No"
+                volunteer.details.transport ? "Yes" : "No"
               )}
-              {renderDetailItem("Capacity", volunteer.capacity)}
+              {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 
             <TabsContent
@@ -154,10 +147,7 @@ export function VolunteerDetailModal({
               </h3>
               {volunteer.trainingRecords.length > 0 ? (
                 <DataTable
-                  data={volunteer.trainingRecords.map((tr, index) => ({
-                    ...tr,
-                    id: index,
-                  }))}
+                  data={volunteer.trainingRecords}
                   columns={trainingRecordModalColumns}
                   title=""
                   searchPlaceholder="Search training records..."
@@ -177,9 +167,9 @@ export function VolunteerDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Volunteer Logs
               </h3>
-              {volunteerLogs.length > 0 ? (
+              {volunteer.volunteerLogs.length > 0 ? (
                 <DataTable
-                  data={volunteerLogs}
+                  data={volunteer.volunteerLogs}
                   columns={volunteerLogModalColumns}
                   title=""
                   searchPlaceholder="Search volunteer logs..."

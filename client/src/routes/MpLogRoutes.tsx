@@ -2,8 +2,39 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MpLogForm } from "../pages/MpLogForm";
 import { trpc } from "../utils/trpc";
-import type { MpLog, TableColumn, Client, Mp } from "../types";
+import type { MpLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+const mpLogColumns: TableColumn<MpLog>[] = [
+  { key: "id", header: "ID" },
+  { key: "date", header: "Date" },
+  {
+    key: "clients",
+    header: "Clients",
+    render: (item: MpLog) =>
+      item.clients.map((client) => client.details.name).join(", "),
+  },
+  {
+    key: "mps",
+    header: "MPs",
+    render: (item: MpLog) => item.mps.map((mp) => mp.details.name).join(", "),
+  },
+  {
+    key: "services",
+    header: "Service(s)",
+    render: (item: MpLog) => item.details.services.join(", "),
+  },
+  {
+    key: "hoursLogged",
+    header: "Hours Logged",
+    render: (item: MpLog) => item.details.hoursLogged,
+  },
+  {
+    key: "notes",
+    header: "Notes",
+    render: (item: MpLog) => item.details.notes,
+  },
+];
 
 export default function MpLogRoutes() {
   const navigate = useNavigate();
@@ -11,13 +42,10 @@ export default function MpLogRoutes() {
   const queryClient = useQueryClient();
 
   const mpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+
   const mpLogsQueryKey = trpc.mpLogs.getAll.queryKey();
 
   const mpLogs = mpLogsQuery.data || [];
-  const clients = clientsQuery.data || [];
-  const mps = mpsQuery.data || [];
 
   const deleteMpLogMutation = useMutation(
     trpc.mpLogs.delete.mutationOptions({
@@ -31,39 +59,17 @@ export default function MpLogRoutes() {
     navigate("/mp-logs/create");
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/mp-logs/edit/${id}`);
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/mp-logs/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteMpLogMutation.mutate({ id });
   };
 
-  // Update columns to use tRPC data
-  const mpLogColumns: TableColumn<MpLog>[] = [
-    { key: "id", header: "ID" },
-    { key: "date", header: "Date" },
-    {
-      key: "clientId",
-      header: "Client",
-      render: (item: MpLog) =>
-        clients.find((c: Client) => c.id === item.clientId)?.name ||
-        item.clientId,
-    },
-    {
-      key: "mpId",
-      header: "MP",
-      render: (item: MpLog) =>
-        mps.find((mp: Mp) => mp.id === item.mpId)?.name || item.mpId,
-    },
-    {
-      key: "services",
-      header: "Service(s)",
-      render: (item: MpLog) => item.services.join(", "),
-    },
-    { key: "hoursLogged", header: "Hours Logged" },
-    { key: "notes", header: "Notes" },
-  ];
+  if (mpLogsQuery.isLoading) return <div>Loading...</div>;
+  if (mpLogsQuery.error) return <div>Error loading MP Logs</div>;
 
   return (
     <Routes>

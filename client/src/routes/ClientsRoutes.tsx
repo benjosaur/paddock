@@ -4,46 +4,54 @@ import { DataTable } from "../components/DataTable";
 import { ClientForm } from "../pages/ClientForm";
 import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
-import type { Client, TableColumn } from "../types";
+import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket } from "@/utils/helpers";
+import { calculateAgeBracket, capitalise } from "@/utils/helpers";
 
-const clientColumns: TableColumn<Client>[] = [
+const clientColumns: TableColumn<ClientMetadata>[] = [
   { key: "id", header: "ID" },
-  { key: "name", header: "Name" },
+  {
+    key: "name",
+    header: "Name",
+    render: (item: ClientMetadata) => item.details.name,
+  },
   {
     key: "dob",
     header: "Age",
-    render: (item: Client) =>
-      item.dob ? calculateAgeBracket(item.dob) + " years" : "Unknown",
+    render: (item: ClientMetadata) =>
+      item.dateOfBirth
+        ? calculateAgeBracket(item.dateOfBirth) + " years"
+        : "Unknown",
   },
 
   { key: "postCode", header: "Post Code" },
   {
-    key: "servicesProvided",
+    key: "services",
     header: "Services",
-    render: (item: Client) => item.servicesProvided.join(", "),
+    render: (item: ClientMetadata) => item.details.services.join(", "),
   },
   {
     key: "needs",
     header: "Need Types",
-    render: (item: Client) => item.needs.join(", "),
+    render: (item: ClientMetadata) => item.details.needs.join(", "),
   },
   {
-    key: "hasMp",
-    header: "Has MP?",
-    render: (item: Client) => (item.hasMp ? "Yes" : "No"),
+    key: "requests",
+    header: "Outstanding Requests?",
+    render: (item: ClientMetadata) =>
+      item.mpRequests.length + item.volunteerRequests.length,
   },
   {
-    key: "hasAttendanceAllowance",
+    key: "attendanceAllowance",
     header: "Has AA?",
-    render: (item: Client) => (item.hasAttendanceAllowance ? "Yes" : "No"),
+    render: (item: ClientMetadata) =>
+      capitalise(item.details.attendanceAllowance),
   },
 ];
 
 export default function ClientsRoutes() {
   const navigate = useNavigate();
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -63,22 +71,23 @@ export default function ClientsRoutes() {
     navigate("/clients/create");
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/clients/edit/${id}`);
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/clients/edit/${encodedId}`);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteClientMutation.mutate({ id });
   };
 
-  const handleViewClient = (client: Client) => {
-    setSelectedClient(client);
+  const handleViewClient = (client: ClientMetadata) => {
+    setSelectedClientId(client.id);
     setIsClientModalOpen(true);
   };
 
   const handleCloseClientModal = () => {
     setIsClientModalOpen(false);
-    setSelectedClient(null);
+    setSelectedClientId(null);
   };
 
   if (clientsQuery.isLoading) return <div>Loading...</div>;
@@ -102,9 +111,9 @@ export default function ClientsRoutes() {
               onAddNew={handleAddNew}
               resource="clients"
             />
-            {selectedClient && (
+            {selectedClientId && (
               <ClientDetailModal
-                client={selectedClient}
+                clientId={selectedClientId}
                 isOpen={isClientModalOpen}
                 onClose={handleCloseClientModal}
                 onEdit={handleEdit}

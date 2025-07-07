@@ -1,40 +1,34 @@
 import { router, createProtectedProcedure } from "../trpc.ts";
-import {
-  createVolunteerSchema,
-  updateVolunteerSchema,
-  idParamSchema,
-} from "shared/schemas/index.ts";
-import type { Volunteer } from "shared/types/index.ts";
+import { volunteerFullSchema } from "shared/schemas/index.ts";
 
 export const volunteersRouter = router({
   getAll: createProtectedProcedure("volunteers", "read").query(
     async ({ ctx }) => {
-      return await ctx.db.findAll<Volunteer>("volunteers");
+      return await ctx.services.volunteer.getAll();
     }
   ),
 
   getById: createProtectedProcedure("volunteers", "read")
-    .input(idParamSchema)
+    .input(volunteerFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.findById<Volunteer>("volunteers", input.id);
+      return await ctx.services.volunteer.getById(input.id);
     }),
 
   create: createProtectedProcedure("volunteers", "create")
-    .input(createVolunteerSchema)
+    .input(volunteerFullSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.create<Volunteer>("volunteers", input);
+      return await ctx.services.volunteer.create(input, ctx.user.sub);
     }),
 
   update: createProtectedProcedure("volunteers", "update")
-    .input(updateVolunteerSchema)
+    .input(volunteerFullSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.update<Volunteer>("volunteers", id, data);
+      return await ctx.services.volunteer.update(input, ctx.user.sub);
     }),
 
   delete: createProtectedProcedure("volunteers", "delete")
-    .input(idParamSchema)
+    .input(volunteerFullSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.delete("volunteers", input.id);
+      return await ctx.services.volunteer.delete(input.id);
     }),
 });

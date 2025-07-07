@@ -1,31 +1,36 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Select from "react-select";
+import Select, { MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { MagLog, Client } from "../types";
+import type { MagLog, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
 
 export function MagLogForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Partial<MagLog>>({
+  const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
-    total: undefined,
-    attendees: [],
-    notes: "",
+    clients: [],
+    details: {
+      total: 0,
+      notes: "",
+    },
   });
 
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+
   const magLogQuery = useQuery({
     ...trpc.magLogs.getById.queryOptions({ id }),
     enabled: isEditing && !!id,
   });
+
   const magLogQueryKey = trpc.magLogs.getAll.queryKey();
 
   const createMagLogMutation = useMutation(
@@ -53,25 +58,22 @@ export function MagLogForm() {
     }
   }, [magLogQuery.data]);
 
-  const clientOptions = (clientsQuery.data || []).map((client: Client) => ({
-    value: client.id,
-    label: client.name,
-  }));
+  const clientOptions = (clientsQuery.data || []).map(
+    (client: ClientMetadata) => ({
+      value: client.id,
+      label: client.details.name,
+    })
+  );
 
-  const handleInputChange = (field: keyof MagLog, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleNumericInputChange = (field: keyof MagLog, value: string) => {
-    const numericValue = value === "" ? undefined : parseInt(value);
-    setFormData((prev) => ({ ...prev, [field]: numericValue }));
-  };
-
-  const handleAttendeesChange = (selectedOptions: any) => {
-    const attendees = selectedOptions
-      ? selectedOptions.map((option: any) => option.value)
-      : [];
-    setFormData((prev) => ({ ...prev, attendees }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const field = e.target.name;
+    let value =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,6 +85,21 @@ export function MagLogForm() {
     } else {
       createMagLogMutation.mutate(formData as Omit<MagLog, "id">);
     }
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    options: ({ id: string } & Record<string, any>)[],
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    // finds the whole client object to put into mplog -> excess will be parsed away server-side
+    const matchedOptions = options.filter((option) =>
+      newValues.map((value) => value.value).includes(option.id)
+    );
+    setFormData((prev) => updateNestedValue(field, matchedOptions, prev));
   };
 
   const handleCancel = () => {
@@ -114,9 +131,10 @@ export function MagLogForm() {
                 </label>
                 <Input
                   id="date"
+                  name="date"
                   type="date"
                   value={formData.date || ""}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -130,12 +148,11 @@ export function MagLogForm() {
                 </label>
                 <Input
                   id="total"
+                  name="total"
                   type="number"
                   min="0"
-                  value={formData.total || ""}
-                  onChange={(e) =>
-                    handleNumericInputChange("total", e.target.value)
-                  }
+                  value={formData.details.total || ""}
+                  onChange={handleInputChange}
                   placeholder="e.g., 8"
                   required
                 />
@@ -154,11 +171,21 @@ export function MagLogForm() {
                 </label>
                 <Select
                   options={clientOptions}
-                  value={clientOptions.filter(
-                    (option: { value: number; label: string }) =>
-                      formData.attendees?.includes(option.value)
-                  )}
-                  onChange={handleAttendeesChange}
+                  value={
+                    clientOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.clients
+                          ?.map((client) => client.id)
+                          .includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "clients",
+                      clientsQuery.data ?? [],
+                      newValues
+                    )
+                  }
                   placeholder="Search and select attendees..."
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -180,8 +207,9 @@ export function MagLogForm() {
                 </label>
                 <textarea
                   id="notes"
-                  value={formData.notes || ""}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  name="details.notes"
+                  value={formData.details.notes || ""}
+                  onChange={handleInputChange}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Additional notes about the MAG log session..."

@@ -3,45 +3,60 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Client } from "../types";
+import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { capitalise, updateNestedValue } from "@/utils/helpers";
+import Select from "react-select";
+import { attendanceAllowanceStatus } from "shared/options";
+import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {
   const navigate = useNavigate();
-  const id = Number(useParams<{ id: string }>().id);
+  const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<Client, "id">>({
-    name: "",
-    dob: "",
-    address: "",
+  const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
+    dateOfBirth: "",
     postCode: "",
-    phone: "",
-    email: "",
-    nextOfKin: "",
-    referredBy: "",
-    clientAgreementDate: "",
-    clientAgreementComments: "",
-    riskAssessmentDate: "",
-    riskAssessmentComments: "",
-    needs: [],
-    servicesProvided: [],
-    hasMp: false,
-    hasAttendanceAllowance: false,
+    details: {
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      nextOfKin: "",
+      referredBy: "",
+      clientAgreementDate: "",
+      clientAgreementComments: "",
+      riskAssessmentDate: "",
+      riskAssessmentComments: "",
+      needs: [],
+      services: [],
+      attendanceAllowance: "pending",
+      attendsMag: false,
+      notes: "",
+    },
+    mpRequests: [],
+    volunteerRequests: [],
+    // below not edited here.
+    mpLogs: [],
+    volunteerLogs: [],
+    magLogs: [],
   });
 
   const queryClient = useQueryClient();
 
   const clientQuery = useQuery({
     ...trpc.clients.getById.queryOptions({ id }),
-    enabled: isEditing && !!id,
+    enabled: isEditing,
   });
-  const clientQueryKey = trpc.clients.getAll.queryKey();
+
+  const thisClientQueryKey = trpc.clients.getById.queryKey();
+  const allClientsQueryKey = trpc.clients.getAll.queryKey();
 
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
         navigate("/clients");
       },
     })
@@ -50,7 +65,7 @@ export function ClientForm() {
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientQueryKey });
+        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
         navigate("/clients");
       },
     })
@@ -62,35 +77,70 @@ export function ClientForm() {
     }
   }, [clientQuery.data]);
 
-  const handleInputChange = (field: keyof Client, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name;
+    let value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleArrayInputChange = (
-    field: "needs" | "servicesProvided",
-    value: string
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as
+      | "details.services"
+      | "details.needs"
+      | "details.specialisms";
+    let value = e.target.value.split(",");
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleSelectChange = (
+    field: string,
+    newValue: {
+      label: string;
+      value: string;
+    } | null
   ) => {
-    const array = value
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-    setFormData((prev) => ({ ...prev, [field]: array }));
+    if (!newValue) return null;
+    setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateClientMutation.mutate({ ...formData, id } as Client & {
+      updateClientMutation.mutate({ ...formData, id } as ClientFull & {
         id: number;
       });
     } else {
-      createClientMutation.mutate(formData as Omit<Client, "id">);
+      createClientMutation.mutate(formData as Omit<ClientFull, "id">);
     }
   };
 
   const handleCancel = () => {
     navigate("/clients");
   };
+
+  const handleFieldChangeSubmit = (field: string, newValue: string) => {
+    if (!isEditing) return;
+
+    const updateNameMutation = useMutation(
+      trpc.clients.updateName.mutationOptions({
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
+        },
+      })
+    );
+    updateNameMutation.mutate({
+      id,
+      ...updateNestedValue(field, newValue, formData),
+    });
+  };
+
+  const attendanceAllowanceOptions = attendanceAllowanceStatus.map(
+    (option) => ({
+      value: option,
+      label: capitalise(option),
+    })
+  );
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -110,7 +160,6 @@ export function ClientForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Contact Information
               </h3>
-
               <div>
                 <label
                   htmlFor="name"
@@ -118,29 +167,41 @@ export function ClientForm() {
                 >
                   Name *
                 </label>
-                <Input
-                  id="name"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  required
-                />
-              </div>
-
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    name="details.name"
+                    value={formData.details.name || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.name"
+                      currentValue={formData.details.name}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
+              </div>{" "}
               <div>
                 <label
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth
+                  Date of Birth *
                 </label>
                 <Input
                   id="dob"
+                  name="dateOfBirth"
                   type="date"
-                  value={formData.dob || ""}
-                  onChange={(e) => handleInputChange("dob", e.target.value)}
+                  value={formData.dateOfBirth || ""}
+                  onChange={handleInputChange}
+                  required
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="address"
@@ -150,27 +211,37 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="address"
-                  value={formData.address || ""}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  name="details.address"
+                  value={formData.details.address || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
-                <Input
-                  id="postCode"
-                  value={formData.postCode || ""}
-                  onChange={(e) =>
-                    handleInputChange("postCode", e.target.value)
-                  }
-                />
-              </div>
-
+                <div className="flex gap-2">
+                  <Input
+                    id="postCode"
+                    name="postCode"
+                    value={formData.postCode || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !clientQuery.isLoading && clientQuery.data && (
+                    <FieldEditModal
+                      field="postCode"
+                      currentValue={formData.postCode}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
+              </div>{" "}
               <div>
                 <label
                   htmlFor="phone"
@@ -180,12 +251,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="phone"
+                  name="details.phone"
                   type="tel"
-                  value={formData.phone || ""}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.details.phone || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="email"
@@ -195,12 +266,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="email"
+                  name="details.email"
                   type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  value={formData.details.email || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="nextOfKin"
@@ -210,13 +281,11 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="nextOfKin"
-                  value={formData.nextOfKin || ""}
-                  onChange={(e) =>
-                    handleInputChange("nextOfKin", e.target.value)
-                  }
+                  name="details.nextOfKin"
+                  value={formData.details.nextOfKin || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="referredBy"
@@ -226,10 +295,9 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="referredBy"
-                  value={formData.referredBy || ""}
-                  onChange={(e) =>
-                    handleInputChange("referredBy", e.target.value)
-                  }
+                  name="details.referredBy"
+                  value={formData.details.referredBy || ""}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -237,8 +305,7 @@ export function ClientForm() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
                 Services & Assessments
-              </h3>
-
+              </h3>{" "}
               <div>
                 <label
                   htmlFor="clientAgreementDate"
@@ -248,14 +315,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="clientAgreementDate"
+                  name="details.clientAgreementDate"
                   type="date"
-                  value={formData.clientAgreementDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementDate", e.target.value)
-                  }
+                  value={formData.details.clientAgreementDate || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="clientAgreementComments"
@@ -265,13 +330,11 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="clientAgreementComments"
-                  value={formData.clientAgreementComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("clientAgreementComments", e.target.value)
-                  }
+                  name="details.clientAgreementComments"
+                  value={formData.details.clientAgreementComments || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="riskAssessmentDate"
@@ -281,14 +344,12 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="riskAssessmentDate"
+                  name="details.riskAssessmentDate"
                   type="date"
-                  value={formData.riskAssessmentDate || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentDate", e.target.value)
-                  }
+                  value={formData.details.riskAssessmentDate || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="riskAssessmentComments"
@@ -298,13 +359,11 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="riskAssessmentComments"
-                  value={formData.riskAssessmentComments || ""}
-                  onChange={(e) =>
-                    handleInputChange("riskAssessmentComments", e.target.value)
-                  }
+                  name="details.riskAssessmentComments"
+                  value={formData.details.riskAssessmentComments || ""}
+                  onChange={handleInputChange}
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
                   htmlFor="needs"
@@ -314,62 +373,50 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="needs"
-                  value={formData.needs?.join(", ") || ""}
-                  onChange={(e) =>
-                    handleArrayInputChange("needs", e.target.value)
-                  }
+                  name="details.needs"
+                  value={formData.details.needs?.join(", ") || ""}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 <label
-                  htmlFor="servicesProvided"
+                  htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Provided (comma-separated)
+                  Services Requested (comma-separated)
                 </label>
                 <Input
-                  id="servicesProvided"
-                  value={formData.servicesProvided?.join(", ") || ""}
-                  onChange={(e) =>
-                    handleArrayInputChange("servicesProvided", e.target.value)
-                  }
+                  id="services"
+                  name="details.services"
+                  value={formData.details.services?.join(", ") || ""}
+                  onChange={handleCSVInputChange}
                   placeholder="e.g., Home Care, Meal Preparation"
-                />
+                />{" "}
               </div>
-
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasMp || false}
-                    onChange={(e) =>
-                      handleInputChange("hasMp", e.target.checked)
-                    }
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has MP?
-                  </span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Attendance Allowance?
                 </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasAttendanceAllowance || false}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "hasAttendanceAllowance",
-                        e.target.checked
-                      )
-                    }
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has Attendance Allowance?
-                  </span>
-                </label>
+                <Select
+                  options={attendanceAllowanceOptions}
+                  value={
+                    attendanceAllowanceOptions.find(
+                      (option) =>
+                        option.value === formData.details.attendanceAllowance
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleSelectChange(
+                      "details.attendanceAllowance",
+                      selectedOption
+                    )
+                  }
+                  placeholder="Select request type..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  required
+                />
               </div>
             </div>
           </div>

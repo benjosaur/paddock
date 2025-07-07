@@ -46,7 +46,13 @@ const hasPermission = (
       throw new TRPCError({ code: "FORBIDDEN" });
     }
 
-    return next({ ctx });
+    return next({
+      //generic middleware input instead of from isAuthed does not preserve type narrowing of user so repeating here.
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      },
+    });
   });
 
 export const publicProcedure = t.procedure;

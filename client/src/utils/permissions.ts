@@ -33,10 +33,10 @@ export function getVisibleMenuItems(userRole: UserRole) {
       resource: "volunteers",
     },
     {
-      key: "expiries",
-      label: "Expiries",
-      path: "/expiries",
-      resource: "expiries",
+      key: "records",
+      label: "Records",
+      path: "/records",
+      resource: "trainingRecords",
     },
     {
       key: "new-requests",
