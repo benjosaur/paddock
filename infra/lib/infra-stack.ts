@@ -99,6 +99,11 @@ export class InfraStack extends cdk.Stack {
       },
       { id: "TrusteeGroup", name: "Trustee", description: "Trustees group" },
       { id: "FinanceGroup", name: "Finance", description: "Finance group" },
+      {
+        id: "TestGroup",
+        name: "Test",
+        description: "Tester Group (no prod data access)",
+      },
     ];
 
     groups.forEach(({ id, name, description }) => {

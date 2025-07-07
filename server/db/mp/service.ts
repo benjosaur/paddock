@@ -9,9 +9,9 @@ export class MpService {
   mpLogService = new MpLogService();
   trainingRecordService = new TrainingRecordService();
 
-  async getAll(): Promise<MpMetadata[]> {
+  async getAll(user: User): Promise<MpMetadata[]> {
     try {
-      const mps = await this.mpRepository.getAll();
+      const mps = await this.mpRepository.getAll(user);
       const transformedResult = this.transformDbMpToSharedMetaData(
         mps
       ) as MpMetadata[];
@@ -23,15 +23,15 @@ export class MpService {
     }
   }
 
-  async getById(mpId: string): Promise<MpFull> {
+  async getById(user: User, mpId: string): Promise<MpFull> {
     try {
-      const mp = await this.mpRepository.getById(mpId);
+      const mp = await this.mpRepository.getById(user, mpId);
       const mpLogIds = mp
         .filter((dbResult) => dbResult.entityType == "mpLog")
         .map((mpLog) => mpLog.sK);
       const mpLogs = await Promise.all(
         mpLogIds.map(
-          async (mpLogId) => await this.mpLogService.getById(mpLogId)
+          async (mpLogId) => await this.mpLogService.getById(user, mpLogId)
         )
       );
       const mpMetadata = this.transformDbMpToSharedMetaData(mp);
@@ -44,7 +44,7 @@ export class MpService {
     }
   }
 
-  async create(newMp: Omit<MpMetadata, "id">, userId: string): Promise<MpFull> {
+  async create(newMp: Omit<MpMetadata, "id">, user: User): Promise<MpFull> {
     try {
       const validatedInput = mpFullSchema.omit({ id: true }).parse(newMp);
 
@@ -53,9 +53,9 @@ export class MpService {
         entityType: "mp",
         entityOwner: "mp",
       };
-      const createdMpId = await this.mpRepository.create(mpToCreate, userId);
+      const createdMpId = await this.mpRepository.create(mpToCreate, user);
 
-      const fetchedMp = await this.getById(createdMpId);
+      const fetchedMp = await this.getById(user, createdMpId);
       if (!fetchedMp) {
         throw new Error("Failed to fetch created mp");
       }
@@ -73,7 +73,7 @@ export class MpService {
     }
   }
 
-  async update(updatedMp: MpMetadata, userId: string): Promise<MpFull> {
+  async update(updatedMp: MpMetadata, user: User): Promise<MpFull> {
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const validatedInput = mpFullSchema.parse(updatedMp);
@@ -90,8 +90,8 @@ export class MpService {
         details: validatedInput.details,
       };
 
-      await this.mpRepository.update(dbMp, userId);
-      const fetchedMp = await this.getById(validatedInput.id);
+      await this.mpRepository.update(dbMp, user);
+      const fetchedMp = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
         throw new Error("Updated mp does not match expected values");
@@ -104,23 +104,21 @@ export class MpService {
     }
   }
 
-  async updateName(updatedMp: MpFull, userId: string): Promise<MpFull> {
+  async updateName(updatedMp: MpFull, user: User): Promise<MpFull> {
     // Must update also duplicated name field in mplog details and training log details
     try {
       const validatedInput = mpFullSchema.parse(updatedMp);
 
-      await this.update(validatedInput, userId);
+      await this.update(validatedInput, user);
       await Promise.all(
         validatedInput.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record, userId)
+          this.trainingRecordService.update(record, user)
         )
       );
       await Promise.all(
-        validatedInput.mpLogs.map((log) =>
-          this.mpLogService.update(log, userId)
-        )
+        validatedInput.mpLogs.map((log) => this.mpLogService.update(log, user))
       );
-      const fetchedMp = await this.getById(validatedInput.id);
+      const fetchedMp = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
         throw new Error("Updated mp name does not match expected values");
@@ -132,9 +130,9 @@ export class MpService {
     }
   }
 
-  async delete(mpId: string): Promise<number[]> {
+  async delete(user: User, mpId: string): Promise<number[]> {
     try {
-      const deletedCount = await this.mpRepository.delete(mpId);
+      const deletedCount = await this.mpRepository.delete(user, mpId);
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting MP:", error);

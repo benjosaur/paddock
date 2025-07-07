@@ -4,7 +4,7 @@ import {
   requestStatus,
   requestTypes,
   userRoles,
-} from "../options";
+} from "../const";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),

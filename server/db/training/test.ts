@@ -46,7 +46,7 @@ export async function testTrainingRecordService() {
     console.log("Expiring training records:", expiringRecords);
 
     console.log("5. Deleting training record...");
-    const deletedCount = await trainingRecordService.delete(
+    const deletedCount = await trainingRecordService.delete(user:User, 
       ownerId,
       createdRecord.id
     );

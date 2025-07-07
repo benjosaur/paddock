@@ -3,6 +3,7 @@ export const userRoles = [
   "Trustee",
   "Coordinator",
   "Finance",
+  "Test",
 ] as const;
 export const requestTypes = ["mp", "volunteer"] as const;
 export const requestStatus = ["pending", "urgent"] as const;

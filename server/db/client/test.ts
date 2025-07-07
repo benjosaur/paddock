@@ -42,7 +42,7 @@ export async function testClientService() {
     console.log("Created client:", createdClient.id);
 
     console.log("\n2. Getting client by ID...");
-    const retrievedClient = await clientService.getById(createdClient.id);
+    const retrievedClient = await clientService.getById(user:User, createdClient.id);
     console.log("Retrieved client:", retrievedClient.details.name);
 
     console.log("\n3. Getting all clients...");
@@ -64,7 +64,7 @@ export async function testClientService() {
     console.log("Updated client phone:", updatedClient.details.phone);
 
     console.log("\n5. Deleting client...");
-    const deletedCount = await clientService.delete(createdClient.id);
+    const deletedCount = await clientService.delete(user:User, createdClient.id);
     console.log("Deleted items count:", deletedCount[0]);
 
     console.log("\nAll tests completed successfully!");

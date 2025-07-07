@@ -36,7 +36,7 @@ export async function testVolunteerService() {
     console.log("Created volunteer:", createdVolunteer);
 
     console.log("2. Getting volunteer by ID...");
-    const retrievedVolunteer = await volunteerService.getById(
+    const retrievedVolunteer = await volunteerService.getById(user:User, 
       createdVolunteer.id
     );
     console.log("Retrieved volunteer:", retrievedVolunteer);
@@ -60,7 +60,7 @@ export async function testVolunteerService() {
     console.log("All volunteers:", allVolunteers);
 
     console.log("5. Deleting volunteer...");
-    const deletedCount = await volunteerService.delete(createdVolunteer.id);
+    const deletedCount = await volunteerService.delete(user:User, createdVolunteer.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("Volunteer Service tests completed successfully!");

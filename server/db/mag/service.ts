@@ -4,8 +4,8 @@ import { DbMagLog, DbMagLogClient, DbMagLogEntity } from "./schema";
 
 export class MagLogService {
   magLogRepository = new MagLogRepository();
-  async getAll(): Promise<MagLog[]> {
-    const magLogs = await this.magLogRepository.getAll();
+  async getAll(user: User): Promise<MagLog[]> {
+    const magLogs = await this.magLogRepository.getAll(user);
     const transformedResult = this.transformDbMagLogToShared(
       magLogs
     ) as MagLog[];
@@ -13,24 +13,27 @@ export class MagLogService {
     return parsedResult;
   }
 
-  async getById(magLogId: string): Promise<MagLog> {
-    const mag = await this.magLogRepository.getById(magLogId);
+  async getById(user: User, magLogId: string): Promise<MagLog> {
+    const mag = await this.magLogRepository.getById(user, magLogId);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult[0];
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<MagLog[]> {
-    const mag = await this.magLogRepository.getByDateInterval(input);
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<MagLog[]> {
+    const mag = await this.magLogRepository.getByDateInterval(user, input);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async create(newMagLog: Omit<MagLog, "id">, userId: string): Promise<MagLog> {
+  async create(newMagLog: Omit<MagLog, "id">, user: User): Promise<MagLog> {
     const validatedInput = magLogSchema.omit({ id: true }).parse(newMagLog);
 
     const magLogMain: Omit<DbMagLogEntity, "pK" | "sK"> = {
@@ -49,10 +52,10 @@ export class MagLogService {
     try {
       const createdLogId = await this.magLogRepository.create(
         [magLogMain, ...magLogClients],
-        userId
+        user
       );
 
-      const fetchedLog = await this.getById(createdLogId);
+      const fetchedLog = await this.getById(user, createdLogId);
       if (!fetchedLog) {
         throw new Error("Failed to fetch created mag log");
       }
@@ -70,7 +73,7 @@ export class MagLogService {
     }
   }
 
-  async update(updatedMpLog: MagLog, userId: string): Promise<MagLog> {
+  async update(updatedMpLog: MagLog, user: User): Promise<MagLog> {
     const validatedInput = magLogSchema.parse(updatedMpLog);
     const magLogKey = validatedInput.id;
 
@@ -92,12 +95,9 @@ export class MagLogService {
       })
     );
     try {
-      await this.magLogRepository.update(
-        [magLogMain, ...magLogClients],
-        userId
-      );
+      await this.magLogRepository.update([magLogMain, ...magLogClients], user);
 
-      const fetchedLog = await this.getById(updatedMpLog.id);
+      const fetchedLog = await this.getById(user, updatedMpLog.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated mag log");
       }
@@ -113,8 +113,8 @@ export class MagLogService {
     }
   }
 
-  async delete(magLogId: string): Promise<number> {
-    const numDeleted = await this.magLogRepository.delete(magLogId);
+  async delete(user: User, magLogId: string): Promise<number> {
+    const numDeleted = await this.magLogRepository.delete(user, magLogId);
     return numDeleted[0];
   }
 

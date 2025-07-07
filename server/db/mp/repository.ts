@@ -8,7 +8,7 @@ import {
 } from "./schema";
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -16,9 +16,9 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class MpRepository {
-  async getAll(): Promise<DbMpMetadata[]> {
+  async getAll(user: User): Promise<DbMpMetadata[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityOwner = :pk AND entityType = :sk",
       ExpressionAttributeValues: {
@@ -36,10 +36,10 @@ export class MpRepository {
     }
   }
 
-  async getById(mpId: string): Promise<DbMpFull[]> {
+  async getById(user:User, mpId: string): Promise<DbMpFull[]> {
     //mp's mplog record only useful here to simply get id of mplogs to fetch later in service
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
       ExpressionAttributeValues: {
         ":pk": mpId,
@@ -58,15 +58,15 @@ export class MpRepository {
 
   async create(
     newMp: Omit<DbMpEntity, "pK" | "sK">,
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `mp#${uuid}`;
     const fullMp: DbMpEntity = { pK: key, sK: key, ...newMp };
     const validatedFullMp = dbMpEntity.parse(fullMp);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullMp, userId),
+      TableName: getTableName(user),
+      Item: addCreateMiddleware(validatedFullMp, user),
     });
 
     try {
@@ -78,11 +78,11 @@ export class MpRepository {
     }
   }
 
-  async update(updatedMp: DbMpEntity, userId: string): Promise<void> {
+  async update(updatedMp: DbMpEntity, user: User): Promise<void> {
     const validatedFullMp = dbMpEntity.parse(updatedMp);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullMp, userId),
+      TableName: getTableName(user),
+      Item: addUpdateMiddleware(validatedFullMp, user),
     });
 
     try {
@@ -93,14 +93,14 @@ export class MpRepository {
     }
   }
 
-  async delete(mpId: string): Promise<number[]> {
+  async delete(user:User, mpId: string): Promise<number[]> {
     try {
-      const mpData = await this.getById(mpId);
+      const mpData = await this.getById(user:User, mpId);
       let deletedCount = 0;
 
       for (const item of mpData) {
         const command = new DeleteCommand({
-          TableName: TABLE_NAME,
+          TableName: getTableName(user),
           Key: {
             pK: item.pK,
             sK: item.sK,

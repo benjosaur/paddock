@@ -47,13 +47,13 @@ runAllTests();
 // Manual Reads
 
 console.dir(await clientService.getAll(), { depth: null });
-console.dir(await clientService.getById("c#1"), { depth: null });
+console.dir(await clientService.getById(user:User, "c#1"), { depth: null });
 console.dir(await mpService.getAll(), { depth: null });
-console.dir(await mpService.getById("mp#1"), { depth: null });
+console.dir(await mpService.getById(user:User, "mp#1"), { depth: null });
 console.dir(await volunteerService.getAll(), { depth: null });
-console.dir(await volunteerService.getById("v#1"), { depth: null });
+console.dir(await volunteerService.getById(user:User, "v#1"), { depth: null });
 console.dir(await mpLogService.getAll(), { depth: null });
-console.dir(await mpLogService.getById("mplog#1"), { depth: null });
+console.dir(await mpLogService.getById(user:User, "mplog#1"), { depth: null });
 console.dir(await mpLogService.getBySubstring("ey"), { depth: null });
 console.dir(await mpLogService.getByMpId("mp#1"), { depth: null });
 console.dir(await mpLogService.getByMpId("mp#1"), { depth: null });
@@ -65,7 +65,7 @@ console.dir(
   { depth: null }
 );
 console.dir(await volunteerLogService.getAll(), { depth: null });
-console.dir(await volunteerLogService.getById("vlog#1"), { depth: null });
+console.dir(await volunteerLogService.getById(user:User, "vlog#1"), { depth: null });
 console.dir(await volunteerLogService.getBySubstring("ey"), { depth: null });
 console.dir(await volunteerLogService.getByVolunteerId("v#1"), { depth: null });
 console.dir(
@@ -76,7 +76,7 @@ console.dir(
   { depth: null }
 );
 console.dir(await magLogService.getAll(), { depth: null });
-console.dir(await magLogService.getById("mag#1"), { depth: null });
+console.dir(await magLogService.getById(user:User, "mag#1"), { depth: null });
 console.dir(
   await magLogService.getByDateInterval({
     startDate: "2024-01-01T00:00:00Z",

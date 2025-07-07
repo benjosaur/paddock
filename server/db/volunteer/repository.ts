@@ -8,7 +8,7 @@ import {
 } from "./schema";
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -16,9 +16,9 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class VolunteerRepository {
-  async getAll(): Promise<DbVolunteerMetadata[]> {
+  async getAll(user: User): Promise<DbVolunteerMetadata[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityOwner = :pk AND entityType = :sk",
       ExpressionAttributeValues: {
@@ -36,9 +36,9 @@ export class VolunteerRepository {
     }
   }
 
-  async getById(volunteerId: string): Promise<DbVolunteerFull[]> {
+  async getById(user: User, volunteerId: string): Promise<DbVolunteerFull[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
       ExpressionAttributeValues: {
         ":pk": volunteerId,
@@ -57,7 +57,7 @@ export class VolunteerRepository {
 
   async create(
     newVolunteer: Omit<DbVolunteerEntity, "pK" | "sK">,
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `v#${uuid}`;
@@ -68,8 +68,8 @@ export class VolunteerRepository {
     };
     const validatedFullVolunteer = dbVolunteerEntity.parse(fullVolunteer);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullVolunteer, userId),
+      TableName: getTableName(user),
+      Item: addCreateMiddleware(validatedFullVolunteer, user),
     });
 
     try {
@@ -81,14 +81,11 @@ export class VolunteerRepository {
     }
   }
 
-  async update(
-    updatedVolunteer: DbVolunteerEntity,
-    userId: string
-  ): Promise<void> {
+  async update(updatedVolunteer: DbVolunteerEntity, user: User): Promise<void> {
     const validatedFullVolunteer = dbVolunteerEntity.parse(updatedVolunteer);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullVolunteer, userId),
+      TableName: getTableName(user),
+      Item: addUpdateMiddleware(validatedFullVolunteer, user),
     });
 
     try {
@@ -99,14 +96,14 @@ export class VolunteerRepository {
     }
   }
 
-  async delete(volunteerId: string): Promise<number[]> {
+  async delete(user: User, volunteerId: string): Promise<number[]> {
     try {
-      const volunteerData = await this.getById(volunteerId);
+      const volunteerData = await this.getById(user, volunteerId);
       let deletedCount = 0;
 
       for (const item of volunteerData) {
         const command = new DeleteCommand({
-          TableName: TABLE_NAME,
+          TableName: getTableName(user),
           Key: {
             pK: item.pK,
             sK: item.sK,

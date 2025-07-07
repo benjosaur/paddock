@@ -18,9 +18,9 @@ export class VolunteerService {
   volunteerLogService = new VolunteerLogService();
   trainingRecordService = new TrainingRecordService();
 
-  async getAll(): Promise<VolunteerMetadata[]> {
+  async getAll(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const volunteers = await this.volunteerRepository.getAll();
+      const volunteers = await this.volunteerRepository.getAll(user);
       const transformedResult = this.transformDbVolunteertoSharedMetaData(
         volunteers
       ) as VolunteerMetadata[];
@@ -34,16 +34,19 @@ export class VolunteerService {
     }
   }
 
-  async getById(volunteerId: string): Promise<VolunteerFull> {
+  async getById(user: User, volunteerId: string): Promise<VolunteerFull> {
     try {
-      const volunteer = await this.volunteerRepository.getById(volunteerId);
+      const volunteer = await this.volunteerRepository.getById(
+        user,
+        volunteerId
+      );
       const volunteerLogIds = volunteer
         .filter((dbResult) => dbResult.entityType == "volunteerLog")
         .map((volunteerLog) => volunteerLog.sK);
       const volunteerLogs = await Promise.all(
         volunteerLogIds.map(
           async (volunteerLogId) =>
-            await this.volunteerLogService.getById(volunteerLogId)
+            await this.volunteerLogService.getById(user, volunteerLogId)
         )
       );
       const volunteerMetadata =
@@ -61,7 +64,7 @@ export class VolunteerService {
 
   async create(
     newVolunteer: Omit<VolunteerMetadata, "id">,
-    userId: string
+    user: User
   ): Promise<VolunteerFull> {
     try {
       const validatedInput = volunteerFullSchema
@@ -75,10 +78,10 @@ export class VolunteerService {
       };
       const createdVolunteerId = await this.volunteerRepository.create(
         volunteerToCreate,
-        userId
+        user
       );
 
-      const fetchedVolunteer = await this.getById(createdVolunteerId);
+      const fetchedVolunteer = await this.getById(user, createdVolunteerId);
       if (!fetchedVolunteer) {
         throw new Error("Failed to fetch created volunteer");
       }
@@ -98,7 +101,7 @@ export class VolunteerService {
 
   async update(
     updatedVolunteer: VolunteerMetadata,
-    userId: string
+    user: User
   ): Promise<VolunteerFull> {
     try {
       const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
@@ -115,8 +118,8 @@ export class VolunteerService {
         details: validatedInput.details,
       };
 
-      await this.volunteerRepository.update(dbVolunteer, userId);
-      const fetchedVolunteer = await this.getById(validatedInput.id);
+      await this.volunteerRepository.update(dbVolunteer, user);
+      const fetchedVolunteer = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
         throw new Error("Updated volunteer does not match expected values");
@@ -131,23 +134,23 @@ export class VolunteerService {
 
   async updateName(
     updatedVolunteer: VolunteerFull,
-    userId: string
+    user: User
   ): Promise<VolunteerFull> {
     try {
       const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
 
-      await this.update(validatedInput, userId);
+      await this.update(validatedInput, user);
       await Promise.all(
         validatedInput.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record, userId)
+          this.trainingRecordService.update(record, user)
         )
       );
       await Promise.all(
         validatedInput.volunteerLogs.map((log) =>
-          this.volunteerLogService.update(log, userId)
+          this.volunteerLogService.update(log, user)
         )
       );
-      const fetchedVolunteer = await this.getById(validatedInput.id);
+      const fetchedVolunteer = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
         throw new Error(
@@ -161,9 +164,12 @@ export class VolunteerService {
     }
   }
 
-  async delete(volunteerId: string): Promise<number[]> {
+  async delete(user: User, volunteerId: string): Promise<number[]> {
     try {
-      const deletedCount = await this.volunteerRepository.delete(volunteerId);
+      const deletedCount = await this.volunteerRepository.delete(
+        user,
+        volunteerId
+      );
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting volunteer:", error);

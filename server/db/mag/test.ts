@@ -33,7 +33,7 @@ export async function testMagLogService() {
     console.log("Created Mag log:", createdLog);
 
     console.log("2. Getting Mag log by ID...");
-    const fetchedLog = await magLogService.getById(createdLog.id);
+    const fetchedLog = await magLogService.getById(user:User, createdLog.id);
     console.log("Fetched Mag log:", fetchedLog);
 
     console.log("3. Updating Mag log...");
@@ -62,7 +62,7 @@ export async function testMagLogService() {
     console.log("Mag logs in January 2025:", logsInInterval);
 
     console.log("6. Deleting Mag log...");
-    const deletedCount = await magLogService.delete(createdLog.id);
+    const deletedCount = await magLogService.delete(user:User, createdLog.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("Mag Log Service tests completed successfully!");

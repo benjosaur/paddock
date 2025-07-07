@@ -1,9 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { ZodError } from "zod";
 import { rolePermissions } from "shared/permissions";
-import type { Context } from "./context";
+import type { LambdaContext, ExpressContext } from "./context";
 
-const t = initTRPC.context<Context>().create({
+const t = initTRPC.context<ExpressContext | LambdaContext>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,

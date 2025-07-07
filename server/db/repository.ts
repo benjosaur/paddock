@@ -1,44 +1,57 @@
 // in repository schemas use default("") instead of shared nullable(), to give values to all optional fields.
 // but on way in these need to be stripped so drop null fields after parsing.
 
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDB, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { isProd } from "..";
 
-const rawClient = new DynamoDBClient({
-  region: "eu-west-2",
-  endpoint: "http://localhost:8000",
-  credentials: {
-    accessKeyId: "dummy",
-    secretAccessKey: "dummy",
-  },
-});
+const createRawClient = (): DynamoDBClient => {
+  if (isProd) {
+    return new DynamoDB();
+  }
 
-export const TABLE_NAME = "WiveyCares";
+  return new DynamoDBClient({
+    region: "eu-west-2",
+    endpoint: "http://localhost:8000",
+    credentials: {
+      accessKeyId: "dummy",
+      secretAccessKey: "dummy",
+    },
+  });
+};
 
-export const client = DynamoDBDocumentClient.from(rawClient);
+export const getTableName = (user: User): string => {
+  const allowedGroups = ["Admin", "Coordinator", "Trustee", "Finance"];
+  if (allowedGroups.find((group) => user.role == group)) {
+    return "WiveyCares";
+  }
+  return "Test";
+};
+
+export const client = DynamoDBDocumentClient.from(createRawClient());
 
 export function addCreateMiddleware<T>(
   input: T,
-  userId: string
+  user: User
 ): T & { createdAt: string; updatedAt: string; updatedBy: string } {
   const now = new Date().toISOString();
   return dropNullFields({
     ...input,
     createdAt: now,
     updatedAt: now,
-    updatedBy: userId,
+    updatedBy: user.sub,
   });
 }
 
 export function addUpdateMiddleware<T>(
   input: T,
-  userId: string
+  user: User
 ): T & { updatedAt: string; updatedBy: string } {
   const now = new Date().toISOString();
   return dropNullFields({
     ...input,
     updatedAt: now,
-    updatedBy: userId,
+    updatedBy: user.sub,
   });
 }
 

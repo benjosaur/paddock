@@ -1,7 +1,7 @@
 import { DbMpLog, dbMpLog } from "./schema";
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -10,9 +10,9 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
 export class MpLogRepository {
-  async getAll(): Promise<DbMpLog[]> {
+  async getAll(user: User): Promise<DbMpLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -29,9 +29,9 @@ export class MpLogRepository {
     }
   }
 
-  async getById(mpLogId: string): Promise<DbMpLog[]> {
+  async getById(user: User, mpLogId: string): Promise<DbMpLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI2",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
@@ -49,9 +49,9 @@ export class MpLogRepository {
     }
   }
 
-  async getMetaLogsBySubstring(string: string): Promise<DbMpLog[]> {
+  async getMetaLogsBySubstring(user: User, string: string): Promise<DbMpLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityOwner = :pk AND entityType = :sk",
       FilterExpression:
@@ -73,9 +73,9 @@ export class MpLogRepository {
     }
   }
 
-  async getMetaLogsByMpId(mpId: string): Promise<DbMpLog[]> {
+  async getMetaLogsByMpId(user: User, mpId: string): Promise<DbMpLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND begins_with(sK, :sk)",
       ExpressionAttributeValues: {
         ":pk": mpId,
@@ -93,10 +93,13 @@ export class MpLogRepository {
     }
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<DbMpLog[]> {
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<DbMpLog[]> {
     const { startDate, endDate } = z
       .object({
         startDate: z.string().date(),
@@ -104,7 +107,7 @@ export class MpLogRepository {
       })
       .parse(input);
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression:
         "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
@@ -129,7 +132,7 @@ export class MpLogRepository {
 
   async create(
     newMpLogs: (Omit<DbMpLog, "pK" | "sK"> | Omit<DbMpLog, "sK">)[],
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `mplog#${uuid}`;
@@ -147,8 +150,8 @@ export class MpLogRepository {
         validatedItems.map((newItem) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addCreateMiddleware(newItem, userId),
+              TableName: getTableName(user),
+              Item: addCreateMiddleware(newItem, user),
             })
           )
         )
@@ -159,9 +162,9 @@ export class MpLogRepository {
       throw error;
     }
   }
-  async update(updatedMpLogs: DbMpLog[], userId: string): Promise<void> {
+  async update(updatedMpLogs: DbMpLog[], user: User): Promise<void> {
     const mpLogKey = updatedMpLogs[0].sK;
-    await this.delete(mpLogKey);
+    await this.delete(user, mpLogKey);
 
     const validatedLogs = dbMpLog.array().parse(updatedMpLogs);
     try {
@@ -169,8 +172,8 @@ export class MpLogRepository {
         validatedLogs.map((log) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addUpdateMiddleware(log, userId),
+              TableName: getTableName(user),
+              Item: addUpdateMiddleware(log, user),
             })
           )
         )
@@ -180,14 +183,14 @@ export class MpLogRepository {
       throw error;
     }
   }
-  async delete(mpLogId: string): Promise<number[]> {
-    const existingLogs = await this.getById(mpLogId);
+  async delete(user: User, mpLogId: string): Promise<number[]> {
+    const existingLogs = await this.getById(user, mpLogId);
     try {
       await Promise.all(
         existingLogs.map((log) =>
           client.send(
             new DeleteCommand({
-              TableName: TABLE_NAME,
+              TableName: getTableName(user),
               Key: { pK: log.pK, sK: log.sK },
             })
           )

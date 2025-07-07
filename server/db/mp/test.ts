@@ -33,7 +33,7 @@ export async function testMpService() {
     console.log("Created MP:", createdMp);
 
     console.log("2. Getting MP by ID...");
-    const retrievedMp = await mpService.getById(createdMp.id);
+    const retrievedMp = await mpService.getById(user:User, createdMp.id);
     console.log("Retrieved MP:", retrievedMp);
 
     console.log("3. Updating MP...");
@@ -52,7 +52,7 @@ export async function testMpService() {
     console.log("All MPs:", allMps);
 
     console.log("5. Deleting MP...");
-    const deletedCount = await mpService.delete(createdMp.id);
+    const deletedCount = await mpService.delete(user:User, createdMp.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("MP Service tests completed successfully!");

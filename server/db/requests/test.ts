@@ -78,14 +78,14 @@ export async function testRequestService() {
     console.log("Requests before 2025-02-01:", requestsBefore);
 
     console.log("7. Deleting MP request...");
-    const deletedMpCount = await requestService.delete(
+    const deletedMpCount = await requestService.delete(user:User, 
       clientId,
       createdMpRequest.id
     );
     console.log("Deleted MP request count:", deletedMpCount);
 
     console.log("8. Deleting volunteer request...");
-    const deletedVolunteerCount = await requestService.delete(
+    const deletedVolunteerCount = await requestService.delete(user:User, 
       clientId,
       createdVolunteerRequest.id
     );
