@@ -6,7 +6,7 @@ import { createServices } from "../../db/service";
 // Create JWT verifier for your Cognito User Pool
 const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: process.env.COGNITO_USER_POOL_ID!,
-  tokenUse: "access", // or "id" depending on which token you're using
+  tokenUse: "id", // or "id" depending on which token you're using
   clientId: process.env.COGNITO_CLIENT_ID!, // Optional, only if you want to verify client ID
 });
 
@@ -16,13 +16,27 @@ export const getUser = async (reqOrEvent: any): Promise<User | null> => {
   }
 
   try {
-    const authHeader = reqOrEvent.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const authHeader =
+      reqOrEvent.headers.authorization ||
+      reqOrEvent.headers.Authorization ||
+      reqOrEvent.headers["Authorization"];
+
+    if (!authHeader) {
+      console.log("No authorization header found");
       return null;
     }
 
-    // Extract token from "Bearer <token>"
-    const token = authHeader.substring(7);
+    const trimmedHeader = authHeader.trim();
+    if (!trimmedHeader.startsWith("Bearer ")) {
+      console.log("Authorization header does not start with Bearer");
+      return null;
+    }
+
+    const token = trimmedHeader.substring(7).trim();
+    if (!token) {
+      console.log("No token found after Bearer");
+      return null;
+    }
 
     // Verify the JWT token with Cognito
     const payload = await jwtVerifier.verify(token);

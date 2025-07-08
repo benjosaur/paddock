@@ -3,9 +3,9 @@
 
 import { DynamoDB, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { isProd } from "..";
 
 const createRawClient = (): DynamoDBClient => {
+  const isProd = process.env.NODE_ENV == "production";
   if (isProd) {
     return new DynamoDB();
   }

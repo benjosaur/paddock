@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --watch index.ts",
     "build": "tsc",
-    "deploy": "sed -n '1,/ESBUILD_DEPLOY_STOP/p' index.ts > temp-index.ts && esbuild temp-index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --external:debug && rm temp-index.ts && cd ../infra && cdk deploy --hotswap",
+    "deploy": "esbuild index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --define:process.env.NODE_ENV='\"production\"' && cd ../infra && cdk deploy --hotswap",
     "start": "bun run index.js",
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",
@@ -20,7 +20,6 @@
     "aws-jwt-verify": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "shared": "workspace:*",
     "zod": "^3.22.4"

@@ -1,4 +1,3 @@
-import cors from "cors";
 import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
 import { prodAppRouter } from "./trpc/prod/router";
 import { createLambdaContext } from "./trpc/prod/context";
@@ -6,57 +5,65 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const isProd = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-
 export const handler = awsLambdaRequestHandler({
   router: prodAppRouter,
   createContext: createLambdaContext,
+  responseMeta() {
+    return {
+      headers: {
+        "Access-Control-Allow-Origin": "https://paddock.health",
+        "Access-Control-Allow-Methods": "GET,POST",
+        "Access-Control-Allow-Headers": "authorization",
+      },
+    };
+  },
 });
 
 // ESBUILD_DEPLOY_STOP
-import express from "express";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { localAppRouter } from "./trpc/local/router";
-import { createExpressContext } from "./trpc/local/context";
+// import cors from "cors";
+// import express from "express";
+// import { createExpressMiddleware } from "@trpc/server/adapters/express";
+// import { localAppRouter } from "./trpc/local/router";
+// import { createExpressContext } from "./trpc/local/context";
 
-const app = express();
-const port = process.env.PORT || 3001;
+// const app = express();
+// const port = process.env.PORT || 3001;
 
-app.use(
-  cors({
-    origin: [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "https://paddock.health",
-    ],
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: [
+//       process.env.CLIENT_URL || "http://localhost:5173",
+//       "https://paddock.health",
+//     ],
+//     credentials: true,
+//   })
+// );
 
-app.use(express.json());
+// app.use(express.json());
 
-app.use(
-  "/trpc",
-  createExpressMiddleware({
-    router: localAppRouter,
-    createContext: createExpressContext,
-  })
-);
+// app.use(
+//   "/trpc",
+//   createExpressMiddleware({
+//     router: localAppRouter,
+//     createContext: createExpressContext,
+//   })
+// );
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+// app.get("/health", (_req, res) => {
+//   res.json({ status: "ok", timestamp: new Date().toISOString() });
+// });
 
-async function startServer() {
-  try {
-    app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
+// async function startServer() {
+//   try {
+//     app.listen(port, () => {
+//       console.log(`Server running on http://localhost:${port}`);
+//     });
+//   } catch (error) {
+//     console.error("Failed to start server:", error);
+//     process.exit(1);
+//   }
+// }
 
-if (!isProd) {
-  startServer();
-}
+// if (!(process.env.NODE_ENV == "production")) {
+//   startServer();
+// }

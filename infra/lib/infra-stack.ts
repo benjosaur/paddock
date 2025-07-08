@@ -190,7 +190,7 @@ export class InfraStack extends cdk.Stack {
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
-        NODE_ENV: "production",
+        // NODE_ENV: "production", doesnt work
       },
     });
 
