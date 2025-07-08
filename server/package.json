@@ -15,11 +15,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.830.0",
+    "@aws-sdk/core": "3.796.0",
     "@aws-sdk/lib-dynamodb": "^3.830.0",
     "@trpc/server": "11.2.0",
     "aws-jwt-verify": "^5.1.0",
     "cors": "^2.8.5",
+    "debug": "^4.4.1",
     "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.2.5",
     "jsonwebtoken": "^9.0.2",
     "shared": "workspace:*",
     "zod": "^3.22.4"

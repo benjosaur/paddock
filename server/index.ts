@@ -20,50 +20,52 @@ export const handler = awsLambdaRequestHandler({
 });
 
 // ESBUILD_DEPLOY_STOP
-// import cors from "cors";
-// import express from "express";
-// import { createExpressMiddleware } from "@trpc/server/adapters/express";
-// import { localAppRouter } from "./trpc/local/router";
-// import { createExpressContext } from "./trpc/local/context";
 
-// const app = express();
-// const port = process.env.PORT || 3001;
+import cors from "cors";
+import express from "express";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { localAppRouter } from "./trpc/local/router";
+import { createExpressContext } from "./trpc/local/context";
 
-// app.use(
-//   cors({
-//     origin: [
-//       process.env.CLIENT_URL || "http://localhost:5173",
-//       "https://paddock.health",
-//     ],
-//     credentials: true,
-//   })
-// );
+const app = express();
+const port = process.env.PORT || 3001;
 
-// app.use(express.json());
+app.use(
+  cors({
+    origin: [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "https://paddock.health",
+    ],
+    credentials: true,
+  })
+);
 
-// app.use(
-//   "/trpc",
-//   createExpressMiddleware({
-//     router: localAppRouter,
-//     createContext: createExpressContext,
-//   })
-// );
+app.use(express.json());
 
-// app.get("/health", (_req, res) => {
-//   res.json({ status: "ok", timestamp: new Date().toISOString() });
-// });
+app.use(
+  "/trpc",
+  createExpressMiddleware({
+    router: localAppRouter,
+    createContext: createExpressContext,
+  })
+);
 
-// async function startServer() {
-//   try {
-//     app.listen(port, () => {
-//       console.log(`Server running on http://localhost:${port}`);
-//     });
-//   } catch (error) {
-//     console.error("Failed to start server:", error);
-//     process.exit(1);
-//   }
-// }
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-// if (!(process.env.NODE_ENV == "production")) {
-//   startServer();
-// }
+async function startServer() {
+  try {
+    app.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+if (!(process.env.NODE_ENV == "production")) {
+  startServer();
+}
+/**/
