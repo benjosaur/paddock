@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch index.ts",
-    "build": "tsc && cp package.json dist/ && cp -r ../node_modules dist/ && mkdir -p dist/node_modules/shared && cp -r ../shared/. dist/node_modules/shared/ && sed -i 's/\"shared\": \"workspace:\\*\"/\"shared\": \"file:./node_modules/shared\"/' dist/package.json",
+    "build": "tsc",
+    "deploy": "sed -n '1,/ESBUILD_DEPLOY_STOP/p' index.ts > temp-index.ts && esbuild temp-index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --external:express && rm temp-index.ts",
     "start": "bun run index.js",
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",

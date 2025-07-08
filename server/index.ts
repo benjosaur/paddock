@@ -1,4 +1,3 @@
-import express from "express";
 import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
@@ -14,6 +13,9 @@ export const handler = awsLambdaRequestHandler({
   router: appRouter,
   createContext: createLambdaContext,
 });
+
+// ESBUILD_DEPLOY_STOP
+import express from "express";
 
 const app = express();
 const port = process.env.PORT || 3001;

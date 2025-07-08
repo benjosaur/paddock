@@ -182,11 +182,16 @@ export class InfraStack extends cdk.Stack {
 
     //backend
     const trpcLambda = new lambda.Function(this, "TrpcApiFunction", {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: "index.handler",
       code: lambda.Code.fromAsset("../server/dist"),
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
+      environment: {
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+        NODE_ENV: "production",
+      },
     });
 
     //databases
