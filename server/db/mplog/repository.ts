@@ -49,6 +49,30 @@ export class MpLogRepository {
     }
   }
 
+  async getMetaLogsByPostCode(
+    user: User,
+    postCode: string
+  ): Promise<DbMpLog[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI5",
+      KeyConditionExpression: "entityType = :pk AND begins_with(postCode, :sk)",
+      ExpressionAttributeValues: {
+        ":pk": "mpLog",
+        ":sk": postCode,
+      },
+    });
+
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbMpLog.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting mpLogs by postcode:", error);
+      throw error;
+    }
+  }
+
   async getMetaLogsBySubstring(user: User, string: string): Promise<DbMpLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),

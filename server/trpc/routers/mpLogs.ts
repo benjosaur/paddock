@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpLogSchema } from "shared/schemas/index";
 
@@ -28,6 +29,22 @@ export const mpLogsRouter = router({
       return allLogs.filter((log) =>
         log.clients.some((client) => client.id === clientId)
       );
+    }),
+
+  getByPostCode: createProtectedProcedure("mpLogs", "read")
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      // Assuming the first MP in the array is the one we want logs for
+      return await ctx.services.mpLog.getByPostCode(ctx.user, input);
+    }),
+
+  getByDateInterval: createProtectedProcedure("mpLogs", "read")
+    .input(
+      z.object({ startDate: z.string().date(), endDate: z.string().date() })
+    )
+    .query(async ({ ctx, input }) => {
+      // Assuming the first MP in the array is the one we want logs for
+      return await ctx.services.mpLog.getByDateInterval(ctx.user, input);
     }),
 
   create: createProtectedProcedure("mpLogs", "create")

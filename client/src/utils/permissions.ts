@@ -11,6 +11,12 @@ export function hasPermission(
 
 export function getVisibleMenuItems(userRole: UserRole) {
   const allMenuItems = [
+    {
+      key: "dashboard",
+      label: "Dashboard",
+      path: "/dashboard",
+      resource: "dashboard",
+    },
     { key: "mp-logs", label: "MP Logs", path: "/mp-logs", resource: "mpLogs" },
     {
       key: "volunteer-logs",
@@ -46,7 +52,16 @@ export function getVisibleMenuItems(userRole: UserRole) {
     },
   ];
 
-  return allMenuItems.filter((item) =>
-    hasPermission(userRole, item.resource, "read")
-  );
+  return allMenuItems.filter((item) => {
+    // Dashboard should be visible if user has read access to any of the core resources
+    if (item.resource === "dashboard") {
+      return (
+        hasPermission(userRole, "mpLogs", "read") ||
+        hasPermission(userRole, "clients", "read") ||
+        hasPermission(userRole, "mps", "read") ||
+        hasPermission(userRole, "volunteers", "read")
+      );
+    }
+    return hasPermission(userRole, item.resource, "read");
+  });
 }

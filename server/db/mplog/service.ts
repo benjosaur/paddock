@@ -35,6 +35,21 @@ export class MpLogService {
     return parsedResult;
   }
 
+  async getByPostCode(user: User, postCode: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsByPostCode(
+      user,
+      postCode
+    );
+    const idsToFetch = metaLogs.map((log) => log.sK);
+    const parsedResult: MpLog[] = [];
+    for (const id of idsToFetch) {
+      const fetchedLog = await this.mpLogRepository.getById(user, id);
+      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      parsedResult.push(parsedLog[0]);
+    }
+    return parsedResult;
+  }
+
   async getByMpId(user: User, mpId: string): Promise<MpLog[]> {
     const metaLogs = await this.mpLogRepository.getMetaLogsByMpId(user, mpId);
     const idsToFetch = metaLogs.map((log) => log.sK);
