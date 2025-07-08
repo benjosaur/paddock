@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --watch index.ts",
     "build": "tsc",
+    "deploy": "esbuild index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --define:process.env.NODE_ENV='\"production\"' && cd ../infra && cdk deploy --hotswap",
     "start": "bun run index.js",
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",
@@ -14,11 +15,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.830.0",
+    "@aws-sdk/core": "3.796.0",
     "@aws-sdk/lib-dynamodb": "^3.830.0",
+    "@trpc/server": "11.2.0",
     "aws-jwt-verify": "^5.1.0",
     "cors": "^2.8.5",
+    "debug": "^4.4.1",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.2.5",
     "jsonwebtoken": "^9.0.2",
     "shared": "workspace:*",
     "zod": "^3.22.4"

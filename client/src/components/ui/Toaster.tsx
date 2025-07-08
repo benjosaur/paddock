@@ -7,22 +7,22 @@ export function Toaster() {
       toastOptions={{
         duration: 3000,
         style: {
-          background: "hsl(var(--background))",
-          color: "hsl(var(--foreground))",
-          border: "1px solid hsl(var(--border))",
+          background: "var(--background)",
+          color: "var(--foreground)",
+          border: "1px solid var(--border)",
         },
         success: {
           duration: 3000,
           style: {
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--success))",
+            background: "var(--background)",
+            border: "1px solid var(--success)",
           },
         },
         error: {
           duration: 5000,
           style: {
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--destructive))",
+            background: "var(--background)",
+            border: "1px solid var(--destructive)",
           },
         },
       }}

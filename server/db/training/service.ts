@@ -4,8 +4,10 @@ import { DbTrainingRecordEntity } from "./schema";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
-  async getAll(): Promise<TrainingRecord[]> {
-    const trainingRecordsFromDb = await this.trainingRecordRepository.getAll();
+  async getAll(user: User): Promise<TrainingRecord[]> {
+    const trainingRecordsFromDb = await this.trainingRecordRepository.getAll(
+      user
+    );
     const transformedRecords = this.transformDbTrainingRecordToShared(
       trainingRecordsFromDb
     ) as TrainingRecord[];
@@ -13,9 +15,12 @@ export class TrainingRecordService {
     return parsedResult;
   }
 
-  async getByExpiringBefore(expiryDate: string): Promise<TrainingRecord[]> {
+  async getByExpiringBefore(
+    user: User,
+    expiryDate: string
+  ): Promise<TrainingRecord[]> {
     const trainingRecordFromDb =
-      await this.trainingRecordRepository.getByExpiringBefore(expiryDate);
+      await this.trainingRecordRepository.getByExpiringBefore(user, expiryDate);
     const transformedRecords = this.transformDbTrainingRecordToShared(
       trainingRecordFromDb
     ) as TrainingRecord[];
@@ -24,10 +29,12 @@ export class TrainingRecordService {
   }
 
   async getById(
+    user: User,
     ownerId: string,
     recordId: string
   ): Promise<TrainingRecord | null> {
     const trainingRecordFromDb = await this.trainingRecordRepository.getById(
+      user,
       ownerId,
       recordId
     );
@@ -43,7 +50,7 @@ export class TrainingRecordService {
 
   async create(
     record: Omit<TrainingRecord, "id">,
-    userId: string
+    user: User
   ): Promise<TrainingRecord> {
     try {
       const validatedInput = trainingRecordSchema
@@ -60,9 +67,10 @@ export class TrainingRecordService {
       };
       const createdRecordId = await this.trainingRecordRepository.create(
         recordToCreate,
-        userId
+        user
       );
       const fetchedRecord = await this.getById(
+        user,
         validatedInput.ownerId,
         createdRecordId
       );
@@ -82,10 +90,7 @@ export class TrainingRecordService {
       throw error;
     }
   }
-  async update(
-    record: TrainingRecord,
-    userId: string
-  ): Promise<TrainingRecord> {
+  async update(record: TrainingRecord, user: User): Promise<TrainingRecord> {
     try {
       const validatedInput = trainingRecordSchema.parse(record);
 
@@ -99,9 +104,10 @@ export class TrainingRecordService {
         details: validatedInput.details,
       };
 
-      await this.trainingRecordRepository.update(dbRecord, userId);
+      await this.trainingRecordRepository.update(dbRecord, user);
 
       const fetchedRecord = await this.getById(
+        user,
         validatedInput.ownerId,
         validatedInput.id
       );
@@ -121,9 +127,14 @@ export class TrainingRecordService {
     }
   }
 
-  async delete(ownerId: string, recordId: string): Promise<number[]> {
+  async delete(
+    user: User,
+    ownerId: string,
+    recordId: string
+  ): Promise<number[]> {
     try {
       const deletedCount = await this.trainingRecordRepository.delete(
+        user,
         ownerId,
         recordId
       );

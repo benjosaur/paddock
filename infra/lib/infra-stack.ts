@@ -1,10 +1,13 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import { Database } from "./database";
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -99,6 +102,11 @@ export class InfraStack extends cdk.Stack {
       },
       { id: "TrusteeGroup", name: "Trustee", description: "Trustees group" },
       { id: "FinanceGroup", name: "Finance", description: "Finance group" },
+      {
+        id: "TestGroup",
+        name: "Test",
+        description: "Tester Group (no prod data access)",
+      },
     ];
 
     groups.forEach(({ id, name, description }) => {
@@ -116,6 +124,7 @@ export class InfraStack extends cdk.Stack {
       maxAge: 300,
     };
 
+    //frontend
     const s3Bucket = new s3.Bucket(this, "S3Bucket", {
       bucketName: `paddock-frontend-${this.account}-${this.region}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -171,8 +180,63 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
+    //backend
+    const trpcLambda = new lambda.Function(this, "TrpcApiFunction", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "index.handler",
+      code: lambda.Code.fromAsset("../server/dist"),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+        // NODE_ENV: "production", doesnt work
+      },
+    });
+
+    //databases
+    const prodDatabase = new Database(this, "WiveyCaresTable", {
+      tableName: "WiveyCares",
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    const testDatabase = new Database(this, "TestTable", {
+      tableName: "Test",
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    prodDatabase.table.grantReadWriteData(trpcLambda);
+    testDatabase.table.grantReadWriteData(trpcLambda);
+
+    const api = new apigateway.RestApi(this, "TrpcApi", {
+      restApiName: "TRPC API",
+      description: "API for TRPC backend",
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: ["Content-Type", "Authorization"],
+      },
+    });
+
+    const lambdaIntegration = new apigateway.LambdaIntegration(trpcLambda);
+
+    const trpcResource = api.root.addResource("trpc");
+
+    trpcResource.addProxy({
+      defaultIntegration: lambdaIntegration,
+      anyMethod: true,
+    });
+
+    //FE deployment
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
-      sources: [s3deploy.Source.asset("../client/dist")],
+      sources: [
+        s3deploy.Source.asset("../client/dist"),
+        s3deploy.Source.data(
+          "config.json",
+          JSON.stringify({
+            apiUrl: api.url,
+          })
+        ),
+      ],
       destinationBucket: s3Bucket,
       distribution,
       distributionPaths: ["/*"],

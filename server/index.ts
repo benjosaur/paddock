@@ -1,11 +1,31 @@
-import express from "express";
-import cors from "cors";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "./trpc/router";
-import { createContext } from "./trpc/context";
+import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
+import { prodAppRouter } from "./trpc/prod/router";
+import { createLambdaContext } from "./trpc/prod/context";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+export const handler = awsLambdaRequestHandler({
+  router: prodAppRouter,
+  createContext: createLambdaContext,
+  responseMeta() {
+    return {
+      headers: {
+        "Access-Control-Allow-Origin": "https://paddock.health",
+        "Access-Control-Allow-Methods": "GET,POST",
+        "Access-Control-Allow-Headers": "authorization",
+      },
+    };
+  },
+});
+
+// ESBUILD_DEPLOY_STOP
+/*
+import cors from "cors";
+import express from "express";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { localAppRouter } from "./trpc/local/router";
+import { createExpressContext } from "./trpc/local/context";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -25,8 +45,8 @@ app.use(express.json());
 app.use(
   "/trpc",
   createExpressMiddleware({
-    router: appRouter,
-    createContext,
+    router: localAppRouter,
+    createContext: createExpressContext,
   })
 );
 
@@ -45,4 +65,7 @@ async function startServer() {
   }
 }
 
-startServer();
+if (!(process.env.NODE_ENV == "production")) {
+  startServer();
+}
+/**/

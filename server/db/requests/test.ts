@@ -1,3 +1,4 @@
+import { sampleUser } from "../test";
 import { RequestService } from "./service";
 import { ClientRequest } from "shared";
 
@@ -6,7 +7,7 @@ const requestService = new RequestService();
 const sampleMpRequest: Omit<ClientRequest, "id"> = {
   clientId: "c#test-client-123",
   requestType: "mp",
-  startDate: "2025-01-10T10:00:00.000Z",
+  startDate: "2025-01-10",
   details: {
     name: "Test Client",
     notes: "Urgent MP support needed",
@@ -18,7 +19,7 @@ const sampleMpRequest: Omit<ClientRequest, "id"> = {
 const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
   clientId: "c#test-client-123",
   requestType: "volunteer",
-  startDate: "2025-01-15T10:00:00.000Z",
+  startDate: "2025-01-15",
   details: {
     name: "Test Client",
     notes: "Weekly volunteer visit requested",
@@ -36,19 +37,22 @@ export async function testRequestService() {
     console.log("1. Creating MP request...");
     const createdMpRequest = await requestService.create(
       sampleMpRequest,
-      "test-user-123"
+      sampleUser
     );
     console.log("Created MP request:", createdMpRequest);
 
     console.log("2. Creating volunteer request...");
     const createdVolunteerRequest = await requestService.create(
       sampleVolunteerRequest,
-      "test-user-123"
+      sampleUser
     );
     console.log("Created volunteer request:", createdVolunteerRequest);
 
     console.log("3. Getting requests by client ID...");
-    const clientRequests = await requestService.getByClientId(clientId);
+    const clientRequests = await requestService.getByClientId(
+      sampleUser,
+      clientId
+    );
     console.log("Client requests:", clientRequests);
 
     console.log("4. Updating MP request...");
@@ -63,22 +67,24 @@ export async function testRequestService() {
     };
     const updatedMpRequest = await requestService.update(
       updatedMpRequestData,
-      "test-user-123"
+      sampleUser
     );
     console.log("Updated MP request:", updatedMpRequest);
 
     console.log("5. Getting all requests...");
-    const allRequests = await requestService.getAll();
+    const allRequests = await requestService.getAll(sampleUser);
     console.log("All requests:", allRequests);
 
     console.log("6. Getting requests before 2025-02-01...");
     const requestsBefore = await requestService.getByStartDateBefore(
-      "2025-02-01T00:00:00.000Z"
+      sampleUser,
+      "2025-02-01"
     );
     console.log("Requests before 2025-02-01:", requestsBefore);
 
     console.log("7. Deleting MP request...");
     const deletedMpCount = await requestService.delete(
+      sampleUser,
       clientId,
       createdMpRequest.id
     );
@@ -86,6 +92,7 @@ export async function testRequestService() {
 
     console.log("8. Deleting volunteer request...");
     const deletedVolunteerCount = await requestService.delete(
+      sampleUser,
       clientId,
       createdVolunteerRequest.id
     );

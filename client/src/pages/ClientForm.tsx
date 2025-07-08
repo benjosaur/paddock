@@ -7,7 +7,7 @@ import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import Select from "react-select";
-import { attendanceAllowanceStatus } from "shared/options";
+import { attendanceAllowanceStatus } from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {

@@ -9,8 +9,8 @@ import {
 
 export class VolunteerLogService {
   volunteerLogRepository = new VolunteerLogRepository();
-  async getAll(): Promise<VolunteerLog[]> {
-    const volunteerLogs = await this.volunteerLogRepository.getAll();
+  async getAll(user: User): Promise<VolunteerLog[]> {
+    const volunteerLogs = await this.volunteerLogRepository.getAll(user);
     const transformedResult = this.groupAndTransformVolunteerLogData(
       volunteerLogs
     ) as VolunteerLog[];
@@ -18,8 +18,11 @@ export class VolunteerLogService {
     return parsedResult;
   }
 
-  async getById(volunteerLogId: string): Promise<VolunteerLog> {
-    const volunteer = await this.volunteerLogRepository.getById(volunteerLogId);
+  async getById(user: User, volunteerLogId: string): Promise<VolunteerLog> {
+    const volunteer = await this.volunteerLogRepository.getById(
+      user,
+      volunteerLogId
+    );
     const transformedResult = this.groupAndTransformVolunteerLogData(
       volunteer
     ) as VolunteerLog[];
@@ -27,39 +30,50 @@ export class VolunteerLogService {
     return parsedResult[0];
   }
 
-  async getBySubstring(string: string): Promise<VolunteerLog[]> {
+  async getBySubstring(user: User, string: string): Promise<VolunteerLog[]> {
     const metaLogs = await this.volunteerLogRepository.getMetaLogsBySubstring(
+      user,
       string
     );
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: VolunteerLog[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.volunteerLogRepository.getById(id);
+      const fetchedLog = await this.volunteerLogRepository.getById(user, id);
       const parsedLog = this.groupAndTransformVolunteerLogData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByVolunteerId(volunteerId: string): Promise<VolunteerLog[]> {
+  async getByVolunteerId(
+    user: User,
+    volunteerId: string
+  ): Promise<VolunteerLog[]> {
     const metaLogs = await this.volunteerLogRepository.getMetaLogsByVolunteerId(
+      user,
       volunteerId
     );
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: VolunteerLog[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.volunteerLogRepository.getById(id);
+      const fetchedLog = await this.volunteerLogRepository.getById(user, id);
       const parsedLog = this.groupAndTransformVolunteerLogData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<VolunteerLog[]> {
-    const mag = await this.volunteerLogRepository.getByDateInterval(input);
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<VolunteerLog[]> {
+    const mag = await this.volunteerLogRepository.getByDateInterval(
+      user,
+      input
+    );
     const transformedResult = this.groupAndTransformVolunteerLogData(
       mag
     ) as VolunteerLog[];
@@ -69,7 +83,7 @@ export class VolunteerLogService {
 
   async create(
     newVolunteerLog: Omit<VolunteerLog, "id">,
-    userId: string
+    user: User
   ): Promise<VolunteerLog> {
     const validatedInput = volunteerLogSchema
       .omit({ id: true })
@@ -99,10 +113,10 @@ export class VolunteerLogService {
     try {
       const createdLogId = await this.volunteerLogRepository.create(
         [volunteerLogMain, ...volunteerLogVolunteers, ...volunteerLogClients],
-        userId
+        user
       );
 
-      const fetchedLog = await this.getById(createdLogId);
+      const fetchedLog = await this.getById(user, createdLogId);
       if (!fetchedLog) {
         throw new Error("Failed to fetch created volunteer log");
       }
@@ -122,7 +136,7 @@ export class VolunteerLogService {
 
   async update(
     updatedVolunteerLog: VolunteerLog,
-    userId: string
+    user: User
   ): Promise<VolunteerLog> {
     const validatedInput = volunteerLogSchema.parse(updatedVolunteerLog);
     const volunteerLogKey = validatedInput.id;
@@ -155,10 +169,10 @@ export class VolunteerLogService {
     try {
       await this.volunteerLogRepository.update(
         [volunteerLogMain, ...volunteerLogVolunteers, ...volunteerLogClients],
-        userId
+        user
       );
 
-      const fetchedLog = await this.getById(updatedVolunteerLog.id);
+      const fetchedLog = await this.getById(user, updatedVolunteerLog.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated volunteer log");
       }
@@ -174,8 +188,11 @@ export class VolunteerLogService {
     }
   }
 
-  async delete(volunteerLogId: string): Promise<number> {
-    const numDeleted = await this.volunteerLogRepository.delete(volunteerLogId);
+  async delete(user: User, volunteerLogId: string): Promise<number> {
+    const numDeleted = await this.volunteerLogRepository.delete(
+      user,
+      volunteerLogId
+    );
     return numDeleted[0];
   }
 

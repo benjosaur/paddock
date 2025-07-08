@@ -1,9 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { ZodError } from "zod";
 import { rolePermissions } from "shared/permissions";
-import type { Context } from "./context";
+import type { ExpressContext } from "./context";
 
-const t = initTRPC.context<Context>().create({
+const t = initTRPC.context<ExpressContext>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
@@ -16,12 +16,17 @@ const t = initTRPC.context<Context>().create({
   },
 });
 
-export const router = t.router;
+export const localRouter = t.router;
 export const middleware = t.middleware;
 
 const isAuthed = middleware(({ ctx, next }) => {
   if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: `Unauthenticated. User info missing. Context: ${JSON.stringify(
+        ctx
+      )}`,
+    });
   }
   return next({
     ctx: {
@@ -37,7 +42,7 @@ const hasPermission = (
 ) =>
   middleware(({ ctx, next }) => {
     if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+      throw new TRPCError({ code: "UNAUTHORIZED", message: `` });
     }
 
     const userPermissions =

@@ -1,6 +1,6 @@
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -9,10 +9,10 @@ import { DbClientRequestEntity, dbClientRequestEntity } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 
 export class RequestRepository {
-  async getAll(): Promise<DbClientRequestEntity[]> {
+  async getAll(user: User): Promise<DbClientRequestEntity[]> {
     // Get MP requests
     const mpRequestCommand = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -22,7 +22,7 @@ export class RequestRepository {
 
     // Get volunteer requests
     const volunteerRequestCommand = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -48,9 +48,12 @@ export class RequestRepository {
     }
   }
 
-  async getByClientId(clientId: string): Promise<DbClientRequestEntity[]> {
+  async getByClientId(
+    user: User,
+    clientId: string
+  ): Promise<DbClientRequestEntity[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND begins_with(sK, :sk)",
       ExpressionAttributeValues: {
         ":pk": clientId,
@@ -68,11 +71,12 @@ export class RequestRepository {
   }
 
   async getById(
+    user: User,
     clientId: string,
     requestId: string
   ): Promise<DbClientRequestEntity | null> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND sK = :sk",
       ExpressionAttributeValues: {
         ":pk": clientId,
@@ -93,7 +97,7 @@ export class RequestRepository {
 
   async create(
     newRequest: Omit<DbClientRequestEntity, "sK">,
-    userId: string
+    user: User
   ): Promise<string> {
     try {
       const uuid = uuidv4();
@@ -104,8 +108,8 @@ export class RequestRepository {
       };
       const validatedRequest = dbClientRequestEntity.parse(fullRequest);
       const command = new PutCommand({
-        TableName: TABLE_NAME,
-        Item: addCreateMiddleware(validatedRequest, userId),
+        TableName: getTableName(user),
+        Item: addCreateMiddleware(validatedRequest, user),
       });
 
       await client.send(command);
@@ -118,13 +122,13 @@ export class RequestRepository {
 
   async update(
     updatedRequest: DbClientRequestEntity,
-    userId: string
+    user: User
   ): Promise<void> {
     try {
       const validatedRequest = dbClientRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
-        TableName: TABLE_NAME,
-        Item: addUpdateMiddleware(validatedRequest, userId),
+        TableName: getTableName(user),
+        Item: addUpdateMiddleware(validatedRequest, user),
       });
 
       await client.send(command);
@@ -134,10 +138,14 @@ export class RequestRepository {
     }
   }
 
-  async delete(clientId: string, requestId: string): Promise<number[]> {
+  async delete(
+    user: User,
+    clientId: string,
+    requestId: string
+  ): Promise<number[]> {
     try {
       const command = new DeleteCommand({
-        TableName: TABLE_NAME,
+        TableName: getTableName(user),
         Key: {
           pK: clientId,
           sK: requestId,
@@ -153,10 +161,11 @@ export class RequestRepository {
   }
 
   async getByStartDateBefore(
+    user: User,
     startDate: string
   ): Promise<DbClientRequestEntity[]> {
     const mpRequestCommand = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression: "entityType = :pk AND #date < :startDate",
       ExpressionAttributeNames: {
@@ -169,7 +178,7 @@ export class RequestRepository {
     });
 
     const volunteerRequestCommand = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression: "entityType = :pk AND #date < :startDate",
       ExpressionAttributeNames: {

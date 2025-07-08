@@ -7,7 +7,7 @@ import { trpc } from "../utils/trpc";
 import type { ClientRequest, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import { requestStatus, requestTypes } from "shared/options";
+import { requestStatus, requestTypes } from "shared/const";
 
 export function ClientRequestForm() {
   const navigate = useNavigate();

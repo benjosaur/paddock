@@ -18,9 +18,9 @@ export class ClientService {
   magLogService = new MagLogService();
   requestService = new RequestService();
 
-  async getAll(): Promise<ClientMetadata[]> {
+  async getAll(user: User): Promise<ClientMetadata[]> {
     try {
-      const clients = await this.clientRepository.getAll();
+      const clients = await this.clientRepository.getAll(user);
       const transformedResult = this.transformDbClientToSharedMetaData(
         clients
       ) as ClientMetadata[];
@@ -34,9 +34,9 @@ export class ClientService {
     }
   }
 
-  async getById(clientId: string): Promise<ClientFull> {
+  async getById(user: User, clientId: string): Promise<ClientFull> {
     try {
-      const client = await this.clientRepository.getById(clientId);
+      const client = await this.clientRepository.getById(user, clientId);
 
       const mpLogIds = client
         .filter((dbResult) => dbResult.entityType == "mpLog")
@@ -54,17 +54,17 @@ export class ClientService {
 
       const mpLogs = await Promise.all(
         mpLogIds.map(
-          async (mpLogId) => await this.mpLogService.getById(mpLogId)
+          async (mpLogId) => await this.mpLogService.getById(user, mpLogId)
         )
       );
       const volunteerLogs = await Promise.all(
         vLogIds.map(
-          async (vLogId) => await this.volunteerLogService.getById(vLogId)
+          async (vLogId) => await this.volunteerLogService.getById(user, vLogId)
         )
       );
       const magLogs = await Promise.all(
         magLogIds.map(
-          async (magLogId) => await this.magLogService.getById(magLogId)
+          async (magLogId) => await this.magLogService.getById(user, magLogId)
         )
       );
 
@@ -82,7 +82,7 @@ export class ClientService {
 
   async create(
     newClient: Omit<ClientFull, "id">,
-    userId: string
+    user: User
   ): Promise<ClientFull> {
     try {
       const validatedInput = clientFullSchema
@@ -96,10 +96,10 @@ export class ClientService {
       };
       const createdClientId = await this.clientRepository.create(
         clientToCreate,
-        userId
+        user
       );
 
-      const fetchedClient = await this.getById(createdClientId);
+      const fetchedClient = await this.getById(user, createdClientId);
       if (!fetchedClient) {
         throw new Error("Failed to fetch created client");
       }
@@ -119,7 +119,7 @@ export class ClientService {
     }
   }
 
-  async update(updatedClient: ClientFull, userId: string): Promise<ClientFull> {
+  async update(updatedClient: ClientFull, user: User): Promise<ClientFull> {
     //note for name or postcode (only metachanges)
     try {
       const validatedInput = clientFullSchema.parse(updatedClient);
@@ -134,8 +134,8 @@ export class ClientService {
         details: validatedInput.details,
       };
 
-      await this.clientRepository.update(dbClient, userId);
-      const fetchedClient = await this.getById(validatedInput.id);
+      await this.clientRepository.update(dbClient, user);
+      const fetchedClient = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
         throw new Error("Updated client does not match expected values");
@@ -148,26 +148,23 @@ export class ClientService {
     }
   }
 
-  async updateName(
-    updatedClient: ClientFull,
-    userId: string
-  ): Promise<ClientFull> {
+  async updateName(updatedClient: ClientFull, user: User): Promise<ClientFull> {
     try {
       const validatedInput = clientFullSchema.parse(updatedClient);
 
-      const clientEntityUpdate = this.update(validatedInput, userId);
+      const clientEntityUpdate = this.update(validatedInput, user);
       const mpLogUpdates = validatedInput.mpLogs.map((log) =>
-        this.mpLogService.update(log, userId)
+        this.mpLogService.update(log, user)
       );
       const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log, userId)
+        this.volunteerLogService.update(log, user)
       );
       await Promise.all([
         clientEntityUpdate,
         ...mpLogUpdates,
         ...volunteerLogUpdates,
       ]);
-      const fetchedClient = await this.getById(validatedInput.id);
+      const fetchedClient = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
         throw new Error("Updated client name does not match expected values");
@@ -181,23 +178,23 @@ export class ClientService {
 
   async updatePostCode(
     updatedClient: ClientFull,
-    userId: string
+    user: User
   ): Promise<ClientFull> {
     try {
       const validatedInput = clientFullSchema.parse(updatedClient);
 
-      const clientEntityUpdate = this.update(validatedInput, userId);
+      const clientEntityUpdate = this.update(validatedInput, user);
       const mpLogUpdates = validatedInput.mpLogs.map((log) =>
-        this.mpLogService.update(log, userId)
+        this.mpLogService.update(log, user)
       );
       const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log, userId)
+        this.volunteerLogService.update(log, user)
       );
       const mpRequestUpdates = validatedInput.mpRequests.map((request) =>
-        this.requestService.update(request, userId)
+        this.requestService.update(request, user)
       );
       const volunteerRequestUpdates = validatedInput.volunteerRequests.map(
-        (request) => this.requestService.update(request, userId)
+        (request) => this.requestService.update(request, user)
       );
       await Promise.all([
         clientEntityUpdate,
@@ -206,7 +203,7 @@ export class ClientService {
         ...mpRequestUpdates,
         ...volunteerRequestUpdates,
       ]);
-      const fetchedClient = await this.getById(validatedInput.id);
+      const fetchedClient = await this.getById(user, validatedInput.id);
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
         throw new Error(
@@ -220,9 +217,9 @@ export class ClientService {
     }
   }
 
-  async delete(clientId: string): Promise<number[]> {
+  async delete(user: User, clientId: string): Promise<number[]> {
     try {
-      const deletedCount = await this.clientRepository.delete(clientId);
+      const deletedCount = await this.clientRepository.delete(user, clientId);
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting client:", error);

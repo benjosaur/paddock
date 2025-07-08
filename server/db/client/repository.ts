@@ -8,7 +8,7 @@ import {
 } from "./schema";
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -16,9 +16,9 @@ import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAll(): Promise<DbClientMetadata[]> {
+  async getAll(user: User): Promise<DbClientMetadata[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression:
         "entityOwner = :pk AND begins_with(entityType, :sk)",
@@ -37,9 +37,9 @@ export class ClientRepository {
     }
   }
 
-  async getById(clientId: string): Promise<DbClientFull[]> {
+  async getById(user: User, clientId: string): Promise<DbClientFull[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
       ExpressionAttributeValues: {
         ":pk": clientId,
@@ -58,15 +58,15 @@ export class ClientRepository {
 
   async create(
     newClient: Omit<DbClientEntity, "pK" | "sK">,
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `c#${uuid}`;
     const fullClient: DbClientEntity = { pK: key, sK: key, ...newClient };
     const validatedFullClient = dbClientEntity.parse(fullClient);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addCreateMiddleware(validatedFullClient, userId),
+      TableName: getTableName(user),
+      Item: addCreateMiddleware(validatedFullClient, user),
     });
 
     try {
@@ -78,11 +78,11 @@ export class ClientRepository {
     }
   }
 
-  async update(updatedClient: DbClientEntity, userId: string): Promise<void> {
+  async update(updatedClient: DbClientEntity, user: User): Promise<void> {
     const validatedFullClient = dbClientEntity.parse(updatedClient);
     const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: addUpdateMiddleware(validatedFullClient, userId),
+      TableName: getTableName(user),
+      Item: addUpdateMiddleware(validatedFullClient, user),
     });
 
     try {
@@ -93,14 +93,14 @@ export class ClientRepository {
     }
   }
 
-  async delete(clientId: string): Promise<number[]> {
+  async delete(user: User, clientId: string): Promise<number[]> {
     try {
-      const clientData = await this.getById(clientId);
+      const clientData = await this.getById(user, clientId);
       let deletedCount = 0;
 
       for (const item of clientData) {
         const command = new DeleteCommand({
-          TableName: TABLE_NAME,
+          TableName: getTableName(user),
           Key: {
             pK: item.pK,
             sK: item.sK,

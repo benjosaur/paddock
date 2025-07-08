@@ -3,16 +3,16 @@ import {
   addCreateMiddleware,
   addUpdateMiddleware,
   client,
-  TABLE_NAME,
+  getTableName,
 } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
 export class MagLogRepository {
-  async getAll(): Promise<DbMagLog[]> {
+  async getAll(user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -29,9 +29,9 @@ export class MagLogRepository {
     }
   }
 
-  async getById(magLogId: string): Promise<DbMagLog[]> {
+  async getById(user: User, magLogId: string): Promise<DbMagLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI2",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
@@ -49,10 +49,13 @@ export class MagLogRepository {
     }
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<DbMagLog[]> {
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<DbMagLog[]> {
     const { startDate, endDate } = z
       .object({
         startDate: z.string().date(),
@@ -60,7 +63,7 @@ export class MagLogRepository {
       })
       .parse(input);
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression:
         "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
@@ -86,7 +89,7 @@ export class MagLogRepository {
 
   async create(
     newMpLogs: (Omit<DbMagLog, "pK" | "sK"> | Omit<DbMagLog, "sK">)[],
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `mag#${uuid}`;
@@ -104,8 +107,8 @@ export class MagLogRepository {
         validatedItems.map((newItem) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addCreateMiddleware(newItem, userId),
+              TableName: getTableName(user),
+              Item: addCreateMiddleware(newItem, user),
             })
           )
         )
@@ -116,9 +119,9 @@ export class MagLogRepository {
       throw error;
     }
   }
-  async update(updatedMpLogs: DbMagLog[], userId: string): Promise<void> {
+  async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
     const mpLogKey = updatedMpLogs[0].sK;
-    await this.delete(mpLogKey);
+    await this.delete(user, mpLogKey);
 
     const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
     try {
@@ -126,8 +129,8 @@ export class MagLogRepository {
         validatedLogs.map((log) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addUpdateMiddleware(log, userId),
+              TableName: getTableName(user),
+              Item: addUpdateMiddleware(log, user),
             })
           )
         )
@@ -137,14 +140,14 @@ export class MagLogRepository {
       throw error;
     }
   }
-  async delete(magLogId: string): Promise<number[]> {
-    const existingLogs = await this.getById(magLogId);
+  async delete(user: User, magLogId: string): Promise<number[]> {
+    const existingLogs = await this.getById(user, magLogId);
     try {
       await Promise.all(
         existingLogs.map((log) =>
           client.send(
             new DeleteCommand({
-              TableName: TABLE_NAME,
+              TableName: getTableName(user),
               Key: { pK: log.pK, sK: log.sK },
             })
           )

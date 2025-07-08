@@ -4,8 +4,8 @@ import { DbMpLog, DbMpLogClient, DbMpLogEntity, DbMpLogMp } from "./schema";
 
 export class MpLogService {
   mpLogRepository = new MpLogRepository();
-  async getAll(): Promise<MpLog[]> {
-    const mpLogs = await this.mpLogRepository.getAll();
+  async getAll(user: User): Promise<MpLog[]> {
+    const mpLogs = await this.mpLogRepository.getAll(user);
     const transformedResult = this.groupAndTransformMpLogData(
       mpLogs
     ) as MpLog[];
@@ -13,48 +13,69 @@ export class MpLogService {
     return parsedResult;
   }
 
-  async getById(mpLogId: string): Promise<MpLog> {
-    const mp = await this.mpLogRepository.getById(mpLogId);
+  async getById(user: User, mpLogId: string): Promise<MpLog> {
+    const mp = await this.mpLogRepository.getById(user, mpLogId);
     const transformedResult = this.groupAndTransformMpLogData(mp) as MpLog[];
     const parsedResult = mpLogSchema.array().parse(transformedResult);
     return parsedResult[0];
   }
 
-  async getBySubstring(string: string): Promise<MpLog[]> {
-    const metaLogs = await this.mpLogRepository.getMetaLogsBySubstring(string);
+  async getBySubstring(user: User, string: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsBySubstring(
+      user,
+      string
+    );
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: MpLog[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.mpLogRepository.getById(id);
+      const fetchedLog = await this.mpLogRepository.getById(user, id);
       const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByMpId(mpId: string): Promise<MpLog[]> {
-    const metaLogs = await this.mpLogRepository.getMetaLogsByMpId(mpId);
+  async getByPostCode(user: User, postCode: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsByPostCode(
+      user,
+      postCode
+    );
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: MpLog[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.mpLogRepository.getById(id);
+      const fetchedLog = await this.mpLogRepository.getById(user, id);
       const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<MpLog[]> {
-    const mag = await this.mpLogRepository.getByDateInterval(input);
+  async getByMpId(user: User, mpId: string): Promise<MpLog[]> {
+    const metaLogs = await this.mpLogRepository.getMetaLogsByMpId(user, mpId);
+    const idsToFetch = metaLogs.map((log) => log.sK);
+    const parsedResult: MpLog[] = [];
+    for (const id of idsToFetch) {
+      const fetchedLog = await this.mpLogRepository.getById(user, id);
+      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      parsedResult.push(parsedLog[0]);
+    }
+    return parsedResult;
+  }
+
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<MpLog[]> {
+    const mag = await this.mpLogRepository.getByDateInterval(user, input);
     const transformedResult = this.groupAndTransformMpLogData(mag) as MpLog[];
     const parsedResult = mpLogSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async create(newMpLog: Omit<MpLog, "id">, userId: string): Promise<MpLog> {
+  async create(newMpLog: Omit<MpLog, "id">, user: User): Promise<MpLog> {
     const validatedInput = mpLogSchema.omit({ id: true }).parse(newMpLog);
 
     const mpLogMain: Omit<DbMpLogEntity, "pK" | "sK"> = {
@@ -80,10 +101,10 @@ export class MpLogService {
     try {
       const createdLogId = await this.mpLogRepository.create(
         [mpLogMain, ...mpLogMps, ...mpLogClients],
-        userId
+        user
       );
 
-      const fetchedLog = await this.getById(createdLogId);
+      const fetchedLog = await this.getById(user, createdLogId);
       if (!fetchedLog) {
         throw new Error("Failed to fetch created mp log");
       }
@@ -101,7 +122,7 @@ export class MpLogService {
     }
   }
 
-  async update(updatedMpLog: MpLog, userId: string): Promise<MpLog> {
+  async update(updatedMpLog: MpLog, user: User): Promise<MpLog> {
     const validatedInput = mpLogSchema.parse(updatedMpLog);
     const mpLogKey = validatedInput.id;
 
@@ -133,10 +154,10 @@ export class MpLogService {
     try {
       await this.mpLogRepository.update(
         [mpLogMain, ...mpLogMps, ...mpLogClients],
-        userId
+        user
       );
 
-      const fetchedLog = await this.getById(updatedMpLog.id);
+      const fetchedLog = await this.getById(user, updatedMpLog.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated mp log");
       }
@@ -152,8 +173,8 @@ export class MpLogService {
     }
   }
 
-  async delete(mpLogId: string): Promise<number> {
-    const numDeleted = await this.mpLogRepository.delete(mpLogId);
+  async delete(user: User, mpLogId: string): Promise<number> {
+    const numDeleted = await this.mpLogRepository.delete(user, mpLogId);
     return numDeleted[0];
   }
 

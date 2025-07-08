@@ -1,10 +1,11 @@
+import { sampleUser } from "../test";
 import { MagLogService } from "./service";
 import { MagLog } from "shared";
 
 const magLogService = new MagLogService();
 
 const sampleMagLog: Omit<MagLog, "id"> = {
-  date: "2025-01-15T10:00:00.000Z",
+  date: "2025-01-15",
   clients: [
     {
       id: "client#test-client-123",
@@ -26,14 +27,11 @@ export async function testMagLogService() {
     console.log("Testing Mag Log Service...");
 
     console.log("1. Creating Mag log...");
-    const createdLog = await magLogService.create(
-      sampleMagLog,
-      "test-user-123"
-    );
+    const createdLog = await magLogService.create(sampleMagLog, sampleUser);
     console.log("Created Mag log:", createdLog);
 
     console.log("2. Getting Mag log by ID...");
-    const fetchedLog = await magLogService.getById(createdLog.id);
+    const fetchedLog = await magLogService.getById(sampleUser, createdLog.id);
     console.log("Fetched Mag log:", fetchedLog);
 
     console.log("3. Updating Mag log...");
@@ -44,25 +42,22 @@ export async function testMagLogService() {
         notes: "Extended magistrate session with additional cases",
       },
     };
-    const updatedLog = await magLogService.update(
-      updatedLogData,
-      "test-user-123"
-    );
+    const updatedLog = await magLogService.update(updatedLogData, sampleUser);
     console.log("Updated Mag log:", updatedLog);
 
     console.log("4. Getting all Mag logs...");
-    const allLogs = await magLogService.getAll();
+    const allLogs = await magLogService.getAll(sampleUser);
     console.log("All Mag logs:", allLogs);
 
     console.log("5. Getting Mag logs by date interval...");
-    const logsInInterval = await magLogService.getByDateInterval({
-      startDate: "2025-01-01T00:00:00.000Z",
-      endDate: "2025-01-31T23:59:59.000Z",
+    const logsInInterval = await magLogService.getByDateInterval(sampleUser, {
+      startDate: "2025-01-01",
+      endDate: "2025-01-31",
     });
     console.log("Mag logs in January 2025:", logsInInterval);
 
     console.log("6. Deleting Mag log...");
-    const deletedCount = await magLogService.delete(createdLog.id);
+    const deletedCount = await magLogService.delete(sampleUser, createdLog.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("Mag Log Service tests completed successfully!");

@@ -1,7 +1,7 @@
 import { DbVolunteerLog, dbVolunteerLog } from "./schema";
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -10,9 +10,9 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
 export class VolunteerLogRepository {
-  async getAll(): Promise<DbVolunteerLog[]> {
+  async getAll(user: User): Promise<DbVolunteerLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI6",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -29,9 +29,9 @@ export class VolunteerLogRepository {
     }
   }
 
-  async getById(volunteerLogId: string): Promise<DbVolunteerLog[]> {
+  async getById(user: User, volunteerLogId: string): Promise<DbVolunteerLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI2",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
@@ -49,9 +49,12 @@ export class VolunteerLogRepository {
     }
   }
 
-  async getMetaLogsBySubstring(string: string): Promise<DbVolunteerLog[]> {
+  async getMetaLogsBySubstring(
+    user: User,
+    string: string
+  ): Promise<DbVolunteerLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityOwner = :pk AND entityType = :sk",
       FilterExpression:
@@ -74,10 +77,11 @@ export class VolunteerLogRepository {
   }
 
   async getMetaLogsByVolunteerId(
+    user: User,
     volunteerId: string
   ): Promise<DbVolunteerLog[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND begins_with(sK, :sk)",
       ExpressionAttributeValues: {
         ":pk": volunteerId,
@@ -95,10 +99,13 @@ export class VolunteerLogRepository {
     }
   }
 
-  async getByDateInterval(input: {
-    startDate: string;
-    endDate: string;
-  }): Promise<DbVolunteerLog[]> {
+  async getByDateInterval(
+    user: User,
+    input: {
+      startDate: string;
+      endDate: string;
+    }
+  ): Promise<DbVolunteerLog[]> {
     const { startDate, endDate } = z
       .object({
         startDate: z.string().date(),
@@ -106,7 +113,7 @@ export class VolunteerLogRepository {
       })
       .parse(input);
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI4",
       KeyConditionExpression:
         "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
@@ -137,7 +144,7 @@ export class VolunteerLogRepository {
       | Omit<DbVolunteerLog, "pK" | "sK">
       | Omit<DbVolunteerLog, "sK">
     )[],
-    userId: string
+    user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `vlog#${uuid}`;
@@ -155,8 +162,8 @@ export class VolunteerLogRepository {
         validatedItems.map((newItem) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addCreateMiddleware(newItem, userId),
+              TableName: getTableName(user),
+              Item: addCreateMiddleware(newItem, user),
             })
           )
         )
@@ -170,10 +177,10 @@ export class VolunteerLogRepository {
 
   async update(
     updatedVolunteerLogs: DbVolunteerLog[],
-    userId: string
+    user: User
   ): Promise<void> {
     const volunteerLogKey = updatedVolunteerLogs[0].sK;
-    await this.delete(volunteerLogKey);
+    await this.delete(user, volunteerLogKey);
 
     const validatedLogs = dbVolunteerLog.array().parse(updatedVolunteerLogs);
     try {
@@ -181,8 +188,8 @@ export class VolunteerLogRepository {
         validatedLogs.map((log) =>
           client.send(
             new PutCommand({
-              TableName: TABLE_NAME,
-              Item: addUpdateMiddleware(log, userId),
+              TableName: getTableName(user),
+              Item: addUpdateMiddleware(log, user),
             })
           )
         )
@@ -193,14 +200,14 @@ export class VolunteerLogRepository {
     }
   }
 
-  async delete(volunteerLogId: string): Promise<number[]> {
-    const existingLogs = await this.getById(volunteerLogId);
+  async delete(user: User, volunteerLogId: string): Promise<number[]> {
+    const existingLogs = await this.getById(user, volunteerLogId);
     try {
       await Promise.all(
         existingLogs.map((log) =>
           client.send(
             new DeleteCommand({
-              TableName: TABLE_NAME,
+              TableName: getTableName(user),
               Key: { pK: log.pK, sK: log.sK },
             })
           )

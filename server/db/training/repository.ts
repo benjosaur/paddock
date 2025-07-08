@@ -1,6 +1,6 @@
 import {
   client,
-  TABLE_NAME,
+  getTableName,
   addCreateMiddleware,
   addUpdateMiddleware,
 } from "../repository";
@@ -10,9 +10,9 @@ import { DbTrainingRecordEntity, dbTrainingRecordEntity } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 
 export class TrainingRecordRepository {
-  async getAll(): Promise<DbTrainingRecordEntity[]> {
+  async getAll(user: User): Promise<DbTrainingRecordEntity[]> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI3",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
@@ -30,11 +30,12 @@ export class TrainingRecordRepository {
   }
 
   async getByExpiringBefore(
+    user: User,
     expiryDate: string
   ): Promise<DbTrainingRecordEntity[]> {
     const validatedExpiryDate = z.string().date().parse(expiryDate);
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       IndexName: "GSI3",
       KeyConditionExpression: "entityType = :pk AND recordExpiry < :expiryDate",
       ExpressionAttributeValues: {
@@ -53,11 +54,12 @@ export class TrainingRecordRepository {
   }
 
   async getById(
+    user: User,
     ownerId: string,
     recordId: string
   ): Promise<DbTrainingRecordEntity | null> {
     const command = new QueryCommand({
-      TableName: TABLE_NAME,
+      TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND sK = :sk",
       ExpressionAttributeValues: {
         ":pk": ownerId,
@@ -78,7 +80,7 @@ export class TrainingRecordRepository {
 
   async create(
     newRecord: Omit<DbTrainingRecordEntity, "sK">,
-    userId: string
+    user: User
   ): Promise<string> {
     try {
       const uuid = uuidv4();
@@ -89,8 +91,8 @@ export class TrainingRecordRepository {
       };
       const validatedRecord = dbTrainingRecordEntity.parse(fullRecord);
       const command = new PutCommand({
-        TableName: TABLE_NAME,
-        Item: addCreateMiddleware(validatedRecord, userId),
+        TableName: getTableName(user),
+        Item: addCreateMiddleware(validatedRecord, user),
       });
 
       await client.send(command);
@@ -103,13 +105,13 @@ export class TrainingRecordRepository {
 
   async update(
     updatedRecord: DbTrainingRecordEntity,
-    userId: string
+    user: User
   ): Promise<void> {
     try {
       const validatedRecord = dbTrainingRecordEntity.parse(updatedRecord);
       const command = new PutCommand({
-        TableName: TABLE_NAME,
-        Item: addUpdateMiddleware(validatedRecord, userId),
+        TableName: getTableName(user),
+        Item: addUpdateMiddleware(validatedRecord, user),
       });
 
       await client.send(command);
@@ -119,10 +121,14 @@ export class TrainingRecordRepository {
     }
   }
 
-  async delete(ownerId: string, recordId: string): Promise<number[]> {
+  async delete(
+    user: User,
+    ownerId: string,
+    recordId: string
+  ): Promise<number[]> {
     try {
       const command = new DeleteCommand({
-        TableName: TABLE_NAME,
+        TableName: getTableName(user),
         Key: {
           pK: ownerId,
           sK: recordId,

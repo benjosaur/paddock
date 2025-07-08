@@ -21,6 +21,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { PaddockUser } from "./types/auth";
 import RecordsRoutes from "./routes/RecordsRoutes";
 import { Toaster } from "./components/ui/Toaster";
+import { Dashboard } from "./pages/Dashboard";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -63,7 +64,7 @@ function AppContent() {
             >
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" />} />
-                <Route path="/dashboard" element={<Navigate to="/mp-logs" />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/mp-logs/*" element={<MpLogRoutes />} />
                 <Route
                   path="/volunteer-logs/*"

@@ -1,22 +1,23 @@
-import { router, createProtectedProcedure } from "../trpc";
+import { z } from "zod";
+import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpLogSchema } from "shared/schemas/index";
 
 export const mpLogsRouter = router({
   getAll: createProtectedProcedure("mpLogs", "read").query(async ({ ctx }) => {
-    return await ctx.services.mpLog.getAll();
+    return await ctx.services.mpLog.getAll(ctx.user);
   }),
 
   getById: createProtectedProcedure("mpLogs", "read")
     .input(mpLogSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.services.mpLog.getById(input.id);
+      return await ctx.services.mpLog.getById(ctx.user, input.id);
     }),
 
   getByMpId: createProtectedProcedure("mpLogs", "read")
     .input(mpLogSchema.pick({ mps: true }))
     .query(async ({ ctx, input }) => {
       // Assuming the first MP in the array is the one we want logs for
-      return await ctx.services.mpLog.getByMpId(input.mps[0].id);
+      return await ctx.services.mpLog.getByMpId(ctx.user, input.mps[0].id);
     }),
 
   getByClientId: createProtectedProcedure("mpLogs", "read")
@@ -24,27 +25,43 @@ export const mpLogsRouter = router({
     .query(async ({ ctx, input }) => {
       // Getting logs for the first client in the array
       const clientId = input.clients[0].id;
-      const allLogs = await ctx.services.mpLog.getAll();
+      const allLogs = await ctx.services.mpLog.getAll(ctx.user);
       return allLogs.filter((log) =>
         log.clients.some((client) => client.id === clientId)
       );
     }),
 
+  getByPostCode: createProtectedProcedure("mpLogs", "read")
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      // Assuming the first MP in the array is the one we want logs for
+      return await ctx.services.mpLog.getByPostCode(ctx.user, input);
+    }),
+
+  getByDateInterval: createProtectedProcedure("mpLogs", "read")
+    .input(
+      z.object({ startDate: z.string().date(), endDate: z.string().date() })
+    )
+    .query(async ({ ctx, input }) => {
+      // Assuming the first MP in the array is the one we want logs for
+      return await ctx.services.mpLog.getByDateInterval(ctx.user, input);
+    }),
+
   create: createProtectedProcedure("mpLogs", "create")
     .input(mpLogSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.mpLog.create(input, ctx.user.sub);
+      return await ctx.services.mpLog.create(input, ctx.user);
     }),
 
   update: createProtectedProcedure("mpLogs", "update")
     .input(mpLogSchema)
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.mpLog.update(input, ctx.user.sub);
+      return await ctx.services.mpLog.update(input, ctx.user);
     }),
 
   delete: createProtectedProcedure("mpLogs", "delete")
     .input(mpLogSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.mpLog.delete(input.id);
+      return await ctx.services.mpLog.delete(ctx.user, input.id);
     }),
 });

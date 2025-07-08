@@ -1,10 +1,11 @@
-import { MpLogService } from "./service";
 import { MpLog } from "shared";
+import { MpLogService } from "./service";
+import { sampleUser } from "../test";
 
 const mpLogService = new MpLogService();
 
 const sampleMpLog: Omit<MpLog, "id"> = {
-  date: "2025-01-15T10:00:00.000Z",
+  date: "2025-01-15",
   clients: [
     {
       id: "client#test-client-123",
@@ -35,11 +36,11 @@ export async function testMpLogService() {
     console.log("Testing MP Log Service...");
 
     console.log("1. Creating MP log...");
-    const createdLog = await mpLogService.create(sampleMpLog, "test-user-123");
+    const createdLog = await mpLogService.create(sampleMpLog, sampleUser);
     console.log("Created MP log:", createdLog);
 
     console.log("2. Getting MP log by ID...");
-    const fetchedLog = await mpLogService.getById(createdLog.id);
+    const fetchedLog = await mpLogService.getById(sampleUser, createdLog.id);
     console.log("Fetched MP log:", fetchedLog);
 
     console.log("3. Updating MP log...");
@@ -51,33 +52,33 @@ export async function testMpLogService() {
         services: ["advice", "support", "advocacy"],
       },
     };
-    const updatedLog = await mpLogService.update(
-      updatedLogData,
-      "test-user-123"
-    );
+    const updatedLog = await mpLogService.update(updatedLogData, sampleUser);
     console.log("Updated MP log:", updatedLog);
 
     console.log("4. Getting all MP logs...");
-    const allLogs = await mpLogService.getAll();
+    const allLogs = await mpLogService.getAll(sampleUser);
     console.log("All MP logs:", allLogs);
 
     console.log("5. Getting MP logs by date interval...");
-    const logsInInterval = await mpLogService.getByDateInterval({
-      startDate: "2025-01-01T00:00:00.000Z",
-      endDate: "2025-01-31T23:59:59.000Z",
+    const logsInInterval = await mpLogService.getByDateInterval(sampleUser, {
+      startDate: "2025-01-01",
+      endDate: "2025-01-31",
     });
     console.log("MP logs in January 2025:", logsInInterval);
 
     console.log("6. Getting MP logs by MP ID...");
-    const mpLogs = await mpLogService.getByMpId("mp#test-mp-789");
+    const mpLogs = await mpLogService.getByMpId(sampleUser, "mp#test-mp-789");
     console.log("MP logs for test MP:", mpLogs);
 
     console.log("7. Getting MP logs by substring...");
-    const searchLogs = await mpLogService.getBySubstring("community");
+    const searchLogs = await mpLogService.getBySubstring(
+      sampleUser,
+      "community"
+    );
     console.log("MP logs matching 'community':", searchLogs);
 
     console.log("8. Deleting MP log...");
-    const deletedCount = await mpLogService.delete(createdLog.id);
+    const deletedCount = await mpLogService.delete(sampleUser, createdLog.id);
     console.log("Deleted count:", deletedCount);
 
     console.log("MP Log Service tests completed successfully!");
