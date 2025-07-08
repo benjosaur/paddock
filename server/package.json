@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --watch index.ts",
     "build": "tsc",
-    "deploy": "sed -n '1,/ESBUILD_DEPLOY_STOP/p' index.ts > temp-index.ts && esbuild temp-index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --external:express && rm temp-index.ts",
+    "deploy": "sed -n '1,/ESBUILD_DEPLOY_STOP/p' index.ts > temp-index.ts && esbuild temp-index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/* --external:debug && rm temp-index.ts && cd ../infra && cdk deploy --hotswap",
     "start": "bun run index.js",
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",

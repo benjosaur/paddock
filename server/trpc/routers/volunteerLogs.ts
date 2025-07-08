@@ -1,4 +1,4 @@
-import { router, createProtectedProcedure } from "../trpc";
+import { router, createProtectedProcedure } from "../prod/trpc";
 import { volunteerLogSchema } from "shared/schemas/index";
 
 export const volunteerLogsRouter = router({

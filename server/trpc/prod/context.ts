@@ -1,8 +1,7 @@
-import { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { APIGatewayProxyEventV2 } from "aws-lambda";
 import { CreateAWSLambdaContextOptions } from "@trpc/server/adapters/aws-lambda";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { createServices } from "../db/service";
+import { createServices } from "../../db/service";
 
 // Create JWT verifier for your Cognito User Pool
 const jwtVerifier = CognitoJwtVerifier.create({
@@ -11,7 +10,7 @@ const jwtVerifier = CognitoJwtVerifier.create({
   clientId: process.env.COGNITO_CLIENT_ID!, // Optional, only if you want to verify client ID
 });
 
-const getUser = async (reqOrEvent: any): Promise<User | null> => {
+export const getUser = async (reqOrEvent: any): Promise<User | null> => {
   if (process.env.NODE_ENV === "development") {
     return { sub: process.env.DEV_SUB!, role: process.env.DEV_ROLE! };
   }
@@ -39,20 +38,6 @@ const getUser = async (reqOrEvent: any): Promise<User | null> => {
     return null;
   }
 };
-
-export const createExpressContext = async ({
-  req,
-  res,
-}: CreateExpressContextOptions) => {
-  return {
-    req,
-    res,
-    user: await getUser(req),
-    services: createServices(),
-  };
-};
-
-export type ExpressContext = Awaited<ReturnType<typeof createExpressContext>>;
 
 export const createLambdaContext = async ({
   event,

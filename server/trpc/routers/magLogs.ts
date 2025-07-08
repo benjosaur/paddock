@@ -1,4 +1,4 @@
-import { router, createProtectedProcedure } from "../trpc";
+import { router, createProtectedProcedure } from "../prod/trpc";
 import { magLogSchema } from "shared/schemas/index";
 
 export const magLogsRouter = router({

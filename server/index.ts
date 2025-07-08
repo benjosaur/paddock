@@ -1,8 +1,7 @@
 import cors from "cors";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
-import { appRouter } from "./trpc/router";
-import { createExpressContext, createLambdaContext } from "./trpc/context";
+import { prodAppRouter } from "./trpc/prod/router";
+import { createLambdaContext } from "./trpc/prod/context";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -10,12 +9,15 @@ dotenv.config();
 export const isProd = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 export const handler = awsLambdaRequestHandler({
-  router: appRouter,
+  router: prodAppRouter,
   createContext: createLambdaContext,
 });
 
 // ESBUILD_DEPLOY_STOP
 import express from "express";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { localAppRouter } from "./trpc/local/router";
+import { createExpressContext } from "./trpc/local/context";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -35,7 +37,7 @@ app.use(express.json());
 app.use(
   "/trpc",
   createExpressMiddleware({
-    router: appRouter,
+    router: localAppRouter,
     createContext: createExpressContext,
   })
 );
