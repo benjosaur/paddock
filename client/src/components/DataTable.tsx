@@ -49,13 +49,25 @@ export function DataTable<T extends { id: string }>({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
-  const filteredData = data.filter((item) =>
-    Object.values(item).some((value) =>
-      String(value || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    )
-  );
+  const matchValue = (
+    value: Record<string, any> | string,
+    searchTerm: string
+  ): boolean => {
+    if (typeof value === "object") {
+      return Object.values(value).some((nestedValue) =>
+        matchValue(nestedValue, searchTerm)
+      );
+    }
+    return String(value || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  };
+
+  const filteredData = data.filter((row) => {
+    return Object.values(row).some((rowValue) =>
+      matchValue(rowValue, searchTerm)
+    );
+  });
 
   const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
