@@ -187,9 +187,6 @@ export class MpLogRepository {
     }
   }
   async update(updatedMpLogs: DbMpLog[], user: User): Promise<void> {
-    const mpLogKey = updatedMpLogs[0].sK;
-    await this.delete(user, mpLogKey);
-
     const validatedLogs = dbMpLog.array().parse(updatedMpLogs);
     try {
       await Promise.all(

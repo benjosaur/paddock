@@ -1,5 +1,7 @@
+import { string } from "zod/v4";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { clientFullSchema } from "shared/schemas/index";
+import { z } from "zod";
 
 export const clientsRouter = router({
   getAll: createProtectedProcedure("clients", "read").query(async ({ ctx }) => {
@@ -31,9 +33,13 @@ export const clientsRouter = router({
     }),
 
   updateName: createProtectedProcedure("clients", "update")
-    .input(clientFullSchema)
+    .input(z.object({ clientId: z.string(), newName: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.updateName(input, ctx.user);
+      return await ctx.services.client.updateName(
+        input.clientId,
+        input.newName,
+        ctx.user
+      );
     }),
 
   updatePostCode: createProtectedProcedure("clients", "update")

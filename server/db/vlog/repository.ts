@@ -179,9 +179,6 @@ export class VolunteerLogRepository {
     updatedVolunteerLogs: DbVolunteerLog[],
     user: User
   ): Promise<void> {
-    const volunteerLogKey = updatedVolunteerLogs[0].sK;
-    await this.delete(user, volunteerLogKey);
-
     const validatedLogs = dbVolunteerLog.array().parse(updatedVolunteerLogs);
     try {
       await Promise.all(

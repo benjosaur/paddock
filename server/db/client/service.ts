@@ -10,6 +10,18 @@ import { MpLogService } from "../mplog/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
+import { sleep } from "bun";
+import {
+  DbClientMpRequestEntity,
+  DbClientVolunteerRequestEntity,
+} from "../requests/schema";
+import { DbMpLogClient } from "../mplog/schema";
+import { DbVolunteerLogClient } from "../vlog/schema";
+import { DbMagLogClient } from "../mag/schema";
+import { MpLogRepository } from "../mplog/repository";
+import { VolunteerLogRepository } from "../vlog/repository";
+import { MagLogRepository } from "../mag/repository";
+import { RequestRepository } from "../requests/repository";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -17,6 +29,10 @@ export class ClientService {
   volunteerLogService = new VolunteerLogService();
   magLogService = new MagLogService();
   requestService = new RequestService();
+  mpLogRepository = new MpLogRepository();
+  volunteerLogRepository = new VolunteerLogRepository();
+  magLogRepository = new MagLogRepository();
+  requestRepository = new RequestRepository();
 
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
@@ -37,7 +53,7 @@ export class ClientService {
   async getById(user: User, clientId: string): Promise<ClientFull> {
     try {
       const client = await this.clientRepository.getById(user, clientId);
-
+      console.log(client);
       const mpLogIds = client
         .filter((dbResult) => dbResult.entityType == "mpLog")
         .map((mpLog) => mpLog.sK);
@@ -51,7 +67,6 @@ export class ClientService {
       const clientMetadata = this.transformDbClientToSharedMetaData(
         client
       ) as Partial<ClientFull>[];
-
       const mpLogs = await Promise.all(
         mpLogIds.map(
           async (mpLogId) => await this.mpLogService.getById(user, mpLogId)
@@ -67,7 +82,6 @@ export class ClientService {
           async (magLogId) => await this.magLogService.getById(user, magLogId)
         )
       );
-
       const fullClient = [
         { ...clientMetadata[0], mpLogs, volunteerLogs, magLogs },
       ];
@@ -122,7 +136,7 @@ export class ClientService {
   async update(updatedClient: ClientFull, user: User): Promise<ClientFull> {
     //note for name or postcode (only metachanges)
     try {
-      const validatedInput = clientFullSchema.parse(updatedClient);
+      const validatedInput = clientMetadataSchema.parse(updatedClient);
 
       const dbClient: DbClientEntity = {
         pK: validatedInput.id,
@@ -133,14 +147,15 @@ export class ClientService {
         postCode: validatedInput.postCode,
         details: validatedInput.details,
       };
-
       await this.clientRepository.update(dbClient, user);
       const fetchedClient = await this.getById(user, validatedInput.id);
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
+      if (
+        JSON.stringify(validatedInput) !==
+        JSON.stringify(clientMetadataSchema.parse(fetchedClient))
+      ) {
+        console.log(validatedInput, fetchedClient);
         throw new Error("Updated client does not match expected values");
       }
-
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
@@ -148,27 +163,90 @@ export class ClientService {
     }
   }
 
-  async updateName(updatedClient: ClientFull, user: User): Promise<ClientFull> {
+  async updateName(
+    clientId: string,
+    newName: string,
+    user: User
+  ): Promise<ClientFull> {
     try {
-      const validatedInput = clientFullSchema.parse(updatedClient);
+      const initialClient = await this.getById(user, clientId);
 
-      const clientEntityUpdate = this.update(validatedInput, user);
-      const mpLogUpdates = validatedInput.mpLogs.map((log) =>
-        this.mpLogService.update(log, user)
+      const updatedClient = {
+        ...initialClient,
+        details: { ...initialClient.details, name: newName },
+      };
+      const updatedClientMpRequests: DbClientMpRequestEntity[] =
+        initialClient.mpRequests.map((req) => ({
+          pK: clientId,
+          sK: req.id,
+          date: req.startDate,
+          details: req.details,
+          entityOwner: "client",
+          entityType: "clientMpRequest",
+        }));
+      const updatedClientVolunteerRequests: DbClientVolunteerRequestEntity[] =
+        initialClient.volunteerRequests.map((req) => ({
+          pK: clientId,
+          sK: req.id,
+          date: req.startDate,
+          details: req.details,
+          entityOwner: "client",
+          entityType: "clientVolunteerRequest",
+        }));
+      const updatedClientMpLogs: DbMpLogClient[] = initialClient.mpLogs.map(
+        (log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: initialClient.postCode,
+          date: log.date,
+          details: { ...log.details, name: newName },
+          entityOwner: "client",
+          entityType: "mpLog",
+        })
       );
-      const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log, user)
+      const updatedClientVolunteerLogs: DbVolunteerLogClient[] =
+        initialClient.volunteerLogs.map((log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: initialClient.postCode,
+          date: log.date,
+          details: { ...log.details, name: newName },
+          entityOwner: "client",
+          entityType: "volunteerLog",
+        }));
+      const updatedClientMagLogs: DbMagLogClient[] = initialClient.magLogs.map(
+        (log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: initialClient.postCode,
+          date: log.date,
+          details: { ...log.details, name: newName },
+          entityOwner: "client",
+          entityType: "magLog",
+        })
       );
+      console.log(updatedClientMagLogs);
       await Promise.all([
-        clientEntityUpdate,
-        ...mpLogUpdates,
-        ...volunteerLogUpdates,
+        this.update(updatedClient, user),
+        ...updatedClientMpRequests.map((req) =>
+          this.requestRepository.update(req, user)
+        ),
+        ...updatedClientVolunteerRequests.map((req) =>
+          this.requestRepository.update(req, user)
+        ),
+        ...updatedClientMpLogs.map((log) =>
+          this.mpLogRepository.update([log], user)
+        ),
+        ...updatedClientVolunteerLogs.map((log) =>
+          this.volunteerLogRepository.update([log], user)
+        ),
+        ...updatedClientMagLogs.map((log) =>
+          this.magLogRepository.update([log], user)
+        ),
       ]);
-      const fetchedClient = await this.getById(user, validatedInput.id);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
-        throw new Error("Updated client name does not match expected values");
-      }
+      const fetchedClient = this.getById(user, clientId);
+
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);

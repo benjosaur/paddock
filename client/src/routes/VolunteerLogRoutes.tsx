@@ -16,7 +16,7 @@ const volunteerLogColumns: TableColumn<VolunteerLog>[] = [
   },
   {
     key: "volunteers",
-    header: "MPs",
+    header: "Volunteers",
     render: (item: VolunteerLog) =>
       item.volunteers.map((volunteer) => volunteer.details.name).join(", "),
   },

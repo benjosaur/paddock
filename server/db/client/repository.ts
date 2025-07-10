@@ -44,6 +44,7 @@ export class ClientRepository {
       ExpressionAttributeValues: {
         ":pk": clientId,
       },
+      ConsistentRead: true,
     });
 
     try {

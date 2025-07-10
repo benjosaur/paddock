@@ -125,7 +125,8 @@ export class MpLogService {
   async update(updatedMpLog: MpLog, user: User): Promise<MpLog> {
     const validatedInput = mpLogSchema.parse(updatedMpLog);
     const mpLogKey = validatedInput.id;
-
+    // may previously have excess mps/clients no longer associated
+    await this.mpLogRepository.delete(user, mpLogKey);
     const mpLogMain: DbMpLogEntity = {
       ...validatedInput,
       pK: mpLogKey,

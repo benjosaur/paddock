@@ -16,6 +16,8 @@ export class MagLogService {
   async getById(user: User, magLogId: string): Promise<MagLog> {
     const mag = await this.magLogRepository.getById(user, magLogId);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
+    console.log("MAG");
+    console.log(transformedResult);
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult[0];
   }
@@ -76,6 +78,7 @@ export class MagLogService {
   async update(updatedMpLog: MagLog, user: User): Promise<MagLog> {
     const validatedInput = magLogSchema.parse(updatedMpLog);
     const magLogKey = validatedInput.id;
+    this.magLogRepository.delete(magLogKey, user);
 
     const magLogMain: DbMagLogEntity = {
       ...validatedInput,
@@ -114,7 +117,7 @@ export class MagLogService {
   }
 
   async delete(user: User, magLogId: string): Promise<number> {
-    const numDeleted = await this.magLogRepository.delete(user, magLogId);
+    const numDeleted = await this.magLogRepository.delete(magLogId, user);
     return numDeleted[0];
   }
 

@@ -98,10 +98,10 @@ function AppContent() {
 
 const testCheckUser = async (): Promise<PaddockUser | null> => {
   return {
-    givenName: import.meta.env.VITE_DEV_GIVEN_NAME,
-    familyName: import.meta.env.VITE_DEV_FAMILY_NAME,
-    email: import.meta.env.VITE_DEV_EMAIL,
-    role: import.meta.env.VITE_DEV_ROLE,
+    givenName: import.meta.env.VITE_DEV_GIVEN_NAME ?? "",
+    familyName: import.meta.env.VITE_DEV_FAMILY_NAME ?? "",
+    email: import.meta.env.VITE_DEV_EMAIL ?? "",
+    role: (import.meta.env.VITE_DEV_ROLE as "Test") ?? "Test",
   };
 };
 

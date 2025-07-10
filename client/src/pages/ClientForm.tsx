@@ -71,6 +71,22 @@ export function ClientForm() {
     })
   );
 
+  const updateNameMutation = useMutation(
+    trpc.clients.updateName.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
+      },
+    })
+  );
+
+  const updatePostCodeMutation = useMutation(
+    trpc.clients.updatePostCode.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
+      },
+    })
+  );
+
   useEffect(() => {
     if (clientQuery.data) {
       setFormData(clientQuery.data);
@@ -122,17 +138,17 @@ export function ClientForm() {
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
 
-    const updateNameMutation = useMutation(
-      trpc.clients.updateName.mutationOptions({
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
-        },
-      })
-    );
-    updateNameMutation.mutate({
-      id,
-      ...updateNestedValue(field, newValue, formData),
-    });
+    if (field == "details.name") {
+      updateNameMutation.mutate({
+        clientId: id,
+        newName: newValue,
+      });
+    } else if (field == "details.postCode") {
+      updatePostCodeMutation.mutate({
+        id,
+        ...updateNestedValue(field, newValue, formData),
+      });
+    } else throw new Error(`${field} not a recognised field`);
   };
 
   const attendanceAllowanceOptions = attendanceAllowanceStatus.map(

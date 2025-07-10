@@ -140,7 +140,8 @@ export class VolunteerLogService {
   ): Promise<VolunteerLog> {
     const validatedInput = volunteerLogSchema.parse(updatedVolunteerLog);
     const volunteerLogKey = validatedInput.id;
-
+    // may previously have excess volunteers/clients no longer associated
+    await this.volunteerLogRepository.delete(user, volunteerLogKey);
     const volunteerLogMain: DbVolunteerLogEntity = {
       ...validatedInput,
       pK: volunteerLogKey,

@@ -120,9 +120,6 @@ export class MagLogRepository {
     }
   }
   async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
-    const mpLogKey = updatedMpLogs[0].sK;
-    await this.delete(user, mpLogKey);
-
     const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
     try {
       await Promise.all(
@@ -140,7 +137,7 @@ export class MagLogRepository {
       throw error;
     }
   }
-  async delete(user: User, magLogId: string): Promise<number[]> {
+  async delete(magLogId: string, user: User): Promise<number[]> {
     const existingLogs = await this.getById(user, magLogId);
     try {
       await Promise.all(
