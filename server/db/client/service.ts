@@ -255,42 +255,67 @@ export class ClientService {
   }
 
   async updatePostCode(
-    updatedClient: ClientFull,
+    clientId: string,
+    newPostCode: string,
     user: User
   ): Promise<ClientFull> {
     try {
-      const validatedInput = clientFullSchema.parse(updatedClient);
+      const initialClient = await this.getById(user, clientId);
 
-      const clientEntityUpdate = this.update(validatedInput, user);
-      const mpLogUpdates = validatedInput.mpLogs.map((log) =>
-        this.mpLogService.update(log, user)
+      const updatedClient = {
+        ...initialClient,
+        postCode: newPostCode,
+      };
+      const updatedClientMpLogs: DbMpLogClient[] = initialClient.mpLogs.map(
+        (log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: newPostCode,
+          date: log.date,
+          details: { ...log.details, name: initialClient.details.name },
+          entityOwner: "client",
+          entityType: "mpLog",
+        })
       );
-      const volunteerLogUpdates = validatedInput.volunteerLogs.map((log) =>
-        this.volunteerLogService.update(log, user)
-      );
-      const mpRequestUpdates = validatedInput.mpRequests.map((request) =>
-        this.requestService.update(request, user)
-      );
-      const volunteerRequestUpdates = validatedInput.volunteerRequests.map(
-        (request) => this.requestService.update(request, user)
+      const updatedClientVolunteerLogs: DbVolunteerLogClient[] =
+        initialClient.volunteerLogs.map((log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: newPostCode,
+          date: log.date,
+          details: { ...log.details, name: initialClient.details.name },
+          entityOwner: "client",
+          entityType: "volunteerLog",
+        }));
+      const updatedClientMagLogs: DbMagLogClient[] = initialClient.magLogs.map(
+        (log) => ({
+          pK: clientId,
+          sK: log.id,
+          postCode: newPostCode,
+          date: log.date,
+          details: { ...log.details, name: initialClient.details.name },
+          entityOwner: "client",
+          entityType: "magLog",
+        })
       );
       await Promise.all([
-        clientEntityUpdate,
-        ...mpLogUpdates,
-        ...volunteerLogUpdates,
-        ...mpRequestUpdates,
-        ...volunteerRequestUpdates,
+        this.update(updatedClient, user),
+        ...updatedClientMpLogs.map((log) =>
+          this.mpLogRepository.update([log], user)
+        ),
+        ...updatedClientVolunteerLogs.map((log) =>
+          this.volunteerLogRepository.update([log], user)
+        ),
+        ...updatedClientMagLogs.map((log) =>
+          this.magLogRepository.update([log], user)
+        ),
       ]);
-      const fetchedClient = await this.getById(user, validatedInput.id);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedClient)) {
-        throw new Error(
-          "Updated client postcode does not match expected values"
-        );
-      }
+      const fetchedClient = this.getById(user, clientId);
+
       return fetchedClient;
     } catch (error) {
-      console.error("Service Layer Error updating MP Name:", error);
+      console.error("Service Layer Error updating Client Name:", error);
       throw error;
     }
   }

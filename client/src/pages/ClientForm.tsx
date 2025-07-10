@@ -143,10 +143,10 @@ export function ClientForm() {
         clientId: id,
         newName: newValue,
       });
-    } else if (field == "details.postCode") {
+    } else if (field == "postCode") {
       updatePostCodeMutation.mutate({
-        id,
-        ...updateNestedValue(field, newValue, formData),
+        clientId: id,
+        newPostCode: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
   };

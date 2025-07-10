@@ -43,8 +43,12 @@ export const clientsRouter = router({
     }),
 
   updatePostCode: createProtectedProcedure("clients", "update")
-    .input(clientFullSchema)
+    .input(z.object({ clientId: z.string(), newPostCode: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.updatePostCode(input, ctx.user);
+      return await ctx.services.client.updatePostCode(
+        input.clientId,
+        input.newPostCode,
+        ctx.user
+      );
     }),
 });
