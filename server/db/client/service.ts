@@ -10,7 +10,6 @@ import { MpLogService } from "../mplog/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
-import { sleep } from "bun";
 import {
   DbClientMpRequestEntity,
   DbClientVolunteerRequestEntity,
@@ -180,7 +179,7 @@ export class ClientService {
           pK: clientId,
           sK: req.id,
           date: req.startDate,
-          details: req.details,
+          details: { ...req.details, name: newName },
           entityOwner: "client",
           entityType: "clientMpRequest",
         }));
@@ -189,7 +188,7 @@ export class ClientService {
           pK: clientId,
           sK: req.id,
           date: req.startDate,
-          details: req.details,
+          details: { ...req.details, name: newName },
           entityOwner: "client",
           entityType: "clientVolunteerRequest",
         }));
