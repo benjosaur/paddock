@@ -6,6 +6,7 @@ import { trpc } from "../utils/trpc";
 import type { VolunteerFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { FieldEditModal } from "@/components/FieldEditModal";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export function VolunteerForm() {
     ...trpc.volunteers.getById.queryOptions({ id }),
     enabled: isEditing,
   });
+  const thisVolunteerQueryKey = trpc.volunteers.getById.queryKey();
   const volunteerQueryKey = trpc.volunteers.getAll.queryKey();
 
   const createVolunteerMutation = useMutation(
@@ -57,6 +59,22 @@ export function VolunteerForm() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: volunteerQueryKey });
         navigate("/volunteers");
+      },
+    })
+  );
+
+  const updateNameMutation = useMutation(
+    trpc.volunteers.updateName.mutationOptions({
+      onSuccess: () => {
+        const queryKeys = [
+          thisVolunteerQueryKey,
+          trpc.volunteerLogs.getAll.queryKey(),
+          trpc.trainingRecords.getAll.queryKey(),
+        ];
+
+        queryKeys.forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
       },
     })
   );
@@ -82,6 +100,17 @@ export function VolunteerForm() {
       | "details.specialisms";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleFieldChangeSubmit = (field: string, newValue: string) => {
+    if (!isEditing) return;
+
+    if (field == "details.name") {
+      updateNameMutation.mutate({
+        volunteerId: id,
+        newName: newValue,
+      });
+    } else throw new Error(`${field} not a recognised field`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -124,13 +153,24 @@ export function VolunteerForm() {
                 >
                   Name *
                 </label>
-                <Input
-                  id="name"
-                  name="details.name"
-                  value={formData.details.name || ""}
-                  onChange={handleInputChange}
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    name="details.name"
+                    value={formData.details.name || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !volunteerQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.name"
+                      currentValue={formData.details.name}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
               </div>
 
               <div>

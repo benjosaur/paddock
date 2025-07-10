@@ -74,7 +74,17 @@ export function ClientForm() {
   const updateNameMutation = useMutation(
     trpc.clients.updateName.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
+        const queryKeys = [
+          thisClientQueryKey,
+          trpc.mpLogs.getAll.queryKey(),
+          trpc.volunteerLogs.getAll.queryKey(),
+          trpc.magLogs.getAll.queryKey(),
+          trpc.clientRequests.getAll.queryKey(),
+        ];
+
+        queryKeys.forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
       },
     })
   );

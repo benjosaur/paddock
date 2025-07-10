@@ -6,6 +6,7 @@ import { trpc } from "../utils/trpc";
 import type { MpFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { FieldEditModal } from "@/components/FieldEditModal";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export function MpForm() {
     ...trpc.mps.getById.queryOptions({ id }),
     enabled: isEditing,
   });
+  const thisMpQueryKey = trpc.mps.getById.queryKey();
   const mpQueryKey = trpc.mps.getAll.queryKey();
 
   const createMpMutation = useMutation(
@@ -57,6 +59,22 @@ export function MpForm() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: mpQueryKey });
         navigate("/mps");
+      },
+    })
+  );
+
+  const updateNameMutation = useMutation(
+    trpc.mps.updateName.mutationOptions({
+      onSuccess: () => {
+        const queryKeys = [
+          thisMpQueryKey,
+          trpc.mpLogs.getAll.queryKey(),
+          trpc.trainingRecords.getAll.queryKey(),
+        ];
+
+        queryKeys.forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
       },
     })
   );
@@ -81,6 +99,17 @@ export function MpForm() {
       | "details.specialisms";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleFieldChangeSubmit = (field: string, newValue: string) => {
+    if (!isEditing) return;
+
+    if (field == "details.name") {
+      updateNameMutation.mutate({
+        mpId: id,
+        newName: newValue,
+      });
+    } else throw new Error(`${field} not a recognised field`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -123,13 +152,24 @@ export function MpForm() {
                 >
                   Name *
                 </label>
-                <Input
-                  id="name"
-                  name="details.name"
-                  value={formData.details.name || ""}
-                  onChange={handleInputChange}
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    name="details.name"
+                    value={formData.details.name || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                  />
+                  {isEditing && !mpQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.name"
+                      currentValue={formData.details.name}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
               </div>
 
               <div>

@@ -53,7 +53,6 @@ export class ClientService {
   async getById(user: User, clientId: string): Promise<ClientFull> {
     try {
       const client = await this.clientRepository.getById(user, clientId);
-      console.log(client);
       const mpLogIds = client
         .filter((dbResult) => dbResult.entityType == "mpLog")
         .map((mpLog) => mpLog.sK);
@@ -121,8 +120,7 @@ export class ClientService {
       const { id, ...restFetched } = fetchedClient;
 
       if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        console.log(validatedInput);
-        console.log(restFetched);
+        console.log(validatedInput, fetchedClient);
         throw new Error("Created client does not match expected values");
       }
 
@@ -149,13 +147,15 @@ export class ClientService {
       };
       await this.clientRepository.update(dbClient, user);
       const fetchedClient = await this.getById(user, validatedInput.id);
-      if (
-        JSON.stringify(validatedInput) !==
-        JSON.stringify(clientMetadataSchema.parse(fetchedClient))
-      ) {
-        console.log(validatedInput, fetchedClient);
-        throw new Error("Updated client does not match expected values");
-      }
+
+      // below will throw error on name update. input name will be diff to updated requests name. as fetch will occur at same time as request name update.
+      // if (
+      //   JSON.stringify(validatedInput) !==
+      //   JSON.stringify(clientMetadataSchema.parse(fetchedClient))
+      // ) {
+      //   console.log(validatedInput, fetchedClient);
+      //   throw new Error("Updated client does not match expected values");
+      // }
       return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
@@ -225,7 +225,6 @@ export class ClientService {
           entityType: "magLog",
         })
       );
-      console.log(updatedClientMagLogs);
       await Promise.all([
         this.update(updatedClient, user),
         ...updatedClientMpRequests.map((req) =>

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpFullSchema } from "shared/schemas/index";
 
@@ -22,6 +23,16 @@ export const mpsRouter = router({
     .input(mpFullSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.update(input, ctx.user);
+    }),
+
+  updateName: createProtectedProcedure("mps", "update")
+    .input(z.object({ mpId: z.string(), newName: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.mp.updateName(
+        input.mpId,
+        input.newName,
+        ctx.user
+      );
     }),
 
   delete: createProtectedProcedure("mps", "delete")

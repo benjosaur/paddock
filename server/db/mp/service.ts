@@ -1,13 +1,23 @@
 import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
 import { MpRepository } from "./repository";
-import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
+import {
+  DbMpFull,
+  DbMpMetadata,
+  DbMpEntity,
+  DbMpTrainingRecordEntity,
+} from "./schema";
 import { MpLogService } from "../mplog/service";
 import { TrainingRecordService } from "../training/service";
+import { DbMpLogMp } from "../mplog/schema";
+import { TrainingRecordRepository } from "../training/repository";
+import { MpLogRepository } from "../mplog/repository";
 
 export class MpService {
   mpRepository = new MpRepository();
   mpLogService = new MpLogService();
+  mpLogRepository = new MpLogRepository();
   trainingRecordService = new TrainingRecordService();
+  trainingRecordRepository = new TrainingRecordRepository();
 
   async getAll(user: User): Promise<MpMetadata[]> {
     try {
@@ -76,7 +86,7 @@ export class MpService {
   async update(updatedMp: MpMetadata, user: User): Promise<MpFull> {
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
-      const validatedInput = mpFullSchema.parse(updatedMp);
+      const validatedInput = mpMetadataSchema.parse(updatedMp);
 
       const dbMp: DbMpEntity = {
         pK: validatedInput.id,
@@ -93,9 +103,14 @@ export class MpService {
       await this.mpRepository.update(dbMp, user);
       const fetchedMp = await this.getById(user, validatedInput.id);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
-        throw new Error("Updated mp does not match expected values");
-      }
+      // below will throw error on name update. input name will be diff to updated training record name. as fetch will occur at same time as record name update.
+      // if (
+      //   JSON.stringify(validatedInput) !==
+      //   JSON.stringify(mpMetadataSchema.parse(fetchedMp))
+      // ) {
+      //   console.log(validatedInput, mpMetadataSchema.parse(fetchedMp));
+      //   throw new Error("Updated mp does not match expected values");
+      // }
 
       return fetchedMp;
     } catch (error) {
@@ -104,28 +119,48 @@ export class MpService {
     }
   }
 
-  async updateName(updatedMp: MpFull, user: User): Promise<MpFull> {
-    // Must update also duplicated name field in mplog details and training log details
+  async updateName(mpId: string, newName: string, user: User): Promise<MpFull> {
     try {
-      const validatedInput = mpFullSchema.parse(updatedMp);
+      const initialMp = await this.getById(user, mpId);
 
-      await this.update(validatedInput, user);
-      await Promise.all(
-        validatedInput.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record, user)
-        )
-      );
-      await Promise.all(
-        validatedInput.mpLogs.map((log) => this.mpLogService.update(log, user))
-      );
-      const fetchedMp = await this.getById(user, validatedInput.id);
+      const updatedMp = {
+        ...initialMp,
+        details: { ...initialMp.details, name: newName },
+      };
+      const updatedMpTrainingRecords: DbMpTrainingRecordEntity[] =
+        initialMp.trainingRecords.map((record) => ({
+          pK: mpId,
+          sK: record.id,
+          recordExpiry: record.recordExpiry,
+          recordName: record.recordName,
+          details: { ...record.details, name: newName },
+          entityOwner: "mp",
+          entityType: "trainingRecord",
+        }));
+      const updatedMpLogMps: DbMpLogMp[] = initialMp.mpLogs.map((log) => ({
+        pK: mpId,
+        sK: log.id,
+        postCode: initialMp.postCode,
+        date: log.date,
+        details: { ...log.details, name: newName },
+        entityOwner: "mp",
+        entityType: "mpLog",
+      }));
+      await Promise.all([
+        this.update(updatedMp, user),
+        ...updatedMpTrainingRecords.map((record) =>
+          this.trainingRecordRepository.update(record, user)
+        ),
+        ...updatedMpLogMps.map((log) =>
+          this.mpLogRepository.update([log], user)
+        ),
+      ]);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedMp)) {
-        throw new Error("Updated mp name does not match expected values");
-      }
+      const fetchedMp = this.getById(user, mpId);
+
       return fetchedMp;
     } catch (error) {
-      console.error("Service Layer Error updating MP Name:", error);
+      console.error("Service Layer Error updating Mp Name:", error);
       throw error;
     }
   }

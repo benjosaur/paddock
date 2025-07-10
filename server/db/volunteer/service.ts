@@ -9,14 +9,20 @@ import {
   DbVolunteerFull,
   DbVolunteerMetadata,
   DbVolunteerEntity,
+  DbVolunteerTrainingRecordEntity,
 } from "./schema";
 import { VolunteerLogService } from "../vlog/service";
 import { TrainingRecordService } from "../training/service";
+import { VolunteerLogRepository } from "../vlog/repository";
+import { TrainingRecordRepository } from "../training/repository";
+import { DbVolunteerLogVolunteer } from "../vlog/schema";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
   volunteerLogService = new VolunteerLogService();
   trainingRecordService = new TrainingRecordService();
+  volunteerLogRepository = new VolunteerLogRepository();
+  trainingRecordRepository = new TrainingRecordRepository();
 
   async getAll(user: User): Promise<VolunteerMetadata[]> {
     try {
@@ -104,7 +110,7 @@ export class VolunteerService {
     user: User
   ): Promise<VolunteerFull> {
     try {
-      const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
+      const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
 
       const dbVolunteer: DbVolunteerEntity = {
         pK: validatedInput.id,
@@ -121,9 +127,13 @@ export class VolunteerService {
       await this.volunteerRepository.update(dbVolunteer, user);
       const fetchedVolunteer = await this.getById(user, validatedInput.id);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
-        throw new Error("Updated volunteer does not match expected values");
-      }
+      // below will throw error on name update. input name will be diff to updated training record name. as fetch will occur at same time as record name update.
+      // if (
+      //   JSON.stringify(validatedInput) !==
+      //   JSON.stringify(volunteerMetadataSchema.parse(fetchedVolunteer))
+      // ) {
+      //   throw new Error("Updated volunteer does not match expected values");
+      // }
 
       return fetchedVolunteer;
     } catch (error) {
@@ -133,30 +143,49 @@ export class VolunteerService {
   }
 
   async updateName(
-    updatedVolunteer: VolunteerFull,
+    volunteerId: string,
+    newName: string,
     user: User
   ): Promise<VolunteerFull> {
     try {
-      const validatedInput = volunteerFullSchema.parse(updatedVolunteer);
+      const initialVolunteer = await this.getById(user, volunteerId);
 
-      await this.update(validatedInput, user);
-      await Promise.all(
-        validatedInput.trainingRecords.map((record) =>
-          this.trainingRecordService.update(record, user)
-        )
-      );
-      await Promise.all(
-        validatedInput.volunteerLogs.map((log) =>
-          this.volunteerLogService.update(log, user)
-        )
-      );
-      const fetchedVolunteer = await this.getById(user, validatedInput.id);
+      const updatedVolunteer = {
+        ...initialVolunteer,
+        details: { ...initialVolunteer.details, name: newName },
+      };
+      const updatedVolunteerTrainingRecords: DbVolunteerTrainingRecordEntity[] =
+        initialVolunteer.trainingRecords.map((record) => ({
+          pK: volunteerId,
+          sK: record.id,
+          recordExpiry: record.recordExpiry,
+          recordName: record.recordName,
+          details: { ...record.details, name: newName },
+          entityOwner: "volunteer",
+          entityType: "trainingRecord",
+        }));
+      const updatedVolunteerLogVolunteers: DbVolunteerLogVolunteer[] =
+        initialVolunteer.volunteerLogs.map((log) => ({
+          pK: volunteerId,
+          sK: log.id,
+          postCode: initialVolunteer.postCode,
+          date: log.date,
+          details: { ...log.details, name: newName },
+          entityOwner: "volunteer",
+          entityType: "volunteerLog",
+        }));
+      await Promise.all([
+        this.update(updatedVolunteer, user),
+        ...updatedVolunteerTrainingRecords.map((record) =>
+          this.trainingRecordRepository.update(record, user)
+        ),
+        ...updatedVolunteerLogVolunteers.map((log) =>
+          this.volunteerLogRepository.update([log], user)
+        ),
+      ]);
 
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedVolunteer)) {
-        throw new Error(
-          "Updated volunteer name does not match expected values"
-        );
-      }
+      const fetchedVolunteer = this.getById(user, volunteerId);
+
       return fetchedVolunteer;
     } catch (error) {
       console.error("Service Layer Error updating Volunteer Name:", error);

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { volunteerFullSchema } from "shared/schemas/index";
 
@@ -24,6 +25,16 @@ export const volunteersRouter = router({
     .input(volunteerFullSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.update(input, ctx.user);
+    }),
+
+  updateName: createProtectedProcedure("volunteers", "update")
+    .input(z.object({ volunteerId: z.string(), newName: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.volunteer.updateName(
+        input.volunteerId,
+        input.newName,
+        ctx.user
+      );
     }),
 
   delete: createProtectedProcedure("volunteers", "delete")
