@@ -16,14 +16,33 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class VolunteerRepository {
+  async getAllActive(user: User): Promise<DbVolunteerMetadata[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
+      ExpressionAttributeValues: {
+        ":pk": "mp",
+        ":sk": "N",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbVolunteerMetadata.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting item:", error);
+      throw error;
+    }
+  }
+
   async getAll(user: User): Promise<DbVolunteerMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
-      KeyConditionExpression: "entityOwner = :pk AND entityType = :sk",
+      KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
-        ":pk": "volunteer",
-        ":sk": "volunteer",
+        ":pk": "mp",
       },
     });
     try {

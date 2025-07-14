@@ -27,7 +27,7 @@ export const packageSchema = z.object({
   requestId: z.string(),
   type: z.enum(requestTypes),
   startDate: z.string().date(),
-  endDate: z.union([z.string().date(), z.literal("")]).default(""),
+  endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     carerName: z.string(),
     weeklyHours: z.number(),
@@ -41,7 +41,7 @@ export const requestSchema = z.object({
   type: z.enum(requestTypes),
   clientId: z.string(),
   startDate: z.string().date(),
-  endDate: z.union([z.string().date(), z.literal("")]).default(""),
+  endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
     weeklyHours: z.string().default(""),

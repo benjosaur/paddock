@@ -20,11 +20,29 @@ export class ClientRepository {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
-      KeyConditionExpression:
-        "entityOwner = :pk AND begins_with(entityType, :sk)",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
         ":pk": "client",
-        ":sk": "client",
+        ":sk": "N",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbClientMetadata.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting item:", error);
+      throw error;
+    }
+  }
+
+  async getAllActive(user: User): Promise<DbClientMetadata[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityOwner = :pk",
+      ExpressionAttributeValues: {
+        ":pk": "client",
       },
     });
     try {
