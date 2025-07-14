@@ -6,7 +6,7 @@ import {
 } from "shared";
 import { ClientRepository } from "./repository";
 import { DbClientEntity, DbClientFull, DbClientMetadata } from "./schema";
-import { MpLogService } from "../mplog/service";
+import { MpLogService } from "../package/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
@@ -14,10 +14,10 @@ import {
   DbClientMpRequestEntity,
   DbClientVolunteerRequestEntity,
 } from "../requests/schema";
-import { DbMpLogClient } from "../mplog/schema";
+import { DbMpLogClient } from "../package/schema";
 import { DbVolunteerLogClient } from "../vlog/schema";
 import { DbMagLogClient } from "../mag/schema";
-import { MpLogRepository } from "../mplog/repository";
+import { MpLogRepository } from "../package/repository";
 import { VolunteerLogRepository } from "../vlog/repository";
 import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";

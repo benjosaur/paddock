@@ -6,11 +6,11 @@ import {
   DbMpEntity,
   DbMpTrainingRecordEntity,
 } from "./schema";
-import { MpLogService } from "../mplog/service";
+import { MpLogService } from "../package/service";
 import { TrainingRecordService } from "../training/service";
-import { DbMpLogMp } from "../mplog/schema";
+import { DbMpLogMp } from "../package/schema";
 import { TrainingRecordRepository } from "../training/repository";
-import { MpLogRepository } from "../mplog/repository";
+import { MpLogRepository } from "../package/repository";
 
 export class MpService {
   mpRepository = new MpRepository();

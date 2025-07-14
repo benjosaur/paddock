@@ -1,7 +1,7 @@
 import { ClientService } from "./client/service";
 import { MagLogService } from "./mag/service";
 import { MpService } from "./mp/service";
-import { MpLogService } from "./mplog/service";
+import { MpLogService } from "./package/service";
 import { RequestService } from "./requests/service";
 import { TrainingRecordService } from "./training/service";
 import { VolunteerLogService } from "./vlog/service";

@@ -1,36 +1,25 @@
 import { z } from "zod";
 import { clientMetadataSchema } from "shared";
-import {
-  dbClientMpRequestEntity,
-  dbClientVolunteerRequestEntity,
-} from "../requests/schema";
-import { dbMpLogClient } from "../mplog/schema";
-import { dbVolunteerLogClient } from "../vlog/schema";
 import { dbMagLogClient } from "../mag/schema";
+import { dbRequest } from "../requests/schema";
+import { dbPackage } from "../package/schema";
 
 export const dbClientEntity = clientMetadataSchema
   .omit({
     id: true,
-    mpRequests: true,
-    volunteerRequests: true,
+    requests: true,
   })
   .extend({
     pK: z.string(),
     sK: z.string(),
     entityType: z.literal("client"),
-    entityOwner: z.literal("client"),
   });
 
-export const dbClientMetadata = z.union([
-  dbClientEntity,
-  dbClientMpRequestEntity,
-  dbClientVolunteerRequestEntity,
-]);
+export const dbClientMetadata = z.union([dbClientEntity, dbRequest]);
 
 export const dbClientFull = z.union([
   dbClientMetadata,
-  dbMpLogClient,
-  dbVolunteerLogClient,
+  dbPackage,
   dbMagLogClient,
 ]);
 

@@ -36,7 +36,7 @@ export const packageSchema = z.object({
   }),
 });
 
-export const clientRequestSchema = z.object({
+export const requestSchema = z.object({
   id: z.string(),
   type: z.enum(requestTypes),
   clientId: z.string(),
@@ -110,7 +110,7 @@ export const clientMetadataSchema = z.object({
     attendanceAllowance: z.enum(attendanceAllowanceStatus),
     attendsMag: z.boolean().default(false),
   }),
-  requests: z.array(clientRequestSchema).default([]),
+  requests: z.array(requestSchema).default([]),
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({
@@ -151,7 +151,7 @@ export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
 export type Package = z.infer<typeof packageSchema>;
 export type MagLog = z.infer<typeof magLogSchema>;
-export type ClientRequest = z.infer<typeof clientRequestSchema>;
+export type Request = z.infer<typeof requestSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;

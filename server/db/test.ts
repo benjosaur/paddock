@@ -1,13 +1,13 @@
 import { ClientService } from "./client/service";
 import { MpService } from "./mp/service";
-import { MpLogService } from "./mplog/service";
+import { MpLogService } from "./package/service";
 import { VolunteerService } from "./volunteer/service";
 import { VolunteerLogService } from "./vlog/service";
 import { MagLogService } from "./mag/service";
 import { TrainingRecordService } from "./training/service";
 import { testClientService } from "./client/test";
 import { testMpService } from "./mp/test";
-import { testMpLogService } from "./mplog/test";
+import { testMpLogService } from "./package/test";
 import { testVolunteerService } from "./volunteer/test";
 import { testVolunteerLogService } from "./vlog/test";
 import { testMagLogService } from "./mag/test";
