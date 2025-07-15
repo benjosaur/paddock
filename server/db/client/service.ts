@@ -5,40 +5,41 @@ import {
   clientMetadataSchema,
 } from "shared";
 import { ClientRepository } from "./repository";
-import { DbClientEntity, DbClientFull, DbClientMetadata } from "./schema";
-import { MpLogService } from "../package/service";
+import { DbClientEntity, DbClientFull } from "./schema";
+import { PackageService } from "../package/service";
 import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
 import {
   DbClientMpRequestEntity,
   DbClientVolunteerRequestEntity,
+  DbRequestEntity,
 } from "../requests/schema";
 import { DbMpLogClient } from "../package/schema";
 import { DbVolunteerLogClient } from "../vlog/schema";
 import { DbMagLogClient } from "../mag/schema";
-import { MpLogRepository } from "../package/repository";
+import { PackageRepository } from "../package/repository";
 import { VolunteerLogRepository } from "../vlog/repository";
 import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
 
 export class ClientService {
   clientRepository = new ClientRepository();
-  mpLogService = new MpLogService();
-  volunteerLogService = new VolunteerLogService();
   magLogService = new MagLogService();
   requestService = new RequestService();
-  mpLogRepository = new MpLogRepository();
-  volunteerLogRepository = new VolunteerLogRepository();
+  packageService = new PackageService();
+  packageRepository = new PackageRepository();
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
 
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
-      const clients = await this.clientRepository.getAll(user);
-      const transformedResult = this.transformDbClientToSharedMetaData(
-        clients
-      ) as ClientMetadata[];
+      const dbClients = await this.clientRepository.getAll(user);
+      const dbRequests = await this.requestRepository.getAllActive(user);
+      const transformedResult = this.transformDbClientToSharedMetaData([
+        ...dbClients,
+        ...dbRequests,
+      ]);
       const parsedResult = clientMetadataSchema
         .array()
         .parse(transformedResult);
@@ -49,15 +50,12 @@ export class ClientService {
     }
   }
 
-  async getById(user: User, clientId: string): Promise<ClientFull> {
+  async getById(clientId: string, user: User): Promise<ClientFull> {
     try {
-      const client = await this.clientRepository.getById(user, clientId);
-      const mpLogIds = client
-        .filter((dbResult) => dbResult.entityType == "mpLog")
-        .map((mpLog) => mpLog.sK);
-      const vLogIds = client
-        .filter((dbResult) => dbResult.entityType == "volunteerLog")
-        .map((volunteerLog) => volunteerLog.sK);
+      const client = await this.clientRepository.getById(clientId, user);
+      const requestIds = client
+        .filter((dbResult) => dbResult.entityType == "request")
+        .map((req) => req.sK);
       const magLogIds = client
         .filter((dbResult) => dbResult.entityType == "magLog")
         .map((magLog) => magLog.sK);
@@ -65,24 +63,18 @@ export class ClientService {
       const clientMetadata = this.transformDbClientToSharedMetaData(
         client
       ) as Partial<ClientFull>[];
-      const mpLogs = await Promise.all(
-        mpLogIds.map(
-          async (mpLogId) => await this.mpLogService.getById(user, mpLogId)
-        )
-      );
-      const volunteerLogs = await Promise.all(
-        vLogIds.map(
-          async (vLogId) => await this.volunteerLogService.getById(user, vLogId)
+      const requests = await Promise.all(
+        requestIds.map(
+          async (requestId) =>
+            await this.requestService.getById(requestId, user)
         )
       );
       const magLogs = await Promise.all(
         magLogIds.map(
-          async (magLogId) => await this.magLogService.getById(user, magLogId)
+          async (magLogId) => await this.magLogService.getById(magLogId, user)
         )
       );
-      const fullClient = [
-        { ...clientMetadata[0], mpLogs, volunteerLogs, magLogs },
-      ];
+      const fullClient = [{ ...clientMetadata[0], requests, magLogs }];
       const parsedResult = clientFullSchema.array().parse(fullClient);
 
       return parsedResult[0];
@@ -329,7 +321,7 @@ export class ClientService {
   }
 
   private transformDbClientToSharedMetaData(
-    items: DbClientMetadata[] | DbClientFull[]
+    items: (DbClientEntity | DbRequestEntity | DbMagLogClient)[]
   ): ClientMetadata[] {
     // for creating full clients handle fetching + adding full logs separately after transform
     const clientsMap = new Map<string, Partial<ClientMetadata>>();
@@ -346,36 +338,26 @@ export class ClientService {
       const client = clientsMap.get(clientId)!;
 
       switch (item.entityType) {
-        case "client":
-          client.dateOfBirth = item.dateOfBirth;
-          client.postCode = item.postCode;
-          client.details = item.details;
+        case "client": {
+          const { pK, sK, entityType, ...rest } = item as DbClientEntity;
+          const fetchedClient: Omit<ClientMetadata, "requests"> = {
+            id: pK,
+            ...rest,
+          };
+          Object.assign(client, fetchedClient);
           break;
-        case "clientMpRequest":
-          if (!client.mpRequests) client.mpRequests = [];
-          client.mpRequests.push({
-            id: item.sK,
-            clientId: item.pK,
-            requestType: "mp",
-            startDate: item.date,
-            details: item.details,
+        }
+        case "request": {
+          if (!client.requests) client.requests = [];
+          const { pK, sK, entityType, ...rest } = item as DbRequestEntity;
+          client.requests.push({
+            id: sK,
+            clientId: pK,
+            ...rest,
           });
           break;
-        case "clientVolunteerRequest":
-          if (!client.volunteerRequests) client.volunteerRequests = [];
-          client.volunteerRequests.push({
-            id: item.sK,
-            clientId: item.pK,
-            requestType: "volunteer",
-            startDate: item.date,
-            details: item.details,
-          });
-          break;
-        case "mpLog":
-          break;
-        case "volunteerLog":
-          break;
-        case "magLog":
+        }
+        case "magLogClient":
           break;
         default:
           throw new Error(`Undefined Case: ${item}`);

@@ -36,7 +36,7 @@ export const packageSchema = z.object({
   }),
 });
 
-export const requestSchema = z.object({
+export const requestMetadataSchema = z.object({
   id: z.string(),
   type: z.enum(requestTypes),
   clientId: z.string(),
@@ -48,6 +48,9 @@ export const requestSchema = z.object({
     status: z.enum(requestStatus).default("pending"),
     notes: z.string().default(""),
   }),
+});
+
+export const requestFullSchema = requestMetadataSchema.extend({
   packages: z.array(packageSchema).default([]),
 });
 
@@ -110,11 +113,11 @@ export const clientMetadataSchema = z.object({
     attendanceAllowance: z.enum(attendanceAllowanceStatus),
     attendsMag: z.boolean().default(false),
   }),
-  requests: z.array(requestSchema).default([]),
+  requests: z.array(requestMetadataSchema),
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({
-  packages: z.array(packageSchema).default([]),
+  requests: z.array(requestFullSchema).default([]),
   magLogs: z.array(magLogSchema).default([]),
 });
 
@@ -133,10 +136,11 @@ export const mpMetadataSchema = z.object({
     transport: z.boolean().default(false),
     capacity: z.string().default(""),
   }),
+  packages: z.array(packageSchema).default([]),
 });
 
 export const mpFullSchema = mpMetadataSchema.extend({
-  packages: z.array(packageSchema).default([]),
+  requests: z.array(requestFullSchema).default([]),
 });
 
 export const volunteerMetadataSchema = mpMetadataSchema;
@@ -151,7 +155,8 @@ export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
 export type Package = z.infer<typeof packageSchema>;
 export type MagLog = z.infer<typeof magLogSchema>;
-export type Request = z.infer<typeof requestSchema>;
+export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
+export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;

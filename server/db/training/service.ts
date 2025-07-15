@@ -1,6 +1,7 @@
 import { TrainingRecord, trainingRecordSchema } from "shared";
 import { TrainingRecordRepository } from "./repository";
 import { DbTrainingRecordEntity } from "./schema";
+import { record } from "zod/v4";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
@@ -146,33 +147,11 @@ export class TrainingRecordService {
   }
 
   private transformDbTrainingRecordToShared(
-    items: DbTrainingRecordEntity[]
+    records: DbTrainingRecordEntity[]
   ): TrainingRecord[] {
-    const trainingRecordsMap = new Map<string, Partial<TrainingRecord>>();
-
-    for (const item of items) {
-      const trainingRecordId = item.sK;
-
-      if (!trainingRecordsMap.has(trainingRecordId)) {
-        trainingRecordsMap.set(trainingRecordId, {
-          id: trainingRecordId,
-        });
-      }
-
-      const trainingRecord = trainingRecordsMap.get(trainingRecordId)!;
-
-      switch (item.entityType) {
-        case "trainingRecord":
-          trainingRecord.id = item.sK;
-          trainingRecord.ownerId = item.pK;
-          trainingRecord.recordName = item.recordName;
-          trainingRecord.recordExpiry = item.recordExpiry;
-          trainingRecord.details = item.details;
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
-    }
-    return Array.from(trainingRecordsMap.values()) as TrainingRecord[];
+    return records.map((record) => {
+      const { pK, sK, entityType, ...rest } = record;
+      return { id: sK, ownerId: pK, ...rest };
+    });
   }
 }

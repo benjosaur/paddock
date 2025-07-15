@@ -1,6 +1,4 @@
 import {
-  dbClientMetadata,
-  DbClientMetadata,
   DbClientFull,
   dbClientFull,
   DbClientEntity,
@@ -16,7 +14,7 @@ import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAllActive(user: User): Promise<DbClientMetadata[]> {
+  async getAllActive(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
@@ -28,7 +26,7 @@ export class ClientRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbClientMetadata.array().parse(result.Items);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Repository Layer Error getting item:", error);
@@ -36,7 +34,7 @@ export class ClientRepository {
     }
   }
 
-  async getAll(user: User): Promise<DbClientMetadata[]> {
+  async getAll(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
@@ -47,7 +45,7 @@ export class ClientRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbClientMetadata.array().parse(result.Items);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Repository Layer Error getting item:", error);
@@ -55,14 +53,13 @@ export class ClientRepository {
     }
   }
 
-  async getById(user: User, clientId: string): Promise<DbClientFull[]> {
+  async getById(clientId: string, user: User): Promise<DbClientFull[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
       ExpressionAttributeValues: {
         ":pk": clientId,
       },
-      ConsistentRead: true,
     });
 
     try {

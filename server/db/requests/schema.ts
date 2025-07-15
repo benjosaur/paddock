@@ -1,8 +1,9 @@
 import { z } from "zod";
 
-import { requestSchema } from "shared";
+import { requestMetadataSchema } from "shared";
+import { dbPackage } from "../package/schema";
 
-export const dbRequest = requestSchema
+export const dbRequestEntity = requestMetadataSchema
   .omit({ id: true, clientId: true })
   .extend({
     pK: z.string(),
@@ -15,4 +16,7 @@ export const dbRequest = requestSchema
       ),
   });
 
+export const dbRequest = z.union([dbRequestEntity, dbPackage]);
+
+export type DbRequestEntity = z.infer<typeof dbRequestEntity>;
 export type DbRequest = z.infer<typeof dbRequest>;

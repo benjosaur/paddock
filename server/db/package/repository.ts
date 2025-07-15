@@ -11,6 +11,26 @@ import { firstYear } from "shared/const";
 
 export class PackageRepository {
   async getAllActive(user: User): Promise<DbPackage[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
+      ExpressionAttributeValues: {
+        ":pk": "package",
+        ":sk": "N",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbPackage.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting packages:", error);
+      throw error;
+    }
+  }
+
+  async getAllOpen(user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
@@ -87,10 +107,30 @@ export class PackageRepository {
   async getById(user: User, packageId: string): Promise<DbPackage[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI2",
+      IndexName: "GSI5",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": packageId,
+      },
+    });
+
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbPackage.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting package by ID:", error);
+      throw error;
+    }
+  }
+
+  async getByRequestId(user: User, requestId: string): Promise<DbPackage[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "requestId = :requestId",
+      ExpressionAttributeValues: {
+        ":requestId": requestId,
       },
     });
 

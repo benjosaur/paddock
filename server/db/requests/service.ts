@@ -1,29 +1,58 @@
-import { ClientRequest, clientRequestSchema } from "shared";
+import {
+  RequestFull,
+  RequestMetadata,
+  requestFullSchema,
+  requestMetadataSchema,
+} from "shared";
 import { RequestRepository } from "./repository";
-import { DbClientRequestEntity } from "./schema";
+import { DbRequest, DbRequestEntity } from "./schema";
+import { DbPackage } from "../package/schema";
+import { PackageRepository } from "../package/repository";
+import { PackageService } from "../package/service";
+import { fi } from "zod/v4/locales";
 
 export class RequestService {
   requestRepository = new RequestRepository();
+  packageRepository = new PackageRepository();
+  packageService = new PackageService();
 
-  async getAll(user: User): Promise<ClientRequest[]> {
-    const requestsFromDb = await this.requestRepository.getAll(user);
-    const transformedRequests = this.transformDbRequestToShared(requestsFromDb);
+  async getAllActiveWithPackages(user: User): Promise<RequestFull[]> {
+    // no packages
+    const requestsFromDb = await this.requestRepository.getAllActive(user);
+    const packagesFromDb = await this.packageRepository.getAllActive(user);
+    const transformedRequests = this.transformDbRequestToSharedFull([
+      ...requestsFromDb,
+      ...packagesFromDb,
+    ]);
     return transformedRequests;
   }
 
-  async getByClientId(user: User, clientId: string): Promise<ClientRequest[]> {
-    const requestsFromDb = await this.requestRepository.getByClientId(
-      user,
-      clientId
-    );
-    const transformedRequests = this.transformDbRequestToShared(requestsFromDb);
+  async getAllMetadata(user: User): Promise<RequestMetadata[]> {
+    // no packages
+    const requestsFromDb = await this.requestRepository.getAll(user);
+    const transformedRequests =
+      this.transformDbRequestToSharedFull(requestsFromDb);
     return transformedRequests;
+  }
+
+  async getById(requestId: string, user: User): Promise<RequestFull | null> {
+    const requestFromDb = await this.requestRepository.getById(user, requestId);
+    if (!requestFromDb) {
+      return null;
+    }
+    const transformedRequest = this.transformDbRequestToSharedFull([
+      requestFromDb,
+    ]);
+    const packages = this.packageService.getByRequestId(requestId);
+    const fullRequest = transformedRequest[0];
+    fullRequest.packages = packages;
+    return fullRequest;
   }
 
   async getByStartDateBefore(
     user: User,
     startDate: string
-  ): Promise<ClientRequest[]> {
+  ): Promise<Request[]> {
     const requestsFromDb = await this.requestRepository.getByStartDateBefore(
       user,
       startDate
@@ -32,33 +61,11 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async getById(
-    user: User,
-    clientId: string,
-    requestId: string
-  ): Promise<ClientRequest | null> {
-    const requestFromDb = await this.requestRepository.getById(
-      user,
-      clientId,
-      requestId
-    );
-    if (!requestFromDb) {
-      return null;
-    }
-    const transformedRequest = this.transformDbRequestToShared([requestFromDb]);
-    return transformedRequest[0];
-  }
-
-  async create(
-    request: Omit<ClientRequest, "id">,
-    user: User
-  ): Promise<ClientRequest> {
+  async create(request: Omit<Request, "id">, user: User): Promise<Request> {
     try {
-      const validatedInput = clientRequestSchema
-        .omit({ id: true })
-        .parse(request);
+      const validatedInput = requestSchema.omit({ id: true }).parse(request);
 
-      const requestToCreate: Omit<DbClientRequestEntity, "sK"> = {
+      const requestToCreate: Omit<DbRequest, "sK"> = {
         pK: validatedInput.clientId,
         entityType:
           validatedInput.requestType == "mp"
@@ -97,11 +104,11 @@ export class RequestService {
     }
   }
 
-  async update(request: ClientRequest, user: User): Promise<ClientRequest> {
+  async update(request: Request, user: User): Promise<Request> {
     try {
-      const validatedInput = clientRequestSchema.parse(request);
+      const validatedInput = requestSchema.parse(request);
 
-      const dbRequest: DbClientRequestEntity = {
+      const dbRequest: DbRequest = {
         pK: validatedInput.clientId,
         sK: validatedInput.id,
         entityType:
@@ -155,15 +162,32 @@ export class RequestService {
     }
   }
 
-  private transformDbRequestToShared(
-    items: DbClientRequestEntity[]
-  ): ClientRequest[] {
-    return items.map((item) => ({
-      id: item.sK,
-      clientId: item.pK,
-      requestType: item.entityType == "clientMpRequest" ? "mp" : "volunteer",
-      startDate: item.date,
-      details: item.details,
-    }));
+  private transformDbRequestToSharedFull(items: DbRequest[]): RequestFull[] {
+    const requestsMap = new Map<string, Partial<RequestFull>>();
+
+    for (const item of items) {
+      const requestId = item.pK;
+
+      if (!requestsMap.has(requestId)) {
+        requestsMap.set(requestId, {
+          id: requestId,
+        });
+      }
+
+      let request = requestsMap.get(requestId)!;
+
+      if (item.sK.startsWith("req")) {
+        const { pK, sK, entityType, ...rest } = item as DbRequestEntity;
+        Object.assign(request, rest);
+      } else if (item.sK.startsWith("pkg")) {
+        if (!request.packages) request.packages = [];
+        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        request.packages.push({ ...rest, id: sK, carerId: pK });
+      } else {
+        throw new Error(`Undefined Case: ${item}`);
+      }
+    }
+
+    return Array.from(requestsMap.values()) as RequestFull[];
   }
 }

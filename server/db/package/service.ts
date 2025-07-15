@@ -1,62 +1,83 @@
-import { MpLog, mpLogSchema } from "shared";
-import { MpLogRepository } from "./repository";
-import { DbMpLog, DbMpLogClient, DbMpLogEntity, DbMpLogMp } from "./schema";
+import { Package, packageSchema } from "shared";
+import { PackageRepository } from "./repository";
+import { DbPackage } from "./schema";
 
-export class MpLogService {
-  mpLogRepository = new MpLogRepository();
-  async getAll(user: User): Promise<MpLog[]> {
-    const mpLogs = await this.mpLogRepository.getAll(user);
-    const transformedResult = this.groupAndTransformMpLogData(
-      mpLogs
-    ) as MpLog[];
-    const parsedResult = mpLogSchema.array().parse(transformedResult);
+export class PackageService {
+  packageRepository = new PackageRepository();
+
+  async getAllActive(user: User): Promise<Package[]> {
+    const packages = await this.packageRepository.getAllActive(user);
+    const transformedResult = this.groupAndTransformPackageData(
+      packages
+    ) as Package[];
+    const parsedResult = packageSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async getById(user: User, mpLogId: string): Promise<MpLog> {
-    const mp = await this.mpLogRepository.getById(user, mpLogId);
-    const transformedResult = this.groupAndTransformMpLogData(mp) as MpLog[];
-    const parsedResult = mpLogSchema.array().parse(transformedResult);
+  async getAll(user: User): Promise<Package[]> {
+    const packages = await this.packageRepository.getAll(user);
+    const transformedResult = this.groupAndTransformPackageData(
+      packages
+    ) as Package[];
+    const parsedResult = packageSchema.array().parse(transformedResult);
+    return parsedResult;
+  }
+
+  async getById(user: User, packageId: string): Promise<Package> {
+    const pkg = await this.packageRepository.getById(user, packageId);
+    const transformedResult = this.groupAndTransformPackageData(
+      pkg
+    ) as Package[];
+    const parsedResult = packageSchema.array().parse(transformedResult);
     return parsedResult[0];
   }
 
-  async getBySubstring(user: User, string: string): Promise<MpLog[]> {
-    const metaLogs = await this.mpLogRepository.getMetaLogsBySubstring(
+  async getByRequestId(user: User, requestId: string): Promise<Package> {
+    const pkg = await this.packageRepository.getByRequestId(user, requestId);
+    const transformedResult = this.groupAndTransformPackageData(
+      pkg
+    ) as Package[];
+    const parsedResult = packageSchema.array().parse(transformedResult);
+    return parsedResult[0];
+  }
+
+  async getBySubstring(user: User, string: string): Promise<Package[]> {
+    const metaLogs = await this.packageRepository.getMetaLogsBySubstring(
       user,
       string
     );
     const idsToFetch = metaLogs.map((log) => log.sK);
-    const parsedResult: MpLog[] = [];
+    const parsedResult: Package[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.mpLogRepository.getById(user, id);
-      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      const fetchedLog = await this.packageRepository.getById(user, id);
+      const parsedLog = this.groupAndTransformPackageData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByPostCode(user: User, postCode: string): Promise<MpLog[]> {
-    const metaLogs = await this.mpLogRepository.getMetaLogsByPostCode(
+  async getByPostCode(user: User, postCode: string): Promise<Package[]> {
+    const metaLogs = await this.packageRepository.getMetaLogsByPostCode(
       user,
       postCode
     );
     const idsToFetch = metaLogs.map((log) => log.sK);
-    const parsedResult: MpLog[] = [];
+    const parsedResult: Package[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.mpLogRepository.getById(user, id);
-      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      const fetchedLog = await this.packageRepository.getById(user, id);
+      const parsedLog = this.groupAndTransformPackageData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByMpId(user: User, mpId: string): Promise<MpLog[]> {
-    const metaLogs = await this.mpLogRepository.getMetaLogsByMpId(user, mpId);
+  async getByMpId(user: User, mpId: string): Promise<Package[]> {
+    const metaLogs = await this.packageRepository.getMetaLogsByMpId(user, mpId);
     const idsToFetch = metaLogs.map((log) => log.sK);
-    const parsedResult: MpLog[] = [];
+    const parsedResult: Package[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.mpLogRepository.getById(user, id);
-      const parsedLog = this.groupAndTransformMpLogData(fetchedLog);
+      const fetchedLog = await this.packageRepository.getById(user, id);
+      const parsedLog = this.groupAndTransformPackageData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
@@ -68,39 +89,43 @@ export class MpLogService {
       startDate: string;
       endDate: string;
     }
-  ): Promise<MpLog[]> {
-    const mag = await this.mpLogRepository.getByDateInterval(user, input);
-    const transformedResult = this.groupAndTransformMpLogData(mag) as MpLog[];
-    const parsedResult = mpLogSchema.array().parse(transformedResult);
+  ): Promise<Package[]> {
+    const mag = await this.packageRepository.getByDateInterval(user, input);
+    const transformedResult = this.groupAndTransformPackageData(
+      mag
+    ) as Package[];
+    const parsedResult = packageSchema.array().parse(transformedResult);
     return parsedResult;
   }
 
-  async create(newMpLog: Omit<MpLog, "id">, user: User): Promise<MpLog> {
-    const validatedInput = mpLogSchema.omit({ id: true }).parse(newMpLog);
+  async create(newPackage: Omit<Package, "id">, user: User): Promise<Package> {
+    const validatedInput = packageSchema.omit({ id: true }).parse(newPackage);
 
-    const mpLogMain: Omit<DbMpLogEntity, "pK" | "sK"> = {
+    const packageMain: Omit<DbPackageEntity, "pK" | "sK"> = {
       ...validatedInput,
-      entityType: "mpLog",
+      entityType: "package",
       entityOwner: "main",
     };
-    const mpLogMps: Omit<DbMpLogMp, "sK">[] = validatedInput.mps.map((mp) => ({
-      date: validatedInput.date,
-      entityType: "mpLog",
-      entityOwner: "mp",
-      pK: mp.id,
-      ...mp,
-    }));
-    const mpLogClients: Omit<DbMpLogClient, "sK">[] =
+    const packageMps: Omit<DbPackageMp, "sK">[] = validatedInput.mps.map(
+      (mp) => ({
+        date: validatedInput.date,
+        entityType: "package",
+        entityOwner: "mp",
+        pK: mp.id,
+        ...mp,
+      })
+    );
+    const packageClients: Omit<DbPackageClient, "sK">[] =
       validatedInput.clients.map((client) => ({
         date: validatedInput.date,
-        entityType: "mpLog",
+        entityType: "package",
         entityOwner: "client",
         pK: client.id,
         ...client,
       }));
     try {
-      const createdLogId = await this.mpLogRepository.create(
-        [mpLogMain, ...mpLogMps, ...mpLogClients],
+      const createdLogId = await this.packageRepository.create(
+        [packageMain, ...packageMps, ...packageClients],
         user
       );
 
@@ -117,48 +142,48 @@ export class MpLogService {
 
       return fetchedLog;
     } catch (error) {
-      console.error("Service Layer Error creating mpLogs:", error);
+      console.error("Service Layer Error creating packages:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLog: MpLog, user: User): Promise<MpLog> {
-    const validatedInput = mpLogSchema.parse(updatedMpLog);
-    const mpLogKey = validatedInput.id;
+  async update(updatedPackage: Package, user: User): Promise<Package> {
+    const validatedInput = packageSchema.parse(updatedPackage);
+    const packageKey = validatedInput.id;
     // may previously have excess mps/clients no longer associated
-    await this.mpLogRepository.delete(user, mpLogKey);
-    const mpLogMain: DbMpLogEntity = {
+    await this.packageRepository.delete(user, packageKey);
+    const packageMain: DbPackageEntity = {
       ...validatedInput,
-      pK: mpLogKey,
-      sK: mpLogKey,
-      entityType: "mpLog",
+      pK: packageKey,
+      sK: packageKey,
+      entityType: "package",
       entityOwner: "main",
     };
-    const mpLogMps: DbMpLogMp[] = validatedInput.mps.map((mp) => ({
+    const packageMps: DbPackageMp[] = validatedInput.mps.map((mp) => ({
       pK: mp.id,
-      sK: mpLogKey,
+      sK: packageKey,
       date: validatedInput.date,
-      entityType: "mpLog",
+      entityType: "package",
       entityOwner: "mp",
       ...mp,
     }));
-    const mpLogClients: DbMpLogClient[] = validatedInput.clients.map(
+    const packageClients: DbPackageClient[] = validatedInput.clients.map(
       (client) => ({
         pK: client.id,
-        sK: mpLogKey,
+        sK: packageKey,
         date: validatedInput.date,
-        entityType: "mpLog",
+        entityType: "package",
         entityOwner: "client",
         ...client,
       })
     );
     try {
-      await this.mpLogRepository.update(
-        [mpLogMain, ...mpLogMps, ...mpLogClients],
+      await this.packageRepository.update(
+        [packageMain, ...packageMps, ...packageClients],
         user
       );
 
-      const fetchedLog = await this.getById(user, updatedMpLog.id);
+      const fetchedLog = await this.getById(user, updatedPackage.id);
       if (!fetchedLog) {
         throw new Error("Failed to fetch updated mp log");
       }
@@ -169,55 +194,20 @@ export class MpLogService {
 
       return fetchedLog;
     } catch (error) {
-      console.error("Service Layer Error updating mpLogs:", error);
+      console.error("Service Layer Error updating packages:", error);
       throw error;
     }
   }
 
-  async delete(user: User, mpLogId: string): Promise<number> {
-    const numDeleted = await this.mpLogRepository.delete(user, mpLogId);
+  async delete(user: User, packageId: string): Promise<number> {
+    const numDeleted = await this.packageRepository.delete(user, packageId);
     return numDeleted[0];
   }
 
-  private groupAndTransformMpLogData(items: DbMpLog[]): MpLog[] {
-    const mpLogsMap = new Map<string, Partial<MpLog>>();
-
-    for (const item of items) {
-      // nb id is sK not pK
-      const mpLogId = item.sK;
-
-      if (!mpLogsMap.has(mpLogId)) {
-        mpLogsMap.set(mpLogId, {
-          id: mpLogId,
-        });
-      }
-
-      const mpLog = mpLogsMap.get(mpLogId)!;
-
-      switch (item.entityOwner) {
-        case "main":
-          mpLog.date = item.date;
-          mpLog.details = item.details;
-          break;
-        case "mp":
-          if (!mpLog.mps) mpLog.mps = [];
-          mpLog.mps.push({
-            id: item.pK,
-            details: item.details,
-          });
-          break;
-        case "client":
-          if (!mpLog.clients) mpLog.clients = [];
-          mpLog.clients.push({
-            id: item.pK,
-            postCode: item.postCode,
-            details: item.details,
-          });
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
-    }
-    return Array.from(mpLogsMap.values()) as MpLog[];
+  private groupAndTransformPackageData(dbPackages: DbPackage[]): Package[] {
+    return dbPackages.map((pkg) => {
+      const { pK, sK, entityType, ...rest } = pkg;
+      return { ...rest, id: sK, carerId: pK };
+    });
   }
 }

@@ -5,12 +5,32 @@ import {
   addUpdateMiddleware,
 } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { DbRequest, dbRequest } from "./schema";
+import { DbRequestEntity, dbRequestEntity } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
 export class RequestRepository {
-  async getAllActive(user: User): Promise<DbRequest[]> {
+  async getAllActive(user: User): Promise<DbRequestEntity[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
+      ExpressionAttributeValues: {
+        ":pk": "request",
+        ":sk": "N",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbRequestEntity.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting requests:", error);
+      throw error;
+    }
+  }
+
+  async getAllOpen(user: User): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
@@ -44,7 +64,7 @@ export class RequestRepository {
         ...(openRequestResult.Items || []),
         ...(endsAfterTodayRequestResult.Items || []),
       ];
-      const parsedResult = dbRequest.array().parse(allItems);
+      const parsedResult = dbRequestEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
       console.error("Error getting client requests:", error);
@@ -52,7 +72,7 @@ export class RequestRepository {
     }
   }
 
-  async getAll(user: User): Promise<DbRequest[]> {
+  async getAll(user: User): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
@@ -76,7 +96,7 @@ export class RequestRepository {
       );
 
       const allItems = results.flatMap((result) => result.Items);
-      const parsedResult = dbRequest.array().parse(allItems);
+      const parsedResult = dbRequestEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
       console.error("Error getting client requests:", error);
@@ -84,36 +104,16 @@ export class RequestRepository {
     }
   }
 
-  async getByClientId(user: User, clientId: string): Promise<DbRequest[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      KeyConditionExpression: "pK = :pk AND begins_with(sK, :sk)",
-      ExpressionAttributeValues: {
-        ":pk": clientId,
-        ":sk": "req#",
-      },
-    });
-    try {
-      const result = await client.send(command);
-      const parsedResult = dbRequest.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting client requests by client ID:", error);
-      throw error;
-    }
-  }
-
   async getById(
     user: User,
-    clientId: string,
     requestId: string
-  ): Promise<DbRequest | null> {
+  ): Promise<DbRequestEntity | null> {
+    // also returns associated packages
     const command = new QueryCommand({
       TableName: getTableName(user),
-      KeyConditionExpression: "pK = :pk AND sK = :sk",
+      KeyConditionExpression: "requestId = :requestId",
       ExpressionAttributeValues: {
-        ":pk": clientId,
-        ":sk": requestId,
+        ":requestId": requestId,
       },
     });
     try {
@@ -121,22 +121,25 @@ export class RequestRepository {
       if (!result.Items || result.Items.length === 0) {
         return null;
       }
-      return dbRequest.parse(result.Items[0]);
+      return dbRequestEntity.parse(result.Items[0]);
     } catch (error) {
       console.error("Error getting client request by id:", error);
       throw error;
     }
   }
 
-  async create(newRequest: Omit<DbRequest, "sK">, user: User): Promise<string> {
+  async create(
+    newRequest: Omit<DbRequestEntity, "sK">,
+    user: User
+  ): Promise<string> {
     try {
       const uuid = uuidv4();
       const requestKey = `req#${uuid}`;
-      const fullRequest: DbRequest = {
+      const fullRequest: DbRequestEntity = {
         sK: requestKey,
         ...newRequest,
       };
-      const validatedRequest = dbRequest.parse(fullRequest);
+      const validatedRequest = dbRequestEntity.parse(fullRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
         Item: addCreateMiddleware(validatedRequest, user),
@@ -150,9 +153,9 @@ export class RequestRepository {
     }
   }
 
-  async update(updatedRequest: DbRequest, user: User): Promise<void> {
+  async update(updatedRequest: DbRequestEntity, user: User): Promise<void> {
     try {
-      const validatedRequest = dbRequest.parse(updatedRequest);
+      const validatedRequest = dbRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
         Item: addUpdateMiddleware(validatedRequest, user),
