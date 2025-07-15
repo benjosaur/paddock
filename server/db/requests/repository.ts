@@ -7,11 +7,12 @@ import {
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { DbRequest, dbRequest } from "./schema";
 import { v4 as uuidv4 } from "uuid";
+import { firstYear } from "shared/const";
 
 export class RequestRepository {
   async getAllActive(user: User): Promise<DbRequest[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = currentDate.slice(0, 4);
+    const currentYear = parseInt(currentDate.slice(0, 4));
 
     const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
@@ -43,6 +44,38 @@ export class RequestRepository {
         ...(openRequestResult.Items || []),
         ...(endsAfterTodayRequestResult.Items || []),
       ];
+      const parsedResult = dbRequest.array().parse(allItems);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting client requests:", error);
+      throw error;
+    }
+  }
+
+  async getAll(user: User): Promise<DbRequest[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
+    const commands: QueryCommand[] = [];
+
+    for (let year = firstYear; year <= currentYear; year++) {
+      const packageEndedInYear = new QueryCommand({
+        TableName: getTableName(user),
+        IndexName: "GSI3",
+        KeyConditionExpression: `entityType = :pk`,
+        ExpressionAttributeValues: {
+          ":pk": `request#${year}`,
+        },
+      });
+      commands.push(packageEndedInYear);
+    }
+
+    try {
+      const results = await Promise.all(
+        commands.map((command) => client.send(command))
+      );
+
+      const allItems = results.flatMap((result) => result.Items);
       const parsedResult = dbRequest.array().parse(allItems);
       return parsedResult;
     } catch (error) {
@@ -150,54 +183,6 @@ export class RequestRepository {
       return [1];
     } catch (error) {
       console.error("Repository Layer Error deleting client request:", error);
-      throw error;
-    }
-  }
-
-  async getByStartDateBefore(
-    user: User,
-    startDate: string
-  ): Promise<DbRequest[]> {
-    const mpRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI4",
-      KeyConditionExpression: "entityType = :pk AND #date < :startDate",
-      ExpressionAttributeNames: {
-        "#date": "date",
-      },
-      ExpressionAttributeValues: {
-        ":pk": "clientMpRequest",
-        ":startDate": startDate,
-      },
-    });
-
-    const volunteerRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI4",
-      KeyConditionExpression: "entityType = :pk AND #date < :startDate",
-      ExpressionAttributeNames: {
-        "#date": "date",
-      },
-      ExpressionAttributeValues: {
-        ":pk": "clientVolunteerRequest",
-        ":startDate": startDate,
-      },
-    });
-
-    try {
-      const [mpResult, volunteerResult] = await Promise.all([
-        client.send(mpRequestCommand),
-        client.send(volunteerRequestCommand),
-      ]);
-
-      const allItems = [
-        ...(mpResult.Items || []),
-        ...(volunteerResult.Items || []),
-      ];
-      const parsedResult = dbRequest.array().parse(allItems);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting requests by start date:", error);
       throw error;
     }
   }

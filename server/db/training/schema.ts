@@ -9,4 +9,4 @@ export const dbTrainingRecord = trainingRecordSchema
     entityType: z.literal("trainingRecord"),
   });
 
-export type DbTrainingRecordEntity = z.infer<typeof dbTrainingRecord>;
+export type DbTrainingRecord = z.infer<typeof dbTrainingRecord>;

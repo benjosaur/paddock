@@ -1,3 +1,4 @@
+export const firstYear = 2017;
 export const userRoles = [
   "Admin",
   "Trustee",

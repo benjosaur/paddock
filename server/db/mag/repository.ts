@@ -32,7 +32,7 @@ export class MagLogRepository {
   async getById(user: User, magLogId: string): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI2",
+      IndexName: "GSI5",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": magLogId,
@@ -87,20 +87,13 @@ export class MagLogRepository {
     }
   }
 
-  async create(
+  async createMagEntity(
     newMpLogs: (Omit<DbMagLog, "pK" | "sK"> | Omit<DbMagLog, "sK">)[],
     user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `mag#${uuid}`;
-    const newItems = newMpLogs.map((mpLog) =>
-      mpLog.entityOwner == "main"
-        ? { pK: key, sK: key, ...mpLog }
-        : {
-            sK: key,
-            ...mpLog,
-          }
-    );
+    const newItems = newMpLogs.map((mpLog) => ({ pK: key, sK: key, ...mpLog }));
     const validatedItems = dbMagLog.array().parse(newItems);
     try {
       await Promise.all(
@@ -119,6 +112,33 @@ export class MagLogRepository {
       throw error;
     }
   }
+
+  async createMagReference(
+    newMpLogs: Omit<DbMagLog, "sK">[],
+    user: User
+  ): Promise<string> {
+    const uuid = uuidv4();
+    const key = `mag#${uuid}`;
+    const newItems = newMpLogs.map((mpLog) => ({ sK: key, ...mpLog }));
+    const validatedItems = dbMagLog.array().parse(newItems);
+    try {
+      await Promise.all(
+        validatedItems.map((newItem) =>
+          client.send(
+            new PutCommand({
+              TableName: getTableName(user),
+              Item: addCreateMiddleware(newItem, user),
+            })
+          )
+        )
+      );
+      return key;
+    } catch (error) {
+      console.error("Repository Layer Error creating mpLogs:", error);
+      throw error;
+    }
+  }
+
   async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
     const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
     try {

@@ -22,7 +22,7 @@ export class VolunteerRepository {
       IndexName: "GSI1",
       KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
-        ":pk": "mp",
+        ":pk": "volunteer",
         ":sk": "N",
       },
     });
@@ -42,7 +42,7 @@ export class VolunteerRepository {
       IndexName: "GSI1",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
-        ":pk": "mp",
+        ":pk": "volunteer",
       },
     });
     try {

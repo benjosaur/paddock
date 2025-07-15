@@ -16,7 +16,7 @@ import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAll(user: User): Promise<DbClientMetadata[]> {
+  async getAllActive(user: User): Promise<DbClientMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
@@ -36,11 +36,11 @@ export class ClientRepository {
     }
   }
 
-  async getAllActive(user: User): Promise<DbClientMetadata[]> {
+  async getAll(user: User): Promise<DbClientMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
-      KeyConditionExpression: "entityOwner = :pk",
+      KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "client",
       },
