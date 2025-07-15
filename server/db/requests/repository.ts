@@ -104,13 +104,11 @@ export class RequestRepository {
     }
   }
 
-  async getById(
-    user: User,
-    requestId: string
-  ): Promise<DbRequestEntity | null> {
+  async getById(requestId: string, user: User): Promise<DbRequestEntity> {
     // also returns associated packages
     const command = new QueryCommand({
       TableName: getTableName(user),
+      IndexName: "GSI2",
       KeyConditionExpression: "requestId = :requestId",
       ExpressionAttributeValues: {
         ":requestId": requestId,
@@ -119,11 +117,11 @@ export class RequestRepository {
     try {
       const result = await client.send(command);
       if (!result.Items || result.Items.length === 0) {
-        return null;
+        throw new Error(`Request with ID ${requestId} not found`);
       }
       return dbRequestEntity.parse(result.Items[0]);
     } catch (error) {
-      console.error("Error getting client request by id:", error);
+      console.error("Repository Layer Error getting request by id:", error);
       throw error;
     }
   }

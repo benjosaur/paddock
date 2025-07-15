@@ -1,6 +1,12 @@
 import { MagLog, magLogSchema } from "shared";
 import { MagLogRepository } from "./repository";
-import { DbMagLog, DbMagLogClient, DbMagLogEntity } from "./schema";
+import {
+  DbMagLog,
+  DbMagLogClient,
+  DbMagLogEntity,
+  DbMagLogMp,
+  DbMagLogVolunteer,
+} from "./schema";
 
 export class MagLogService {
   magLogRepository = new MagLogRepository();
@@ -16,8 +22,6 @@ export class MagLogService {
   async getById(user: User, magLogId: string): Promise<MagLog> {
     const mag = await this.magLogRepository.getById(user, magLogId);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
-    console.log("MAG");
-    console.log(transformedResult);
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult[0];
   }
@@ -135,22 +139,35 @@ export class MagLogService {
 
       const magLog = magLogsMap.get(magLogId)!;
 
-      switch (item.entityOwner) {
-        case "main":
-          magLog.date = item.date;
-          magLog.details = item.details;
-          break;
-        case "client":
-          if (!magLog.clients) magLog.clients = [];
-          magLog.clients.push({
-            id: item.pK,
-            details: item.details,
-          });
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.sK.startsWith("mag")) {
+        const { pK, sK, entityType, ...rest } = item as DbMagLogEntity;
+        Object.assign(magLog, rest);
+        continue;
+      } else if (item.sK.startsWith("c")) {
+        if (!magLog.clients) magLog.clients = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogClient;
+        magLog.clients.push({
+          id: item.pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("m")) {
+        if (!magLog.mps) magLog.mps = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogMp;
+        magLog.mps.push({
+          id: item.pK,
+          ...rest,
+        });
+      } else if (item.sK.startsWith("v")) {
+        if (!magLog.volunteers) magLog.volunteers = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogVolunteer;
+        magLog.volunteers.push({
+          id: item.pK,
+          ...rest,
+        });
+      } else throw new Error(`Undefined Case: ${item}`);
     }
+
     return Array.from(magLogsMap.values()) as MagLog[];
   }
 }

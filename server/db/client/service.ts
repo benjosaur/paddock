@@ -32,10 +32,28 @@ export class ClientService {
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
 
+  async getAllActive(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllActive(user);
+      const dbRequests = await this.requestRepository.getAllActive(user);
+      const transformedResult = this.transformDbClientToSharedMetaData([
+        ...dbClients,
+        ...dbRequests,
+      ]);
+      const parsedResult = clientMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all clients:", error);
+      throw error;
+    }
+  }
+
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAll(user);
-      const dbRequests = await this.requestRepository.getAllActive(user);
+      const dbRequests = await this.requestRepository.getAll(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
         ...dbRequests,
@@ -54,10 +72,10 @@ export class ClientService {
     try {
       const client = await this.clientRepository.getById(clientId, user);
       const requestIds = client
-        .filter((dbResult) => dbResult.entityType == "request")
+        .filter((dbResult) => dbResult.sK.startsWith("req"))
         .map((req) => req.sK);
       const magLogIds = client
-        .filter((dbResult) => dbResult.entityType == "magLog")
+        .filter((dbResult) => dbResult.sK.startsWith("mag"))
         .map((magLog) => magLog.sK);
 
       const clientMetadata = this.transformDbClientToSharedMetaData(
@@ -337,31 +355,26 @@ export class ClientService {
 
       const client = clientsMap.get(clientId)!;
 
-      switch (item.entityType) {
-        case "client": {
-          const { pK, sK, entityType, ...rest } = item as DbClientEntity;
-          const fetchedClient: Omit<ClientMetadata, "requests"> = {
-            id: pK,
-            ...rest,
-          };
-          Object.assign(client, fetchedClient);
-          break;
-        }
-        case "request": {
-          if (!client.requests) client.requests = [];
-          const { pK, sK, entityType, ...rest } = item as DbRequestEntity;
-          client.requests.push({
-            id: sK,
-            clientId: pK,
-            ...rest,
-          });
-          break;
-        }
-        case "magLogClient":
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.sK.startsWith("c")) {
+        const { pK, sK, entityType, ...rest } = item as DbClientEntity;
+        const fetchedClient: Omit<ClientMetadata, "requests"> = {
+          id: pK,
+          ...rest,
+        };
+        Object.assign(client, fetchedClient);
+        continue;
+      } else if (item.sK.startsWith("req")) {
+        if (!client.requests) client.requests = [];
+        const { pK, sK, entityType, ...rest } = item as DbRequestEntity;
+        client.requests.push({
+          id: sK,
+          clientId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else throw new Error(`Undefined Case: ${item}`);
     }
 
     return Array.from(clientsMap.values()) as ClientMetadata[];

@@ -16,7 +16,7 @@ export class MagLogRepository {
       IndexName: "GSI4",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
-        ":pk": "magLog",
+        ":pk": "magLogEntity",
       },
     });
     try {

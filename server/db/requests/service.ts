@@ -17,7 +17,6 @@ export class RequestService {
   packageService = new PackageService();
 
   async getAllActiveWithPackages(user: User): Promise<RequestFull[]> {
-    // no packages
     const requestsFromDb = await this.requestRepository.getAllActive(user);
     const packagesFromDb = await this.packageRepository.getAllActive(user);
     const transformedRequests = this.transformDbRequestToSharedFull([
@@ -35,17 +34,12 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async getById(requestId: string, user: User): Promise<RequestFull | null> {
-    const requestFromDb = await this.requestRepository.getById(user, requestId);
-    if (!requestFromDb) {
-      return null;
-    }
+  async getById(requestId: string, user: User): Promise<RequestFull> {
+    const requestFromDb = await this.requestRepository.getById(requestId, user);
     const transformedRequest = this.transformDbRequestToSharedFull([
       requestFromDb,
     ]);
-    const packages = this.packageService.getByRequestId(requestId);
     const fullRequest = transformedRequest[0];
-    fullRequest.packages = packages;
     return fullRequest;
   }
 

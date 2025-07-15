@@ -16,20 +16,31 @@ import { TrainingRecordService } from "../training/service";
 import { VolunteerLogRepository } from "../vlog/repository";
 import { TrainingRecordRepository } from "../training/repository";
 import { DbVolunteerLogVolunteer } from "../vlog/schema";
+import { DbTrainingRecord } from "../training/schema";
+import { DbPackage } from "../package/schema";
+import { PackageService } from "../package/service";
+import { PackageRepository } from "../package/repository";
+import { RequestService } from "../requests/service";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
-  volunteerLogService = new VolunteerLogService();
+  packageService = new PackageService();
+  requestService = new RequestService();
   trainingRecordService = new TrainingRecordService();
-  volunteerLogRepository = new VolunteerLogRepository();
+  packageRepository = new PackageRepository();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAll(user: User): Promise<VolunteerMetadata[]> {
+  async getAllActive(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const volunteers = await this.volunteerRepository.getAll(user);
-      const transformedResult = this.transformDbVolunteertoSharedMetaData(
-        volunteers
-      ) as VolunteerMetadata[];
+      const dbVolunteers = await this.volunteerRepository.getAllActive(user);
+      const dbTrainingRecords =
+        await this.trainingRecordRepository.getAllActive(user);
+      const dbPackages = await this.packageRepository.getAllActive(user);
+      const transformedResult = this.transformDbVolunteerToSharedMetaData([
+        ...dbVolunteers,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
       const parsedResult = volunteerMetadataSchema
         .array()
         .parse(transformedResult);
@@ -40,30 +51,54 @@ export class VolunteerService {
     }
   }
 
-  async getById(user: User, volunteerId: string): Promise<VolunteerFull> {
+  async getAll(user: User): Promise<VolunteerMetadata[]> {
+    try {
+      const dbVolunteers = await this.volunteerRepository.getAll(user);
+      const dbTrainingRecords = await this.trainingRecordRepository.getAll(
+        user
+      );
+      const dbPackages = await this.packageRepository.getAll(user);
+      const transformedResult = this.transformDbVolunteerToSharedMetaData([
+        ...dbVolunteers,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
+      const parsedResult = volunteerMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all volunteers:", error);
+      throw error;
+    }
+  }
+
+  async getById(volunteerId: string, user: User): Promise<VolunteerFull> {
     try {
       const volunteer = await this.volunteerRepository.getById(
-        user,
-        volunteerId
+        volunteerId,
+        user
       );
-      const volunteerLogIds = volunteer
-        .filter((dbResult) => dbResult.entityType == "volunteerLog")
-        .map((volunteerLog) => volunteerLog.sK);
-      const volunteerLogs = await Promise.all(
-        volunteerLogIds.map(
-          async (volunteerLogId) =>
-            await this.volunteerLogService.getById(user, volunteerLogId)
+      const requestIds = volunteer
+        .filter((dbResult): dbResult is DbPackage =>
+          dbResult.sK.startsWith("pkg")
+        )
+        .map((pkg) => pkg.requestId);
+      const requests = await Promise.all(
+        requestIds.map(
+          async (requestId) =>
+            await this.requestService.getById(requestId, user)
         )
       );
       const volunteerMetadata =
-        this.transformDbVolunteertoSharedMetaData(volunteer);
-      const volunteerFull: VolunteerFull[] = [
-        { ...volunteerMetadata[0], volunteerLogs },
+        this.transformDbVolunteerToSharedMetaData(volunteer);
+      const fullVolunteer: VolunteerFull[] = [
+        { ...volunteerMetadata[0], requests },
       ];
-      const parsedResult = volunteerFullSchema.array().parse(volunteerFull);
+      const parsedResult = volunteerFullSchema.array().parse(fullVolunteer);
       return parsedResult[0];
     } catch (error) {
-      console.error("Service Layer Error getting volunteer by ID:", error);
+      console.error("Service Layer Error getting Volunteer by ID:", error);
       throw error;
     }
   }
@@ -206,7 +241,7 @@ export class VolunteerService {
     }
   }
 
-  private transformDbVolunteertoSharedMetaData(
+  private transformDbVolunteerToSharedMetaData(
     items: DbVolunteerMetadata[] | DbVolunteerFull[]
   ): VolunteerMetadata[] {
     const volunteersMap = new Map<string, Partial<VolunteerFull>>();
@@ -222,31 +257,42 @@ export class VolunteerService {
 
       const volunteer = volunteersMap.get(volunteerId)!;
 
-      switch (item.entityType) {
-        case "volunteer":
-          volunteer.dateOfBirth = item.dateOfBirth;
-          volunteer.postCode = item.postCode;
-          volunteer.details = item.details;
-          volunteer.recordName = item.recordName;
-          volunteer.recordExpiry = item.recordExpiry;
-          break;
-        case "trainingRecord":
-          if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
-          volunteer.trainingRecords.push({
-            id: item.sK,
-            ownerId: item.pK,
-            recordName: item.recordName,
-            recordExpiry: item.recordExpiry,
-            details: item.details,
-          });
-          break;
-        case "volunteerLog":
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.sK.startsWith("m")) {
+        const { pK, sK, entityType, ...rest } = item as DbVolunteerEntity;
+        const fetchedVolunteer: Omit<
+          VolunteerMetadata,
+          "packages" | "trainingRecords"
+        > = {
+          id: pK,
+          ...rest,
+        };
+        Object.assign(volunteer, fetchedVolunteer);
+        continue;
+      } else if (item.sK.startsWith("tr")) {
+        if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
+        const { pK, sK, entityType, ...rest } = item as DbTrainingRecord;
+        volunteer.trainingRecords.push({
+          id: sK,
+          ownerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("pkg")) {
+        if (!volunteer.packages) volunteer.packages = [];
+        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        volunteer.packages.push({
+          id: sK,
+          carerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else throw new Error(`Undefined Case: ${item}`);
     }
 
-    return Array.from(volunteersMap.values()) as VolunteerMetadata[];
+    return Array.from(volunteersMap.values()) as
+      | VolunteerMetadata[]
+      | VolunteerFull[];
   }
 }

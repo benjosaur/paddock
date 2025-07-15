@@ -23,8 +23,8 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getById(user: User, packageId: string): Promise<Package> {
-    const pkg = await this.packageRepository.getById(user, packageId);
+  async getById(packageId: string, user: User): Promise<Package> {
+    const pkg = await this.packageRepository.getById(packageId, user);
     const transformedResult = this.groupAndTransformPackageData(
       pkg
     ) as Package[];
@@ -32,16 +32,7 @@ export class PackageService {
     return parsedResult[0];
   }
 
-  async getByRequestId(user: User, requestId: string): Promise<Package> {
-    const pkg = await this.packageRepository.getByRequestId(user, requestId);
-    const transformedResult = this.groupAndTransformPackageData(
-      pkg
-    ) as Package[];
-    const parsedResult = packageSchema.array().parse(transformedResult);
-    return parsedResult[0];
-  }
-
-  async getBySubstring(user: User, string: string): Promise<Package[]> {
+  async getBySubstring(string: string, user: User): Promise<Package[]> {
     const metaLogs = await this.packageRepository.getMetaLogsBySubstring(
       user,
       string
@@ -49,14 +40,14 @@ export class PackageService {
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: Package[] = [];
     for (const id of idsToFetch) {
-      const fetchedLog = await this.packageRepository.getById(user, id);
+      const fetchedLog = await this.packageRepository.getById(id, user);
       const parsedLog = this.groupAndTransformPackageData(fetchedLog);
       parsedResult.push(parsedLog[0]);
     }
     return parsedResult;
   }
 
-  async getByPostCode(user: User, postCode: string): Promise<Package[]> {
+  async getByPostCode(postCode: string, user: User): Promise<Package[]> {
     const metaLogs = await this.packageRepository.getMetaLogsByPostCode(
       user,
       postCode
@@ -71,7 +62,7 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getByMpId(user: User, mpId: string): Promise<Package[]> {
+  async getByMpId(mpId: string, user: User): Promise<Package[]> {
     const metaLogs = await this.packageRepository.getMetaLogsByMpId(user, mpId);
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: Package[] = [];
@@ -84,11 +75,11 @@ export class PackageService {
   }
 
   async getByDateInterval(
-    user: User,
     input: {
       startDate: string;
       endDate: string;
-    }
+    },
+    user: User
   ): Promise<Package[]> {
     const mag = await this.packageRepository.getByDateInterval(user, input);
     const transformedResult = this.groupAndTransformPackageData(

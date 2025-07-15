@@ -104,33 +104,13 @@ export class PackageRepository {
     }
   }
 
-  async getById(user: User, packageId: string): Promise<DbPackage[]> {
+  async getById(packageId: string, user: User): Promise<DbPackage[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI5",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": packageId,
-      },
-    });
-
-    try {
-      const result = await client.send(command);
-      const parsedResult = dbPackage.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting package by ID:", error);
-      throw error;
-    }
-  }
-
-  async getByRequestId(user: User, requestId: string): Promise<DbPackage[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI2",
-      KeyConditionExpression: "requestId = :requestId",
-      ExpressionAttributeValues: {
-        ":requestId": requestId,
       },
     });
 
@@ -190,8 +170,8 @@ export class PackageRepository {
       throw error;
     }
   }
-  async delete(user: User, packageId: string): Promise<number[]> {
-    const existingLogs = await this.getById(user, packageId);
+  async delete(packageId: string, user: User): Promise<number[]> {
+    const existingLogs = await this.getById(packageId, user);
     try {
       await Promise.all(
         existingLogs.map((log) =>

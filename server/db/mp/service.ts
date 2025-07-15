@@ -1,51 +1,77 @@
 import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
 import { MpRepository } from "./repository";
-import {
-  DbMpFull,
-  DbMpMetadata,
-  DbMpEntity,
-  DbMpTrainingRecordEntity,
-} from "./schema";
-import { MpLogService } from "../package/service";
+import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
+import { PackageService } from "../package/service";
 import { TrainingRecordService } from "../training/service";
-import { DbMpLogMp } from "../package/schema";
+import { DbPackage } from "../package/schema";
 import { TrainingRecordRepository } from "../training/repository";
-import { MpLogRepository } from "../package/repository";
+import { PackageRepository } from "../package/repository";
+import { DbTrainingRecord } from "../training/schema";
+import { RequestService } from "../requests/service";
 
 export class MpService {
   mpRepository = new MpRepository();
-  mpLogService = new MpLogService();
-  mpLogRepository = new MpLogRepository();
+  packageService = new PackageService();
+  packageRepository = new PackageRepository();
+  requestService = new RequestService();
   trainingRecordService = new TrainingRecordService();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAll(user: User): Promise<MpMetadata[]> {
+  async getAllActive(user: User): Promise<MpMetadata[]> {
     try {
-      const mps = await this.mpRepository.getAll(user);
-      const transformedResult = this.transformDbMpToSharedMetaData(
-        mps
-      ) as MpMetadata[];
+      const dbMps = await this.mpRepository.getAllActive(user);
+      const dbTrainingRecords =
+        await this.trainingRecordRepository.getAllActive(user);
+      const dbPackages = await this.packageRepository.getAllActive(user);
+      const transformedResult = this.transformDbMpToSharedMetaData([
+        ...dbMps,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
       const parsedResult = mpMetadataSchema.array().parse(transformedResult);
       return parsedResult;
     } catch (error) {
-      console.error("Service Layer Error getting all MPs:", error);
+      console.error("Service Layer Error getting all mps:", error);
       throw error;
     }
   }
 
-  async getById(user: User, mpId: string): Promise<MpFull> {
+  async getAll(user: User): Promise<MpMetadata[]> {
     try {
-      const mp = await this.mpRepository.getById(user, mpId);
-      const mpLogIds = mp
-        .filter((dbResult) => dbResult.entityType == "mpLog")
-        .map((mpLog) => mpLog.sK);
-      const mpLogs = await Promise.all(
-        mpLogIds.map(
-          async (mpLogId) => await this.mpLogService.getById(user, mpLogId)
+      const dbMps = await this.mpRepository.getAll(user);
+      const dbTrainingRecords = await this.trainingRecordRepository.getAll(
+        user
+      );
+      const dbPackages = await this.packageRepository.getAll(user);
+      const transformedResult = this.transformDbMpToSharedMetaData([
+        ...dbMps,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
+      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all mps:", error);
+      throw error;
+    }
+  }
+
+  async getById(mpId: string, user: User): Promise<MpFull> {
+    try {
+      const mp = await this.mpRepository.getById(mpId, user);
+      const requestIds = mp
+        .filter((dbResult): dbResult is DbPackage =>
+          dbResult.sK.startsWith("pkg")
+        )
+        .map((pkg) => pkg.requestId);
+      const requests = await Promise.all(
+        requestIds.map(
+          async (requestId) =>
+            await this.requestService.getById(requestId, user)
         )
       );
       const mpMetadata = this.transformDbMpToSharedMetaData(mp);
-      const fullMp: MpFull[] = [{ ...mpMetadata[0], mpLogs }];
+      const fullMp: MpFull[] = [{ ...mpMetadata[0], requests }];
       const parsedResult = mpFullSchema.array().parse(fullMp);
       return parsedResult[0];
     } catch (error) {
@@ -178,7 +204,7 @@ export class MpService {
   private transformDbMpToSharedMetaData(
     items: DbMpMetadata[] | DbMpFull[]
   ): MpMetadata[] {
-    const mpsMap = new Map<string, Partial<MpFull>>();
+    const mpsMap = new Map<string, Partial<MpMetadata>>();
 
     for (const item of items) {
       const mpId = item.pK;
@@ -191,31 +217,37 @@ export class MpService {
 
       const mp = mpsMap.get(mpId)!;
 
-      switch (item.entityType) {
-        case "mp":
-          mp.dateOfBirth = item.dateOfBirth;
-          mp.postCode = item.postCode;
-          mp.details = item.details;
-          mp.recordName = item.recordName;
-          mp.recordExpiry = item.recordExpiry;
-          break;
-        case "trainingRecord":
-          if (!mp.trainingRecords) mp.trainingRecords = [];
-          mp.trainingRecords.push({
-            id: item.sK,
-            ownerId: item.pK,
-            recordName: item.recordName,
-            recordExpiry: item.recordExpiry,
-            details: item.details,
-          });
-          break;
-        case "mpLog":
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.sK.startsWith("m")) {
+        const { pK, sK, entityType, ...rest } = item as DbMpEntity;
+        const fetchedMp: Omit<MpMetadata, "packages" | "trainingRecords"> = {
+          id: pK,
+          ...rest,
+        };
+        Object.assign(mp, fetchedMp);
+        continue;
+      } else if (item.sK.startsWith("tr")) {
+        if (!mp.trainingRecords) mp.trainingRecords = [];
+        const { pK, sK, entityType, ...rest } = item as DbTrainingRecord;
+        mp.trainingRecords.push({
+          id: sK,
+          ownerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("pkg")) {
+        if (!mp.packages) mp.packages = [];
+        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        mp.packages.push({
+          id: sK,
+          carerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else throw new Error(`Undefined Case: ${item}`);
     }
 
-    return Array.from(mpsMap.values()) as MpMetadata[] | MpFull[];
+    return Array.from(mpsMap.values()) as MpMetadata[];
   }
 }

@@ -109,9 +109,9 @@ export class ClientRepository {
     }
   }
 
-  async delete(user: User, clientId: string): Promise<number[]> {
+  async delete(clientId: string, user: User): Promise<number[]> {
     try {
-      const clientData = await this.getById(user, clientId);
+      const clientData = await this.getById(clientId, user);
       let deletedCount = 0;
 
       for (const item of clientData) {

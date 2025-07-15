@@ -92,6 +92,7 @@ const basePersonDetails = z.object({
   email: z.string().default(""),
   nextOfKin: z.string().default(""),
   services: z.array(z.string()).default([]),
+  attendsMag: z.boolean().default(false),
   notes: z
     .array(z.object({ date: z.string().date(), note: z.string() }))
     .default([]),
@@ -111,7 +112,6 @@ export const clientMetadataSchema = z.object({
     riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
     attendanceAllowance: z.enum(attendanceAllowanceStatus),
-    attendsMag: z.boolean().default(false),
   }),
   requests: z.array(requestMetadataSchema),
 });
@@ -139,7 +139,7 @@ export const mpMetadataSchema = z.object({
   packages: z.array(packageSchema).default([]),
 });
 
-export const mpFullSchema = mpMetadataSchema.extend({
+export const mpFullSchema = mpMetadataSchema.omit({ packages: true }).extend({
   requests: z.array(requestFullSchema).default([]),
 });
 

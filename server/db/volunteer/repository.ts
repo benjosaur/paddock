@@ -55,7 +55,7 @@ export class VolunteerRepository {
     }
   }
 
-  async getById(user: User, volunteerId: string): Promise<DbVolunteerFull[]> {
+  async getById(volunteerId: string, user: User): Promise<DbVolunteerFull[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
@@ -115,9 +115,9 @@ export class VolunteerRepository {
     }
   }
 
-  async delete(user: User, volunteerId: string): Promise<number[]> {
+  async delete(volunteerId: string, user: User): Promise<number[]> {
     try {
-      const volunteerData = await this.getById(user, volunteerId);
+      const volunteerData = await this.getById(volunteerId, user);
       let deletedCount = 0;
 
       for (const item of volunteerData) {
