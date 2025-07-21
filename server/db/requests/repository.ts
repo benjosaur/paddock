@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
 export class RequestRepository {
-  async getAllActive(user: User): Promise<DbRequestEntity[]> {
+  async getAllNotArchived(user: User): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
@@ -60,7 +60,7 @@ export class RequestRepository {
     }
   }
 
-  async getAllOpen(user: User): Promise<DbRequestEntity[]> {
+  async getAllThisYear(user: User): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 

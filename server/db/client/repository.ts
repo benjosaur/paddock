@@ -14,7 +14,7 @@ import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAllActive(user: User): Promise<DbClientEntity[]> {
+  async getAllNotArchived(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",

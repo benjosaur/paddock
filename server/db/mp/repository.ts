@@ -16,7 +16,7 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class MpRepository {
-  async getAllActive(user: User): Promise<DbMpMetadata[]> {
+  async getAllNotArchived(user: User): Promise<DbMpMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",

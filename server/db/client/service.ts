@@ -25,10 +25,10 @@ export class ClientService {
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
 
-  async getAllActive(user: User): Promise<ClientMetadata[]> {
+  async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
     try {
-      const dbClients = await this.clientRepository.getAllActive(user);
-      const dbRequests = await this.requestRepository.getAllActive(user);
+      const dbClients = await this.clientRepository.getAllNotArchived(user);
+      const dbRequests = await this.requestRepository.getAllNotArchived(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
         ...dbRequests,

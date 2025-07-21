@@ -27,12 +27,14 @@ export class VolunteerService {
   packageRepository = new PackageRepository();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAllActive(user: User): Promise<VolunteerMetadata[]> {
+  async getAllNotArchived(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const dbVolunteers = await this.volunteerRepository.getAllActive(user);
+      const dbVolunteers = await this.volunteerRepository.getAllNotArchived(
+        user
+      );
       const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllActive(user);
-      const dbPackages = await this.packageRepository.getAllActive(user);
+        await this.trainingRecordRepository.getAllNotArchived(user);
+      const dbPackages = await this.packageRepository.getAllNotArchived(user);
       const transformedResult = this.transformDbVolunteerToSharedMetaData([
         ...dbVolunteers,
         ...dbTrainingRecords,

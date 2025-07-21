@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
 export class PackageRepository {
-  async getAllActive(user: User): Promise<DbPackage[]> {
+  async getAllNotArchived(user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
@@ -55,7 +55,7 @@ export class PackageRepository {
     }
   }
 
-  async getAllOpen(user: User): Promise<DbPackage[]> {
+  async getAllThisYear(user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 

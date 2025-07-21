@@ -5,8 +5,8 @@ import { DbPackage } from "./schema";
 export class PackageService {
   packageRepository = new PackageRepository();
 
-  async getAllActive(user: User): Promise<Package[]> {
-    const packages = await this.packageRepository.getAllActive(user);
+  async getAllNotArchived(user: User): Promise<Package[]> {
+    const packages = await this.packageRepository.getAllNotArchived(user);
     const transformedResult = this.groupAndTransformPackageData(
       packages
     ) as Package[];
@@ -14,8 +14,8 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getAllOpen(user: User): Promise<Package[]> {
-    const packages = await this.packageRepository.getAllOpen(user);
+  async getAllThisYear(user: User): Promise<Package[]> {
+    const packages = await this.packageRepository.getAllThisYear(user);
     const transformedResult = this.groupAndTransformPackageData(
       packages
     ) as Package[];

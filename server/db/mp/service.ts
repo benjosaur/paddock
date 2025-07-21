@@ -18,12 +18,12 @@ export class MpService {
   trainingRecordService = new TrainingRecordService();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAllActive(user: User): Promise<MpMetadata[]> {
+  async getAllNotArchived(user: User): Promise<MpMetadata[]> {
     try {
-      const dbMps = await this.mpRepository.getAllActive(user);
+      const dbMps = await this.mpRepository.getAllNotArchived(user);
       const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllActive(user);
-      const dbPackages = await this.packageRepository.getAllActive(user);
+        await this.trainingRecordRepository.getAllNotArchived(user);
+      const dbPackages = await this.packageRepository.getAllNotArchived(user);
       const transformedResult = this.transformDbMpToSharedMetaData([
         ...dbMps,
         ...dbTrainingRecords,

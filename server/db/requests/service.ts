@@ -4,16 +4,15 @@ import { DbRequest, DbRequestEntity } from "./schema";
 import { DbPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
-import { endsWith } from "zod/v4";
 
 export class RequestService {
   requestRepository = new RequestRepository();
   packageRepository = new PackageRepository();
   packageService = new PackageService();
 
-  async getAllActiveWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAllActive(user);
-    const packagesFromDb = await this.packageRepository.getAllActive(user);
+  async getAllNotArchivedWithPackages(user: User): Promise<RequestFull[]> {
+    const requestsFromDb = await this.requestRepository.getAllNotArchived(user);
+    const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
     const transformedRequests = this.transformDbRequestToSharedFull([
       ...requestsFromDb,
       ...packagesFromDb,
@@ -21,10 +20,10 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async getAllOpenWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAllOpen(user);
+  async getAllThisYearWithPackages(user: User): Promise<RequestFull[]> {
+    const requestsFromDb = await this.requestRepository.getAllThisYear(user);
     // below as we want all packages associated with the request (though archived wont be fetched)
-    const packagesFromDb = await this.packageRepository.getAllActive(user);
+    const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
     const transformedRequests = this.transformDbRequestToSharedFull([
       ...requestsFromDb,
       ...packagesFromDb,

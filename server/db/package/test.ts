@@ -54,11 +54,11 @@ export async function testPackageService() {
     console.log("All packages:", allPackages);
 
     console.log("5. Getting all active packages...");
-    const activePackages = await packageService.getAllActive(sampleUser);
+    const activePackages = await packageService.getAllNotArchived(sampleUser);
     console.log("Active packages:", activePackages);
 
     console.log("6. Getting all open packages...");
-    const openPackages = await packageService.getAllOpen(sampleUser);
+    const openPackages = await packageService.getAllThisYear(sampleUser);
     console.log("Open packages:", openPackages);
 
     console.log("7. Deleting package...");

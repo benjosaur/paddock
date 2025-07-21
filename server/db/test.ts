@@ -50,16 +50,20 @@ async function runAllTests() {
 // Manual Reads
 
 console.dir(await clientService.getAll(sampleUser), { depth: null });
-console.dir(await clientService.getAllActive(sampleUser), { depth: null });
+console.dir(await clientService.getAllNotArchived(sampleUser), { depth: null });
 console.dir(await clientService.getById("c#1", sampleUser), { depth: null });
 console.dir(await mpService.getAll(sampleUser), { depth: null });
-console.dir(await mpService.getAllActive(sampleUser), { depth: null });
+console.dir(await mpService.getAllNotArchived(sampleUser), { depth: null });
 console.dir(await mpService.getById("mp#1", sampleUser), { depth: null });
 console.dir(await volunteerService.getAll(sampleUser), { depth: null });
-console.dir(await volunteerService.getAllActive(sampleUser), { depth: null });
+console.dir(await volunteerService.getAllNotArchived(sampleUser), {
+  depth: null,
+});
 console.dir(await volunteerService.getById("v#1", sampleUser), { depth: null });
 console.dir(await packageService.getAll(sampleUser), { depth: null });
-console.dir(await packageService.getAllActive(sampleUser), { depth: null });
+console.dir(await packageService.getAllNotArchived(sampleUser), {
+  depth: null,
+});
 console.dir(await packageService.getById("pkg#1", sampleUser), { depth: null });
 // console.dir(await packageService.getBySubstring("ey", sampleUser), {
 //   depth: null,
@@ -89,7 +93,7 @@ console.dir(await trainingRecordService.getAll(sampleUser), { depth: null });
 //   { depth: null }
 // );
 console.dir(await requestService.getAllMetadata(sampleUser), { depth: null });
-console.dir(await requestService.getAllActiveWithPackages(sampleUser), {
+console.dir(await requestService.getAllNotArchivedWithPackages(sampleUser), {
   depth: null,
 });
 console.dir(await requestService.getById("req#1", sampleUser), { depth: null });

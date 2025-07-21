@@ -74,7 +74,7 @@ export async function testRequestService() {
     console.log("All requests:", allRequests);
 
     console.log("6. Getting all active requests with packages...");
-    const activeRequests = await requestService.getAllActiveWithPackages(
+    const activeRequests = await requestService.getAllNotArchivedWithPackages(
       sampleUser
     );
     console.log("Active requests:", activeRequests);
