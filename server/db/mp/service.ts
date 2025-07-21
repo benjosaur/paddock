@@ -8,6 +8,7 @@ import { TrainingRecordRepository } from "../training/repository";
 import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
+import { genericUpdate } from "../repository";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -80,111 +81,45 @@ export class MpService {
     }
   }
 
-  async create(newMp: Omit<MpMetadata, "id">, user: User): Promise<MpFull> {
+  async create(newMp: Omit<MpMetadata, "id">, user: User): Promise<string> {
+    // not for packages
     try {
-      const validatedInput = mpFullSchema.omit({ id: true }).parse(newMp);
+      const validatedInput = mpMetadataSchema.omit({ id: true }).parse(newMp);
 
-      const mpToCreate: Omit<DbMpEntity, "id" | "pK" | "sK"> = {
+      const mpToCreate: Omit<DbMpEntity, "pK" | "sK"> = {
         ...validatedInput,
         entityType: "mp",
-        entityOwner: "mp",
       };
       const createdMpId = await this.mpRepository.create(mpToCreate, user);
-
-      const fetchedMp = await this.getById(user, createdMpId);
-      if (!fetchedMp) {
-        throw new Error("Failed to fetch created mp");
-      }
-
-      const { id, ...restFetched } = fetchedMp;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error("Created mp does not match expected values");
-      }
-
-      return fetchedMp;
+      return createdMpId;
     } catch (error) {
       console.error("Service Layer Error creating MP:", error);
       throw error;
     }
   }
 
-  async update(updatedMp: MpMetadata, user: User): Promise<MpFull> {
+  async update(updatedMp: MpMetadata, user: User): Promise<void> {
+    // also not for packages
     // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const validatedInput = mpMetadataSchema.parse(updatedMp);
-
-      const dbMp: DbMpEntity = {
-        pK: validatedInput.id,
-        sK: validatedInput.id,
-        entityType: "mp",
-        entityOwner: "mp",
-        dateOfBirth: validatedInput.dateOfBirth,
-        postCode: validatedInput.postCode,
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
-      };
-
+      const { id, ...rest } = validatedInput;
+      const dbMp: DbMpEntity = { pK: id, sK: id, entityType: "mp", ...rest };
       await this.mpRepository.update(dbMp, user);
-      const fetchedMp = await this.getById(user, validatedInput.id);
-
-      // below will throw error on name update. input name will be diff to updated training record name. as fetch will occur at same time as record name update.
-      // if (
-      //   JSON.stringify(validatedInput) !==
-      //   JSON.stringify(mpMetadataSchema.parse(fetchedMp))
-      // ) {
-      //   console.log(validatedInput, mpMetadataSchema.parse(fetchedMp));
-      //   throw new Error("Updated mp does not match expected values");
-      // }
-
-      return fetchedMp;
     } catch (error) {
       console.error("Service Layer Error updating MP:", error);
       throw error;
     }
   }
 
-  async updateName(mpId: string, newName: string, user: User): Promise<MpFull> {
+  async updateName(mpId: string, newName: string, user: User): Promise<void> {
     try {
-      const initialMp = await this.getById(user, mpId);
-
-      const updatedMp = {
-        ...initialMp,
-        details: { ...initialMp.details, name: newName },
-      };
-      const updatedMpTrainingRecords: DbMpTrainingRecordEntity[] =
-        initialMp.trainingRecords.map((record) => ({
-          pK: mpId,
-          sK: record.id,
-          recordExpiry: record.recordExpiry,
-          recordName: record.recordName,
-          details: { ...record.details, name: newName },
-          entityOwner: "mp",
-          entityType: "trainingRecord",
-        }));
-      const updatedMpLogMps: DbMpLogMp[] = initialMp.mpLogs.map((log) => ({
-        pK: mpId,
-        sK: log.id,
-        postCode: initialMp.postCode,
-        date: log.date,
-        details: { ...log.details, name: newName },
-        entityOwner: "mp",
-        entityType: "mpLog",
+      const initialMpRecords = await this.mpRepository.getById(mpId, user);
+      const updatedMpRecords = initialMpRecords.map((record) => ({
+        ...record,
+        details: { ...record.details, name: newName },
       }));
-      await Promise.all([
-        this.update(updatedMp, user),
-        ...updatedMpTrainingRecords.map((record) =>
-          this.trainingRecordRepository.update(record, user)
-        ),
-        ...updatedMpLogMps.map((log) =>
-          this.mpLogRepository.update([log], user)
-        ),
-      ]);
-
-      const fetchedMp = this.getById(user, mpId);
-
-      return fetchedMp;
+      await genericUpdate(updatedMpRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Mp Name:", error);
       throw error;
@@ -193,7 +128,7 @@ export class MpService {
 
   async delete(user: User, mpId: string): Promise<number[]> {
     try {
-      const deletedCount = await this.mpRepository.delete(user, mpId);
+      const deletedCount = await this.mpRepository.delete(mpId, user);
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting MP:", error);

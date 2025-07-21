@@ -9,18 +9,15 @@ import {
   DbVolunteerFull,
   DbVolunteerMetadata,
   DbVolunteerEntity,
-  DbVolunteerTrainingRecordEntity,
 } from "./schema";
-import { VolunteerLogService } from "../vlog/service";
 import { TrainingRecordService } from "../training/service";
-import { VolunteerLogRepository } from "../vlog/repository";
 import { TrainingRecordRepository } from "../training/repository";
-import { DbVolunteerLogVolunteer } from "../vlog/schema";
 import { DbTrainingRecord } from "../training/schema";
 import { DbPackage } from "../package/schema";
 import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
+import { genericUpdate } from "../repository";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -108,73 +105,43 @@ export class VolunteerService {
   async create(
     newVolunteer: Omit<VolunteerMetadata, "id">,
     user: User
-  ): Promise<VolunteerFull> {
+  ): Promise<string> {
+    // not for packages
     try {
-      const validatedInput = volunteerFullSchema
+      const validatedInput = volunteerMetadataSchema
         .omit({ id: true })
         .parse(newVolunteer);
 
-      const volunteerToCreate: Omit<DbVolunteerEntity, "id" | "pK" | "sK"> = {
+      const volunteerToCreate: Omit<DbVolunteerEntity, "pK" | "sK"> = {
         ...validatedInput,
         entityType: "volunteer",
-        entityOwner: "volunteer",
       };
       const createdVolunteerId = await this.volunteerRepository.create(
         volunteerToCreate,
         user
       );
-
-      const fetchedVolunteer = await this.getById(user, createdVolunteerId);
-      if (!fetchedVolunteer) {
-        throw new Error("Failed to fetch created volunteer");
-      }
-
-      const { id, ...restFetched } = fetchedVolunteer;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error("Created volunteer does not match expected values");
-      }
-
-      return fetchedVolunteer;
+      return createdVolunteerId;
     } catch (error) {
-      console.error("Service Layer Error creating volunteer:", error);
+      console.error("Service Layer Error creating MP:", error);
       throw error;
     }
   }
 
-  async update(
-    updatedVolunteer: VolunteerMetadata,
-    user: User
-  ): Promise<VolunteerFull> {
+  async update(updatedVolunteer: VolunteerMetadata, user: User): Promise<void> {
+    // also not for packages
+    // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
-
+      const { id, ...rest } = validatedInput;
       const dbVolunteer: DbVolunteerEntity = {
-        pK: validatedInput.id,
-        sK: validatedInput.id,
+        pK: id,
+        sK: id,
         entityType: "volunteer",
-        entityOwner: "volunteer",
-        dateOfBirth: validatedInput.dateOfBirth,
-        postCode: validatedInput.postCode,
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
+        ...rest,
       };
-
       await this.volunteerRepository.update(dbVolunteer, user);
-      const fetchedVolunteer = await this.getById(user, validatedInput.id);
-
-      // below will throw error on name update. input name will be diff to updated training record name. as fetch will occur at same time as record name update.
-      // if (
-      //   JSON.stringify(validatedInput) !==
-      //   JSON.stringify(volunteerMetadataSchema.parse(fetchedVolunteer))
-      // ) {
-      //   throw new Error("Updated volunteer does not match expected values");
-      // }
-
-      return fetchedVolunteer;
     } catch (error) {
-      console.error("Service Layer Error updating volunteer:", error);
+      console.error("Service Layer Error updating MP:", error);
       throw error;
     }
   }
@@ -183,47 +150,17 @@ export class VolunteerService {
     volunteerId: string,
     newName: string,
     user: User
-  ): Promise<VolunteerFull> {
+  ): Promise<void> {
     try {
-      const initialVolunteer = await this.getById(user, volunteerId);
-
-      const updatedVolunteer = {
-        ...initialVolunteer,
-        details: { ...initialVolunteer.details, name: newName },
-      };
-      const updatedVolunteerTrainingRecords: DbVolunteerTrainingRecordEntity[] =
-        initialVolunteer.trainingRecords.map((record) => ({
-          pK: volunteerId,
-          sK: record.id,
-          recordExpiry: record.recordExpiry,
-          recordName: record.recordName,
-          details: { ...record.details, name: newName },
-          entityOwner: "volunteer",
-          entityType: "trainingRecord",
-        }));
-      const updatedVolunteerLogVolunteers: DbVolunteerLogVolunteer[] =
-        initialVolunteer.volunteerLogs.map((log) => ({
-          pK: volunteerId,
-          sK: log.id,
-          postCode: initialVolunteer.postCode,
-          date: log.date,
-          details: { ...log.details, name: newName },
-          entityOwner: "volunteer",
-          entityType: "volunteerLog",
-        }));
-      await Promise.all([
-        this.update(updatedVolunteer, user),
-        ...updatedVolunteerTrainingRecords.map((record) =>
-          this.trainingRecordRepository.update(record, user)
-        ),
-        ...updatedVolunteerLogVolunteers.map((log) =>
-          this.volunteerLogRepository.update([log], user)
-        ),
-      ]);
-
-      const fetchedVolunteer = this.getById(user, volunteerId);
-
-      return fetchedVolunteer;
+      const initialVolunteerRecords = await this.volunteerRepository.getById(
+        volunteerId,
+        user
+      );
+      const updatedVolunteerRecords = initialVolunteerRecords.map((record) => ({
+        ...record,
+        details: { ...record.details, name: newName },
+      }));
+      await genericUpdate(updatedVolunteerRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Volunteer Name:", error);
       throw error;
@@ -233,12 +170,12 @@ export class VolunteerService {
   async delete(user: User, volunteerId: string): Promise<number[]> {
     try {
       const deletedCount = await this.volunteerRepository.delete(
-        user,
-        volunteerId
+        volunteerId,
+        user
       );
       return deletedCount;
     } catch (error) {
-      console.error("Service Layer Error deleting volunteer:", error);
+      console.error("Service Layer Error deleting MP:", error);
       throw error;
     }
   }
@@ -250,7 +187,7 @@ export class VolunteerService {
 
     for (const item of items) {
       if (item.pK.startsWith("m")) continue;
-      // this is an mp tr/pkg which we do not want to consider
+      // this is an volunteer tr/pkg which we do not want to consider
       const volunteerId = item.pK;
 
       if (!volunteersMap.has(volunteerId)) {

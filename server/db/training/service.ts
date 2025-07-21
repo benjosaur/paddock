@@ -1,7 +1,6 @@
 import { TrainingRecord, trainingRecordSchema } from "shared";
 import { TrainingRecordRepository } from "./repository";
-import { DbTrainingRecordEntity } from "./schema";
-import { record } from "zod/v4";
+import { DbTrainingRecord } from "./schema";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();

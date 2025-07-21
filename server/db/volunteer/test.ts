@@ -5,10 +5,11 @@ import { VolunteerMetadata } from "shared";
 const volunteerService = new VolunteerService();
 
 const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
+  archived: "N",
   dateOfBirth: "1985-05-15",
   postCode: "E1 6AN",
-  recordName: "First Aid",
-  recordExpiry: "2025-12-31",
+  dbsExpiry: "2025-12-31",
+  publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "Sarah Johnson",
@@ -16,13 +17,19 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
     email: "sarah.johnson@email.com",
     phone: "020 7946 0958",
     nextOfKin: "Michael Johnson",
-    needs: [],
     services: ["Food Bank", "Community Support"],
-    notes: "Experienced volunteer coordinator",
+    attendsMag: false,
+    notes: [
+      {
+        date: "2025-07-21",
+        note: "Experienced volunteer coordinator",
+      },
+    ],
     specialisms: ["Community Outreach", "Event Management"],
     transport: true,
     capacity: "Part time",
   },
+  packages: [],
 };
 
 export async function testVolunteerService() {
@@ -30,25 +37,38 @@ export async function testVolunteerService() {
     console.log("Testing Volunteer Service...");
 
     console.log("1. Creating volunteer...");
-    const createdVolunteer = await volunteerService.create(
+    const createdVolunteerId = await volunteerService.create(
       sampleVolunteer,
       sampleUser
     );
-    console.log("Created volunteer:", createdVolunteer);
+    console.log("Created volunteer ID:", createdVolunteerId);
 
     console.log("2. Getting volunteer by ID...");
     const retrievedVolunteer = await volunteerService.getById(
-      sampleUser,
-      createdVolunteer.id
+      createdVolunteerId,
+      sampleUser
     );
     console.log("Retrieved volunteer:", retrievedVolunteer);
 
     console.log("3. Updating volunteer...");
     const updatedVolunteerData: VolunteerMetadata = {
-      ...retrievedVolunteer,
+      id: retrievedVolunteer.id,
+      archived: retrievedVolunteer.archived,
+      dateOfBirth: retrievedVolunteer.dateOfBirth,
+      postCode: retrievedVolunteer.postCode,
+      dbsExpiry: retrievedVolunteer.dbsExpiry,
+      publicLiabilityExpiry: retrievedVolunteer.publicLiabilityExpiry,
+      trainingRecords: retrievedVolunteer.trainingRecords,
+      packages: [], // VolunteerMetadata requires packages, VolunteerFull has requests instead
       details: {
         ...retrievedVolunteer.details,
-        notes: "Updated experienced volunteer coordinator",
+        notes: [
+          ...retrievedVolunteer.details.notes,
+          {
+            date: "2025-07-21",
+            note: "Updated experienced volunteer coordinator",
+          },
+        ],
       },
     };
     const updatedVolunteer = await volunteerService.update(
@@ -64,7 +84,7 @@ export async function testVolunteerService() {
     console.log("5. Deleting volunteer...");
     const deletedCount = await volunteerService.delete(
       sampleUser,
-      createdVolunteer.id
+      createdVolunteerId
     );
     console.log("Deleted count:", deletedCount);
 
