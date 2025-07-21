@@ -5,6 +5,7 @@ import { ClientFull } from "shared";
 const clientService = new ClientService();
 
 const sampleClient: Omit<ClientFull, "id"> = {
+  archived: "N",
   dateOfBirth: "1990-01-15",
   postCode: "SW1A 1AA",
   details: {
@@ -13,9 +14,13 @@ const sampleClient: Omit<ClientFull, "id"> = {
     phone: "07123456789",
     email: "john.doe@example.com",
     nextOfKin: "Jane Doe (Spouse) - 07987654321",
-    needs: ["Mobility support", "Medication reminders"],
     services: ["Home visits", "Telephone support"],
-    notes: "Regular check-ups required. Diabetes management.",
+    notes: [
+      {
+        date: "2024-01-01",
+        note: "Regular check-ups required. Diabetes management.",
+      },
+    ],
     referredBy: "GP Surgery",
     clientAgreementDate: "2024-01-01",
     clientAgreementComments: "All terms agreed",
@@ -24,10 +29,7 @@ const sampleClient: Omit<ClientFull, "id"> = {
     attendanceAllowance: "yes",
     attendsMag: true,
   },
-  mpRequests: [],
-  volunteerRequests: [],
-  mpLogs: [],
-  volunteerLogs: [],
+  requests: [],
   magLogs: [],
 };
 
@@ -36,13 +38,16 @@ export async function testClientService() {
     console.log("Testing Client Service...\n");
 
     console.log("1. Creating client...");
-    const createdClient = await clientService.create(sampleClient, sampleUser);
-    console.log("Created client:", createdClient.id);
+    const createdClientId = await clientService.create(
+      sampleClient,
+      sampleUser
+    );
+    console.log("Created client:", createdClientId);
 
     console.log("\n2. Getting client by ID...");
     const retrievedClient = await clientService.getById(
-      sampleUser,
-      createdClient.id
+      createdClientId,
+      sampleUser
     );
     console.log("Retrieved client:", retrievedClient.details.name);
 
@@ -58,16 +63,13 @@ export async function testClientService() {
         phone: "07999888777",
       },
     };
-    const updatedClient = await clientService.update(
-      updatedClientData,
-      sampleUser
-    );
-    console.log("Updated client phone:", updatedClient.details.phone);
+    await clientService.update(updatedClientData, sampleUser);
+    console.log("Updated client phone:", updatedClientData.details.phone);
 
     console.log("\n5. Deleting client...");
     const deletedCount = await clientService.delete(
       sampleUser,
-      createdClient.id
+      createdClientId
     );
     console.log("Deleted items count:", deletedCount[0]);
 

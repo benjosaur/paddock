@@ -5,23 +5,16 @@ import {
   clientMetadataSchema,
 } from "shared";
 import { ClientRepository } from "./repository";
-import { DbClientEntity, DbClientFull } from "./schema";
+import { DbClientEntity } from "./schema";
 import { PackageService } from "../package/service";
-import { VolunteerLogService } from "../vlog/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
-import {
-  DbClientMpRequestEntity,
-  DbClientVolunteerRequestEntity,
-  DbRequestEntity,
-} from "../requests/schema";
-import { DbMpLogClient } from "../package/schema";
-import { DbVolunteerLogClient } from "../vlog/schema";
+import { DbRequestEntity } from "../requests/schema";
 import { DbMagLogClient } from "../mag/schema";
 import { PackageRepository } from "../package/repository";
-import { VolunteerLogRepository } from "../vlog/repository";
 import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
+import { genericUpdate } from "../repository";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -103,16 +96,13 @@ export class ClientService {
     }
   }
 
-  async create(
-    newClient: Omit<ClientFull, "id">,
-    user: User
-  ): Promise<ClientFull> {
+  async create(newClient: Omit<ClientFull, "id">, user: User): Promise<string> {
     try {
       const validatedInput = clientFullSchema
         .omit({ id: true })
         .parse(newClient);
 
-      const clientToCreate: Omit<DbClientEntity, "id" | "pK" | "sK"> = {
+      const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = {
         ...validatedInput,
         entityType: "client",
       };
@@ -120,52 +110,25 @@ export class ClientService {
         clientToCreate,
         user
       );
-
-      const fetchedClient = await this.getById(user, createdClientId);
-      if (!fetchedClient) {
-        throw new Error("Failed to fetch created client");
-      }
-
-      const { id, ...restFetched } = fetchedClient;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        console.log(validatedInput, fetchedClient);
-        throw new Error("Created client does not match expected values");
-      }
-
-      return fetchedClient;
+      return createdClientId;
     } catch (error) {
       console.error("Service Layer Error creating client:", error);
       throw error;
     }
   }
 
-  async update(updatedClient: ClientFull, user: User): Promise<ClientFull> {
+  async update(updatedClient: ClientFull, user: User): Promise<void> {
     //note for name or postcode (only metachanges)
     try {
       const validatedInput = clientMetadataSchema.parse(updatedClient);
-
+      const { id, ...rest } = validatedInput;
       const dbClient: DbClientEntity = {
-        pK: validatedInput.id,
-        sK: validatedInput.id,
+        pK: id,
+        sK: id,
         entityType: "client",
-        entityOwner: "client",
-        dateOfBirth: validatedInput.dateOfBirth,
-        postCode: validatedInput.postCode,
-        details: validatedInput.details,
+        ...rest,
       };
       await this.clientRepository.update(dbClient, user);
-      const fetchedClient = await this.getById(user, validatedInput.id);
-
-      // below will throw error on name update. input name will be diff to updated requests name. as fetch will occur at same time as request name update.
-      // if (
-      //   JSON.stringify(validatedInput) !==
-      //   JSON.stringify(clientMetadataSchema.parse(fetchedClient))
-      // ) {
-      //   console.log(validatedInput, fetchedClient);
-      //   throw new Error("Updated client does not match expected values");
-      // }
-      return fetchedClient;
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
       throw error;
@@ -176,86 +139,18 @@ export class ClientService {
     clientId: string,
     newName: string,
     user: User
-  ): Promise<ClientFull> {
+  ): Promise<void> {
+    // update mags and reqs
     try {
-      const initialClient = await this.getById(user, clientId);
-
-      const updatedClient = {
-        ...initialClient,
-        details: { ...initialClient.details, name: newName },
-      };
-      const updatedClientMpRequests: DbClientMpRequestEntity[] =
-        initialClient.mpRequests.map((req) => ({
-          pK: clientId,
-          sK: req.id,
-          date: req.startDate,
-          details: { ...req.details, name: newName },
-          entityOwner: "client",
-          entityType: "clientMpRequest",
-        }));
-      const updatedClientVolunteerRequests: DbClientVolunteerRequestEntity[] =
-        initialClient.volunteerRequests.map((req) => ({
-          pK: clientId,
-          sK: req.id,
-          date: req.startDate,
-          details: { ...req.details, name: newName },
-          entityOwner: "client",
-          entityType: "clientVolunteerRequest",
-        }));
-      const updatedClientMpLogs: DbMpLogClient[] = initialClient.mpLogs.map(
-        (log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: initialClient.postCode,
-          date: log.date,
-          details: { ...log.details, name: newName },
-          entityOwner: "client",
-          entityType: "mpLog",
-        })
+      const initialClientRecords = await this.clientRepository.getById(
+        clientId,
+        user
       );
-      const updatedClientVolunteerLogs: DbVolunteerLogClient[] =
-        initialClient.volunteerLogs.map((log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: initialClient.postCode,
-          date: log.date,
-          details: { ...log.details, name: newName },
-          entityOwner: "client",
-          entityType: "volunteerLog",
-        }));
-      const updatedClientMagLogs: DbMagLogClient[] = initialClient.magLogs.map(
-        (log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: initialClient.postCode,
-          date: log.date,
-          details: { ...log.details, name: newName },
-          entityOwner: "client",
-          entityType: "magLog",
-        })
-      );
-      await Promise.all([
-        this.update(updatedClient, user),
-        ...updatedClientMpRequests.map((req) =>
-          this.requestRepository.update(req, user)
-        ),
-        ...updatedClientVolunteerRequests.map((req) =>
-          this.requestRepository.update(req, user)
-        ),
-        ...updatedClientMpLogs.map((log) =>
-          this.mpLogRepository.update([log], user)
-        ),
-        ...updatedClientVolunteerLogs.map((log) =>
-          this.volunteerLogRepository.update([log], user)
-        ),
-        ...updatedClientMagLogs.map((log) =>
-          this.magLogRepository.update([log], user)
-        ),
-      ]);
-
-      const fetchedClient = this.getById(user, clientId);
-
-      return fetchedClient;
+      const updatedClientRecords = initialClientRecords.map((record) => ({
+        ...record,
+        details: { ...record.details, name: newName },
+      }));
+      await genericUpdate(updatedClientRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
       throw error;
@@ -266,62 +161,20 @@ export class ClientService {
     clientId: string,
     newPostCode: string,
     user: User
-  ): Promise<ClientFull> {
+  ): Promise<void> {
+    // update clientEntity & magLogClient
     try {
-      const initialClient = await this.getById(user, clientId);
-
-      const updatedClient = {
-        ...initialClient,
-        postCode: newPostCode,
-      };
-      const updatedClientMpLogs: DbMpLogClient[] = initialClient.mpLogs.map(
-        (log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: newPostCode,
-          date: log.date,
-          details: { ...log.details, name: initialClient.details.name },
-          entityOwner: "client",
-          entityType: "mpLog",
-        })
+      const initialClientRecords = await this.clientRepository.getById(
+        clientId,
+        user
       );
-      const updatedClientVolunteerLogs: DbVolunteerLogClient[] =
-        initialClient.volunteerLogs.map((log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: newPostCode,
-          date: log.date,
-          details: { ...log.details, name: initialClient.details.name },
-          entityOwner: "client",
-          entityType: "volunteerLog",
-        }));
-      const updatedClientMagLogs: DbMagLogClient[] = initialClient.magLogs.map(
-        (log) => ({
-          pK: clientId,
-          sK: log.id,
-          postCode: newPostCode,
-          date: log.date,
-          details: { ...log.details, name: initialClient.details.name },
-          entityOwner: "client",
-          entityType: "magLog",
-        })
+      const initialEntityAndMagLogClients = initialClientRecords.filter(
+        (record) => record.sK === "magLogClient" || record.sK === "client"
       );
-      await Promise.all([
-        this.update(updatedClient, user),
-        ...updatedClientMpLogs.map((log) =>
-          this.mpLogRepository.update([log], user)
-        ),
-        ...updatedClientVolunteerLogs.map((log) =>
-          this.volunteerLogRepository.update([log], user)
-        ),
-        ...updatedClientMagLogs.map((log) =>
-          this.magLogRepository.update([log], user)
-        ),
-      ]);
-
-      const fetchedClient = this.getById(user, clientId);
-
-      return fetchedClient;
+      const updatedEntityAndMagLogClients = initialEntityAndMagLogClients.map(
+        (record) => ({ ...record, postCode: newPostCode })
+      );
+      await genericUpdate(updatedEntityAndMagLogClients, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
       throw error;
@@ -330,7 +183,7 @@ export class ClientService {
 
   async delete(user: User, clientId: string): Promise<number[]> {
     try {
-      const deletedCount = await this.clientRepository.delete(user, clientId);
+      const deletedCount = await this.clientRepository.delete(clientId, user);
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting client:", error);

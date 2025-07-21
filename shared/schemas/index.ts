@@ -28,7 +28,7 @@ export const packageSchema = z.object({
   startDate: z.string().date(),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
-    carerName: z.string(),
+    name: z.string(),
     weeklyHours: z.number(),
     notes: z.string().default(""),
     services: z.array(z.string()).default([]),
@@ -59,6 +59,7 @@ export const magLogSchema = z.object({
   clients: z.array(
     z.object({
       id: z.string(),
+      postCode: z.string(),
       details: z.object({ name: z.string() }),
     })
   ),

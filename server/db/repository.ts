@@ -2,7 +2,11 @@
 // but on way in these need to be stripped so drop null fields after parsing.
 
 import { DynamoDB, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  BatchWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const createRawClient = (): DynamoDBClient => {
   const isProd = process.env.NODE_ENV == "production";
@@ -77,4 +81,41 @@ function dropNullFields<T>(input: T): T {
     return result as T;
   }
   return input;
+}
+
+export async function genericUpdate<T extends Record<string, any>>(
+  items: T[],
+  user: User
+): Promise<void> {
+  // only for use when input validation is intentioanlly agnostic and not necessary
+  const tableName = getTableName(user);
+
+  // DynamoDB batch write can handle up to 25 items at a time
+  const batchSize = 25;
+  const batches = [];
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    batches.push(items.slice(i, i + batchSize));
+  }
+
+  for (const batch of batches) {
+    const requestItems = {
+      [tableName]: batch.map((item) => ({
+        PutRequest: {
+          Item: item,
+        },
+      })),
+    };
+
+    const command = new BatchWriteCommand({
+      RequestItems: requestItems,
+    });
+
+    try {
+      await client.send(command);
+    } catch (error) {
+      console.error("Repository Layer Error in generic update:", error);
+      throw error;
+    }
+  }
 }
