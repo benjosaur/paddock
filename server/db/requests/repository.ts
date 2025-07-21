@@ -169,7 +169,7 @@ export class RequestRepository {
   }
 
   async create(
-    newRequest: Omit<DbRequestEntity, "sK">,
+    newRequest: Omit<DbRequestEntity, "sK" | "requestId">,
     user: User
   ): Promise<string> {
     try {
@@ -177,6 +177,7 @@ export class RequestRepository {
       const requestKey = `req#${uuid}`;
       const fullRequest: DbRequestEntity = {
         sK: requestKey,
+        requestId: requestKey,
         ...newRequest,
       };
       const validatedRequest = dbRequestEntity.parse(fullRequest);

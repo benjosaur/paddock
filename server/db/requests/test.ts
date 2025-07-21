@@ -1,29 +1,31 @@
 import { sampleUser } from "../test";
 import { RequestService } from "./service";
-import { ClientRequest } from "shared";
+import { RequestMetadata } from "shared";
 
 const requestService = new RequestService();
 
-const sampleMpRequest: Omit<ClientRequest, "id"> = {
+const samplePaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
-  requestType: "mp",
+  requestType: "paid",
   startDate: "2025-01-10",
+  endDate: "open",
   details: {
     name: "Test Client",
-    notes: "Urgent MP support needed",
-    schedule: "Once a week",
+    notes: "Urgent paid support needed",
+    weeklyHours: 10,
     status: "urgent",
   },
 };
 
-const sampleVolunteerRequest: Omit<ClientRequest, "id"> = {
+const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
-  requestType: "volunteer",
+  requestType: "unpaid",
   startDate: "2025-01-15",
+  endDate: "open",
   details: {
     name: "Test Client",
-    notes: "Weekly volunteer visit requested",
-    schedule: "Once a week",
+    notes: "Weekly unpaid volunteer visit requested",
+    weeklyHours: 5,
     status: "pending",
   },
 };
@@ -34,69 +36,64 @@ export async function testRequestService() {
   try {
     console.log("Testing Request Service...");
 
-    console.log("1. Creating MP request...");
-    const createdMpRequest = await requestService.create(
-      sampleMpRequest,
+    console.log("1. Creating paid request...");
+    const createdPaidRequestId = await requestService.create(
+      samplePaidRequest,
       sampleUser
     );
-    console.log("Created MP request:", createdMpRequest);
+    console.log("Created paid request ID:", createdPaidRequestId);
 
-    console.log("2. Creating volunteer request...");
-    const createdVolunteerRequest = await requestService.create(
-      sampleVolunteerRequest,
+    console.log("2. Creating unpaid request...");
+    const createdUnpaidRequestId = await requestService.create(
+      sampleUnpaidRequest,
       sampleUser
     );
-    console.log("Created volunteer request:", createdVolunteerRequest);
+    console.log("Created unpaid request ID:", createdUnpaidRequestId);
 
-    console.log("3. Getting requests by client ID...");
-    const clientRequests = await requestService.getByClientId(
-      sampleUser,
-      clientId
+    console.log("3. Getting request by ID...");
+    const paidRequest = await requestService.getById(
+      createdPaidRequestId,
+      sampleUser
     );
-    console.log("Client requests:", clientRequests);
+    console.log("Paid request:", paidRequest);
 
-    console.log("4. Updating MP request...");
-    const updatedMpRequestData: ClientRequest = {
-      ...createdMpRequest,
+    console.log("4. Updating paid request...");
+    const updatedPaidRequestData: RequestMetadata = {
+      ...paidRequest,
       details: {
-        name: "Test Client",
-        notes: "Updated MP support requirements",
-        schedule: "Once a week",
+        ...paidRequest.details,
+        notes: "Updated paid support requirements",
         status: "pending",
       },
     };
-    const updatedMpRequest = await requestService.update(
-      updatedMpRequestData,
-      sampleUser
-    );
-    console.log("Updated MP request:", updatedMpRequest);
+    await requestService.update(updatedPaidRequestData as any, sampleUser);
+    console.log("Updated paid request");
 
-    console.log("5. Getting all requests...");
-    const allRequests = await requestService.getAll(sampleUser);
+    console.log("5. Getting all requests metadata...");
+    const allRequests = await requestService.getAllMetadata(sampleUser);
     console.log("All requests:", allRequests);
 
-    console.log("6. Getting requests before 2025-02-01...");
-    const requestsBefore = await requestService.getByStartDateBefore(
-      sampleUser,
-      "2025-02-01"
+    console.log("6. Getting all active requests with packages...");
+    const activeRequests = await requestService.getAllActiveWithPackages(
+      sampleUser
     );
-    console.log("Requests before 2025-02-01:", requestsBefore);
+    console.log("Active requests:", activeRequests);
 
-    console.log("7. Deleting MP request...");
-    const deletedMpCount = await requestService.delete(
+    console.log("7. Deleting paid request...");
+    const deletedPaidCount = await requestService.delete(
       sampleUser,
       clientId,
-      createdMpRequest.id
+      createdPaidRequestId
     );
-    console.log("Deleted MP request count:", deletedMpCount);
+    console.log("Deleted paid request count:", deletedPaidCount);
 
-    console.log("8. Deleting volunteer request...");
-    const deletedVolunteerCount = await requestService.delete(
+    console.log("8. Deleting unpaid request...");
+    const deletedUnpaidCount = await requestService.delete(
       sampleUser,
       clientId,
-      createdVolunteerRequest.id
+      createdUnpaidRequestId
     );
-    console.log("Deleted volunteer request count:", deletedVolunteerCount);
+    console.log("Deleted unpaid request count:", deletedUnpaidCount);
 
     console.log("Request Service tests completed successfully!");
   } catch (error) {

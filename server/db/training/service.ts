@@ -51,76 +51,40 @@ export class TrainingRecordService {
   async create(
     record: Omit<TrainingRecord, "id">,
     user: User
-  ): Promise<TrainingRecord> {
+  ): Promise<string> {
     try {
       const validatedInput = trainingRecordSchema
         .omit({ id: true })
         .parse(record);
-
-      const recordToCreate: Omit<DbTrainingRecordEntity, "sK"> = {
-        pK: validatedInput.ownerId,
+      const { ownerId, ...rest } = validatedInput;
+      const newRecord: Omit<DbTrainingRecord, "sK"> = {
+        ...rest,
+        pK: ownerId,
         entityType: "trainingRecord",
-        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
       };
       const createdRecordId = await this.trainingRecordRepository.create(
-        recordToCreate,
+        newRecord,
         user
       );
-      const fetchedRecord = await this.getById(
-        user,
-        validatedInput.ownerId,
-        createdRecordId
-      );
-      if (!fetchedRecord) {
-        throw new Error("Failed to fetch created training record");
-      }
-
-      const { id, ...restFetched } = fetchedRecord;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error("Created record does not match expected values");
-      }
-
-      return fetchedRecord;
+      return createdRecordId;
     } catch (error) {
       console.error("Service Layer Error creating training record:", error);
       throw error;
     }
   }
-  async update(record: TrainingRecord, user: User): Promise<TrainingRecord> {
+  async update(record: TrainingRecord, user: User): Promise<void> {
     try {
       const validatedInput = trainingRecordSchema.parse(record);
+      const { id, ownerId, ...rest } = validatedInput;
 
-      const dbRecord: DbTrainingRecordEntity = {
-        pK: validatedInput.ownerId,
-        sK: validatedInput.id,
+      const updatedRecord: DbTrainingRecord = {
+        pK: ownerId,
+        sK: id,
         entityType: "trainingRecord",
-        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
+        ...rest,
       };
 
-      await this.trainingRecordRepository.update(dbRecord, user);
-
-      const fetchedRecord = await this.getById(
-        user,
-        validatedInput.ownerId,
-        validatedInput.id
-      );
-      if (!fetchedRecord) {
-        throw new Error("Failed to fetch updated training record");
-      }
-
-      // Assert exact equality for update
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedRecord)) {
-        throw new Error("Updated record does not match expected values");
-      }
-
-      return fetchedRecord;
+      await this.trainingRecordRepository.update(updatedRecord, user);
     } catch (error) {
       console.error("Service Layer Error updating training record:", error);
       throw error;
@@ -146,7 +110,7 @@ export class TrainingRecordService {
   }
 
   private transformDbTrainingRecordToShared(
-    records: DbTrainingRecordEntity[]
+    records: DbTrainingRecord[]
   ): TrainingRecord[] {
     return records.map((record) => {
       const { pK, sK, entityType, ...rest } = record;

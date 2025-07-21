@@ -1,14 +1,10 @@
-import {
-  RequestFull,
-  RequestMetadata,
-  requestFullSchema,
-  requestMetadataSchema,
-} from "shared";
+import { RequestFull, RequestMetadata, requestMetadataSchema } from "shared";
 import { RequestRepository } from "./repository";
 import { DbRequest, DbRequestEntity } from "./schema";
 import { DbPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
+import { endsWith } from "zod/v4";
 
 export class RequestService {
   requestRepository = new RequestRepository();
@@ -17,6 +13,17 @@ export class RequestService {
 
   async getAllActiveWithPackages(user: User): Promise<RequestFull[]> {
     const requestsFromDb = await this.requestRepository.getAllActive(user);
+    const packagesFromDb = await this.packageRepository.getAllActive(user);
+    const transformedRequests = this.transformDbRequestToSharedFull([
+      ...requestsFromDb,
+      ...packagesFromDb,
+    ]);
+    return transformedRequests;
+  }
+
+  async getAllOpenWithPackages(user: User): Promise<RequestFull[]> {
+    const requestsFromDb = await this.requestRepository.getAllOpen(user);
+    // below as we want all packages associated with the request (though archived wont be fetched)
     const packagesFromDb = await this.packageRepository.getAllActive(user);
     const transformedRequests = this.transformDbRequestToSharedFull([
       ...requestsFromDb,
@@ -41,97 +48,49 @@ export class RequestService {
     return fullRequest;
   }
 
-  async getByStartDateBefore(
-    user: User,
-    startDate: string
-  ): Promise<Request[]> {
-    const requestsFromDb = await this.requestRepository.getByStartDateBefore(
-      user,
-      startDate
-    );
-    const transformedRequests = this.transformDbRequestToShared(requestsFromDb);
-    return transformedRequests;
-  }
-
-  async create(request: Omit<Request, "id">, user: User): Promise<Request> {
+  async create(
+    request: Omit<RequestMetadata, "id" | "requestId">,
+    user: User
+  ): Promise<string> {
     try {
-      const validatedInput = requestSchema.omit({ id: true }).parse(request);
-
-      const requestToCreate: Omit<DbRequest, "sK"> = {
-        pK: validatedInput.clientId,
-        entityType:
-          validatedInput.requestType == "mp"
-            ? "clientMpRequest"
-            : "clientVolunteerRequest",
-        entityOwner: "client",
-        date: validatedInput.startDate,
-        details: validatedInput.details,
+      const validatedInput = requestMetadataSchema
+        .omit({ id: true })
+        .parse(request);
+      const requestSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
+      const { clientId, ...rest } = validatedInput;
+      const requestToCreate: Omit<DbRequestEntity, "sK" | "requestId"> = {
+        pK: clientId,
+        entityType: `request#${requestSuffix}`,
+        ...rest,
       };
       const createdRequestId = await this.requestRepository.create(
         requestToCreate,
         user
       );
 
-      const fetchedRequest = await this.getById(
-        user,
-        validatedInput.clientId,
-        createdRequestId
-      );
-      if (!fetchedRequest) {
-        throw new Error("Failed to fetch created client request");
-      }
-
-      const { id, ...restFetched } = fetchedRequest;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error(
-          "Created client request does not match expected values"
-        );
-      }
-
-      return fetchedRequest;
+      return createdRequestId;
     } catch (error) {
       console.error("Service Layer Error creating client request:", error);
       throw error;
     }
   }
 
-  async update(request: Request, user: User): Promise<Request> {
+  async update(request: Request, user: User): Promise<void> {
     try {
-      const validatedInput = requestSchema.parse(request);
-
-      const dbRequest: DbRequest = {
-        pK: validatedInput.clientId,
-        sK: validatedInput.id,
-        entityType:
-          validatedInput.requestType == "mp"
-            ? "clientMpRequest"
-            : "clientVolunteerRequest",
-        entityOwner: "client",
-        date: validatedInput.startDate,
-        details: validatedInput.details,
+      const validatedInput = requestMetadataSchema.parse(request);
+      const { id, clientId, ...rest } = validatedInput;
+      const requestSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
+      const dbRequest: DbRequestEntity = {
+        pK: clientId,
+        sK: id,
+        requestId: id,
+        entityType: `request#${requestSuffix}`,
+        ...rest,
       };
 
       await this.requestRepository.update(dbRequest, user);
-
-      const fetchedRequest = await this.getById(
-        user,
-        validatedInput.clientId,
-        validatedInput.id
-      );
-      if (!fetchedRequest) {
-        throw new Error("Failed to fetch updated client request");
-      }
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedRequest)) {
-        throw new Error(
-          "Updated client request does not match expected values"
-        );
-      }
-
-      return fetchedRequest;
     } catch (error) {
-      console.error("Service Layer Error updating client request:", error);
+      console.error(" Service Layer Error updating client request:", error);
       throw error;
     }
   }
