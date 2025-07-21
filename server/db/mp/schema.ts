@@ -2,6 +2,7 @@ import { z } from "zod";
 import { mpMetadataSchema } from "shared";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
+import { dbMagLogMp } from "../mag/schema";
 
 export const dbMpEntity = mpMetadataSchema
   .omit({
@@ -16,7 +17,7 @@ export const dbMpEntity = mpMetadataSchema
 
 export const dbMpMetadata = z.union([dbMpEntity, dbTrainingRecord]);
 
-export const dbMpFull = z.union([dbMpMetadata, dbPackage]);
+export const dbMpFull = z.union([dbMpMetadata, dbPackage, dbMagLogMp]);
 
 export type DbMpMetadata = z.infer<typeof dbMpMetadata>;
 export type DbMpEntity = z.infer<typeof dbMpEntity>;

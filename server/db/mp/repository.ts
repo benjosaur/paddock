@@ -31,7 +31,7 @@ export class MpRepository {
       const parsedResult = dbMpMetadata.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting item:", error);
+      console.error("Repository Layer Error getting all active Mps:", error);
       throw error;
     }
   }
@@ -50,7 +50,7 @@ export class MpRepository {
       const parsedResult = dbMpMetadata.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting item:", error);
+      console.error("Repository Layer Error getting all Mps:", error);
       throw error;
     }
   }
@@ -70,7 +70,7 @@ export class MpRepository {
       const parsedResult = dbMpFull.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting mp by ID:", error);
+      console.error("Repository Layer Error getting Mp by Id:", error);
       throw error;
     }
   }

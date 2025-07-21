@@ -87,4 +87,7 @@ export async function testMpLogService() {
   }
 }
 
-testMpLogService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testMpLogService();
+}

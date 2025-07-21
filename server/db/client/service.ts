@@ -93,6 +93,7 @@ export class ClientService {
         )
       );
       const fullClient = [{ ...clientMetadata[0], requests, magLogs }];
+      console.dir(fullClient, { depth: null });
       const parsedResult = clientFullSchema.array().parse(fullClient);
 
       return parsedResult[0];
@@ -114,7 +115,6 @@ export class ClientService {
       const clientToCreate: Omit<DbClientEntity, "id" | "pK" | "sK"> = {
         ...validatedInput,
         entityType: "client",
-        entityOwner: "client",
       };
       const createdClientId = await this.clientRepository.create(
         clientToCreate,

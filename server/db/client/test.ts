@@ -77,4 +77,7 @@ export async function testClientService() {
   }
 }
 
-testClientService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testClientService();
+}

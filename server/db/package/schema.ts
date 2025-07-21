@@ -9,12 +9,11 @@ export const dbPackage = packageSchema
   .extend({
     pK: z.string(), // m/v#
     sK: z.string(), // pkg#
-    entityType: z
-      .string()
-      .regex(
-        /^package#(\d{4}|open)$/,
-        "Must be 'package#yyyy' (4-digit year) or 'package#open'"
-      ),
+    entityType: z.string(),
+    // .regex(
+    //   /^package#(\d{4}|open)$/,
+    //   "Must be 'package#yyyy' (4-digit year) or 'package#open'"
+    // ),
   });
 
 export type DbPackage = z.infer<typeof dbPackage>;

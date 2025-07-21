@@ -25,7 +25,6 @@ export const packageSchema = z.object({
   id: z.string(),
   carerId: z.string(),
   requestId: z.string(),
-  type: z.enum(requestTypes),
   startDate: z.string().date(),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
@@ -38,13 +37,13 @@ export const packageSchema = z.object({
 
 export const requestMetadataSchema = z.object({
   id: z.string(),
-  type: z.enum(requestTypes),
+  requestType: z.enum(requestTypes),
   clientId: z.string(),
   startDate: z.string().date(),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
-    weeklyHours: z.string().default(""),
+    weeklyHours: z.number().default(0),
     status: z.enum(requestStatus).default("pending"),
     notes: z.string().default(""),
   }),

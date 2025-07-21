@@ -9,7 +9,6 @@ import { DbRequest, DbRequestEntity } from "./schema";
 import { DbPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
-import { fi } from "zod/v4/locales";
 
 export class RequestService {
   requestRepository = new RequestRepository();
@@ -36,9 +35,8 @@ export class RequestService {
 
   async getById(requestId: string, user: User): Promise<RequestFull> {
     const requestFromDb = await this.requestRepository.getById(requestId, user);
-    const transformedRequest = this.transformDbRequestToSharedFull([
-      requestFromDb,
-    ]);
+    const transformedRequest =
+      this.transformDbRequestToSharedFull(requestFromDb);
     const fullRequest = transformedRequest[0];
     return fullRequest;
   }
@@ -160,7 +158,7 @@ export class RequestService {
     const requestsMap = new Map<string, Partial<RequestFull>>();
 
     for (const item of items) {
-      const requestId = item.pK;
+      const requestId = item.requestId;
 
       if (!requestsMap.has(requestId)) {
         requestsMap.set(requestId, {
@@ -169,10 +167,9 @@ export class RequestService {
       }
 
       let request = requestsMap.get(requestId)!;
-
       if (item.sK.startsWith("req")) {
         const { pK, sK, entityType, ...rest } = item as DbRequestEntity;
-        Object.assign(request, rest);
+        Object.assign(request, { ...rest, clientId: pK });
       } else if (item.sK.startsWith("pkg")) {
         if (!request.packages) request.packages = [];
         const { pK, sK, entityType, ...rest } = item as DbPackage;

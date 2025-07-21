@@ -62,4 +62,7 @@ export async function testMpService() {
   }
 }
 
-testMpService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testMpService();
+}

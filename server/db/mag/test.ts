@@ -66,4 +66,7 @@ export async function testMagLogService() {
   }
 }
 
-testMagLogService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testMagLogService();
+}

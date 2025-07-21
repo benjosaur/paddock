@@ -2,6 +2,7 @@ import { z } from "zod";
 import { volunteerMetadataSchema } from "shared";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
+import { dbMagLogVolunteer } from "../mag/schema";
 
 export const dbVolunteerEntity = volunteerMetadataSchema
   .omit({
@@ -19,7 +20,11 @@ export const dbVolunteerMetadata = z.union([
   dbTrainingRecord,
 ]);
 
-export const dbVolunteerFull = z.union([dbVolunteerMetadata, dbPackage]);
+export const dbVolunteerFull = z.union([
+  dbVolunteerMetadata,
+  dbPackage,
+  dbMagLogVolunteer,
+]);
 
 export type DbVolunteerMetadata = z.infer<typeof dbVolunteerMetadata>;
 export type DbVolunteerEntity = z.infer<typeof dbVolunteerEntity>;

@@ -5,7 +5,12 @@ import {
   addUpdateMiddleware,
 } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { DbRequestEntity, dbRequestEntity } from "./schema";
+import {
+  DbRequest,
+  dbRequest,
+  DbRequestEntity,
+  dbRequestEntity,
+} from "./schema";
 import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
@@ -90,6 +95,17 @@ export class RequestRepository {
       commands.push(packageEndedInYear);
     }
 
+    const openRequestCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI3",
+      KeyConditionExpression: "entityType = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `request#open`,
+      },
+    });
+
+    commands.push(openRequestCommand);
+
     try {
       const results = await Promise.all(
         commands.map((command) => client.send(command))
@@ -104,7 +120,7 @@ export class RequestRepository {
     }
   }
 
-  async getById(requestId: string, user: User): Promise<DbRequestEntity> {
+  async getById(requestId: string, user: User): Promise<DbRequest[]> {
     // also returns associated packages
     const command = new QueryCommand({
       TableName: getTableName(user),
@@ -119,7 +135,8 @@ export class RequestRepository {
       if (!result.Items || result.Items.length === 0) {
         throw new Error(`Request with ID ${requestId} not found`);
       }
-      return dbRequestEntity.parse(result.Items[0]);
+      console.log(result.Items);
+      return dbRequest.array().parse(result.Items);
     } catch (error) {
       console.error("Repository Layer Error getting request by id:", error);
       throw error;

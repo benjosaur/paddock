@@ -8,12 +8,13 @@ export const dbRequestEntity = requestMetadataSchema
   .extend({
     pK: z.string(),
     sK: z.string(),
-    entityType: z
-      .string()
-      .regex(
-        /^request#(\d{4}|open)$/,
-        "Must be 'request#yyyy' (4-digit year) or 'package#open'"
-      ),
+    entityType: z.string(),
+    // below is actually same as pK but just for indexing purposes
+    requestId: z.string(),
+    // .regex(
+    //   /^request#(\d{4}|open)$/,
+    //   "Must be 'request#yyyy' (4-digit year) or 'request#open'"
+    // ),
   });
 
 export const dbRequest = z.union([dbRequestEntity, dbPackage]);

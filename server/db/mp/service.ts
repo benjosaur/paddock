@@ -207,6 +207,8 @@ export class MpService {
     const mpsMap = new Map<string, Partial<MpMetadata>>();
 
     for (const item of items) {
+      if (item.pK.startsWith("v")) continue;
+      // this is a volunteer tr/pkg which we do not want to consider
       const mpId = item.pK;
 
       if (!mpsMap.has(mpId)) {
@@ -216,7 +218,6 @@ export class MpService {
       }
 
       const mp = mpsMap.get(mpId)!;
-
       if (item.sK.startsWith("m")) {
         const { pK, sK, entityType, ...rest } = item as DbMpEntity;
         const fetchedMp: Omit<MpMetadata, "packages" | "trainingRecords"> = {

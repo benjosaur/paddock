@@ -74,4 +74,7 @@ export async function testVolunteerService() {
   }
 }
 
-testVolunteerService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testVolunteerService();
+}

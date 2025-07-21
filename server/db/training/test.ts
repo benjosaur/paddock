@@ -59,4 +59,7 @@ export async function testTrainingRecordService() {
   }
 }
 
-testTrainingRecordService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testTrainingRecordService();
+}

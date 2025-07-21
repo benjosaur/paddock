@@ -63,6 +63,8 @@ export class VolunteerService {
         ...dbTrainingRecords,
         ...dbPackages,
       ]);
+      console.log("VOLUNTEERS");
+      console.log(transformedResult);
       const parsedResult = volunteerMetadataSchema
         .array()
         .parse(transformedResult);
@@ -244,9 +246,11 @@ export class VolunteerService {
   private transformDbVolunteerToSharedMetaData(
     items: DbVolunteerMetadata[] | DbVolunteerFull[]
   ): VolunteerMetadata[] {
-    const volunteersMap = new Map<string, Partial<VolunteerFull>>();
+    const volunteersMap = new Map<string, Partial<VolunteerMetadata>>();
 
     for (const item of items) {
+      if (item.pK.startsWith("m")) continue;
+      // this is an mp tr/pkg which we do not want to consider
       const volunteerId = item.pK;
 
       if (!volunteersMap.has(volunteerId)) {
@@ -256,8 +260,7 @@ export class VolunteerService {
       }
 
       const volunteer = volunteersMap.get(volunteerId)!;
-
-      if (item.sK.startsWith("m")) {
+      if (item.sK.startsWith("v")) {
         const { pK, sK, entityType, ...rest } = item as DbVolunteerEntity;
         const fetchedVolunteer: Omit<
           VolunteerMetadata,
@@ -291,8 +294,6 @@ export class VolunteerService {
       } else throw new Error(`Undefined Case: ${item}`);
     }
 
-    return Array.from(volunteersMap.values()) as
-      | VolunteerMetadata[]
-      | VolunteerFull[];
+    return Array.from(volunteersMap.values()) as VolunteerMetadata[];
   }
 }

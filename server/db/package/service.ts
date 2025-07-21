@@ -34,8 +34,8 @@ export class PackageService {
 
   async getBySubstring(string: string, user: User): Promise<Package[]> {
     const metaLogs = await this.packageRepository.getMetaLogsBySubstring(
-      user,
-      string
+      string,
+      user
     );
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: Package[] = [];
@@ -52,18 +52,6 @@ export class PackageService {
       user,
       postCode
     );
-    const idsToFetch = metaLogs.map((log) => log.sK);
-    const parsedResult: Package[] = [];
-    for (const id of idsToFetch) {
-      const fetchedLog = await this.packageRepository.getById(user, id);
-      const parsedLog = this.groupAndTransformPackageData(fetchedLog);
-      parsedResult.push(parsedLog[0]);
-    }
-    return parsedResult;
-  }
-
-  async getByMpId(mpId: string, user: User): Promise<Package[]> {
-    const metaLogs = await this.packageRepository.getMetaLogsByMpId(user, mpId);
     const idsToFetch = metaLogs.map((log) => log.sK);
     const parsedResult: Package[] = [];
     for (const id of idsToFetch) {

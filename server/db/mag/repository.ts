@@ -24,12 +24,12 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting item:", error);
+      console.error("Repository Layer Error getting item:", error);
       throw error;
     }
   }
 
-  async getById(user: User, magLogId: string): Promise<DbMagLog[]> {
+  async getById(magLogId: string, user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI5",
@@ -44,17 +44,17 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting magLog by ID:", error);
+      console.error("Repository Layer Error getting magLog by ID:", error);
       throw error;
     }
   }
 
   async getByDateInterval(
-    user: User,
     input: {
       startDate: string;
       endDate: string;
-    }
+    },
+    user: User
   ): Promise<DbMagLog[]> {
     const { startDate, endDate } = z
       .object({
@@ -82,7 +82,7 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting magLogs by magId:", error);
+      console.error("Repository Layer Error getting magLogs by magId:", error);
       throw error;
     }
   }
@@ -158,7 +158,7 @@ export class MagLogRepository {
     }
   }
   async delete(magLogId: string, user: User): Promise<number[]> {
-    const existingLogs = await this.getById(user, magLogId);
+    const existingLogs = await this.getById(magLogId, user);
     try {
       await Promise.all(
         existingLogs.map((log) =>

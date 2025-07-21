@@ -5,6 +5,8 @@ export const dbMagLogEntity = magLogSchema
   .omit({
     id: true,
     clients: true,
+    mps: true,
+    volunteers: true,
   })
   .extend({
     pK: z.string(),
@@ -20,7 +22,7 @@ export const dbMagLogClient = magLogSchema.shape.clients.element
     entityType: z.literal("magLogClient"),
   });
 
-export const dbMagLogVolunteer = magLogSchema.shape.mps.element
+export const dbMagLogMp = magLogSchema.shape.mps.element
   .omit({ id: true })
   .extend({
     pK: z.string(),
@@ -28,7 +30,7 @@ export const dbMagLogVolunteer = magLogSchema.shape.mps.element
     entityType: z.literal("magLogMp"),
   });
 
-export const dbMagLogMp = magLogSchema.shape.volunteers.element
+export const dbMagLogVolunteer = magLogSchema.shape.volunteers.element
   .omit({ id: true })
   .extend({
     pK: z.string(),
@@ -36,7 +38,7 @@ export const dbMagLogMp = magLogSchema.shape.volunteers.element
     entityType: z.literal("magLogVolunteer"),
   });
 
-export const dbMagLog = z.union([
+export const dbMagLog = z.discriminatedUnion("entityType", [
   dbMagLogEntity,
   dbMagLogClient,
   dbMagLogVolunteer,

@@ -48,6 +48,8 @@ export class VolunteerRepository {
     try {
       const result = await client.send(command);
       const parsedResult = dbVolunteerMetadata.array().parse(result.Items);
+      console.log("PARSED V RESULT");
+      console.log(parsedResult);
       return parsedResult;
     } catch (error) {
       console.error("Error getting item:", error);

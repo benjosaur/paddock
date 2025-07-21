@@ -19,8 +19,9 @@ export class MagLogService {
     return parsedResult;
   }
 
-  async getById(user: User, magLogId: string): Promise<MagLog> {
-    const mag = await this.magLogRepository.getById(user, magLogId);
+  async getById(magLogId: string, user: User): Promise<MagLog> {
+    const mag = await this.magLogRepository.getById(magLogId, user);
+    console.log(mag);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult[0];
@@ -33,7 +34,7 @@ export class MagLogService {
       endDate: string;
     }
   ): Promise<MagLog[]> {
-    const mag = await this.magLogRepository.getByDateInterval(user, input);
+    const mag = await this.magLogRepository.getByDateInterval(input, user);
     const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
     const parsedResult = magLogSchema.array().parse(transformedResult);
     return parsedResult;
@@ -139,11 +140,15 @@ export class MagLogService {
 
       const magLog = magLogsMap.get(magLogId)!;
 
-      if (item.sK.startsWith("mag")) {
+      if (item.pK.startsWith("mag")) {
+        // second check below as may not have any associated clients/mps/volunteers
+        if (!magLog.clients) magLog.clients = [];
+        if (!magLog.mps) magLog.mps = [];
+        if (!magLog.volunteers) magLog.volunteers = [];
         const { pK, sK, entityType, ...rest } = item as DbMagLogEntity;
         Object.assign(magLog, rest);
         continue;
-      } else if (item.sK.startsWith("c")) {
+      } else if (item.pK.startsWith("c")) {
         if (!magLog.clients) magLog.clients = [];
         const { pK, sK, entityType, ...rest } = item as DbMagLogClient;
         magLog.clients.push({
@@ -151,14 +156,14 @@ export class MagLogService {
           ...rest,
         });
         continue;
-      } else if (item.sK.startsWith("m")) {
+      } else if (item.pK.startsWith("m")) {
         if (!magLog.mps) magLog.mps = [];
         const { pK, sK, entityType, ...rest } = item as DbMagLogMp;
         magLog.mps.push({
           id: item.pK,
           ...rest,
         });
-      } else if (item.sK.startsWith("v")) {
+      } else if (item.pK.startsWith("v")) {
         if (!magLog.volunteers) magLog.volunteers = [];
         const { pK, sK, entityType, ...rest } = item as DbMagLogVolunteer;
         magLog.volunteers.push({
