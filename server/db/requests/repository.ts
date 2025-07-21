@@ -16,21 +16,46 @@ import { firstYear } from "shared/const";
 
 export class RequestRepository {
   async getAllActive(user: User): Promise<DbRequestEntity[]> {
-    const command = new QueryCommand({
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
+    const commands: QueryCommand[] = [];
+
+    for (let year = firstYear; year <= currentYear; year++) {
+      const packageEndedInYear = new QueryCommand({
+        TableName: getTableName(user),
+        IndexName: "GSI1",
+        KeyConditionExpression: `entityType = :pk AND archived = :sk`,
+        ExpressionAttributeValues: {
+          ":pk": `request#${year}`,
+          ":sk": "N",
+        },
+      });
+      commands.push(packageEndedInYear);
+    }
+
+    const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
-        ":pk": "request",
+        ":pk": `request#open`,
         ":sk": "N",
       },
     });
+
+    commands.push(openRequestCommand);
+
     try {
-      const result = await client.send(command);
-      const parsedResult = dbRequestEntity.array().parse(result.Items);
+      const results = await Promise.all(
+        commands.map((command) => client.send(command))
+      );
+
+      const allItems = results.flatMap((result) => result.Items);
+      const parsedResult = dbRequestEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Repository Layer Error getting requests:", error);
+      console.error("Error getting client requests:", error);
       throw error;
     }
   }

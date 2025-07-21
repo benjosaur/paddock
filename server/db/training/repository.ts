@@ -10,7 +10,7 @@ import { DbTrainingRecord, dbTrainingRecord } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 
 export class TrainingRecordRepository {
-  async getAll(user: User): Promise<DbTrainingRecord[]> {
+  async getAllActive(user: User): Promise<DbTrainingRecord[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
@@ -30,7 +30,7 @@ export class TrainingRecordRepository {
     }
   }
 
-  async getAllActive(user: User): Promise<DbTrainingRecord[]> {
+  async getAll(user: User): Promise<DbTrainingRecord[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",

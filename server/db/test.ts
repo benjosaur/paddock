@@ -4,6 +4,7 @@ import { PackageService } from "./package/service";
 import { VolunteerService } from "./volunteer/service";
 import { MagLogService } from "./mag/service";
 import { TrainingRecordService } from "./training/service";
+import { RequestService } from "./requests/service";
 import { testClientService } from "./client/test";
 import { testMpService } from "./mp/test";
 // import { testMpLogService } from "./package/test";
@@ -23,6 +24,7 @@ const volunteerService = new VolunteerService();
 const packageService = new PackageService();
 const magLogService = new MagLogService();
 const trainingRecordService = new TrainingRecordService();
+const requestService = new RequestService();
 
 async function runAllTests() {
   console.log("🚀 Starting all database tests...\n");
@@ -48,12 +50,16 @@ async function runAllTests() {
 // Manual Reads
 
 console.dir(await clientService.getAll(sampleUser), { depth: null });
+console.dir(await clientService.getAllActive(sampleUser), { depth: null });
 console.dir(await clientService.getById("c#1", sampleUser), { depth: null });
 console.dir(await mpService.getAll(sampleUser), { depth: null });
+console.dir(await mpService.getAllActive(sampleUser), { depth: null });
 console.dir(await mpService.getById("mp#1", sampleUser), { depth: null });
 console.dir(await volunteerService.getAll(sampleUser), { depth: null });
+console.dir(await volunteerService.getAllActive(sampleUser), { depth: null });
 console.dir(await volunteerService.getById("v#1", sampleUser), { depth: null });
 console.dir(await packageService.getAll(sampleUser), { depth: null });
+console.dir(await packageService.getAllActive(sampleUser), { depth: null });
 console.dir(await packageService.getById("pkg#1", sampleUser), { depth: null });
 // console.dir(await packageService.getBySubstring("ey", sampleUser), {
 //   depth: null,
@@ -82,3 +88,8 @@ console.dir(await trainingRecordService.getAll(sampleUser), { depth: null });
 //   await trainingRecordService.getByExpiringBefore(sampleUser, "2026-01-31"),
 //   { depth: null }
 // );
+console.dir(await requestService.getAllMetadata(sampleUser), { depth: null });
+console.dir(await requestService.getAllActiveWithPackages(sampleUser), {
+  depth: null,
+});
+console.dir(await requestService.getById("req#1", sampleUser), { depth: null });

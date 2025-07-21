@@ -11,21 +11,46 @@ import { firstYear } from "shared/const";
 
 export class PackageRepository {
   async getAllActive(user: User): Promise<DbPackage[]> {
-    const command = new QueryCommand({
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
+    const commands: QueryCommand[] = [];
+
+    for (let year = firstYear; year <= currentYear; year++) {
+      const packageEndedInYear = new QueryCommand({
+        TableName: getTableName(user),
+        IndexName: "GSI1",
+        KeyConditionExpression: `entityType = :pk AND archived = :sk`,
+        ExpressionAttributeValues: {
+          ":pk": `package#${year}`,
+          ":sk": "N",
+        },
+      });
+      commands.push(packageEndedInYear);
+    }
+
+    const openPackageCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
       KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
-        ":pk": "package",
+        ":pk": `package#open`,
         ":sk": "N",
       },
     });
+
+    commands.push(openPackageCommand);
+
     try {
-      const result = await client.send(command);
-      const parsedResult = dbPackage.array().parse(result.Items);
+      const results = await Promise.all(
+        commands.map((command) => client.send(command))
+      );
+
+      const allItems = results.flatMap((result) => result.Items);
+      const parsedResult = dbPackage.array().parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Repository Layer Error getting packages:", error);
+      console.error("Error getting client requests:", error);
       throw error;
     }
   }

@@ -112,7 +112,7 @@ export const clientMetadataSchema = z.object({
     riskAssessmentComments: z.string().default(""),
     attendanceAllowance: z.enum(attendanceAllowanceStatus),
   }),
-  requests: z.array(requestMetadataSchema),
+  requests: z.array(requestMetadataSchema).default([]),
 });
 
 export const clientFullSchema = clientMetadataSchema.extend({
