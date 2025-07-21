@@ -104,6 +104,8 @@ export const clientMetadataSchema = z.object({
   dateOfBirth: z.string().date(),
   postCode: z.string(),
   details: basePersonDetails.extend({
+    donationScheme: z.boolean().default(false),
+    donationAmount: z.number().default(0),
     referredBy: z.string().default(""),
     clientAgreementDate: z
       .union([z.string().date(), z.literal("")])

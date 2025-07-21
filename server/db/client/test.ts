@@ -21,6 +21,8 @@ const sampleClient: Omit<ClientFull, "id"> = {
         note: "Regular check-ups required. Diabetes management.",
       },
     ],
+    donationScheme: true,
+    donationAmount: 10,
     referredBy: "GP Surgery",
     clientAgreementDate: "2024-01-01",
     clientAgreementComments: "All terms agreed",
