@@ -103,7 +103,7 @@ export class RequestRepository {
   }
 
   async getAll(
-    startYear: number | null = null,
+    startYear: number | null,
     user: User
   ): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);

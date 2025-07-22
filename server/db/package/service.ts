@@ -23,10 +23,7 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getAll(
-    startYear: number | null = null,
-    user: User
-  ): Promise<Package[]> {
+  async getAll(startYear: number | null, user: User): Promise<Package[]> {
     const packages = await this.packageRepository.getAll(startYear, user);
     const transformedResult = this.groupAndTransformPackageData(
       packages

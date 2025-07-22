@@ -32,7 +32,7 @@ export class RequestService {
   }
 
   async getAllMetadata(
-    startYear: number | null = null,
+    startYear: number | null,
     user: User
   ): Promise<RequestMetadata[]> {
     // no packages

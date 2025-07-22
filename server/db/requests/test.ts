@@ -70,7 +70,7 @@ export async function testRequestService() {
     console.log("Updated paid request");
 
     console.log("5. Getting all requests metadata...");
-    const allRequests = await requestService.getAllMetadata(sampleUser);
+    const allRequests = await requestService.getAllMetadata(null, sampleUser);
     console.log("All requests:", allRequests);
 
     console.log("6. Getting all active requests with packages...");

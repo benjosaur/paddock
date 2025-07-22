@@ -19,14 +19,22 @@
 	- For each request. Get weekly hours. Get Start Date. Get End Date. Derive total days covered in each month / 7 * weeklyHours and append to totalHours. Get village add to village entry. Get service(s), add to each service. Repeat
 */
 
+import { firstYear } from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
+import { Report } from "./schema";
 
 export class ReportService {
   requestService = new RequestService();
   packageService = new PackageService();
-  async generateRequestsReport(startYear: number, user: User): Promise<any> {
+  async generateRequestsReport(
+    startYear: number | null,
+    user: User
+  ): Promise<Report> {
     // find requests that ended in start year or later
     const requests = await this.requestService.getAllMetadata(startYear, user);
+    const report: Report = {
+      years: [],
+    };
   }
 }

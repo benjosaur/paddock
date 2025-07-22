@@ -97,10 +97,7 @@ export class PackageRepository {
     }
   }
 
-  async getAll(
-    startYear: number | null = null,
-    user: User
-  ): Promise<DbPackage[]> {
+  async getAll(startYear: number | null, user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
     const startYearToUse = startYear || firstYear;

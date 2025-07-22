@@ -50,7 +50,7 @@ export async function testPackageService() {
     console.log("Updated package successfully");
 
     console.log("4. Getting all packages...");
-    const allPackages = await packageService.getAll(sampleUser);
+    const allPackages = await packageService.getAll(null, sampleUser);
     console.log("All packages:", allPackages);
 
     console.log("5. Getting all active packages...");
