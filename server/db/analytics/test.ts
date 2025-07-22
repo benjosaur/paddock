@@ -18,6 +18,23 @@ export async function testReportService() {
       sampleUser
     );
     console.log("Generated packages report:", packagesReport);
+
+    console.log("\n3. Generating active requests cross section...");
+    const activeRequestsCrossSection =
+      await reportService.generateActiveRequestsCrossSection(sampleUser);
+    console.log(
+      "Generated active requests cross section:",
+      activeRequestsCrossSection
+    );
+
+    console.log("\n4. Generating active packages cross section...");
+    const activePackagesCrossSection =
+      await reportService.generateActivePackagesCrossSection(sampleUser);
+    console.log(
+      "Generated active packages cross section:",
+      activePackagesCrossSection
+    );
+
     console.log("\nAll tests completed successfully!");
   } catch (error) {
     console.error("Test failed:", error);

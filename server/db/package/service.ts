@@ -15,8 +15,8 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getAllThisYear(user: User): Promise<Package[]> {
-    const packages = await this.packageRepository.getAllThisYear(user);
+  async getAllNotEndedYet(user: User): Promise<Package[]> {
+    const packages = await this.packageRepository.getAllNotEndedYet(user);
     const transformedResult = this.groupAndTransformPackageData(
       packages
     ) as Package[];

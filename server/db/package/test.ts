@@ -70,7 +70,7 @@ export async function testPackageService() {
     console.log("Active packages:", activePackages);
 
     console.log("6. Getting all open packages...");
-    const openPackages = await packageService.getAllThisYear(sampleUser);
+    const openPackages = await packageService.getAllNotEndedYet(sampleUser);
     console.log("Open packages:", openPackages);
 
     console.log("7. Deleting package...");

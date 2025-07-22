@@ -55,7 +55,7 @@ export class PackageRepository {
     }
   }
 
-  async getAllThisYear(user: User): Promise<DbPackage[]> {
+  async getAllNotEndedYet(user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 

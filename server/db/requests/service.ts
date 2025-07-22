@@ -21,8 +21,8 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async getAllThisYearWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAllThisYear(user);
+  async getAllNotEndedYetWithPackages(user: User): Promise<RequestFull[]> {
+    const requestsFromDb = await this.requestRepository.getAllNotEndedYet(user);
     // below as we want all packages associated with the request (though archived wont be fetched)
     const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
     const transformedRequests = this.transformDbRequestToSharedFull([

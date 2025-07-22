@@ -22,12 +22,65 @@
 import { firstYear, months, serviceOptions } from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
-import { Report, reportMonthSchema, ReportYear } from "./schema";
+import { CrossSection, Report, reportMonthSchema, ReportYear } from "./schema";
 import { Package, RequestMetadata } from "shared";
 
 export class ReportService {
   requestService = new RequestService();
   packageService = new PackageService();
+
+  async generateActiveRequestsCrossSection(user: User): Promise<CrossSection> {
+    const requests = await this.requestService.getAllNotEndedYetWithPackages(
+      user
+    );
+    const crossSection: CrossSection = {
+      totalHours: 0,
+      localities: [],
+      services: [],
+    };
+    for (const request of requests) {
+      const weeklyHours = request.details.weeklyHours;
+      crossSection.totalHours += weeklyHours;
+      this.addHoursToReportLocality(
+        weeklyHours,
+        crossSection.localities,
+        request.details.address.locality,
+        request.details.services
+      );
+      this.addHoursToReportService(
+        weeklyHours,
+        crossSection.services,
+        request.details.services
+      );
+    }
+    return crossSection;
+  }
+
+  async generateActivePackagesCrossSection(user: User): Promise<CrossSection> {
+    const packages = await this.packageService.getAllNotEndedYet(user);
+    const crossSection: CrossSection = {
+      totalHours: 0,
+      localities: [],
+      services: [],
+    };
+    for (const pkg of packages) {
+      const weeklyHours = pkg.details.weeklyHours;
+      crossSection.totalHours += weeklyHours;
+      this.addHoursToReportLocality(
+        weeklyHours,
+        crossSection.localities,
+        pkg.details.address.locality,
+        pkg.details.services
+      );
+      this.addHoursToReportService(
+        weeklyHours,
+        crossSection.services,
+        pkg.details.services
+      );
+    }
+    return crossSection;
+  }
+
   async generateRequestsReport(
     user: User,
     startYear: number = firstYear
