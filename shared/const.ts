@@ -1,3 +1,5 @@
+import { nonpositive } from "zod/v4";
+
 export const firstYear = 2017;
 export const userRoles = [
   "Admin",
@@ -29,4 +31,19 @@ export const trainingRecordTypes = [
   "Manual Handling",
   "GDPR",
   "Other",
+] as const;
+export const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+export const wordMonths = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ] as const;

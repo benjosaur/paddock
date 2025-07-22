@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { ClientService } from "./service";
 import { ClientFull } from "shared";
 

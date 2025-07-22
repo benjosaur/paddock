@@ -21,6 +21,13 @@ export const viewConfigSchema = z.object({
   availableViews: z.array(z.string()),
 });
 
+const addressSchema = z.object({
+  streetAddress: z.string().default(""),
+  locality: z.string(),
+  county: z.string().default("Somerset"),
+  postCode: z.string(),
+});
+
 export const packageSchema = z.object({
   id: z.string(),
   carerId: z.string(),
@@ -30,6 +37,7 @@ export const packageSchema = z.object({
   details: z.object({
     name: z.string(),
     weeklyHours: z.number(),
+    address: addressSchema,
     notes: z.string().default(""),
     services: z.array(z.string()).default([]),
   }),
@@ -44,20 +52,15 @@ export const requestMetadataSchema = z.object({
   details: z.object({
     name: z.string(),
     weeklyHours: z.number().default(0),
+    address: addressSchema,
     status: z.enum(requestStatus).default("pending"),
+    services: z.array(z.string()).default([]),
     notes: z.string().default(""),
   }),
 });
 
 export const requestFullSchema = requestMetadataSchema.extend({
   packages: z.array(packageSchema).default([]),
-});
-
-const addressSchema = z.object({
-  streetAddress: z.string().default(""),
-  locality: z.string(),
-  county: z.string().default("Somerset"),
-  postCode: z.string(),
 });
 
 export const magLogSchema = z.object({

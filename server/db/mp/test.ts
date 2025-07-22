@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { MpService } from "./service";
 import { MpMetadata } from "shared";
 

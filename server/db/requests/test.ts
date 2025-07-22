@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { RequestService } from "./service";
 import { RequestMetadata } from "shared";
 
@@ -12,6 +12,13 @@ const samplePaidRequest: Omit<RequestMetadata, "id"> = {
   details: {
     name: "Test Client",
     notes: "Urgent paid support needed",
+    address: {
+      streetAddress: "61626 Schmidt Divide",
+      locality: "Bishops Lydeard",
+      county: "Somerset",
+      postCode: "TA4 2PJ",
+    },
+    services: ["Befriending", "Attendance Allowance"],
     weeklyHours: 10,
     status: "urgent",
   },
@@ -24,6 +31,13 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
   endDate: "open",
   details: {
     name: "Test Client",
+    address: {
+      streetAddress: "61626 Schmidt Divide",
+      locality: "Bishops Lydeard",
+      county: "Somerset",
+      postCode: "TA4 2PJ",
+    },
+    services: ["Befriending", "Attendance Allowance"],
     notes: "Weekly unpaid volunteer visit requested",
     weeklyHours: 5,
     status: "pending",
@@ -70,7 +84,7 @@ export async function testRequestService() {
     console.log("Updated paid request");
 
     console.log("5. Getting all requests metadata...");
-    const allRequests = await requestService.getAllMetadata(null, sampleUser);
+    const allRequests = await requestService.getAllMetadata(sampleUser);
     console.log("All requests:", allRequests);
 
     console.log("6. Getting all active requests with packages...");

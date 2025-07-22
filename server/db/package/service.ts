@@ -1,6 +1,7 @@
 import { Package, packageSchema } from "shared";
 import { PackageRepository } from "./repository";
 import { DbPackage } from "./schema";
+import { firstYear } from "shared/const";
 
 export class PackageService {
   packageRepository = new PackageRepository();
@@ -23,7 +24,7 @@ export class PackageService {
     return parsedResult;
   }
 
-  async getAll(startYear: number | null, user: User): Promise<Package[]> {
+  async getAll(user: User, startYear: number = firstYear): Promise<Package[]> {
     const packages = await this.packageRepository.getAll(startYear, user);
     const transformedResult = this.groupAndTransformPackageData(
       packages

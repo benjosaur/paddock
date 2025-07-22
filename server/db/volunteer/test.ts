@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { VolunteerService } from "./service";
 import { VolunteerMetadata } from "shared";
 

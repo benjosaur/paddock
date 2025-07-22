@@ -1,4 +1,4 @@
-import { serviceOptions } from "shared/const";
+import { months, serviceOptions } from "shared/const";
 import { z } from "zod";
 
 export const crossSectionSchema = z.object({
@@ -27,30 +27,20 @@ export const crossSectionSchema = z.object({
     .default([]),
 });
 
-export const yearSchema = crossSectionSchema.extend({
-  year: z.string().regex(/^\d{4}$/),
-  months: z.record(
-    z.enum([
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ]),
-    crossSectionSchema.default({ totalHours: 0 })
-  ),
+export const reportMonthSchema = crossSectionSchema.extend({
+  month: z.number(),
+});
+
+export const reportYearSchema = crossSectionSchema.extend({
+  year: z.number(),
+  months: z.array(reportMonthSchema),
 });
 
 export const reportSchema = z.object({
-  years: z.array(yearSchema),
+  years: z.array(reportYearSchema),
 });
 
 export type CrossSection = z.infer<typeof crossSectionSchema>;
+export type ReportMonth = z.infer<typeof reportMonthSchema>;
+export type ReportYear = z.infer<typeof reportYearSchema>;
 export type Report = z.infer<typeof reportSchema>;

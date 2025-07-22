@@ -1,6 +1,6 @@
 import { Package } from "shared";
 import { PackageService } from "./service";
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 
 const packageService = new PackageService();
 
@@ -11,6 +11,12 @@ const samplePackage: Omit<Package, "id"> = {
   endDate: "2025-12-31",
   details: {
     name: "Support Package for John Smith",
+    address: {
+      streetAddress: "61626 Schmidt Divide",
+      locality: "Bishops Lydeard",
+      county: "Somerset",
+      postCode: "TA4 2PJ",
+    },
     weeklyHours: 10,
     notes: "Weekly support visits including shopping and companionship",
     services: ["companionship", "shopping", "transport"],
@@ -40,6 +46,12 @@ export async function testPackageService() {
       ...fetchedPackage,
       details: {
         name: "Enhanced Support Package for John Smith",
+        address: {
+          streetAddress: "61626 Schmidt Divide",
+          locality: "Bishops Lydeard",
+          county: "Somerset",
+          postCode: "TA4 2PJ",
+        },
         weeklyHours: 15,
         notes:
           "Extended weekly support visits including shopping, companionship, and medical appointments",
@@ -50,7 +62,7 @@ export async function testPackageService() {
     console.log("Updated package successfully");
 
     console.log("4. Getting all packages...");
-    const allPackages = await packageService.getAll(null, sampleUser);
+    const allPackages = await packageService.getAll(sampleUser);
     console.log("All packages:", allPackages);
 
     console.log("5. Getting all active packages...");

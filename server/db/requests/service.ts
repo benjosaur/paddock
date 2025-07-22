@@ -4,6 +4,7 @@ import { DbRequest, DbRequestEntity } from "./schema";
 import { DbPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
+import { firstYear } from "shared/const";
 
 export class RequestService {
   requestRepository = new RequestRepository();
@@ -32,8 +33,8 @@ export class RequestService {
   }
 
   async getAllMetadata(
-    startYear: number | null,
-    user: User
+    user: User,
+    startYear: number = firstYear
   ): Promise<RequestMetadata[]> {
     // no packages
     const requestsFromDb = await this.requestRepository.getAll(startYear, user);

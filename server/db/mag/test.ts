@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { MagLogService } from "./service";
 import { MagLog } from "shared";
 

@@ -12,11 +12,7 @@ import { testVolunteerService } from "./volunteer/test";
 import { testMagLogService } from "./mag/test";
 import { testTrainingRecordService } from "./training/test";
 import { testRequestService } from "./requests/test";
-
-export const sampleUser: User = {
-  role: "Admin",
-  sub: "test-user-123",
-};
+import { sampleUser } from "../utils/test";
 
 const clientService = new ClientService();
 const mpService = new MpService();
@@ -60,7 +56,7 @@ console.dir(await volunteerService.getAllNotArchived(sampleUser), {
   depth: null,
 });
 console.dir(await volunteerService.getById("v#1", sampleUser), { depth: null });
-console.dir(await packageService.getAll(null, sampleUser), { depth: null });
+console.dir(await packageService.getAll(sampleUser), { depth: null });
 console.dir(await packageService.getAllNotArchived(sampleUser), {
   depth: null,
 });
@@ -68,7 +64,7 @@ console.dir(await packageService.getById("pkg#1", sampleUser), { depth: null });
 console.dir(await magLogService.getAll(sampleUser), { depth: null });
 console.dir(await magLogService.getById("mag#1", sampleUser), { depth: null });
 console.dir(await trainingRecordService.getAll(sampleUser), { depth: null });
-console.dir(await requestService.getAllMetadata(null, sampleUser), {
+console.dir(await requestService.getAllMetadata(sampleUser), {
   depth: null,
 });
 console.dir(await requestService.getAllNotArchivedWithPackages(sampleUser), {
