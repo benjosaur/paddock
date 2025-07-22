@@ -7,7 +7,7 @@ import { TrainingRecordService } from "./training/service";
 import { RequestService } from "./requests/service";
 import { testClientService } from "./client/test";
 import { testMpService } from "./mp/test";
-// import { testMpLogService } from "./package/test";
+import { testPackageService } from "./package/test";
 import { testVolunteerService } from "./volunteer/test";
 import { testMagLogService } from "./mag/test";
 import { testTrainingRecordService } from "./training/test";
@@ -32,7 +32,7 @@ async function runAllTests() {
   try {
     await testClientService();
     await testMpService();
-    // await testMpLogService();
+    await testPackageService();
     await testVolunteerService();
     await testMagLogService();
     await testTrainingRecordService();
@@ -65,33 +65,9 @@ console.dir(await packageService.getAllNotArchived(sampleUser), {
   depth: null,
 });
 console.dir(await packageService.getById("pkg#1", sampleUser), { depth: null });
-// console.dir(await packageService.getBySubstring("ey", sampleUser), {
-//   depth: null,
-// });
-// console.dir(
-//   await packageService.getByDateInterval(
-//     {
-//       startDate: "2024-01-01",
-//       endDate: "2026-01-31",
-//     },
-//     sampleUser
-//   ),
-//   { depth: null }
-// );
 console.dir(await magLogService.getAll(sampleUser), { depth: null });
 console.dir(await magLogService.getById("mag#1", sampleUser), { depth: null });
-// console.dir(
-//   await magLogService.getByDateInterval(sampleUser, {
-//     startDate: "2024-01-01",
-//     endDate: "2026-01-31",
-//   }),
-//   { depth: null }
-// );
 console.dir(await trainingRecordService.getAll(sampleUser), { depth: null });
-// console.dir(
-//   await trainingRecordService.getByExpiringBefore(sampleUser, "2026-01-31"),
-//   { depth: null }
-// );
 console.dir(await requestService.getAllMetadata(sampleUser), { depth: null });
 console.dir(await requestService.getAllNotArchivedWithPackages(sampleUser), {
   depth: null,

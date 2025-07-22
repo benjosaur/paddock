@@ -7,13 +7,17 @@ const mpService = new MpService();
 const sampleMp: Omit<MpMetadata, "id"> = {
   archived: "N",
   dateOfBirth: "1990-01-01",
-  postCode: "SW1A 1AA",
   dbsExpiry: "2025-12-31",
   publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "John Smith",
-    address: "House of Commons, Westminster",
+    address: {
+      streetAddress: "House of Commons",
+      locality: "Westminster",
+      county: "London",
+      postCode: "SW1A 1AA",
+    },
     email: "john.smith@parliament.uk",
     phone: "020 7219 3000",
     nextOfKin: "Jane Smith",
@@ -49,7 +53,6 @@ export async function testMpService() {
       id: retrievedMp.id,
       archived: retrievedMp.archived,
       dateOfBirth: retrievedMp.dateOfBirth,
-      postCode: retrievedMp.postCode,
       dbsExpiry: retrievedMp.dbsExpiry,
       publicLiabilityExpiry: retrievedMp.publicLiabilityExpiry,
       trainingRecords: retrievedMp.trainingRecords,

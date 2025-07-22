@@ -21,10 +21,12 @@ export const serviceOptions = [
   "Overnight",
   "Meal Prep",
   "Transport",
+  "Other",
 ] as const;
 export const trainingRecordTypes = [
   "First Aid",
   "Professional Boundaries",
   "Manual Handling",
   "GDPR",
+  "Other",
 ] as const;

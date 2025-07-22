@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { clientMetadataSchema } from "shared";
 import { dbMagLogClient } from "../mag/schema";
-import { dbRequest, dbRequestEntity } from "../requests/schema";
-import { dbPackage } from "../package/schema";
+import { dbRequestEntity } from "../requests/schema";
 
 export const dbClientEntity = clientMetadataSchema
   .omit({

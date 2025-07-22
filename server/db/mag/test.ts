@@ -9,15 +9,23 @@ const sampleMagLog: Omit<MagLog, "id"> = {
   clients: [
     {
       id: "client#test-client-123",
+      postCode: "SW1A 1AA",
       details: { name: "John Smith" },
     },
     {
       id: "client#test-client-456",
+      postCode: "E1 6AN",
       details: { name: "Jane Doe" },
     },
   ],
+  mps: [],
+  volunteers: [],
   details: {
-    total: 150.75,
+    totalClients: 2,
+    totalFamily: 0,
+    totalVolunteers: 0,
+    totalMps: 0,
+    otherAttendees: 1,
     notes: "Monthly magistrate session",
   },
 };
@@ -31,14 +39,18 @@ export async function testMagLogService() {
     console.log("Created Mag log:", createdLog);
 
     console.log("2. Getting Mag log by ID...");
-    const fetchedLog = await magLogService.getById(sampleUser, createdLog.id);
+    const fetchedLog = await magLogService.getById(createdLog.id, sampleUser);
     console.log("Fetched Mag log:", fetchedLog);
 
     console.log("3. Updating Mag log...");
     const updatedLogData: MagLog = {
       ...createdLog,
       details: {
-        total: 200.5,
+        totalClients: 2,
+        totalFamily: 1,
+        totalVolunteers: 1,
+        totalMps: 1,
+        otherAttendees: 2,
         notes: "Extended magistrate session with additional cases",
       },
     };

@@ -7,10 +7,14 @@ const clientService = new ClientService();
 const sampleClient: Omit<ClientFull, "id"> = {
   archived: "N",
   dateOfBirth: "1990-01-15",
-  postCode: "SW1A 1AA",
   details: {
     name: "John Doe",
-    address: "123 Test Street, London",
+    address: {
+      streetAddress: "61626 Schmidt Divide",
+      locality: "Bishops Lydeard",
+      county: "Somerset",
+      postCode: "TA4 2PJ",
+    },
     phone: "07123456789",
     email: "john.doe@example.com",
     nextOfKin: "Jane Doe (Spouse) - 07987654321",

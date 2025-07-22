@@ -7,13 +7,17 @@ const volunteerService = new VolunteerService();
 const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
   archived: "N",
   dateOfBirth: "1985-05-15",
-  postCode: "E1 6AN",
   dbsExpiry: "2025-12-31",
   publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "Sarah Johnson",
-    address: "123 Volunteer Street, London",
+    address: {
+      streetAddress: "123 Volunteer Street",
+      locality: "London",
+      county: "Greater London",
+      postCode: "E1 6AN",
+    },
     email: "sarah.johnson@email.com",
     phone: "020 7946 0958",
     nextOfKin: "Michael Johnson",
@@ -55,7 +59,6 @@ export async function testVolunteerService() {
       id: retrievedVolunteer.id,
       archived: retrievedVolunteer.archived,
       dateOfBirth: retrievedVolunteer.dateOfBirth,
-      postCode: retrievedVolunteer.postCode,
       dbsExpiry: retrievedVolunteer.dbsExpiry,
       publicLiabilityExpiry: retrievedVolunteer.publicLiabilityExpiry,
       trainingRecords: retrievedVolunteer.trainingRecords,

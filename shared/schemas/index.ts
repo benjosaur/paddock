@@ -53,14 +53,20 @@ export const requestFullSchema = requestMetadataSchema.extend({
   packages: z.array(packageSchema).default([]),
 });
 
+const addressSchema = z.object({
+  streetAddress: z.string().default(""),
+  locality: z.string(),
+  county: z.string().default("Somerset"),
+  postCode: z.string(),
+});
+
 export const magLogSchema = z.object({
   id: z.string(),
   date: z.string(),
   clients: z.array(
     z.object({
       id: z.string(),
-      postCode: z.string(),
-      details: z.object({ name: z.string() }),
+      details: z.object({ name: z.string(), address: addressSchema }),
     })
   ),
   mps: z.array(
@@ -87,7 +93,7 @@ export const magLogSchema = z.object({
 
 const basePersonDetails = z.object({
   name: z.string(),
-  address: z.string().default(""),
+  address: addressSchema,
   phone: z.string().default(""),
   email: z.string().default(""),
   nextOfKin: z.string().default(""),
@@ -102,7 +108,6 @@ export const clientMetadataSchema = z.object({
   id: z.string(),
   archived: z.enum(booleanTypes),
   dateOfBirth: z.string().date(),
-  postCode: z.string(),
   details: basePersonDetails.extend({
     donationScheme: z.boolean().default(false),
     donationAmount: z.number().default(0),
@@ -127,7 +132,6 @@ export const mpMetadataSchema = z.object({
   id: z.string(),
   archived: z.enum(booleanTypes),
   dateOfBirth: z.string().default(""),
-  postCode: z.string(),
   dbsExpiry: z.union([z.string().date(), z.literal("")]).default(""),
   publicLiabilityExpiry: z
     .union([z.string().date(), z.literal("")])

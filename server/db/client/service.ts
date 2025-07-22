@@ -86,7 +86,6 @@ export class ClientService {
         )
       );
       const fullClient = [{ ...clientMetadata[0], requests, magLogs }];
-      console.dir(fullClient, { depth: null });
       const parsedResult = clientFullSchema.array().parse(fullClient);
 
       return parsedResult[0];
