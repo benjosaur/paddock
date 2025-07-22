@@ -7,6 +7,8 @@ import {
   DbMagLogMp,
   DbMagLogVolunteer,
 } from "./schema";
+import { id } from "zod/v4/locales";
+import { client } from "../repository";
 
 export class MagLogService {
   magLogRepository = new MagLogRepository();
@@ -40,81 +42,101 @@ export class MagLogService {
     return parsedResult;
   }
 
-  async create(newMagLog: Omit<MagLog, "id">, user: User): Promise<MagLog> {
+  async create(newMagLog: Omit<MagLog, "id">, user: User): Promise<string> {
     const validatedInput = magLogSchema.omit({ id: true }).parse(newMagLog);
 
     const magLogMain: Omit<DbMagLogEntity, "pK" | "sK"> = {
       ...validatedInput,
-      entityType: "magLog",
-      entityOwner: "main",
+      entityType: "magLogEntity",
     };
     const magLogClients: Omit<DbMagLogClient, "sK">[] =
       validatedInput.clients.map((client) => ({
         date: validatedInput.date,
-        entityType: "magLog",
+        entityType: "magLogClient",
         entityOwner: "client",
         pK: client.id,
         ...client,
       }));
+    const magLogMps: Omit<DbMagLogMp, "sK">[] = validatedInput.mps.map(
+      (mp) => ({
+        date: validatedInput.date,
+        entityType: "magLogMp",
+        entityOwner: "mp",
+        pK: mp.id,
+        ...mp,
+      })
+    );
+    const magLogVolunteers: Omit<DbMagLogVolunteer, "sK">[] =
+      validatedInput.volunteers.map((volunteer) => ({
+        date: validatedInput.date,
+        entityType: "magLogVolunteer",
+        entityOwner: "volunteer",
+        pK: volunteer.id,
+        ...volunteer,
+      }));
     try {
-      const createdLogId = await this.magLogRepository.create(
-        [magLogMain, ...magLogClients],
+      const createdLogId = await this.magLogRepository.createMagEntity(
+        [magLogMain],
+        user
+      );
+      await this.magLogRepository.createMagReference(
+        [...magLogClients, ...magLogMps, ...magLogVolunteers],
         user
       );
 
-      const fetchedLog = await this.getById(user, createdLogId);
-      if (!fetchedLog) {
-        throw new Error("Failed to fetch created mag log");
-      }
-
-      const { id, ...restFetched } = fetchedLog;
-
-      if (JSON.stringify(newMagLog) !== JSON.stringify(restFetched)) {
-        throw new Error("Created mag log does not match expected values");
-      }
-
-      return fetchedLog;
+      return createdLogId;
     } catch (error) {
       console.error("Service Layer Error creating magLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLog: MagLog, user: User): Promise<MagLog> {
+  async update(updatedMpLog: MagLog, user: User): Promise<void> {
     const validatedInput = magLogSchema.parse(updatedMpLog);
-    const magLogKey = validatedInput.id;
-    this.magLogRepository.delete(magLogKey, user);
+    const { id, clients, mps, volunteers, ...rest } = validatedInput;
+
+    // delete all refs in case mps or volunteers purposely removed
+    this.magLogRepository.delete(id, user);
 
     const magLogMain: DbMagLogEntity = {
-      ...validatedInput,
-      pK: magLogKey,
-      sK: magLogKey,
-      entityType: "magLog",
-      entityOwner: "main",
+      ...rest,
+      pK: id,
+      sK: id,
+      entityType: "magLogEntity",
     };
-    const magLogClients: DbMagLogClient[] = validatedInput.clients.map(
-      (client) => ({
+
+    const magLogClients: DbMagLogClient[] = clients.map(
+      (client): DbMagLogClient => ({
         pK: client.id,
-        sK: magLogKey,
-        date: validatedInput.date,
-        entityType: "magLog",
-        entityOwner: "client",
+        sK: id,
+        entityType: "magLogClient",
         ...client,
       })
     );
+
+    const magLogMps: DbMagLogMp[] = mps.map(
+      (mp): DbMagLogMp => ({
+        pK: mp.id,
+        sK: id,
+        entityType: "magLogMp",
+        ...mp,
+      })
+    );
+
+    const magLogVolunteers: DbMagLogVolunteer[] = volunteers.map(
+      (volunteer): DbMagLogVolunteer => ({
+        pK: volunteer.id,
+        sK: id,
+        entityType: "magLogVolunteer",
+        ...volunteer,
+      })
+    );
+
     try {
-      await this.magLogRepository.update([magLogMain, ...magLogClients], user);
-
-      const fetchedLog = await this.getById(user, updatedMpLog.id);
-      if (!fetchedLog) {
-        throw new Error("Failed to fetch updated mag log");
-      }
-
-      if (JSON.stringify(updatedMpLog) !== JSON.stringify(fetchedLog)) {
-        throw new Error("Updated mag log does not match expected values");
-      }
-
-      return fetchedLog;
+      await this.magLogRepository.update(
+        [magLogMain, ...magLogClients, ...magLogMps, ...magLogVolunteers],
+        user
+      );
     } catch (error) {
       console.error("Service Layer Error updating magLogs:", error);
       throw error;

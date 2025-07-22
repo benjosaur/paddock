@@ -9,13 +9,27 @@ const sampleMagLog: Omit<MagLog, "id"> = {
   clients: [
     {
       id: "client#test-client-123",
-      postCode: "SW1A 1AA",
-      details: { name: "John Smith" },
+      details: {
+        name: "John Smith",
+        address: {
+          streetAddress: "61626 Schmidt Divide",
+          locality: "Bishops Lydeard",
+          county: "Somerset",
+          postCode: "TA4 2PJ",
+        },
+      },
     },
     {
       id: "client#test-client-456",
-      postCode: "E1 6AN",
-      details: { name: "Jane Doe" },
+      details: {
+        name: "Jane Doe",
+        address: {
+          streetAddress: "123 Main St",
+          locality: "London",
+          county: "Greater London",
+          postCode: "E1 6AN",
+        },
+      },
     },
   ],
   mps: [],
@@ -35,16 +49,16 @@ export async function testMagLogService() {
     console.log("Testing Mag Log Service...");
 
     console.log("1. Creating Mag log...");
-    const createdLog = await magLogService.create(sampleMagLog, sampleUser);
-    console.log("Created Mag log:", createdLog);
+    const createdLogId = await magLogService.create(sampleMagLog, sampleUser);
+    console.log("Created Mag log ID:", createdLogId);
 
     console.log("2. Getting Mag log by ID...");
-    const fetchedLog = await magLogService.getById(createdLog.id, sampleUser);
+    const fetchedLog = await magLogService.getById(createdLogId, sampleUser);
     console.log("Fetched Mag log:", fetchedLog);
 
     console.log("3. Updating Mag log...");
     const updatedLogData: MagLog = {
-      ...createdLog,
+      ...fetchedLog,
       details: {
         totalClients: 2,
         totalFamily: 1,
@@ -69,7 +83,7 @@ export async function testMagLogService() {
     console.log("Mag logs in January 2025:", logsInInterval);
 
     console.log("6. Deleting Mag log...");
-    const deletedCount = await magLogService.delete(sampleUser, createdLog.id);
+    const deletedCount = await magLogService.delete(sampleUser, createdLogId);
     console.log("Deleted count:", deletedCount);
 
     console.log("Mag Log Service tests completed successfully!");

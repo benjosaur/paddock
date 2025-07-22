@@ -45,7 +45,7 @@ async function runAllTests() {
   }
 }
 
-// runAllTests();
+runAllTests();
 
 // Manual Reads
 
