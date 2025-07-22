@@ -102,13 +102,16 @@ export class RequestRepository {
     }
   }
 
-  async getAll(user: User): Promise<DbRequestEntity[]> {
+  async getAll(
+    startYear: number | null = null,
+    user: User
+  ): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
-
+    const startYearToUse = startYear || firstYear;
     const commands: QueryCommand[] = [];
 
-    for (let year = firstYear; year <= currentYear; year++) {
+    for (let year = startYearToUse; year <= currentYear; year++) {
       const packageEndedInYear = new QueryCommand({
         TableName: getTableName(user),
         IndexName: "GSI3",

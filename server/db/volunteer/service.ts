@@ -56,7 +56,7 @@ export class VolunteerService {
       const dbTrainingRecords = await this.trainingRecordRepository.getAll(
         user
       );
-      const dbPackages = await this.packageRepository.getAll(user);
+      const dbPackages = await this.packageRepository.getAll(null, user);
       const transformedResult = this.transformDbVolunteerToSharedMetaData([
         ...dbVolunteers,
         ...dbTrainingRecords,

@@ -60,7 +60,7 @@ console.dir(await volunteerService.getAllNotArchived(sampleUser), {
   depth: null,
 });
 console.dir(await volunteerService.getById("v#1", sampleUser), { depth: null });
-console.dir(await packageService.getAll(sampleUser), { depth: null });
+console.dir(await packageService.getAll(null, sampleUser), { depth: null });
 console.dir(await packageService.getAllNotArchived(sampleUser), {
   depth: null,
 });
@@ -68,7 +68,9 @@ console.dir(await packageService.getById("pkg#1", sampleUser), { depth: null });
 console.dir(await magLogService.getAll(sampleUser), { depth: null });
 console.dir(await magLogService.getById("mag#1", sampleUser), { depth: null });
 console.dir(await trainingRecordService.getAll(sampleUser), { depth: null });
-console.dir(await requestService.getAllMetadata(sampleUser), { depth: null });
+console.dir(await requestService.getAllMetadata(null, sampleUser), {
+  depth: null,
+});
 console.dir(await requestService.getAllNotArchivedWithPackages(sampleUser), {
   depth: null,
 });

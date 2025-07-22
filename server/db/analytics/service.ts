@@ -25,5 +25,8 @@ import { RequestService } from "../requests/service";
 export class ReportService {
   requestService = new RequestService();
   packageService = new PackageService();
-  async generateRequestsReport(startYear: number): Promise<any> {}
+  async generateRequestsReport(startYear: number, user: User): Promise<any> {
+    // find requests that ended in start year or later
+    const requests = await this.requestService.getAllMetadata(startYear, user);
+  }
 }

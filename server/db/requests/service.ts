@@ -31,9 +31,12 @@ export class RequestService {
     return transformedRequests;
   }
 
-  async getAllMetadata(user: User): Promise<RequestMetadata[]> {
+  async getAllMetadata(
+    startYear: number | null = null,
+    user: User
+  ): Promise<RequestMetadata[]> {
     // no packages
-    const requestsFromDb = await this.requestRepository.getAll(user);
+    const requestsFromDb = await this.requestRepository.getAll(startYear, user);
     const transformedRequests =
       this.transformDbRequestToSharedFull(requestsFromDb);
     return transformedRequests;

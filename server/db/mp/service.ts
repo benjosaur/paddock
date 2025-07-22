@@ -43,7 +43,7 @@ export class MpService {
       const dbTrainingRecords = await this.trainingRecordRepository.getAll(
         user
       );
-      const dbPackages = await this.packageRepository.getAll(user);
+      const dbPackages = await this.packageRepository.getAll(null, user);
       const transformedResult = this.transformDbMpToSharedMetaData([
         ...dbMps,
         ...dbTrainingRecords,
