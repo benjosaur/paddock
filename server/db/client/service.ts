@@ -46,7 +46,7 @@ export class ClientService {
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAll(user);
-      const dbRequests = await this.requestRepository.getAll(null, user);
+      const dbRequests = await this.requestRepository.getAll(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
         ...dbRequests,

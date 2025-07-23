@@ -16,11 +16,16 @@ export function ClientForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
+    archived: "N",
     dateOfBirth: "",
-    postCode: "",
     details: {
       name: "",
-      address: "",
+      address: {
+        streetAddress: "",
+        locality: "",
+        county: "Somerset",
+        postCode: "",
+      },
       phone: "",
       email: "",
       nextOfKin: "",
@@ -29,17 +34,14 @@ export function ClientForm() {
       clientAgreementComments: "",
       riskAssessmentDate: "",
       riskAssessmentComments: "",
-      needs: [],
       services: [],
       attendanceAllowance: "pending",
       attendsMag: false,
-      notes: "",
+      donationScheme: false,
+      donationAmount: 0,
+      notes: [],
     },
-    mpRequests: [],
-    volunteerRequests: [],
-    // below not edited here.
-    mpLogs: [],
-    volunteerLogs: [],
+    requests: [],
     magLogs: [],
   });
 
@@ -76,10 +78,8 @@ export function ClientForm() {
       onSuccess: () => {
         const queryKeys = [
           thisClientQueryKey,
-          trpc.mpLogs.getAll.queryKey(),
-          trpc.volunteerLogs.getAll.queryKey(),
-          trpc.magLogs.getAll.queryKey(),
-          trpc.clientRequests.getAll.queryKey(),
+          trpc.mag.getAll.queryKey(),
+          trpc.requests.getAllMetadata.queryKey(),
         ];
 
         queryKeys.forEach((queryKey) => {
@@ -111,10 +111,7 @@ export function ClientForm() {
   };
 
   const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as
-      | "details.services"
-      | "details.needs"
-      | "details.specialisms";
+    const field = e.target.name as "details.services";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -153,7 +150,7 @@ export function ClientForm() {
         clientId: id,
         newName: newValue,
       });
-    } else if (field == "postCode") {
+    } else if (field == "details.address.postCode") {
       updatePostCodeMutation.mutate({
         clientId: id,
         newPostCode: newValue,
@@ -233,12 +230,40 @@ export function ClientForm() {
                   htmlFor="address"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Address
+                  Street Address
                 </label>
                 <Input
                   id="address"
-                  name="details.address"
-                  value={formData.details.address || ""}
+                  name="details.address.streetAddress"
+                  value={formData.details.address.streetAddress || ""}
+                  onChange={handleInputChange}
+                />
+              </div>{" "}
+              <div>
+                <label
+                  htmlFor="locality"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Locality
+                </label>
+                <Input
+                  id="locality"
+                  name="details.address.locality"
+                  value={formData.details.address.locality || ""}
+                  onChange={handleInputChange}
+                />
+              </div>{" "}
+              <div>
+                <label
+                  htmlFor="county"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  County
+                </label>
+                <Input
+                  id="county"
+                  name="details.address.county"
+                  value={formData.details.address.county || ""}
                   onChange={handleInputChange}
                 />
               </div>{" "}
@@ -252,8 +277,8 @@ export function ClientForm() {
                 <div className="flex gap-2">
                   <Input
                     id="postCode"
-                    name="postCode"
-                    value={formData.postCode || ""}
+                    name="details.address.postCode"
+                    value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
                     required
                     disabled={isEditing}
@@ -261,8 +286,8 @@ export function ClientForm() {
                   />
                   {isEditing && !clientQuery.isLoading && clientQuery.data && (
                     <FieldEditModal
-                      field="postCode"
-                      currentValue={formData.postCode}
+                      field="details.address.postCode"
+                      currentValue={formData.details.address.postCode}
                       onSubmit={handleFieldChangeSubmit}
                     />
                   )}
@@ -389,22 +414,7 @@ export function ClientForm() {
                   value={formData.details.riskAssessmentComments || ""}
                   onChange={handleInputChange}
                 />
-              </div>{" "}
-              <div>
-                <label
-                  htmlFor="needs"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Needs (comma-separated)
-                </label>
-                <Input
-                  id="needs"
-                  name="details.needs"
-                  value={formData.details.needs?.join(", ") || ""}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Personal Care, Domestic Support"
-                />
-              </div>{" "}
+              </div>
               <div>
                 <label
                   htmlFor="services"

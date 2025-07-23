@@ -25,6 +25,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
       update: true,
       delete: true,
     },
+    analytics: { read: true, create: false, update: false, delete: false },
   },
   Admin: {
     clients: { read: true, create: true, update: true, delete: true },
@@ -39,6 +40,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
       update: true,
       delete: true,
     },
+    analytics: { read: true, create: false, update: false, delete: false },
   },
   Trustee: {
     clients: { read: true, create: false, update: false, delete: false },
@@ -53,6 +55,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
       update: false,
       delete: false,
     },
+    analytics: { read: true, create: false, update: false, delete: false },
   },
   Coordinator: {
     clients: { read: true, create: true, update: true, delete: false },
@@ -67,6 +70,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
       update: false,
       delete: false,
     },
+    analytics: { read: true, create: false, update: false, delete: false },
   },
   Finance: {
     clients: { read: true, create: false, update: false, delete: false },
@@ -81,5 +85,6 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
       update: false,
       delete: false,
     },
+    analytics: { read: true, create: false, update: false, delete: false },
   },
 };

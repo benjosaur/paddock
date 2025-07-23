@@ -97,7 +97,10 @@ export class PackageRepository {
     }
   }
 
-  async getAll(startYear: number, user: User): Promise<DbPackage[]> {
+  async getAll(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
     const commands: QueryCommand[] = [];

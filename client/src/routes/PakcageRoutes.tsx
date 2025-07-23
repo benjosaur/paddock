@@ -1,6 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
-import { MpLogForm } from "../pages/MpLogForm";
+import { MpLogForm } from "../pages/PackageForm";
 import { trpc } from "../utils/trpc";
 import type { MpLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

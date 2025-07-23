@@ -4,27 +4,34 @@ import Select from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { ClientRequest, ClientMetadata } from "../types";
+import type { RequestMetadata, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import { requestStatus, requestTypes } from "shared/const";
 
-export function ClientRequestForm() {
+export function RequestForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || "";
-  const clientId = searchParams.get("clientId") || "";
 
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<ClientRequest, "id">>({
+  const [formData, setFormData] = useState<Omit<RequestMetadata, "id">>({
     clientId: "",
-    requestType: "mp",
+    requestType: "paid",
     startDate: "",
+    endDate: "open",
     details: {
       name: "",
+      weeklyHours: 0,
+      address: {
+        streetAddress: "",
+        locality: "",
+        county: "Somerset",
+        postCode: "",
+      },
       status: "pending",
-      schedule: "",
+      services: [],
       notes: "",
     },
   });
@@ -33,28 +40,28 @@ export function ClientRequestForm() {
 
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
 
-  const clientRequestQuery = useQuery({
-    ...trpc.clientRequests.getById.queryOptions({ id, clientId }),
+  const requestQuery = useQuery({
+    ...trpc.requests.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const clientRequestQueryKey = trpc.clientRequests.getAll.queryKey();
+  const requestQueryKey = trpc.requests.getAllMetadata.queryKey();
 
   const clients = clientsQuery.data || [];
-  const clientRequest = clientRequestQuery.data;
+  const request = requestQuery.data;
 
   const createMutation = useMutation(
-    trpc.clientRequests.create.mutationOptions({
+    trpc.requests.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientRequestQueryKey });
+        queryClient.invalidateQueries({ queryKey: requestQueryKey });
         navigate("/new-requests");
       },
     })
   );
 
   const updateMutation = useMutation(
-    trpc.clientRequests.update.mutationOptions({
+    trpc.requests.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientRequestQueryKey });
+        queryClient.invalidateQueries({ queryKey: requestQueryKey });
         navigate("/new-requests");
       },
     })
@@ -76,18 +83,20 @@ export function ClientRequestForm() {
   }));
 
   useEffect(() => {
-    if (isEditing && clientRequest) {
-      setFormData(clientRequest);
+    if (isEditing && request) {
+      setFormData(request);
     }
-  }, [isEditing, clientRequest]);
+  }, [isEditing, request]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -222,18 +231,35 @@ export function ClientRequestForm() {
 
               <div>
                 <label
-                  htmlFor="schedule"
+                  htmlFor="weeklyHours"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Schedule *
+                  Weekly Hours *
                 </label>
                 <Input
-                  id="schedule"
-                  name="details.schedule"
-                  value={formData.details.schedule || ""}
+                  id="weeklyHours"
+                  name="details.weeklyHours"
+                  type="number"
+                  value={formData.details.weeklyHours || 0}
                   onChange={handleInputChange}
-                  placeholder="e.g., Mon, Wed, Fri at 10:00 AM"
+                  placeholder="e.g., 10"
                   required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="notes"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Notes
+                </label>
+                <Input
+                  id="notes"
+                  name="details.notes"
+                  value={formData.details.notes || ""}
+                  onChange={handleInputChange}
+                  placeholder="Additional notes about the request"
                 />
               </div>
 
@@ -261,6 +287,72 @@ export function ClientRequestForm() {
                 />
               </div>
             </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Service Address
+              </h3>
+
+              <div>
+                <label
+                  htmlFor="streetAddress"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Street Address
+                </label>
+                <Input
+                  id="streetAddress"
+                  name="details.address.streetAddress"
+                  value={formData.details.address.streetAddress || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="locality"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Locality
+                </label>
+                <Input
+                  id="locality"
+                  name="details.address.locality"
+                  value={formData.details.address.locality || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="county"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  County
+                </label>
+                <Input
+                  id="county"
+                  name="details.address.county"
+                  value={formData.details.address.county || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="postCode"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Post Code
+                </label>
+                <Input
+                  id="postCode"
+                  name="details.address.postCode"
+                  value={formData.details.address.postCode || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
@@ -275,7 +367,7 @@ export function ClientRequestForm() {
                 ? "Saving..."
                 : isEditing
                 ? "Update Request"
-                : "Create Client Request"}
+                : "Create Request"}
             </Button>
           </div>
         </form>

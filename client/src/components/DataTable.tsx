@@ -26,6 +26,7 @@ interface DataTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
   onEdit?: (id: string) => void;
+  onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
@@ -182,6 +183,14 @@ export function DataTable<T extends { id: string }>({
                             <DropdownMenuItem onClick={() => onEdit(item.id)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="update">
+                          {onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Archive
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

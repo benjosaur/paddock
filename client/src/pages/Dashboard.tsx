@@ -20,7 +20,8 @@ export function Dashboard() {
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
-  const mpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
+  const activePackagesQuery = useQuery(trpc.packages.getAllNotEndedYet.queryOptions());
+  const analyticsQuery = useQuery(trpc.analytics.)
 
   // Get year to date range
   const yearRange = getCurrentYear();

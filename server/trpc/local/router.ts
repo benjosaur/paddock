@@ -6,6 +6,7 @@ import { packagesRouter } from "../routers/packages";
 import { magRouter } from "../routers/mag";
 import { requestsRouter } from "../routers/requests";
 import { trainingRecordsRouter } from "../routers/trainingRecords";
+import { analyticsRouter } from "../routers/analytics";
 
 export const localAppRouter = localRouter({
   mps: mpsRouter,
@@ -15,4 +16,5 @@ export const localAppRouter = localRouter({
   mag: magRouter,
   requests: requestsRouter,
   trainingRecords: trainingRecordsRouter,
+  analytics: analyticsRouter,
 });
