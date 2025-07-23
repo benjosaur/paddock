@@ -41,6 +41,7 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
+      console.log(result.Items);
       const parsedResult = dbTrainingRecord.array().parse(result.Items);
       return parsedResult;
     } catch (error) {

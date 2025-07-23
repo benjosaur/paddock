@@ -4,6 +4,7 @@ import {
   booleanTypes,
   requestStatus,
   requestTypes,
+  serviceOptions,
   userRoles,
 } from "../const";
 
@@ -156,6 +157,45 @@ export const volunteerMetadataSchema = mpMetadataSchema;
 
 export const volunteerFullSchema = mpFullSchema;
 
+export const crossSectionSchema = z.object({
+  totalHours: z.number().default(0),
+  localities: z
+    .array(
+      z.object({
+        name: z.string(),
+        services: z.array(
+          z.object({
+            name: z.enum(serviceOptions),
+            totalHours: z.number().default(0),
+          })
+        ),
+        totalHours: z.number().default(0),
+      })
+    )
+    .default([]),
+  services: z
+    .array(
+      z.object({
+        name: z.enum(serviceOptions),
+        totalHours: z.number().default(0),
+      })
+    )
+    .default([]),
+});
+
+export const reportMonthSchema = crossSectionSchema.extend({
+  month: z.number(),
+});
+
+export const reportYearSchema = crossSectionSchema.extend({
+  year: z.number(),
+  months: z.array(reportMonthSchema),
+});
+
+export const reportSchema = z.object({
+  years: z.array(reportYearSchema),
+});
+
 export type MpMetadata = z.infer<typeof mpMetadataSchema>;
 export type MpFull = z.infer<typeof mpFullSchema>;
 export type VolunteerMetadata = z.infer<typeof volunteerMetadataSchema>;
@@ -169,3 +209,7 @@ export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
+export type CrossSection = z.infer<typeof crossSectionSchema>;
+export type ReportMonth = z.infer<typeof reportMonthSchema>;
+export type ReportYear = z.infer<typeof reportYearSchema>;
+export type Report = z.infer<typeof reportSchema>;

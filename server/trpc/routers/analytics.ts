@@ -1,5 +1,5 @@
+import { crossSectionSchema, reportSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { crossSectionSchema, reportSchema } from "../../db/analytics/schema";
 import { z } from "zod";
 
 export const analyticsRouter = router({

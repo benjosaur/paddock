@@ -22,8 +22,14 @@
 import { firstYear, months, serviceOptions } from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
-import { CrossSection, Report, reportMonthSchema, ReportYear } from "./schema";
-import { Package, RequestMetadata } from "shared";
+import {
+  Package,
+  RequestMetadata,
+  CrossSection,
+  Report,
+  reportMonthSchema,
+  ReportYear,
+} from "shared";
 
 export class ReportService {
   requestService = new RequestService();

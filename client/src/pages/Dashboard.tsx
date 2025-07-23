@@ -1,6 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import Select, { SingleValue } from "react-select";
 import { trpc } from "../utils/trpc";
 import { AnimatedCounter } from "../components/AnimatedCounter";
+import { Button } from "../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
 import {
   Tabs,
   TabsList,
@@ -8,8 +19,18 @@ import {
   TabsContent,
 } from "../components/ui/tabs";
 import { Package, RequestFull } from "shared";
+import type { Report } from "shared";
+import { firstYear } from "shared/const";
 
 export function Dashboard() {
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportType, setReportType] = useState<"requests" | "packages">(
+    "requests"
+  );
+  const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
+  const [generatedReport, setGeneratedReport] = useState<Report | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
   // Fetch all required data
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
@@ -26,6 +47,16 @@ export function Dashboard() {
   const analyticsRequestsXsQuery = useQuery(
     trpc.analytics.getActiveRequestsCrossSection.queryOptions()
   );
+
+  const requestsReportQuery = useQuery({
+    ...trpc.analytics.getRequestsReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
+
+  const packagesReportQuery = useQuery({
+    ...trpc.analytics.getPackagesReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
 
   // Check if any queries are loading
   const isLoading =
@@ -86,11 +117,243 @@ export function Dashboard() {
   const analyticsPackages = analyticsPackagesXsQuery.data!; // throw on isloading above
   const analyticsRequests = analyticsRequestsXsQuery.data!;
 
+  const reportTypeOptions = [
+    { value: "requests", label: "Requests Report" },
+    { value: "packages", label: "Packages Report" },
+  ];
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      let report: Report;
+      if (reportType === "requests") {
+        const result = await requestsReportQuery.refetch();
+        report = result.data!;
+      } else {
+        const result = await packagesReportQuery.refetch();
+        report = result.data!;
+      }
+      setGeneratedReport(report);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleResetReport = () => {
+    setGeneratedReport(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Live Overview</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Live Overview</p>
+          </div>
+          <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="lg">
+                Generate Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Generate Analytics Report</DialogTitle>
+              </DialogHeader>
+
+              {!generatedReport ? (
+                <div className="space-y-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Report Type *
+                      </label>
+                      <Select
+                        options={reportTypeOptions}
+                        value={
+                          reportTypeOptions.find(
+                            (option) => option.value === reportType
+                          ) || null
+                        }
+                        onChange={(
+                          selectedOption: SingleValue<{
+                            value: string;
+                            label: string;
+                          }>
+                        ) => {
+                          if (selectedOption) {
+                            setReportType(
+                              selectedOption.value as "requests" | "packages"
+                            );
+                          }
+                        }}
+                        placeholder="Select report type..."
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Year
+                      </label>
+                      <Input
+                        type="number"
+                        min={firstYear}
+                        max={new Date().getFullYear()}
+                        value={startYear}
+                        onChange={(e) =>
+                          setStartYear(
+                            parseInt(e.target.value) || new Date().getFullYear()
+                          )
+                        }
+                        placeholder="e.g., 2024"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setReportModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleGenerateReport}
+                      disabled={isGeneratingReport}
+                    >
+                      {isGeneratingReport ? "Generating..." : "Generate Report"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 p-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">
+                      {reportType === "requests" ? "Requests" : "Packages"}{" "}
+                      Report
+                      {startYear && ` (from ${startYear})`}
+                    </h3>
+                    <div className="space-x-2">
+                      <Button variant="outline" onClick={handleResetReport}>
+                        Generate New Report
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setReportModalOpen(false)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {generatedReport.years.map((year: any) => (
+                      <div
+                        key={year.year}
+                        className="bg-white rounded-lg border p-6"
+                      >
+                        <h4 className="text-xl font-semibold mb-4 text-blue-600">
+                          {year.year} - Total Hours: {year.totalHours}
+                        </h4>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                          <div>
+                            <h5 className="text-lg font-medium mb-3 text-gray-700">
+                              Localities
+                            </h5>
+                            <div className="space-y-2">
+                              {year.localities.map((locality: any) => (
+                                <div
+                                  key={locality.name}
+                                  className="bg-gray-50 p-3 rounded"
+                                >
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-medium">
+                                      {locality.name}
+                                    </span>
+                                    <span className="text-blue-600 font-semibold">
+                                      {locality.totalHours}h
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    {locality.services.map((service: any) => (
+                                      <div
+                                        key={service.name}
+                                        className="flex justify-between"
+                                      >
+                                        <span>{service.name}</span>
+                                        <span>{service.totalHours}h</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h5 className="text-lg font-medium mb-3 text-gray-700">
+                              Services
+                            </h5>
+                            <div className="space-y-2">
+                              {year.services.map((service: any) => (
+                                <div
+                                  key={service.name}
+                                  className="bg-gray-50 p-3 rounded flex justify-between items-center"
+                                >
+                                  <span className="font-medium">
+                                    {service.name}
+                                  </span>
+                                  <span className="text-blue-600 font-semibold">
+                                    {service.totalHours}h
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="text-lg font-medium mb-3 text-gray-700">
+                            Monthly Breakdown
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {year.months.map((month: any) => (
+                              <div
+                                key={month.month}
+                                className="bg-blue-50 p-4 rounded"
+                              >
+                                <h6 className="font-semibold mb-2">
+                                  Month {month.month} - {month.totalHours}h
+                                </h6>
+                                <div className="space-y-1 text-sm">
+                                  {month.localities.map((locality: any) => (
+                                    <div
+                                      key={locality.name}
+                                      className="flex justify-between"
+                                    >
+                                      <span>{locality.name}</span>
+                                      <span>{locality.totalHours}h</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
