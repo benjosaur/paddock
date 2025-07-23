@@ -19,6 +19,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PaddockUser } from "./types/auth";
 import RecordsRoutes from "./routes/RecordsRoutes";
+import DbsRoutes from "./routes/DbsRoutes";
+import PublicLiabilityRoutes from "./routes/PublicLiabilityRoutes";
 import { Toaster } from "./components/ui/Toaster";
 import { Dashboard } from "./pages/Dashboard";
 
@@ -70,6 +72,11 @@ function AppContent() {
                 <Route path="/mps/*" element={<MpsRoutes />} />
                 <Route path="/volunteers/*" element={<VolunteersRoutes />} />
                 <Route path="/records/*" element={<RecordsRoutes />} />
+                <Route path="/dbs/*" element={<DbsRoutes />} />
+                <Route
+                  path="/public-liability/*"
+                  element={<PublicLiabilityRoutes />}
+                />
                 <Route path="/requests/*" element={<RequestRoutes />} />
                 <Route
                   path="*"

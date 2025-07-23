@@ -44,6 +44,18 @@ export function getVisibleMenuItems(userRole: UserRole) {
       resource: "trainingRecords",
     },
     {
+      key: "dbs",
+      label: "DBS",
+      path: "/dbs",
+      resource: "volunteers", // DBS requires both volunteers and mps permissions
+    },
+    {
+      key: "public-liability",
+      label: "Public Liability",
+      path: "/public-liability",
+      resource: "volunteers", // Public Liability requires both volunteers and mps permissions
+    },
+    {
       key: "requests",
       label: "Requests",
       path: "/requests",
@@ -61,6 +73,23 @@ export function getVisibleMenuItems(userRole: UserRole) {
         hasPermission(userRole, "volunteers", "read")
       );
     }
+
+    // DBS requires both volunteers and mps permissions
+    if (item.key === "dbs") {
+      return (
+        hasPermission(userRole, "volunteers", "read") &&
+        hasPermission(userRole, "mps", "read")
+      );
+    }
+
+    // Public Liability requires both volunteers and mps permissions
+    if (item.key === "public-liability") {
+      return (
+        hasPermission(userRole, "volunteers", "read") &&
+        hasPermission(userRole, "mps", "read")
+      );
+    }
+
     return hasPermission(userRole, item.resource, "read");
   });
 }

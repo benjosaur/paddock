@@ -244,13 +244,14 @@ export function ClientForm() {
                   htmlFor="locality"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Locality
+                  Locality *
                 </label>
                 <Input
                   id="locality"
                   name="details.address.locality"
                   value={formData.details.address.locality || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>{" "}
               <div>
@@ -272,7 +273,7 @@ export function ClientForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code *
+                  Post Code
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -280,7 +281,6 @@ export function ClientForm() {
                     name="details.address.postCode"
                     value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
-                    required
                     disabled={isEditing}
                     className="flex-1"
                   />

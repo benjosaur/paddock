@@ -1,46 +1,60 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { RequestForm } from "../pages/RequestForm";
+import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
-import type { RequestMetadata, TableColumn } from "../types";
+import type { RequestFull, RequestMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
-const requestColumns: TableColumn<RequestMetadata>[] = [
+const requestColumns: TableColumn<RequestFull>[] = [
   {
     key: "id",
     header: "Request ID",
-    render: (item: RequestMetadata) => item.id,
+    render: (item) => item.id,
   },
   {
     key: "clientName",
     header: "Client Name",
-    render: (item: RequestMetadata) => item.details.name,
+    render: (item) => item.details.name,
   },
   {
     key: "requestType",
     header: "Type",
-    render: (item: RequestMetadata) => item.requestType,
+    render: (item) => item.requestType,
   },
   {
     key: "startDate",
     header: "Start Date",
-    render: (item: RequestMetadata) => item.startDate,
+    render: (item) => item.startDate,
   },
   {
     key: "endDate",
     header: "End Date",
-    render: (item: RequestMetadata) =>
-      item.endDate === "open" ? "Ongoing" : item.endDate,
+    render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
   },
   {
     key: "weeklyHours",
     header: "Weekly Hours",
-    render: (item: RequestMetadata) => item.details.weeklyHours,
+    render: (item) => item.details.weeklyHours,
+  },
+  {
+    key: "weeklyServicedHours",
+    header: "Hours in Service",
+    render: (item) =>
+      item.packages
+        .map((pkg) => {
+          if (pkg.endDate == "open" || new Date(pkg.endDate) > new Date()) {
+            return pkg.details.weeklyHours;
+          }
+          return 0;
+        })
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "status",
     header: "Status",
-    render: (item: RequestMetadata) => item.details.status,
+    render: (item) => item.details.status,
   },
 ];
 
@@ -49,11 +63,18 @@ export default function RequestRoutes() {
 
   const queryClient = useQueryClient();
 
-  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
+  const requestsQuery = useQuery(
+    trpc.requests.getAllNotArchived.queryOptions()
+  );
 
-  const requestsQueryKey = trpc.requests.getAllMetadata.queryKey();
+  const requestsQueryKey = trpc.requests.getAllNotArchived.queryKey();
 
   const requests = requestsQuery.data || [];
+
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
@@ -76,6 +97,16 @@ export default function RequestRoutes() {
     navigate(`/requests/edit?id=${encodedId}`);
   };
 
+  const handleView = (request: RequestMetadata) => {
+    setSelectedRequestId(request.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequestId(null);
+  };
+
   const handleDelete = (id: string) => {
     deleteRequestMutation.mutate({ id });
   };
@@ -84,26 +115,38 @@ export default function RequestRoutes() {
   if (requestsQuery.error) return <div>Error loading requests</div>;
 
   return (
-    <Routes>
-      <Route
-        index
-        element={
-          <DataTable
-            key="requests"
-            title="Requests"
-            searchPlaceholder="Search requests..."
-            data={requests}
-            columns={requestColumns}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAdd}
-            onAddNew={handleAddNew}
-            resource="requests"
-          />
-        }
-      />
-      <Route path="create" element={<RequestForm />} />
-      <Route path="edit" element={<RequestForm />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          index
+          element={
+            <DataTable
+              key="requests"
+              title="Requests"
+              searchPlaceholder="Search requests..."
+              data={requests}
+              columns={requestColumns}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAdd}
+              onAddNew={handleAddNew}
+              onViewItem={handleView}
+              resource="requests"
+            />
+          }
+        />
+        <Route path="create" element={<RequestForm />} />
+        <Route path="edit" element={<RequestForm />} />
+      </Routes>
+      {selectedRequestId && (
+        <RequestDetailModal
+          requestId={selectedRequestId}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
+    </>
   );
 }
