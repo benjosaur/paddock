@@ -78,7 +78,7 @@ export class RequestService {
     }
   }
 
-  async update(request: Request, user: User): Promise<void> {
+  async update(request: RequestMetadata, user: User): Promise<void> {
     try {
       const validatedInput = requestMetadataSchema.parse(request);
       const { id, clientId, ...rest } = validatedInput;
@@ -98,22 +98,9 @@ export class RequestService {
     }
   }
 
-  async delete(
-    user: User,
-    clientId: string,
-    requestId: string
-  ): Promise<number[]> {
-    try {
-      const deletedCount = await this.requestRepository.delete(
-        user,
-        clientId,
-        requestId
-      );
-      return deletedCount;
-    } catch (error) {
-      console.error("Service Layer Error deleting client request:", error);
-      throw error;
-    }
+  async delete(user: User, requestId: string): Promise<number> {
+    const numDeleted = await this.requestRepository.delete(requestId, user);
+    return numDeleted[0];
   }
 
   private transformDbRequestToSharedFull(items: DbRequest[]): RequestFull[] {

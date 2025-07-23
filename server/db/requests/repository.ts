@@ -208,24 +208,22 @@ export class RequestRepository {
     }
   }
 
-  async delete(
-    user: User,
-    clientId: string,
-    requestId: string
-  ): Promise<number[]> {
+  async delete(requestId: string, user: User): Promise<number[]> {
+    const existingLogs = await this.getById(requestId, user);
     try {
-      const command = new DeleteCommand({
-        TableName: getTableName(user),
-        Key: {
-          pK: clientId,
-          sK: requestId,
-        },
-      });
-
-      await client.send(command);
-      return [1];
+      await Promise.all(
+        existingLogs.map((log) =>
+          client.send(
+            new DeleteCommand({
+              TableName: getTableName(user),
+              Key: { pK: log.pK, sK: log.sK },
+            })
+          )
+        )
+      );
+      return [existingLogs.length];
     } catch (error) {
-      console.error("Repository Layer Error deleting client request:", error);
+      console.error("Repository Layer Error deleting requests:", error);
       throw error;
     }
   }

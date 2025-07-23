@@ -10,7 +10,7 @@ export const clientsRouter = router({
   getById: createProtectedProcedure("clients", "read")
     .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.services.client.getById(ctx.user, input.id);
+      return await ctx.services.client.getById(input.id, ctx.user);
     }),
 
   create: createProtectedProcedure("clients", "create")

@@ -96,7 +96,6 @@ export async function testRequestService() {
     console.log("7. Deleting paid request...");
     const deletedPaidCount = await requestService.delete(
       sampleUser,
-      clientId,
       createdPaidRequestId
     );
     console.log("Deleted paid request count:", deletedPaidCount);
@@ -104,7 +103,6 @@ export async function testRequestService() {
     console.log("8. Deleting unpaid request...");
     const deletedUnpaidCount = await requestService.delete(
       sampleUser,
-      clientId,
       createdUnpaidRequestId
     );
     console.log("Deleted unpaid request count:", deletedUnpaidCount);

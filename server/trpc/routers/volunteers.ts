@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { volunteerFullSchema } from "shared/schemas/index";
+import {
+  volunteerFullSchema,
+  volunteerMetadataSchema,
+} from "shared/schemas/index";
 
 export const volunteersRouter = router({
   getAll: createProtectedProcedure("volunteers", "read").query(
@@ -12,17 +15,17 @@ export const volunteersRouter = router({
   getById: createProtectedProcedure("volunteers", "read")
     .input(volunteerFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.services.volunteer.getById(ctx.user, input.id);
+      return await ctx.services.volunteer.getById(input.id, ctx.user);
     }),
 
   create: createProtectedProcedure("volunteers", "create")
-    .input(volunteerFullSchema.omit({ id: true }))
+    .input(volunteerMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.create(input, ctx.user);
     }),
 
   update: createProtectedProcedure("volunteers", "update")
-    .input(volunteerFullSchema)
+    .input(volunteerMetadataSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.update(input, ctx.user);
     }),
