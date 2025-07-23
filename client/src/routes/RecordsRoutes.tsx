@@ -16,11 +16,15 @@ const recordColumns: TableColumn<TrainingRecord>[] = [
     header: "Role",
     render: (item) => (item.ownerId.startsWith("m") ? "mp" : "volunteer"),
   },
-  { key: "recordName", header: "Training Record" },
+  {
+    key: "recordName",
+    header: "Training Record",
+    render: (item) => item.details.recordName,
+  },
   {
     key: "date",
     header: "Expires",
-    render: (item) => calculateTimeToDate(item.recordExpiry),
+    render: (item) => calculateTimeToDate(item.expiryDate),
   },
 ];
 

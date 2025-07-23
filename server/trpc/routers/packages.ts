@@ -6,6 +6,13 @@ export const packagesRouter = router({
       return await ctx.services.packages.getAll(ctx.user);
     }
   ),
+
+  getAllNotArchived: createProtectedProcedure("packages", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.packages.getAllNotArchived(ctx.user);
+    }
+  ),
+
   getAllNotEndedYet: createProtectedProcedure("packages", "read").query(
     async ({ ctx }) => {
       return await ctx.services.packages.getAllNotEndedYet(ctx.user);

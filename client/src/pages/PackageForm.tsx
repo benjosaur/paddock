@@ -1,75 +1,113 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import Select, { MultiValue } from "react-select";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import Select, { SingleValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { MpLog, ClientMetadata, MpMetadata } from "../types";
+import type { Package, MpMetadata, RequestMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
-export function MpLogForm() {
+export function PackageForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
-  const [formData, setFormData] = useState<Omit<MpLog, "id">>({
-    date: "",
-    clients: [],
-    mps: [],
-    details: { services: [], hoursLogged: 1, notes: "" },
+  const initialRequestId = location.state?.requestId || "";
+
+  const [formData, setFormData] = useState<Omit<Package, "id">>({
+    carerId: "",
+    requestId: initialRequestId,
+    startDate: "",
+    endDate: "open",
+    details: {
+      name: "",
+      weeklyHours: 0,
+      address: {
+        streetAddress: "",
+        locality: "",
+        county: "Somerset",
+        postCode: "",
+      },
+      notes: "",
+      services: [],
+    },
   });
 
   const queryClient = useQueryClient();
 
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
 
-  const mpLogQuery = useQuery({
-    ...trpc.mpLogs.getById.queryOptions({ id }),
+  const packageQuery = useQuery({
+    ...trpc.packages.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const mpLogQueryKey = trpc.mpLogs.getAll.queryKey();
+  const packageQueryKey = trpc.packages.getAll.queryKey();
 
-  const createMpLogMutation = useMutation(
-    trpc.mpLogs.create.mutationOptions({
+  const createPackageMutation = useMutation(
+    trpc.packages.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpLogQueryKey });
-        navigate("/mp-logs");
+        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        navigate("/packages");
       },
     })
   );
 
-  const updateMpLogMutation = useMutation(
-    trpc.mpLogs.update.mutationOptions({
+  const updatePackageMutation = useMutation(
+    trpc.packages.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpLogQueryKey });
-        navigate("/mp-logs");
+        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        navigate("/packages");
       },
     })
   );
 
   // Load existing data when editing
   useEffect(() => {
-    if (mpLogQuery.data) {
-      setFormData(mpLogQuery.data);
+    if (packageQuery.data) {
+      setFormData(packageQuery.data);
     }
-  }, [mpLogQuery.data]);
+  }, [packageQuery.data]);
 
-  const clientOptions = (clientsQuery.data || []).map(
-    (client: ClientMetadata) => ({
-      value: client.id,
-      label: client.details.name,
-    })
-  );
+  // Auto-populate package details when request is selected
+  useEffect(() => {
+    if (formData.requestId && requestsQuery.data) {
+      const selectedRequest = requestsQuery.data.find(
+        (request: RequestMetadata) => request.id === formData.requestId
+      );
+      if (selectedRequest) {
+        setFormData((prev) => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            name: `${selectedRequest.details.name}`,
+            address: selectedRequest.details.address,
+          },
+        }));
+      }
+    }
+  }, [formData.requestId, requestsQuery.data]);
 
-  const mpOptions = (mpsQuery.data || []).map((mp: MpMetadata) => ({
-    value: mp.id,
-    label: mp.details.name,
-  }));
+  const mpOptions = (mpsQuery.data || [])
+    .filter((mp: MpMetadata) => mp.id && mp.details?.name)
+    .map((mp: MpMetadata) => ({
+      value: mp.id,
+      label: mp.details.name,
+    }));
+
+  const requestOptions = (requestsQuery.data || [])
+    .filter((request: RequestMetadata) => request.id && request.details?.name)
+    .map((request: RequestMetadata) => ({
+      value: request.id,
+      label: `${request.details.name} - ${request.requestType}`,
+    }));
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const field = e.target.name;
     let value =
@@ -79,53 +117,46 @@ export function MpLogForm() {
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as
-      | "details.services"
-      | "details.needs"
-      | "details.specialisms";
-    let value = e.target.value.split(",");
+  const handleSelectChange = (
+    field: string,
+    selectedOption: SingleValue<{ value: string; label: string }>
+  ) => {
+    const value = selectedOption ? selectedOption.value : "";
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleMultiSelectChange = (
-    field: string,
-    options: ({ id: string } & Record<string, any>)[],
-    newValues: MultiValue<{
-      label: string;
-      value: string;
-    }>
-  ) => {
-    // finds the whole client object to put into mplog -> excess will be parsed away server-side
-    const matchedOptions = options.filter((option) =>
-      newValues.map((value) => value.value).includes(option.id)
-    );
-    setFormData((prev) => updateNestedValue(field, matchedOptions, prev));
+  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const field = e.target.name as "details.services";
+    let value = e.target.value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateMpLogMutation.mutate({ ...formData, id } as MpLog & { id: number });
+      updatePackageMutation.mutate({ ...formData, id } as Package);
     } else {
-      createMpLogMutation.mutate(formData as Omit<MpLog, "id">);
+      createPackageMutation.mutate(formData);
     }
   };
 
   const handleCancel = () => {
-    navigate("/mp-logs");
+    navigate("/packages");
   };
 
-  if (isEditing && mpLogQuery.isLoading) return <div>Loading...</div>;
-  if (isEditing && mpLogQuery.error) return <div>Error loading MP log</div>;
-  if (clientsQuery.isLoading || mpsQuery.isLoading)
+  if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && packageQuery.error) return <div>Error loading package</div>;
+  if (mpsQuery.isLoading || requestsQuery.isLoading)
     return <div>Loading...</div>;
 
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit MP Log" : "Create New MP Log"}
+          {isEditing ? "Edit Package" : "Create New Package"}
         </h1>
       </div>
 
@@ -134,21 +165,90 @@ export function MpLogForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Log Information
+                Package Information
               </h3>
 
               <div>
                 <label
-                  htmlFor="date"
+                  htmlFor="name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date *
+                  Client Name
                 </label>
                 <Input
-                  id="date"
-                  name="date"
+                  id="name"
+                  name="details.name"
+                  value={formData.details.name || ""}
+                  placeholder="Auto-generated from selected request"
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="requestId"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Request *
+                </label>
+                <Select
+                  options={requestOptions}
+                  value={
+                    requestOptions.find(
+                      (option) => option.value === formData.requestId
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleSelectChange("requestId", selectedOption)
+                  }
+                  placeholder="Select a request..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  noOptionsMessage={() => "No requests found"}
+                  isClearable
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="carerId"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Carer/MP *
+                </label>
+                <Select
+                  options={mpOptions}
+                  value={
+                    mpOptions.find(
+                      (option) => option.value === formData.carerId
+                    ) || null
+                  }
+                  onChange={(selectedOption) =>
+                    handleSelectChange("carerId", selectedOption)
+                  }
+                  placeholder="Select a carer/MP..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  noOptionsMessage={() => "No carers/MPs found"}
+                  isClearable
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Start Date *
+                </label>
+                <Input
+                  id="startDate"
+                  name="startDate"
                   type="date"
-                  value={formData.date || ""}
+                  value={formData.startDate || ""}
                   onChange={handleInputChange}
                   required
                 />
@@ -156,108 +256,104 @@ export function MpLogForm() {
 
               <div>
                 <label
-                  htmlFor="client"
+                  htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client *
+                  End Date
                 </label>
-                <Select
-                  options={clientOptions}
-                  value={
-                    clientOptions.filter(
-                      (option: { value: string; label: string }) =>
-                        formData.clients
-                          ?.map((client) => client.id)
-                          .includes(option.value)
-                    ) || null
-                  }
-                  onChange={(newValues) =>
-                    handleMultiSelectChange(
-                      "clients",
-                      clientsQuery.data ?? [],
-                      newValues
-                    )
-                  }
-                  placeholder="Select a client..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isSearchable
-                  required
-                  isMulti
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  value={formData.endDate === "open" ? "" : formData.endDate}
+                  onChange={(e) => {
+                    const value = e.target.value || "open";
+                    setFormData((prev) =>
+                      updateNestedValue("endDate", value, prev)
+                    );
+                  }}
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="mp"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  MP *
-                </label>
-                <Select
-                  options={mpOptions}
-                  value={
-                    mpOptions.filter(
-                      (option: { value: string; label: string }) =>
-                        formData.mps?.map((mp) => mp.id).includes(option.value)
-                    ) || null
-                  }
-                  onChange={(newValues) =>
-                    handleMultiSelectChange(
-                      "mps",
-                      mpsQuery.data ?? [],
-                      newValues
-                    )
-                  }
-                  placeholder="Select an MP..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isSearchable
-                  required
-                  isMulti
-                />
+                <small className="text-gray-500">
+                  Leave empty for ongoing package
+                </small>
               </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Service Details
+                Package Details
               </h3>
+
+              <div>
+                <label
+                  htmlFor="weeklyHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Weekly Hours *
+                </label>
+                <Input
+                  id="weeklyHours"
+                  name="details.weeklyHours"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={formData.details.weeklyHours || ""}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 10"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Service Address
+                </label>
+                <small className="text-gray-500 block mb-2">
+                  Auto-filled from selected request (you can modify if needed)
+                </small>
+                <div className="space-y-2">
+                  <Input
+                    name="details.address.streetAddress"
+                    placeholder="Street Address"
+                    value={formData.details.address.streetAddress || ""}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    name="details.address.locality"
+                    placeholder="Town/City *"
+                    value={formData.details.address.locality || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="details.address.county"
+                    placeholder="County"
+                    value={formData.details.address.county || "Somerset"}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    name="details.address.postCode"
+                    placeholder="Post Code *"
+                    value={formData.details.address.postCode || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
 
               <div>
                 <label
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services (comma-separated) *
+                  Services (comma-separated)
                 </label>
                 <Input
                   id="services"
                   name="details.services"
-                  value={formData.details.services}
+                  value={formData.details.services.join(", ")}
                   onChange={handleCSVInputChange}
-                  placeholder="e.g., Consultation, Document Review"
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="hoursLogged"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Hours Logged *
-                </label>
-                <Input
-                  id="hoursLogged"
-                  name="details.hoursLogged"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={formData.details.hoursLogged || ""}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2.5"
-                  required
+                  placeholder="e.g., companionship, shopping, transport"
                 />
               </div>
 
@@ -275,7 +371,7 @@ export function MpLogForm() {
                   onChange={handleInputChange}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Additional notes about the service provided..."
+                  placeholder="Additional notes about the package..."
                 />
               </div>
             </div>
@@ -286,7 +382,7 @@ export function MpLogForm() {
               Cancel
             </Button>
             <Button type="submit">
-              {isEditing ? "Update MP Log" : "Create MP Log"}
+              {isEditing ? "Update Package" : "Create Package"}
             </Button>
           </div>
         </form>

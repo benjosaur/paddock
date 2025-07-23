@@ -14,26 +14,30 @@ export function MpForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<MpFull, "id">>({
+    archived: "N",
     dateOfBirth: "",
-    postCode: "",
-    recordName: "",
-    recordExpiry: "",
+    dbsExpiry: "",
+    publicLiabilityExpiry: "",
     details: {
       name: "",
-      address: "",
+      address: {
+        streetAddress: "",
+        locality: "",
+        county: "Somerset",
+        postCode: "",
+      },
       phone: "",
       email: "",
       nextOfKin: "",
-      needs: [],
       services: [],
       specialisms: [],
       transport: false,
       capacity: "",
-      notes: "",
+      attendsMag: false,
+      notes: [],
     },
     trainingRecords: [],
-    //below not edited here
-    mpLogs: [],
+    requests: [],
   });
 
   const queryClient = useQueryClient();
@@ -68,7 +72,6 @@ export function MpForm() {
       onSuccess: () => {
         const queryKeys = [
           thisMpQueryKey,
-          trpc.mpLogs.getAll.queryKey(),
           trpc.trainingRecords.getAll.queryKey(),
         ];
 
@@ -93,10 +96,7 @@ export function MpForm() {
   };
 
   const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as
-      | "details.services"
-      | "details.needs"
-      | "details.specialisms";
+    const field = e.target.name as "details.services" | "details.specialisms";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -191,15 +191,46 @@ export function MpForm() {
 
               <div>
                 <label
-                  htmlFor="address"
+                  htmlFor="streetAddress"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Address
+                  Street Address
                 </label>
                 <Input
-                  id="address"
-                  name="details.address"
-                  value={formData.details.address || ""}
+                  id="streetAddress"
+                  name="details.address.streetAddress"
+                  value={formData.details.address.streetAddress || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="locality"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Locality *
+                </label>
+                <Input
+                  id="locality"
+                  name="details.address.locality"
+                  value={formData.details.address.locality || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="county"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  County
+                </label>
+                <Input
+                  id="county"
+                  name="details.address.county"
+                  value={formData.details.address.county || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -213,8 +244,8 @@ export function MpForm() {
                 </label>
                 <Input
                   id="postCode"
-                  name="postCode"
-                  value={formData.postCode || ""}
+                  name="details.address.postCode"
+                  value={formData.details.address.postCode || ""}
                   onChange={handleInputChange}
                   required
                 />
@@ -269,21 +300,6 @@ export function MpForm() {
 
               <div>
                 <label
-                  htmlFor="dbsNumber"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  DBS Number
-                </label>
-                <Input
-                  id="dbsNumber"
-                  name="recordName"
-                  value={formData.recordName || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="dbsExpiry"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -292,8 +308,24 @@ export function MpForm() {
                 <Input
                   id="dbsExpiry"
                   type="date"
-                  name="recordExpiry"
-                  value={formData.recordExpiry || ""}
+                  name="dbsExpiry"
+                  value={formData.dbsExpiry || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="publicLiabilityExpiry"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Public Liability Expiry
+                </label>
+                <Input
+                  id="publicLiabilityExpiry"
+                  type="date"
+                  name="publicLiabilityExpiry"
+                  value={formData.publicLiabilityExpiry || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -305,22 +337,6 @@ export function MpForm() {
               </h3>
               <div>
                 <label
-                  htmlFor="needs"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Needs Offered (comma-separated)
-                </label>
-                <Input
-                  id="needs"
-                  name="details.needs"
-                  value={formData.details.needs}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Personal Care, Domestic Support"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -329,7 +345,7 @@ export function MpForm() {
                 <Input
                   id="services"
                   name="details.services"
-                  value={formData.details.services}
+                  value={formData.details.services.join(",")}
                   onChange={handleCSVInputChange}
                   placeholder="e.g., Personal Care, Domestic Support"
                 />
@@ -345,7 +361,7 @@ export function MpForm() {
                 <Input
                   id="specialisms"
                   name="details.specialisms"
-                  value={formData.details.specialisms}
+                  value={formData.details.specialisms.join(",")}
                   onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
@@ -406,7 +422,7 @@ export function MpForm() {
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span className="text-sm">
-                            {record.recordName} - Expires: {record.recordExpiry}
+                            {record.details.name} - Expires: {record.expiryDate}
                           </span>
                         </div>
                       ))}

@@ -1,77 +1,87 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
-import { ClientRequestForm } from "../pages/RequestForm";
+import { RequestForm } from "../pages/RequestForm";
 import { trpc } from "../utils/trpc";
-import type { ClientRequest, TableColumn } from "../types";
+import type { RequestMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const clientRequestColumns: TableColumn<ClientRequest>[] = [
-  { key: "id", header: "Request ID" },
+const requestColumns: TableColumn<RequestMetadata>[] = [
   {
-    key: "clientId",
-    header: "Client Name",
-    render: (item) => item.details.name,
+    key: "id",
+    header: "Request ID",
+    render: (item: RequestMetadata) => item.id,
   },
-  { key: "requestType", header: "Type" },
+  {
+    key: "clientName",
+    header: "Client Name",
+    render: (item: RequestMetadata) => item.details.name,
+  },
+  {
+    key: "requestType",
+    header: "Type",
+    render: (item: RequestMetadata) => item.requestType,
+  },
   {
     key: "startDate",
     header: "Start Date",
+    render: (item: RequestMetadata) => item.startDate,
   },
   {
-    key: "schedule",
-    header: "Schedule",
-    render: (item) => item.details.schedule,
+    key: "endDate",
+    header: "End Date",
+    render: (item: RequestMetadata) =>
+      item.endDate === "open" ? "Ongoing" : item.endDate,
   },
-  { key: "status", header: "Status", render: (item) => item.details.status },
+  {
+    key: "weeklyHours",
+    header: "Weekly Hours",
+    render: (item: RequestMetadata) => item.details.weeklyHours,
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (item: RequestMetadata) => item.details.status,
+  },
 ];
 
-export default function ClientRequestRoutes() {
+export default function RequestRoutes() {
   const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
-  const clientRequestsQuery = useQuery(
-    trpc.clientRequests.getAll.queryOptions()
-  );
+  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
 
-  const clientRequestsQueryKey = trpc.clientRequests.getAll.queryKey();
+  const requestsQueryKey = trpc.requests.getAllMetadata.queryKey();
 
-  const clientRequests = clientRequestsQuery.data || [];
+  const requests = requestsQuery.data || [];
 
-  const deleteClientRequestMutation = useMutation(
-    trpc.clientRequests.delete.mutationOptions({
+  const deleteRequestMutation = useMutation(
+    trpc.requests.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientRequestsQueryKey });
+        queryClient.invalidateQueries({ queryKey: requestsQueryKey });
       },
     })
   );
 
-  const getClientId = (trainingRecordId: string): string => {
-    const selectedRequest = clientRequests.find(
-      (req) => (req.id = trainingRecordId)
-    );
-    if (!selectedRequest) {
-      throw new Error(`Request not found with id: ${trainingRecordId}`);
-    }
-    return selectedRequest.clientId;
-  };
-
   const handleAddNew = () => {
-    navigate("/new-requests/create");
+    navigate("/requests/create");
   };
 
-  const handleEditNavigation = (id: string) => {
-    const clientId = getClientId(id);
-    const params = new URLSearchParams();
-    params.set("id", id);
-    params.set("clientId", clientId);
-    navigate(`/new-requests/edit?${params.toString()}`);
+  const handleAdd = (requestId: string) => {
+    navigate("/packages/create", { state: { requestId } });
+  };
+
+  const handleEdit = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/requests/edit?id=${encodedId}`);
   };
 
   const handleDelete = (id: string) => {
-    const clientId = getClientId(id);
-    deleteClientRequestMutation.mutate({ id, clientId });
+    deleteRequestMutation.mutate({ id });
   };
+
+  if (requestsQuery.isLoading) return <div>Loading...</div>;
+  if (requestsQuery.error) return <div>Error loading requests</div>;
 
   return (
     <Routes>
@@ -79,20 +89,21 @@ export default function ClientRequestRoutes() {
         index
         element={
           <DataTable
-            key="new-requests"
-            title="New Client Requests"
+            key="requests"
+            title="Requests"
             searchPlaceholder="Search requests..."
-            data={clientRequests}
-            columns={clientRequestColumns}
-            onEdit={handleEditNavigation}
+            data={requests}
+            columns={requestColumns}
+            onEdit={handleEdit}
             onDelete={handleDelete}
+            onAdd={handleAdd}
             onAddNew={handleAddNew}
-            resource="clientRequests"
+            resource="requests"
           />
         }
       />
-      <Route path="create" element={<ClientRequestForm />} />
-      <Route path="edit" element={<ClientRequestForm />} />
+      <Route path="create" element={<RequestForm />} />
+      <Route path="edit" element={<RequestForm />} />
     </Routes>
   );
 }

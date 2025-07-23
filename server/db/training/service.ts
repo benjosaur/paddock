@@ -15,6 +15,16 @@ export class TrainingRecordService {
     return parsedResult;
   }
 
+  async getAllNotArchived(user: User): Promise<TrainingRecord[]> {
+    const trainingRecordsFromDb =
+      await this.trainingRecordRepository.getAllNotArchived(user);
+    const transformedRecords = this.transformDbTrainingRecordToShared(
+      trainingRecordsFromDb
+    ) as TrainingRecord[];
+    const parsedResult = trainingRecordSchema.array().parse(transformedRecords);
+    return parsedResult;
+  }
+
   async getByExpiringBefore(
     user: User,
     expiryDate: string

@@ -10,7 +10,7 @@ const samplePackage: Omit<Package, "id"> = {
   startDate: "2025-01-15",
   endDate: "2025-12-31",
   details: {
-    name: "Support Package for John Smith",
+    name: "John Smith",
     address: {
       streetAddress: "61626 Schmidt Divide",
       locality: "Bishops Lydeard",
@@ -45,7 +45,7 @@ export async function testPackageService() {
     const updatedPackageData: Package = {
       ...fetchedPackage,
       details: {
-        name: "Enhanced Support Package for John Smith",
+        name: "John Smith",
         address: {
           streetAddress: "61626 Schmidt Divide",
           locality: "Bishops Lydeard",

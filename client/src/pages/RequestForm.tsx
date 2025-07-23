@@ -53,7 +53,7 @@ export function RequestForm() {
     trpc.requests.create.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: requestQueryKey });
-        navigate("/new-requests");
+        navigate("/requests");
       },
     })
   );
@@ -62,7 +62,7 @@ export function RequestForm() {
     trpc.requests.update.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: requestQueryKey });
-        navigate("/new-requests");
+        navigate("/requests");
       },
     })
   );
@@ -126,7 +126,7 @@ export function RequestForm() {
   };
 
   const handleCancel = () => {
-    navigate("/new-requests");
+    navigate("/requests");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -240,6 +240,9 @@ export function RequestForm() {
                   id="weeklyHours"
                   name="details.weeklyHours"
                   type="number"
+                  min="0"
+                  max="168"
+                  step="0.5"
                   value={formData.details.weeklyHours || 0}
                   onChange={handleInputChange}
                   placeholder="e.g., 10"

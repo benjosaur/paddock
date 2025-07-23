@@ -9,7 +9,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket } from "../utils/helpers";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
-  { key: "id", header: "ID" },
+  {
+    key: "id",
+    header: "ID",
+    render: (item: VolunteerMetadata) => item.id,
+  },
   {
     key: "name",
     header: "Name",
@@ -23,21 +27,20 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
         ? calculateAgeBracket(item.dateOfBirth) + " years"
         : "Unknown",
   },
-  { key: "postCode", header: "Post Code" },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: VolunteerMetadata) => item.details.address.postCode,
+  },
   {
     key: "services",
     header: "Services",
     render: (item: VolunteerMetadata) => item.details.services.join(", "),
   },
   {
-    key: "needTypes",
-    header: "Need Types",
-    render: (item: VolunteerMetadata) => item.details.needs.join(", "),
-  },
-  {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: VolunteerMetadata) => item.recordExpiry,
+    render: (item: VolunteerMetadata) => item.dbsExpiry,
   },
   {
     key: "capacity",

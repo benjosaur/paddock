@@ -9,7 +9,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket, capitalise } from "@/utils/helpers";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
-  { key: "id", header: "ID" },
+  {
+    key: "id",
+    header: "ID",
+    render: (item: ClientMetadata) => item.id,
+  },
   {
     key: "name",
     header: "Name",
@@ -24,22 +28,15 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
         : "Unknown",
   },
 
-  { key: "postCode", header: "Post Code" },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: ClientMetadata) => item.details.address.postCode,
+  },
   {
     key: "services",
     header: "Services",
     render: (item: ClientMetadata) => item.details.services.join(", "),
-  },
-  {
-    key: "needs",
-    header: "Need Types",
-    render: (item: ClientMetadata) => item.details.needs.join(", "),
-  },
-  {
-    key: "requests",
-    header: "Outstanding Requests?",
-    render: (item: ClientMetadata) =>
-      item.mpRequests.length + item.volunteerRequests.length,
   },
   {
     key: "attendanceAllowance",

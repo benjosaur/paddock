@@ -1,11 +1,18 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpFullSchema, mpMetadataSchema } from "shared/schemas/index";
+import { getAllJSDocTagsOfKind } from "typescript";
 
 export const mpsRouter = router({
   getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
     return await ctx.services.mp.getAll(ctx.user);
   }),
+
+  getAllNotArchived: createProtectedProcedure("mps", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.mp.getAllNotArchived(ctx.user);
+    }
+  ),
 
   getById: createProtectedProcedure("mps", "read")
     .input(mpFullSchema.pick({ id: true }))

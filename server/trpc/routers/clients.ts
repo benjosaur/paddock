@@ -7,6 +7,12 @@ export const clientsRouter = router({
     return await ctx.services.client.getAll(ctx.user);
   }),
 
+  getAllNotArchived: createProtectedProcedure("clients", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.client.getAllNotArchived(ctx.user);
+    }
+  ),
+
   getById: createProtectedProcedure("clients", "read")
     .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {

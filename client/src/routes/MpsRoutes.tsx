@@ -9,7 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket } from "../utils/helpers";
 
 const mpColumns: TableColumn<MpMetadata>[] = [
-  { key: "id", header: "ID" },
+  { key: "id", header: "ID", render: (item: MpMetadata) => item.id },
   {
     key: "name",
     header: "Name",
@@ -23,7 +23,11 @@ const mpColumns: TableColumn<MpMetadata>[] = [
         ? calculateAgeBracket(item.dateOfBirth) + " years"
         : "Unknown",
   },
-  { key: "postCode", header: "Post Code" },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: MpMetadata) => item.details.address.postCode,
+  },
   {
     key: "services",
     header: "Services",
@@ -32,7 +36,7 @@ const mpColumns: TableColumn<MpMetadata>[] = [
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: MpMetadata) => item.recordExpiry,
+    render: (item: MpMetadata) => item.dbsExpiry,
   },
   {
     key: "capacity",

@@ -34,49 +34,80 @@ export function ClientDetailModal({
   );
   const client = clientQuery.data;
 
-  // Update columns to use tRPC data
-  const volunteerLogModalColumns: TableColumn<
-    ClientFull["volunteerLogs"][number]
-  >[] = [
-    { key: "date", header: "Date" },
-    {
-      key: "volunteer",
-      header: "Volunteer",
-      render: (item) =>
-        item.volunteers.map((volunteer) => volunteer.details.name).join(", "),
-    },
-    { key: "hoursLogged", header: "Hours Logged" },
-    { key: "notes", header: "Notes" },
-  ];
-
-  const mpLogModalColumns: TableColumn<ClientFull["mpLogs"][number]>[] = [
-    { key: "date", header: "Date" },
-    {
-      key: "mp",
-      header: "MP",
-      render: (item) => item.mps.map((mp) => mp.details.name).join(", "),
-    },
-    {
-      key: "services",
-      header: "Service(s)",
-      render: (item) => item.details.services.join(", "),
-    },
-    { key: "notes", header: "Notes" },
-  ];
-
   const magLogModalColumns: TableColumn<ClientFull["magLogs"][number]>[] = [
-    { key: "date", header: "Date" },
-    { key: "total", header: "Total Attendees" },
-    { key: "notes", header: "Notes" },
+    {
+      key: "date",
+      header: "Date",
+      render: (item: ClientFull["magLogs"][number]) => item.date,
+    },
+    {
+      key: "total",
+      header: "Total Attendees",
+      render: (item: ClientFull["magLogs"][number]) =>
+        item.details.totalVolunteers +
+        item.details.totalClients +
+        item.details.totalFamily +
+        item.details.totalMps +
+        item.details.otherAttendees,
+    },
+    {
+      key: "notes",
+      header: "Notes",
+      render: (item: ClientFull["magLogs"][number]) => item.details.notes,
+    },
   ];
 
-  const clientRequestModalColumns: TableColumn<
-    ClientFull["mpRequests"][number] | ClientFull["volunteerRequests"][number]
+  const requestModalColumns: TableColumn<ClientFull["requests"][number]>[] = [
+    {
+      key: "requestType",
+      header: "Type",
+      render: (item: ClientFull["requests"][number]) => item.requestType,
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      render: (item: ClientFull["requests"][number]) => item.startDate,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (item: ClientFull["requests"][number]) => item.details.status,
+    },
+  ];
+
+  const packageModalColumns: TableColumn<
+    ClientFull["requests"][number]["packages"][number]
   >[] = [
-    { key: "requestType", header: "Type" },
-    { key: "startDate", header: "Start Date" },
-    { key: "schedule", header: "Schedule" },
-    { key: "status", header: "Status" },
+    {
+      key: "id",
+      header: "Package ID",
+      render: (item: ClientFull["requests"][number]["packages"][number]) =>
+        item.id,
+    },
+    {
+      key: "name",
+      header: "Package Name",
+      render: (item: ClientFull["requests"][number]["packages"][number]) =>
+        item.details.name,
+    },
+    {
+      key: "carerId",
+      header: "Carer ID",
+      render: (item: ClientFull["requests"][number]["packages"][number]) =>
+        item.carerId,
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      render: (item: ClientFull["requests"][number]["packages"][number]) =>
+        item.startDate,
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      render: (item: ClientFull["requests"][number]["packages"][number]) =>
+        item.endDate === "open" ? "Ongoing" : item.endDate,
+    },
   ];
 
   const renderDetailItem = (
@@ -132,8 +163,13 @@ export function ClientDetailModal({
               </h3>
               {renderDetailItem("ID", client.id)}
               {renderDetailItem("Date of Birth", client.dateOfBirth)}
-              {renderDetailItem("Address", client.details.address)}
-              {renderDetailItem("Post Code", client.postCode)}
+              {renderDetailItem(
+                "Street Address",
+                client.details.address.streetAddress
+              )}
+              {renderDetailItem("Locality", client.details.address.locality)}
+              {renderDetailItem("County", client.details.address.county)}
+              {renderDetailItem("Post Code", client.details.address.postCode)}
               {renderDetailItem("Phone", client.details.phone)}
               {renderDetailItem("Email", client.details.email)}
               {renderDetailItem("Next of Kin", client.details.nextOfKin)}
@@ -163,12 +199,8 @@ export function ClientDetailModal({
                 "Risk Assessment Comments",
                 client.details.riskAssessmentComments
               )}
-              {renderDetailItem("Needs", client.details.needs)}
               {renderDetailItem("Services Provided", client.details.services)}
-              {renderDetailItem(
-                "Requests",
-                client.mpRequests.length + client.volunteerRequests.length
-              )}
+              {renderDetailItem("Requests", client.requests.length)}
               {renderDetailItem(
                 "Attendance Allowance?",
                 client.details.attendanceAllowance
@@ -181,37 +213,19 @@ export function ClientDetailModal({
             >
               <div>
                 <h4 className="text-md font-semibold mb-2 text-gray-600">
-                  MP Logs
+                  Packages
                 </h4>
-                {client.mpLogs.length > 0 ? (
+                {client.requests.flatMap((req) => req.packages).length > 0 ? (
                   <DataTable
-                    data={client.mpLogs}
-                    columns={mpLogModalColumns}
+                    data={client.requests.flatMap((req) => req.packages)}
+                    columns={packageModalColumns}
                     title=""
-                    searchPlaceholder="Search MP logs..."
-                    resource="mpLogs"
+                    searchPlaceholder="Search packages..."
+                    resource="packages"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
-                    No MP logs found for this client.
-                  </p>
-                )}
-              </div>
-              <div>
-                <h4 className="text-md font-semibold mb-2 text-gray-600">
-                  Volunteer Logs
-                </h4>
-                {client.volunteerLogs.length > 0 ? (
-                  <DataTable
-                    data={client.volunteerLogs}
-                    columns={volunteerLogModalColumns}
-                    title=""
-                    searchPlaceholder="Search volunteer logs..."
-                    resource="volunteerLogs"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No Volunteer logs found for this client.
+                    No packages found for this client.
                   </p>
                 )}
               </div>
@@ -225,7 +239,7 @@ export function ClientDetailModal({
                     columns={magLogModalColumns}
                     title=""
                     searchPlaceholder="Search MAG logs..."
-                    resource="magLogs"
+                    resource="mag"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
@@ -242,14 +256,13 @@ export function ClientDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 New Requests
               </h3>
-              {client.mpRequests.length + client.volunteerRequests.length >
-              0 ? (
+              {client.requests.length > 0 ? (
                 <DataTable
-                  data={[...client.mpRequests, ...client.volunteerRequests]}
-                  columns={clientRequestModalColumns}
+                  data={client.requests}
+                  columns={requestModalColumns}
                   title=""
                   searchPlaceholder="Search requests..."
-                  resource="clientRequests"
+                  resource="requests"
                 />
               ) : (
                 <p className="text-sm text-gray-500">

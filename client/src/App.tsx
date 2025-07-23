@@ -10,11 +10,10 @@ import { Sidebar } from "./components/Sidebar";
 import { LandingPage } from "./pages/LandingPage";
 import ClientsRoutes from "./routes/ClientsRoutes";
 import MpsRoutes from "./routes/MpsRoutes";
-import MpLogRoutes from "./routes/PakcageRoutes";
+import PackageRoutes from "./routes/PackageRoutes";
 import MagLogRoutes from "./routes/MagLogRoutes";
-import VolunteerLogRoutes from "./routes/VolunteerLogRoutes";
 import VolunteersRoutes from "./routes/VolunteersRoutes";
-import ClientRequestRoutes from "./routes/RequestRoutes";
+import RequestRoutes from "./routes/RequestRoutes";
 import { queryClient } from "./utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -65,20 +64,13 @@ function AppContent() {
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/mp-logs/*" element={<MpLogRoutes />} />
-                <Route
-                  path="/volunteer-logs/*"
-                  element={<VolunteerLogRoutes />}
-                />
-                <Route path="/mag-logs/*" element={<MagLogRoutes />} />
+                <Route path="/packages/*" element={<PackageRoutes />} />
+                <Route path="/mag/*" element={<MagLogRoutes />} />
                 <Route path="/clients/*" element={<ClientsRoutes />} />
                 <Route path="/mps/*" element={<MpsRoutes />} />
                 <Route path="/volunteers/*" element={<VolunteersRoutes />} />
                 <Route path="/records/*" element={<RecordsRoutes />} />
-                <Route
-                  path="/new-requests/*"
-                  element={<ClientRequestRoutes />}
-                />
+                <Route path="/requests/*" element={<RequestRoutes />} />
                 <Route
                   path="*"
                   element={

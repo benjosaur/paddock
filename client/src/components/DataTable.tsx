@@ -28,6 +28,7 @@ interface DataTableProps<T> {
   onEdit?: (id: string) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onAdd?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
@@ -39,7 +40,9 @@ export function DataTable<T extends { id: string }>({
   data,
   columns,
   onEdit,
+  onArchive,
   onDelete,
+  onAdd,
   title,
   searchPlaceholder,
   onViewItem,
@@ -49,25 +52,49 @@ export function DataTable<T extends { id: string }>({
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
+    {}
+  );
 
-  const matchValue = (
-    value: Record<string, any> | string,
-    searchTerm: string
-  ): boolean => {
+  const matchValue = (value: any, searchTerm: string): boolean => {
+    if (value === null || value === undefined) {
+      return false;
+    }
     if (typeof value === "object") {
       return Object.values(value).some((nestedValue) =>
         matchValue(nestedValue, searchTerm)
       );
     }
-    return String(value || "")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
   };
 
   const filteredData = data.filter((row) => {
-    return Object.values(row).some((rowValue) =>
-      matchValue(rowValue, searchTerm)
+    // Check if row matches search term
+    const matchesSearch =
+      searchTerm === "" ||
+      columns.some((col) => {
+        const cellValue = col.render
+          ? col.render(row)
+          : row[col.key as keyof T];
+        return matchValue(cellValue, searchTerm);
+      });
+
+    // Check if row matches all column filters
+    const matchesColumnFilters = Object.entries(columnFilters).every(
+      ([columnKey, filterValue]) => {
+        if (filterValue === "") return true;
+
+        const column = columns.find((col) => String(col.key) === columnKey);
+        if (!column) return true;
+
+        const cellValue = column.render
+          ? column.render(row)
+          : row[column.key as keyof T];
+        return matchValue(cellValue, filterValue);
+      }
     );
+
+    return matchesSearch && matchesColumnFilters;
   });
 
   const handleDeleteClick = (id: string) => {
@@ -86,6 +113,13 @@ export function DataTable<T extends { id: string }>({
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setItemToDelete(null);
+  };
+
+  const handleColumnFilterChange = (columnKey: string, value: string) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [columnKey]: value,
+    }));
   };
 
   return (
@@ -138,6 +172,24 @@ export function DataTable<T extends { id: string }>({
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
             </tr>
+            <tr className="bg-white/70">
+              {columns.map((col, index) => (
+                <th
+                  key={`filter-${String(col.key)}`}
+                  className={`px-6 py-2 ${index === 0 ? "" : ""}`}
+                >
+                  <Input
+                    placeholder={`Filter...`}
+                    value={columnFilters[String(col.key)] || ""}
+                    onChange={(e) =>
+                      handleColumnFilterChange(String(col.key), e.target.value)
+                    }
+                    className="h-8 text-xs !font-normal placeholder:font-normal"
+                  />
+                </th>
+              ))}
+              {(onEdit || onDelete) && <th className="px-6 py-2"></th>}
+            </tr>
           </thead>
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
             {filteredData.map((item, index) => (
@@ -178,6 +230,14 @@ export function DataTable<T extends { id: string }>({
                             View
                           </DropdownMenuItem>
                         )}
+                        <PermissionGate resource={resource} action="create">
+                          {onAdd && (
+                            <DropdownMenuItem onClick={() => onAdd(item.id)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Create Package
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onEdit && (
                             <DropdownMenuItem onClick={() => onEdit(item.id)}>
@@ -187,10 +247,12 @@ export function DataTable<T extends { id: string }>({
                           )}
                         </PermissionGate>
                         <PermissionGate resource={resource} action="update">
-                          {onEdit && (
-                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                          {onArchive && (
+                            <DropdownMenuItem
+                              onClick={() => onArchive(item.id)}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
-                              Archive
+                              Toggle Archive
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

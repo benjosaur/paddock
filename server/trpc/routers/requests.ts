@@ -6,6 +6,15 @@ export const requestsRouter = router({
       return await ctx.services.requests.getAllMetadata(ctx.user);
     }
   ),
+
+  getAllNotArchived: createProtectedProcedure("requests", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.requests.getAllNotArchivedWithPackages(
+        ctx.user
+      );
+    }
+  ),
+
   getAllNotEndedYet: createProtectedProcedure("requests", "read").query(
     async ({ ctx }) => {
       return await ctx.services.requests.getAllNotEndedYetWithPackages(

@@ -12,6 +12,12 @@ export const volunteersRouter = router({
     }
   ),
 
+  getAllNotArchived: createProtectedProcedure("volunteers", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.volunteer.getAllNotArchived(ctx.user);
+    }
+  ),
+
   getById: createProtectedProcedure("volunteers", "read")
     .input(volunteerFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
