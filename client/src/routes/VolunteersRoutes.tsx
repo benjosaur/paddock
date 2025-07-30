@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
@@ -55,11 +56,18 @@ export function VolunteersRoutes() {
     null
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
-  const volunteersQueryKey = trpc.volunteers.getAll.queryKey();
+  const volunteersQuery = useQuery(
+    showArchived 
+      ? trpc.volunteers.getAll.queryOptions()
+      : trpc.volunteers.getAllNotArchived.queryOptions()
+  );
+  const volunteersQueryKey = showArchived 
+    ? trpc.volunteers.getAll.queryKey()
+    : trpc.volunteers.getAllNotArchived.queryKey();
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -102,7 +110,7 @@ export function VolunteersRoutes() {
         element={
           <>
             <DataTable
-              key="volunteers"
+              key={`volunteers-${showArchived}`}
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
               data={volunteersQuery.data || []}
@@ -112,6 +120,16 @@ export function VolunteersRoutes() {
               onViewItem={handleViewVolunteer as (item: unknown) => void}
               onAddNew={handleAddNew}
               resource="volunteers"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
             {selectedVolunteerId && (
               <VolunteerDetailModal

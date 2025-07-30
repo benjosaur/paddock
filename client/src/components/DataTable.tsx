@@ -34,6 +34,7 @@ interface DataTableProps<T> {
   onViewItem?: (item: T) => void;
   onAddNew?: () => void;
   resource: AppRouterKeys;
+  customActions?: React.ReactNode;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -48,6 +49,7 @@ export function DataTable<T extends { id: string }>({
   onViewItem,
   onAddNew,
   resource,
+  customActions,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -143,6 +145,7 @@ export function DataTable<T extends { id: string }>({
               className="pl-10 w-72 shadow-sm"
             />
           </div>
+          {customActions}
           <PermissionGate resource={resource} action="create">
             {onAddNew && (
               <Button className="shadow-sm" onClick={onAddNew}>

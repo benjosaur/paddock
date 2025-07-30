@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import type { TrainingRecord, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
@@ -29,7 +31,13 @@ const recordColumns: TableColumn<TrainingRecord>[] = [
 ];
 
 export default function RecordsRoutes() {
-  const recordsQuery = useQuery(trpc.trainingRecords.getAll.queryOptions());
+  const [showArchived, setShowArchived] = useState(false);
+
+  const recordsQuery = useQuery(
+    showArchived 
+      ? trpc.trainingRecords.getAll.queryOptions()
+      : trpc.trainingRecords.getAllNotArchived.queryOptions()
+  );
 
   const records = recordsQuery.data || [];
 
@@ -42,12 +50,22 @@ export default function RecordsRoutes() {
         index
         element={
           <DataTable
-            key="records"
+            key={`records-${showArchived}`}
             title="Training Records"
             searchPlaceholder="Search records..."
             data={records}
             columns={recordColumns}
             resource="trainingRecords"
+            customActions={
+              <Button
+                variant={showArchived ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowArchived(!showArchived)}
+                className="shadow-sm"
+              >
+                {showArchived ? "Hide Archived" : "Show Archived"}
+              </Button>
+            }
           />
         }
       />

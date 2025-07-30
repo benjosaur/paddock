@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
 import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
@@ -50,11 +51,18 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
-  const clientsQueryKey = trpc.clients.getAll.queryKey();
+  const clientsQuery = useQuery(
+    showArchived 
+      ? trpc.clients.getAll.queryOptions()
+      : trpc.clients.getAllNotArchived.queryOptions()
+  );
+  const clientsQueryKey = showArchived 
+    ? trpc.clients.getAll.queryKey()
+    : trpc.clients.getAllNotArchived.queryKey();
 
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
@@ -97,7 +105,7 @@ export default function ClientsRoutes() {
         element={
           <>
             <DataTable
-              key="clients"
+              key={`clients-${showArchived}`}
               title="Clients"
               searchPlaceholder="Search clients..."
               data={clientsQuery.data || []}
@@ -107,6 +115,16 @@ export default function ClientsRoutes() {
               onViewItem={handleViewClient as (item: unknown) => void}
               onAddNew={handleAddNew}
               resource="clients"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
             {selectedClientId && (
               <ClientDetailModal

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
@@ -54,9 +56,17 @@ const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] = [
 ];
 
 export default function PublicLiabilityRoutes() {
-  const mpsQuery = useQuery(trpc.mps.getAllNotArchived.queryOptions());
+  const [showArchived, setShowArchived] = useState(false);
+
+  const mpsQuery = useQuery(
+    showArchived 
+      ? trpc.mps.getAll.queryOptions()
+      : trpc.mps.getAllNotArchived.queryOptions()
+  );
   const volunteersQuery = useQuery(
-    trpc.volunteers.getAllNotArchived.queryOptions()
+    showArchived 
+      ? trpc.volunteers.getAll.queryOptions()
+      : trpc.volunteers.getAllNotArchived.queryOptions()
   );
 
   const mps = mpsQuery.data || [];
@@ -72,8 +82,28 @@ export default function PublicLiabilityRoutes() {
       <Route
         index
         element={
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold">Public Liability Records</h1>
+          <div className="space-y-6 animate-in">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  Public Liability Records
+                </h1>
+                <span className="text-sm select-none text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
+                  Total: {mps.length + volunteers.length}
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              </div>
+            </div>
+            
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>
@@ -82,7 +112,7 @@ export default function PublicLiabilityRoutes() {
 
               <TabsContent value="mps" className="mt-6">
                 <DataTable
-                  key="mps-public-liability"
+                  key={`mps-public-liability-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
                   data={mps}
@@ -93,7 +123,7 @@ export default function PublicLiabilityRoutes() {
 
               <TabsContent value="volunteers" className="mt-6">
                 <DataTable
-                  key="volunteers-public-liability"
+                  key={`volunteers-public-liability-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
                   data={volunteers}

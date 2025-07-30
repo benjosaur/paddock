@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { MpForm } from "../pages/MpForm";
 import { MpDetailModal } from "../components/MpDetailModal";
 import { trpc } from "../utils/trpc";
@@ -49,11 +50,18 @@ export function MpsRoutes() {
   const navigate = useNavigate();
   const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const mpsQueryKey = trpc.mps.getAll.queryKey();
+  const mpsQuery = useQuery(
+    showArchived 
+      ? trpc.mps.getAll.queryOptions()
+      : trpc.mps.getAllNotArchived.queryOptions()
+  );
+  const mpsQueryKey = showArchived 
+    ? trpc.mps.getAll.queryKey()
+    : trpc.mps.getAllNotArchived.queryKey();
 
   const deleteMpMutation = useMutation(
     trpc.mps.delete.mutationOptions({
@@ -96,7 +104,7 @@ export function MpsRoutes() {
         element={
           <>
             <DataTable
-              key="mps"
+              key={`mps-${showArchived}`}
               title="MPs"
               searchPlaceholder="Search MPs..."
               data={mpsQuery.data || []}
@@ -106,6 +114,16 @@ export function MpsRoutes() {
               onViewItem={handleViewMp as (item: unknown) => void}
               onAddNew={handleAddNew}
               resource="mps"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
             {selectedMpId && (
               <MpDetailModal

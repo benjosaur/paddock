@@ -1,5 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { RequestForm } from "../pages/RequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
@@ -60,21 +61,25 @@ const requestColumns: TableColumn<RequestFull>[] = [
 
 export default function RequestRoutes() {
   const navigate = useNavigate();
-
-  const queryClient = useQueryClient();
-
-  const requestsQuery = useQuery(
-    trpc.requests.getAllNotArchived.queryOptions()
-  );
-
-  const requestsQueryKey = trpc.requests.getAllNotArchived.queryKey();
-
-  const requests = requestsQuery.data || [];
-
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const requestsQuery = useQuery(
+    showArchived 
+      ? trpc.requests.getAll.queryOptions()
+      : trpc.requests.getAllNotArchived.queryOptions()
+  );
+
+  const requestsQueryKey = showArchived 
+    ? trpc.requests.getAll.queryKey()
+    : trpc.requests.getAllNotArchived.queryKey();
+
+  const requests = requestsQuery.data || [];
 
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
@@ -121,7 +126,7 @@ export default function RequestRoutes() {
           index
           element={
             <DataTable
-              key="requests"
+              key={`requests-${showArchived}`}
               title="Requests"
               searchPlaceholder="Search requests..."
               data={requests}
@@ -132,6 +137,16 @@ export default function RequestRoutes() {
               onAddNew={handleAddNew}
               onViewItem={handleView}
               resource="requests"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
           }
         />

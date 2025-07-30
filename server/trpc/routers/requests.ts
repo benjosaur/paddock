@@ -1,7 +1,8 @@
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { requestMetadataSchema } from "shared/schemas/index";
 export const requestsRouter = router({
-  getAllMetadata: createProtectedProcedure("requests", "read").query(
+  getAll: createProtectedProcedure("requests", "read").query(
+    // not w/ associated packages
     async ({ ctx }) => {
       return await ctx.services.requests.getAllMetadata(ctx.user);
     }
