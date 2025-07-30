@@ -47,7 +47,7 @@ export class ReportService {
       };
       for (const request of requests) {
         const weeklyHours = request.details.weeklyHours;
-        crossSection.totalHours += weeklyHours;
+        crossSection.totalHours = parseFloat((crossSection.totalHours + weeklyHours).toFixed(2));
         this.addHoursToReportLocality(
           weeklyHours,
           crossSection.localities,
@@ -80,7 +80,7 @@ export class ReportService {
       };
       for (const pkg of packages) {
         const weeklyHours = pkg.details.weeklyHours;
-        crossSection.totalHours += weeklyHours;
+        crossSection.totalHours = parseFloat((crossSection.totalHours + weeklyHours).toFixed(2));
         this.addHoursToReportLocality(
           weeklyHours,
           crossSection.localities,
@@ -212,7 +212,7 @@ export class ReportService {
       }
     }
     //now in final month of final year
-    const hoursToAdd = item.details.weeklyHours * (endDay - currentDay / 7);
+    const hoursToAdd = item.details.weeklyHours * ((endDay - currentDay) / 7);
     this.addHoursToReport(hoursToAdd, report, item, currentYear, currentMonth);
   }
 
@@ -239,7 +239,7 @@ export class ReportService {
     if (!reportYear) {
       throw new Error(`Year ${year} not found in report`);
     }
-    reportYear.totalHours += hours;
+    reportYear.totalHours = parseFloat((reportYear.totalHours + hours).toFixed(2));
     this.addHoursToReportService(hours, reportYear.services, serviceNames);
     this.addHoursToReportLocality(
       hours,
@@ -253,7 +253,7 @@ export class ReportService {
     if (!reportMonth) {
       throw new Error(`Month ${month} not found in report year ${year}`);
     }
-    reportMonth.totalHours += hours;
+    reportMonth.totalHours = parseFloat((reportMonth.totalHours + hours).toFixed(2));
     this.addHoursToReportService(hours, reportMonth.services, serviceNames);
     this.addHoursToReportLocality(
       hours,
@@ -276,12 +276,12 @@ export class ReportService {
     if (!reportLocality) {
       reportLocality = {
         name: locality,
-        totalHours: hours,
+        totalHours: parseFloat(hours.toFixed(2)),
         services: [],
       };
       reportLocalities.push(reportLocality);
     } else {
-      reportLocality.totalHours += hours;
+      reportLocality.totalHours = parseFloat((reportLocality.totalHours + hours).toFixed(2));
     }
     this.addHoursToReportService(hours, reportLocality.services, serviceNames);
   }
@@ -303,19 +303,19 @@ export class ReportService {
         if (!reportService) {
           reportServices.push({
             name: serviceName as (typeof serviceOptions)[number],
-            totalHours: hours,
+            totalHours: parseFloat(hours.toFixed(2)),
           });
         } else {
-          reportService.totalHours += hours;
+          reportService.totalHours = parseFloat((reportService.totalHours + hours).toFixed(2));
         }
       } else {
         const otherService = reportServices.find((s) => s.name == "Other");
         if (otherService) {
-          otherService.totalHours += hours;
+          otherService.totalHours = parseFloat((otherService.totalHours + hours).toFixed(2));
         } else {
           reportServices.push({
             name: "Other",
-            totalHours: hours,
+            totalHours: parseFloat(hours.toFixed(2)),
           });
         }
       }

@@ -236,11 +236,18 @@ export function Dashboard() {
               ) : (
                 <div className="space-y-6 p-6">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">
-                      {reportType === "requests" ? "Requests" : "Packages"}{" "}
-                      Report
-                      {startYear && ` (from ${startYear})`}
-                    </h3>
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {reportType === "requests" ? "Requests" : "Packages"}{" "}
+                        Analytics Report
+                        {startYear &&
+                          ` (${startYear} - ${new Date().getFullYear()})`}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Comprehensive breakdown by year, month, locality, and
+                        service type
+                      </p>
+                    </div>
                     <div className="space-x-2">
                       <Button variant="outline" onClick={handleResetReport}>
                         Generate New Report
@@ -261,13 +268,14 @@ export function Dashboard() {
                         className="bg-white rounded-lg border p-6"
                       >
                         <h4 className="text-xl font-semibold mb-4 text-blue-600">
-                          {year.year} - Total Hours: {year.totalHours}
+                          {year.year} Annual Summary - Total Hours:{" "}
+                          {year.totalHours.toFixed(2)}h
                         </h4>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                           <div>
                             <h5 className="text-lg font-medium mb-3 text-gray-700">
-                              Localities
+                              Annual Locality Breakdown
                             </h5>
                             <div className="space-y-2">
                               {year.localities.map((locality: any) => (
@@ -280,17 +288,22 @@ export function Dashboard() {
                                       {locality.name}
                                     </span>
                                     <span className="text-blue-600 font-semibold">
-                                      {locality.totalHours}h
+                                      {locality.totalHours.toFixed(2)}h
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div className="text-xs text-gray-600 mb-2">
+                                    Service distribution for {locality.name}:
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-1 text-sm">
                                     {locality.services.map((service: any) => (
                                       <div
                                         key={service.name}
-                                        className="flex justify-between"
+                                        className="flex justify-between bg-white px-2 py-1 rounded"
                                       >
                                         <span>{service.name}</span>
-                                        <span>{service.totalHours}h</span>
+                                        <span className="font-medium">
+                                          {service.totalHours.toFixed(2)}h
+                                        </span>
                                       </div>
                                     ))}
                                   </div>
@@ -301,7 +314,7 @@ export function Dashboard() {
 
                           <div>
                             <h5 className="text-lg font-medium mb-3 text-gray-700">
-                              Services
+                              Annual Service Summary
                             </h5>
                             <div className="space-y-2">
                               {year.services.map((service: any) => (
@@ -309,11 +322,16 @@ export function Dashboard() {
                                   key={service.name}
                                   className="bg-gray-50 p-3 rounded flex justify-between items-center"
                                 >
-                                  <span className="font-medium">
-                                    {service.name}
-                                  </span>
+                                  <div>
+                                    <span className="font-medium block">
+                                      {service.name}
+                                    </span>
+                                    <span className="text-xs text-gray-600">
+                                      Total across all localities
+                                    </span>
+                                  </div>
                                   <span className="text-blue-600 font-semibold">
-                                    {service.totalHours}h
+                                    {service.totalHours.toFixed(2)}h
                                   </span>
                                 </div>
                               ))}
@@ -322,31 +340,104 @@ export function Dashboard() {
                         </div>
 
                         <div>
-                          <h5 className="text-lg font-medium mb-3 text-gray-700">
-                            Monthly Breakdown
+                          <h5 className="text-lg font-medium mb-4 text-gray-700">
+                            Detailed Monthly Analysis
                           </h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {year.months.map((month: any) => (
-                              <div
-                                key={month.month}
-                                className="bg-blue-50 p-4 rounded"
-                              >
-                                <h6 className="font-semibold mb-2">
-                                  Month {month.month} - {month.totalHours}h
-                                </h6>
-                                <div className="space-y-1 text-sm">
-                                  {month.localities.map((locality: any) => (
-                                    <div
-                                      key={locality.name}
-                                      className="flex justify-between"
-                                    >
-                                      <span>{locality.name}</span>
-                                      <span>{locality.totalHours}h</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {year.months.map((month: any) => {
+                              const monthNames = [
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ];
+                              return (
+                                <div
+                                  key={month.month}
+                                  className="bg-blue-50 border border-blue-200 p-4 rounded-lg"
+                                >
+                                  <div className="mb-3">
+                                    <h6 className="font-semibold text-blue-800 text-base">
+                                      {monthNames[month.month - 1]} {year.year}
+                                    </h6>
+                                    <p className="text-sm text-blue-600">
+                                      Total Hours: {month.totalHours.toFixed(2)}
+                                      h
+                                    </p>
+                                  </div>
+
+                                  {/* Monthly Service Breakdown */}
+                                  <div className="mb-4">
+                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                      Service Distribution:
+                                    </h6>
+                                    <div className="space-y-1">
+                                      {month.services.map((service: any) => (
+                                        <div
+                                          key={service.name}
+                                          className="flex justify-between bg-white px-2 py-1 rounded text-sm"
+                                        >
+                                          <span>{service.name}</span>
+                                          <span className="font-medium">
+                                            {service.totalHours.toFixed(2)}h
+                                          </span>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  </div>
+
+                                  {/* Monthly Locality Breakdown with Services */}
+                                  <div>
+                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                      Locality Breakdown:
+                                    </h6>
+                                    <div className="space-y-2">
+                                      {month.localities.map((locality: any) => (
+                                        <div
+                                          key={locality.name}
+                                          className="bg-white p-2 rounded border"
+                                        >
+                                          <div className="flex justify-between items-center mb-1">
+                                            <span className="font-medium text-sm">
+                                              {locality.name}
+                                            </span>
+                                            <span className="text-blue-600 font-semibold text-sm">
+                                              {locality.totalHours.toFixed(2)}h
+                                            </span>
+                                          </div>
+                                          <div className="space-y-1">
+                                            {locality.services.map(
+                                              (service: any) => (
+                                                <div
+                                                  key={service.name}
+                                                  className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                                                >
+                                                  <span>{service.name}</span>
+                                                  <span>
+                                                    {service.totalHours.toFixed(
+                                                      2
+                                                    )}
+                                                    h
+                                                  </span>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>

@@ -29,7 +29,6 @@ export class ClientService {
   async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAllNotArchived(user);
-      console.log(dbClients);
       const dbRequests = await this.requestRepository.getAllNotArchived(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
@@ -49,7 +48,6 @@ export class ClientService {
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAll(user);
-      console.log(dbClients);
       const dbRequests = await this.requestRepository.getAll(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,

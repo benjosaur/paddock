@@ -26,8 +26,8 @@ export class InfraStack extends cdk.Stack {
     );
 
     // Cognito User Pool
-    const userPool = new cognito.UserPool(this, "UserPool", {
-      userPoolName: "paddock-user-pool",
+    const userPool = new cognito.UserPool(this, "PaddockUserPool", {
+      userPoolName: "paddock-health-user-pool",
       selfSignUpEnabled: false,
       signInCaseSensitive: false,
       userInvitation: {
@@ -66,32 +66,43 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    const cognitoDomain = userPool.addDomain("CognitoDomain", {
-      customDomain: {
-        domainName: authDomainName,
-        certificate: certificate,
+    // cooling off
+    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
+    //   customDomain: {
+    //     domainName: authDomainName,
+    //     certificate: certificate,
+    //   },
+    // });
+
+    const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
+      cognitoDomain: {
+        domainPrefix: "auth-paddock-health",
       },
     });
 
     // Cognito User Pool Client
-    const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
-      userPool,
-      userPoolClientName: "paddock-user-pool-client",
-      authFlows: {
-        userSrp: true,
-        userPassword: true,
-        custom: false,
-      },
-      generateSecret: false,
-      preventUserExistenceErrors: true,
-      oAuth: {
-        callbackUrls: ["https://" + domainName + homeRoute],
-        logoutUrls: ["https://" + domainName + homeRoute],
-        flows: {
-          authorizationCodeGrant: true,
+    const userPoolClient = new cognito.UserPoolClient(
+      this,
+      "PaddockUserPoolClient",
+      {
+        userPool,
+        userPoolClientName: "paddock-health-user-pool-client",
+        authFlows: {
+          userSrp: true,
+          userPassword: true,
+          custom: false,
         },
-      },
-    });
+        generateSecret: false,
+        preventUserExistenceErrors: true,
+        oAuth: {
+          callbackUrls: ["https://" + domainName + homeRoute],
+          logoutUrls: ["https://" + domainName + homeRoute],
+          flows: {
+            authorizationCodeGrant: true,
+          },
+        },
+      }
+    );
 
     const groups = [
       { id: "AdminGroup", name: "Admin", description: "Administrators group" },
@@ -155,14 +166,14 @@ export class InfraStack extends cdk.Stack {
           },
         ],
         // Add custom domain configuration
-        viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
-          certificate,
-          {
-            aliases: [domainName, subdomainName],
-            securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-            sslMethod: cloudfront.SSLMethod.SNI,
-          }
-        ),
+        // viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
+        //   certificate,
+        //   {
+        //     aliases: [domainName, subdomainName],
+        //     securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+        //     sslMethod: cloudfront.SSLMethod.SNI,
+        //   }
+        // ),
         errorConfigurations: [
           {
             errorCode: 404,

@@ -100,6 +100,17 @@ export class PackageRepository {
     const currentYear = parseInt(currentDate.slice(0, 4));
     const commands: QueryCommand[] = [];
 
+    const openPackageCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI3",
+      KeyConditionExpression: "entityType = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `package#open`,
+      },
+    });
+
+    commands.push(openPackageCommand);
+
     for (let year = startYear; year <= currentYear; year++) {
       const packageEndedInYear = new QueryCommand({
         TableName: getTableName(user),
