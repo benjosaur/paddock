@@ -1,4 +1,9 @@
-import { RequestFull, RequestMetadata, requestMetadataSchema } from "shared";
+import {
+  RequestFull,
+  RequestMetadata,
+  requestMetadataSchema,
+  requestFullSchema,
+} from "shared";
 import { RequestRepository } from "./repository";
 import { DbRequest, DbRequestEntity } from "./schema";
 import { DbPackage } from "../package/schema";
@@ -11,6 +16,17 @@ export class RequestService {
   packageRepository = new PackageRepository();
   packageService = new PackageService();
 
+  async getAllWithPackages(user: User): Promise<RequestFull[]> {
+    const requestsFromDb = await this.requestRepository.getAll(user);
+    const packagesFromDb = await this.packageRepository.getAll(user);
+    const transformedRequests = this.transformDbRequestToSharedFull([
+      ...requestsFromDb,
+      ...packagesFromDb,
+    ]);
+    const parsedResult = requestFullSchema.array().parse(transformedRequests);
+    return parsedResult;
+  }
+
   async getAllNotArchivedWithPackages(user: User): Promise<RequestFull[]> {
     const requestsFromDb = await this.requestRepository.getAllNotArchived(user);
     const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
@@ -18,7 +34,8 @@ export class RequestService {
       ...requestsFromDb,
       ...packagesFromDb,
     ]);
-    return transformedRequests;
+    const parsedResult = requestFullSchema.array().parse(transformedRequests);
+    return parsedResult;
   }
 
   async getAllNotEndedYetWithPackages(user: User): Promise<RequestFull[]> {
@@ -29,7 +46,8 @@ export class RequestService {
       ...requestsFromDb,
       ...packagesFromDb,
     ]);
-    return transformedRequests;
+    const parsedResult = requestFullSchema.array().parse(transformedRequests);
+    return parsedResult;
   }
 
   async getAllMetadata(
@@ -40,14 +58,18 @@ export class RequestService {
     const requestsFromDb = await this.requestRepository.getAll(user, startYear);
     const transformedRequests =
       this.transformDbRequestToSharedFull(requestsFromDb);
-    return transformedRequests;
+    const parsedResult = requestMetadataSchema
+      .array()
+      .parse(transformedRequests);
+    return parsedResult;
   }
 
   async getById(requestId: string, user: User): Promise<RequestFull> {
     const requestFromDb = await this.requestRepository.getById(requestId, user);
     const transformedRequest =
       this.transformDbRequestToSharedFull(requestFromDb);
-    const fullRequest = transformedRequest[0];
+    const parsedResult = requestFullSchema.array().parse(transformedRequest);
+    const fullRequest = parsedResult[0];
     return fullRequest;
   }
 

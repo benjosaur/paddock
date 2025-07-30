@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { PackageForm } from "../pages/PackageForm";
 import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
@@ -51,12 +53,24 @@ const packageColumns: TableColumn<Package>[] = [
 
 export default function PackageRoutes() {
   const navigate = useNavigate();
+  const [viewState, setViewState] = useState<'active' | 'completed' | 'archived'>('active');
 
   const queryClient = useQueryClient();
 
-  const packagesQuery = useQuery(trpc.packages.getAll.queryOptions());
+  const packagesQuery = useQuery(
+    viewState === 'active' 
+      ? trpc.packages.getAllNotEndedYet.queryOptions()
+      : viewState === 'completed'
+      ? trpc.packages.getAllNotArchived.queryOptions()
+      : trpc.packages.getAll.queryOptions()
+  );
 
-  const packagesQueryKey = trpc.packages.getAll.queryKey();
+  const packagesQueryKey = 
+    viewState === 'active' 
+      ? trpc.packages.getAllNotEndedYet.queryKey()
+      : viewState === 'completed'
+      ? trpc.packages.getAllNotArchived.queryKey()
+      : trpc.packages.getAll.queryKey();
 
   const packages = packagesQuery.data || [];
 
@@ -81,6 +95,22 @@ export default function PackageRoutes() {
     deletePackageMutation.mutate({ id });
   };
 
+  const handleViewToggle = () => {
+    if (viewState === 'active') {
+      setViewState('completed');
+    } else if (viewState === 'completed') {
+      setViewState('archived');
+    } else {
+      setViewState('active');
+    }
+  };
+
+  const getButtonText = () => {
+    if (viewState === 'active') return 'Show Completed';
+    if (viewState === 'completed') return 'Show Archived';
+    return 'Hide Archived';
+  };
+
   if (packagesQuery.isLoading) return <div>Loading...</div>;
   if (packagesQuery.error) return <div>Error loading packages</div>;
 
@@ -90,7 +120,7 @@ export default function PackageRoutes() {
         index
         element={
           <DataTable
-            key="packages"
+            key={`packages-${viewState}`}
             title="Packages"
             searchPlaceholder="Search packages..."
             data={packages}
@@ -99,6 +129,16 @@ export default function PackageRoutes() {
             onDelete={handleDelete}
             onAddNew={handleAddNew}
             resource="packages"
+            customActions={
+              <Button
+                variant={viewState !== 'active' ? "default" : "outline"}
+                size="sm"
+                onClick={handleViewToggle}
+                className="shadow-sm"
+              >
+                {getButtonText()}
+              </Button>
+            }
           />
         }
       />

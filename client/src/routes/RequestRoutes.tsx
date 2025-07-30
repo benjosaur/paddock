@@ -61,7 +61,9 @@ const requestColumns: TableColumn<RequestFull>[] = [
 
 export default function RequestRoutes() {
   const navigate = useNavigate();
-  const [showArchived, setShowArchived] = useState(false);
+  const [viewState, setViewState] = useState<
+    "active" | "completed" | "archived"
+  >("active");
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
@@ -70,14 +72,19 @@ export default function RequestRoutes() {
   const queryClient = useQueryClient();
 
   const requestsQuery = useQuery(
-    showArchived 
-      ? trpc.requests.getAll.queryOptions()
-      : trpc.requests.getAllNotArchived.queryOptions()
+    viewState === "active"
+      ? trpc.requests.getAllNotEndedYet.queryOptions()
+      : viewState === "completed"
+      ? trpc.requests.getAllNotArchived.queryOptions()
+      : trpc.requests.getAll.queryOptions()
   );
 
-  const requestsQueryKey = showArchived 
-    ? trpc.requests.getAll.queryKey()
-    : trpc.requests.getAllNotArchived.queryKey();
+  const requestsQueryKey =
+    viewState === "active"
+      ? trpc.requests.getAllNotEndedYet.queryKey()
+      : viewState === "completed"
+      ? trpc.requests.getAllNotArchived.queryKey()
+      : trpc.requests.getAll.queryKey();
 
   const requests = requestsQuery.data || [];
 
@@ -116,6 +123,22 @@ export default function RequestRoutes() {
     deleteRequestMutation.mutate({ id });
   };
 
+  const handleViewToggle = () => {
+    if (viewState === "active") {
+      setViewState("completed");
+    } else if (viewState === "completed") {
+      setViewState("archived");
+    } else {
+      setViewState("active");
+    }
+  };
+
+  const getButtonText = () => {
+    if (viewState === "active") return "Show Completed";
+    if (viewState === "completed") return "Show Archived";
+    return "Hide Archived";
+  };
+
   if (requestsQuery.isLoading) return <div>Loading...</div>;
   if (requestsQuery.error) return <div>Error loading requests</div>;
 
@@ -126,7 +149,7 @@ export default function RequestRoutes() {
           index
           element={
             <DataTable
-              key={`requests-${showArchived}`}
+              key={`requests-${viewState}`}
               title="Requests"
               searchPlaceholder="Search requests..."
               data={requests}
@@ -139,12 +162,12 @@ export default function RequestRoutes() {
               resource="requests"
               customActions={
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant={viewState !== "active" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
+                  onClick={handleViewToggle}
                   className="shadow-sm"
                 >
-                  {showArchived ? "Hide Archived" : "Show Archived"}
+                  {getButtonText()}
                 </Button>
               }
             />
