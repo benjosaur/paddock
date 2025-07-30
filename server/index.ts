@@ -67,9 +67,5 @@ async function startServer() {
 
 if (!(process.env.NODE_ENV == "production")) {
   startServer();
-  console.log(
-    "localAppRouter keys:",
-    Object.keys(localAppRouter._def.procedures)
-  );
 }
 // */
