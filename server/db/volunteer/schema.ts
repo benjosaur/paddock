@@ -3,15 +3,18 @@ import { volunteerMetadataSchema } from "shared";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
 import { dbMagLogVolunteer } from "../mag/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbVolunteerEntity = volunteerMetadataSchema
-  .omit({
-    id: true,
-    trainingRecords: true,
-  })
+export const dbVolunteerEntity = dbEntrySchema
+  .extend(
+    volunteerMetadataSchema
+      .omit({
+        id: true,
+        trainingRecords: true,
+      })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("volunteer"),
   });
 

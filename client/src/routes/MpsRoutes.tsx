@@ -55,13 +55,24 @@ export function MpsRoutes() {
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.mps.getAll.queryOptions()
       : trpc.mps.getAllNotArchived.queryOptions()
   );
-  const mpsQueryKey = showArchived 
+  const mpsQueryKey = showArchived
     ? trpc.mps.getAll.queryKey()
     : trpc.mps.getAllNotArchived.queryKey();
+
+  const archiveMpMutation = useMutation(
+    trpc.mps.toggleArchive.mutationOptions({
+      onSuccess: () => {
+        // Invalidate all associated routes
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
   const deleteMpMutation = useMutation(
     trpc.mps.delete.mutationOptions({
@@ -73,6 +84,10 @@ export function MpsRoutes() {
 
   const handleAddNew = () => {
     navigate("/mps/create");
+  };
+
+  const handleArchiveToggle = (id: string) => {
+    archiveMpMutation.mutate({ id });
   };
 
   const handleEditNavigation = (id: string) => {
@@ -109,6 +124,7 @@ export function MpsRoutes() {
               searchPlaceholder="Search MPs..."
               data={mpsQuery.data || []}
               columns={mpColumns}
+              onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onViewItem={handleViewMp as (item: unknown) => void}
@@ -144,3 +160,33 @@ export function MpsRoutes() {
 }
 
 export default MpsRoutes;
+
+const associatedMpRoutes = [
+  // Mps
+  trpc.mps.getAll,
+  trpc.mps.getAllNotArchived,
+  trpc.mps.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

@@ -89,14 +89,6 @@ export function ClientForm() {
     })
   );
 
-  const updatePostCodeMutation = useMutation(
-    trpc.clients.updatePostCode.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: thisClientQueryKey });
-      },
-    })
-  );
-
   useEffect(() => {
     if (clientQuery.data) {
       setFormData(clientQuery.data);
@@ -154,11 +146,6 @@ export function ClientForm() {
       updateNameMutation.mutate({
         clientId: id,
         newName: newValue,
-      });
-    } else if (field == "details.address.postCode") {
-      updatePostCodeMutation.mutate({
-        clientId: id,
-        newPostCode: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
   };
@@ -291,17 +278,9 @@ export function ClientForm() {
                     name="details.address.postCode"
                     value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
-                    disabled={isEditing}
                     className="flex-1"
                     required
                   />
-                  {isEditing && !clientQuery.isLoading && clientQuery.data && (
-                    <FieldEditModal
-                      field="details.address.postCode"
-                      currentValue={formData.details.address.postCode}
-                      onSubmit={handleFieldChangeSubmit}
-                    />
-                  )}
                 </div>
               </div>{" "}
               <div>

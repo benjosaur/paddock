@@ -51,4 +51,10 @@ export const volunteersRouter = router({
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.delete(ctx.user, input.id);
     }),
+
+  toggleArchive: createProtectedProcedure("volunteers", "update")
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.volunteer.toggleArchive(input.id, ctx.user);
+    }),
 });

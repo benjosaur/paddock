@@ -6,12 +6,7 @@ import {
   DbVolunteerEntity,
   dbVolunteerEntity,
 } from "./schema";
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
@@ -90,7 +85,7 @@ export class VolunteerRepository {
     const validatedFullVolunteer = dbVolunteerEntity.parse(fullVolunteer);
     const command = new PutCommand({
       TableName: getTableName(user),
-      Item: addCreateMiddleware(validatedFullVolunteer, user),
+      Item: dropNullFields(validatedFullVolunteer),
     });
 
     try {
@@ -106,7 +101,7 @@ export class VolunteerRepository {
     const validatedFullVolunteer = dbVolunteerEntity.parse(updatedVolunteer);
     const command = new PutCommand({
       TableName: getTableName(user),
-      Item: addUpdateMiddleware(validatedFullVolunteer, user),
+      Item: dropNullFields(validatedFullVolunteer),
     });
 
     try {

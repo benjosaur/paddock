@@ -20,6 +20,7 @@ export function MagLogForm() {
 
   const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
+    archived: "N",
     clients: [],
     mps: [],
     volunteers: [],

@@ -9,6 +9,7 @@ import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
+import { addDbMiddleware } from "../service";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -86,10 +87,13 @@ export class MpService {
     try {
       const validatedInput = mpMetadataSchema.omit({ id: true }).parse(newMp);
 
-      const mpToCreate: Omit<DbMpEntity, "pK" | "sK"> = {
-        ...validatedInput,
-        entityType: "mp",
-      };
+      const mpToCreate: Omit<DbMpEntity, "pK" | "sK"> = addDbMiddleware(
+        {
+          ...validatedInput,
+          entityType: "mp",
+        },
+        user
+      );
       const createdMpId = await this.mpRepository.create(mpToCreate, user);
       return createdMpId;
     } catch (error) {
@@ -104,7 +108,15 @@ export class MpService {
     try {
       const validatedInput = mpMetadataSchema.parse(updatedMp);
       const { id, ...rest } = validatedInput;
-      const dbMp: DbMpEntity = { pK: id, sK: id, entityType: "mp", ...rest };
+      const dbMp: DbMpEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "mp",
+          ...rest,
+        },
+        user
+      );
       await this.mpRepository.update(dbMp, user);
     } catch (error) {
       console.error("Service Layer Error updating MP:", error);
@@ -132,6 +144,22 @@ export class MpService {
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting MP:", error);
+      throw error;
+    }
+  }
+
+  async toggleArchive(mpId: string, user: User): Promise<void> {
+    try {
+      const mpRecords = await this.mpRepository.getById(mpId, user);
+
+      const updatedMpRecords = mpRecords.map((record) => ({
+        ...record,
+        archived: record.archived === "Y" ? "N" : "Y",
+      }));
+
+      await genericUpdate(updatedMpRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error toggling MP archive:", error);
       throw error;
     }
   }

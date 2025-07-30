@@ -61,13 +61,23 @@ export function VolunteersRoutes() {
   const queryClient = useQueryClient();
 
   const volunteersQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.volunteers.getAll.queryOptions()
       : trpc.volunteers.getAllNotArchived.queryOptions()
   );
-  const volunteersQueryKey = showArchived 
+  const volunteersQueryKey = showArchived
     ? trpc.volunteers.getAll.queryKey()
     : trpc.volunteers.getAllNotArchived.queryKey();
+
+  const archiveVolunteerMutation = useMutation(
+    trpc.volunteers.toggleArchive.mutationOptions({
+      onSuccess: () => {
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -79,6 +89,10 @@ export function VolunteersRoutes() {
 
   const handleAddNew = () => {
     navigate("/volunteers/create");
+  };
+
+  const handleArchiveToggle = (id: string) => {
+    archiveVolunteerMutation.mutate({ id });
   };
 
   const handleEditNavigation = (id: string) => {
@@ -115,6 +129,7 @@ export function VolunteersRoutes() {
               searchPlaceholder="Search volunteers..."
               data={volunteersQuery.data || []}
               columns={volunteerColumns}
+              onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onViewItem={handleViewVolunteer as (item: unknown) => void}
@@ -150,3 +165,33 @@ export function VolunteersRoutes() {
 }
 
 export default VolunteersRoutes;
+
+const associatedVolunteerRoutes = [
+  // Volunteers
+  trpc.volunteers.getAll,
+  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

@@ -17,7 +17,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { Search, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
+import {
+  Search,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Eye,
+  Plus,
+  FolderOpen,
+} from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import type { TableColumn } from "../types";
 import { AppRouterKeys } from "shared";
@@ -254,8 +262,8 @@ export function DataTable<T extends { id: string }>({
                             <DropdownMenuItem
                               onClick={() => onArchive(item.id)}
                             >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Toggle Archive
+                              <FolderOpen className="mr-2 h-4 w-4" />
+                              Archive
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

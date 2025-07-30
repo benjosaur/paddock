@@ -46,4 +46,10 @@ export const mpsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.delete(ctx.user, input.id);
     }),
+
+  toggleArchive: createProtectedProcedure("mps", "update")
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.mp.toggleArchive(input.id, ctx.user);
+    }),
 });

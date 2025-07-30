@@ -18,6 +18,7 @@ export function RequestForm() {
 
   const [formData, setFormData] = useState<Omit<RequestMetadata, "id">>({
     clientId: "",
+    archived: "N",
     requestType: "paid",
     startDate: "",
     endDate: "open",

@@ -6,6 +6,7 @@ const requestService = new RequestService();
 
 const samplePaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
+  archived: "N",
   requestType: "paid",
   startDate: "2025-01-10",
   endDate: "open",
@@ -26,6 +27,7 @@ const samplePaidRequest: Omit<RequestMetadata, "id"> = {
 
 const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
+  archived: "N",
   requestType: "unpaid",
   startDate: "2025-01-15",
   endDate: "open",
@@ -43,8 +45,6 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
     status: "pending",
   },
 };
-
-const clientId = "c#test-client-123";
 
 export async function testRequestService() {
   try {

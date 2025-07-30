@@ -1,40 +1,49 @@
 import { z } from "zod";
 import { magLogSchema } from "shared";
+import { dbEntrySchema } from "../schema";
 
-export const dbMagLogEntity = magLogSchema
-  .omit({
-    id: true,
-    clients: true,
-    mps: true,
-    volunteers: true,
-  })
+export const dbMagLogEntity = dbEntrySchema
+  .extend(
+    magLogSchema
+      .omit({
+        id: true,
+        clients: true,
+        mps: true,
+        volunteers: true,
+      })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("magLogEntity"),
   });
 
-export const dbMagLogClient = magLogSchema.shape.clients.element
-  .omit({ id: true })
+export const dbMagLogClient = dbEntrySchema
+  .extend(
+    magLogSchema.shape.clients.element
+      .omit({ id: true })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("magLogClient"),
   });
 
-export const dbMagLogMp = magLogSchema.shape.mps.element
-  .omit({ id: true })
+export const dbMagLogMp = dbEntrySchema
+  .extend(
+    magLogSchema.shape.mps.element
+      .omit({ id: true })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("magLogMp"),
   });
 
-export const dbMagLogVolunteer = magLogSchema.shape.volunteers.element
-  .omit({ id: true })
+export const dbMagLogVolunteer = dbEntrySchema
+  .extend(
+    magLogSchema.shape.volunteers.element
+      .omit({ id: true })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("magLogVolunteer"),
   });
 

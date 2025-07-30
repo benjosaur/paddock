@@ -10,6 +10,8 @@ import { DbPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
 import { firstYear } from "shared/const";
+import { addDbMiddleware } from "../service";
+import { genericUpdate } from "../repository";
 
 export class RequestService {
   requestRepository = new RequestRepository();
@@ -17,60 +19,108 @@ export class RequestService {
   packageService = new PackageService();
 
   async getAllWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAll(user);
-    const packagesFromDb = await this.packageRepository.getAll(user);
-    const transformedRequests = this.transformDbRequestToSharedFull([
-      ...requestsFromDb,
-      ...packagesFromDb,
-    ]);
-    const parsedResult = requestFullSchema.array().parse(transformedRequests);
-    return parsedResult;
+    try {
+      const requestsFromDb = await this.requestRepository.getAll(user);
+      const packagesFromDb = await this.packageRepository.getAll(user);
+      const transformedRequests = this.transformDbRequestToSharedFull([
+        ...requestsFromDb,
+        ...packagesFromDb,
+      ]);
+      const parsedResult = requestFullSchema.array().parse(transformedRequests);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all requests with packages:",
+        error
+      );
+      throw error;
+    }
   }
 
   async getAllNotArchivedWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAllNotArchived(user);
-    const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
-    const transformedRequests = this.transformDbRequestToSharedFull([
-      ...requestsFromDb,
-      ...packagesFromDb,
-    ]);
-    const parsedResult = requestFullSchema.array().parse(transformedRequests);
-    return parsedResult;
+    try {
+      const requestsFromDb = await this.requestRepository.getAllNotArchived(
+        user
+      );
+      const packagesFromDb = await this.packageRepository.getAllNotArchived(
+        user
+      );
+      const transformedRequests = this.transformDbRequestToSharedFull([
+        ...requestsFromDb,
+        ...packagesFromDb,
+      ]);
+      const parsedResult = requestFullSchema.array().parse(transformedRequests);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all non-archived requests with packages:",
+        error
+      );
+      throw error;
+    }
   }
 
   async getAllNotEndedYetWithPackages(user: User): Promise<RequestFull[]> {
-    const requestsFromDb = await this.requestRepository.getAllNotEndedYet(user);
-    // below as we want all packages associated with the request (though archived wont be fetched)
-    const packagesFromDb = await this.packageRepository.getAllNotArchived(user);
-    const transformedRequests = this.transformDbRequestToSharedFull([
-      ...requestsFromDb,
-      ...packagesFromDb,
-    ]);
-    const parsedResult = requestFullSchema.array().parse(transformedRequests);
-    return parsedResult;
+    try {
+      const requestsFromDb = await this.requestRepository.getAllNotEndedYet(
+        user
+      );
+      // below as we want all packages associated with the request (though archived wont be fetched)
+      const packagesFromDb = await this.packageRepository.getAllNotArchived(
+        user
+      );
+      const transformedRequests = this.transformDbRequestToSharedFull([
+        ...requestsFromDb,
+        ...packagesFromDb,
+      ]);
+      const parsedResult = requestFullSchema.array().parse(transformedRequests);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all not ended requests with packages:",
+        error
+      );
+      throw error;
+    }
   }
 
   async getAllMetadata(
     user: User,
     startYear: number = firstYear
   ): Promise<RequestMetadata[]> {
-    // no packages
-    const requestsFromDb = await this.requestRepository.getAll(user, startYear);
-    const transformedRequests =
-      this.transformDbRequestToSharedFull(requestsFromDb);
-    const parsedResult = requestMetadataSchema
-      .array()
-      .parse(transformedRequests);
-    return parsedResult;
+    try {
+      // no packages
+      const requestsFromDb = await this.requestRepository.getAll(
+        user,
+        startYear
+      );
+      const transformedRequests =
+        this.transformDbRequestToSharedFull(requestsFromDb);
+      const parsedResult = requestMetadataSchema
+        .array()
+        .parse(transformedRequests);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all request metadata:", error);
+      throw error;
+    }
   }
 
   async getById(requestId: string, user: User): Promise<RequestFull> {
-    const requestFromDb = await this.requestRepository.getById(requestId, user);
-    const transformedRequest =
-      this.transformDbRequestToSharedFull(requestFromDb);
-    const parsedResult = requestFullSchema.array().parse(transformedRequest);
-    const fullRequest = parsedResult[0];
-    return fullRequest;
+    try {
+      const requestFromDb = await this.requestRepository.getById(
+        requestId,
+        user
+      );
+      const transformedRequest =
+        this.transformDbRequestToSharedFull(requestFromDb);
+      const parsedResult = requestFullSchema.array().parse(transformedRequest);
+      const fullRequest = parsedResult[0];
+      return fullRequest;
+    } catch (error) {
+      console.error("Service Layer Error getting request by ID:", error);
+      throw error;
+    }
   }
 
   async create(
@@ -83,11 +133,15 @@ export class RequestService {
         .parse(request);
       const requestSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
       const { clientId, ...rest } = validatedInput;
-      const requestToCreate: Omit<DbRequestEntity, "sK" | "requestId"> = {
-        pK: clientId,
-        entityType: `request#${requestSuffix}`,
-        ...rest,
-      };
+      const requestToCreate: Omit<DbRequestEntity, "sK" | "requestId"> =
+        addDbMiddleware(
+          {
+            pK: clientId,
+            entityType: `request#${requestSuffix}`,
+            ...rest,
+          },
+          user
+        );
       const createdRequestId = await this.requestRepository.create(
         requestToCreate,
         user
@@ -105,13 +159,16 @@ export class RequestService {
       const validatedInput = requestMetadataSchema.parse(request);
       const { id, clientId, ...rest } = validatedInput;
       const requestSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
-      const dbRequest: DbRequestEntity = {
-        pK: clientId,
-        sK: id,
-        requestId: id,
-        entityType: `request#${requestSuffix}`,
-        ...rest,
-      };
+      const dbRequest: DbRequestEntity = addDbMiddleware(
+        {
+          pK: clientId,
+          sK: id,
+          requestId: id,
+          entityType: `request#${requestSuffix}`,
+          ...rest,
+        },
+        user
+      );
 
       await this.requestRepository.update(dbRequest, user);
     } catch (error) {
@@ -121,8 +178,34 @@ export class RequestService {
   }
 
   async delete(user: User, requestId: string): Promise<number> {
-    const numDeleted = await this.requestRepository.delete(requestId, user);
-    return numDeleted[0];
+    try {
+      const numDeleted = await this.requestRepository.delete(requestId, user);
+      return numDeleted[0];
+    } catch (error) {
+      console.error("Service Layer Error deleting request:", error);
+      throw error;
+    }
+  }
+
+  async toggleArchive(requestId: string, user: User): Promise<void> {
+    try {
+      const requestWithPackagesRecords = await this.requestRepository.getById(
+        requestId,
+        user
+      );
+
+      const updatedRequestRecords = requestWithPackagesRecords.map(
+        (record) => ({
+          ...record,
+          archived: record.archived === "Y" ? "N" : "Y",
+        })
+      );
+
+      await genericUpdate(updatedRequestRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error toggling request archive:", error);
+      throw error;
+    }
   }
 
   private transformDbRequestToSharedFull(items: DbRequest[]): RequestFull[] {

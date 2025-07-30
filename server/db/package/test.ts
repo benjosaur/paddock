@@ -6,6 +6,7 @@ const packageService = new PackageService();
 
 const samplePackage: Omit<Package, "id"> = {
   carerId: "mp#test-carer-123",
+  archived: "N",
   requestId: "request#test-request-456",
   startDate: "2025-01-15",
   endDate: "2025-12-31",

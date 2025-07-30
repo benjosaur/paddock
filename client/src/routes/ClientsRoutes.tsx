@@ -56,13 +56,23 @@ export default function ClientsRoutes() {
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.clients.getAll.queryOptions()
       : trpc.clients.getAllNotArchived.queryOptions()
   );
-  const clientsQueryKey = showArchived 
+  const clientsQueryKey = showArchived
     ? trpc.clients.getAll.queryKey()
     : trpc.clients.getAllNotArchived.queryKey();
+
+  const archiveClientMutation = useMutation(
+    trpc.clients.toggleArchive.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
@@ -74,6 +84,10 @@ export default function ClientsRoutes() {
 
   const handleAddNew = () => {
     navigate("/clients/create");
+  };
+
+  const handleArchiveToggle = (id: string) => {
+    archiveClientMutation.mutate({ id });
   };
 
   const handleEdit = (id: string) => {
@@ -110,6 +124,7 @@ export default function ClientsRoutes() {
               searchPlaceholder="Search clients..."
               data={clientsQuery.data || []}
               columns={clientColumns}
+              onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewItem={handleViewClient as (item: unknown) => void}
@@ -143,3 +158,35 @@ export default function ClientsRoutes() {
     </Routes>
   );
 }
+
+const associatedClientRoutes = [
+  // Dashboard Analytics
+
+  // Clients
+  trpc.clients.getAll,
+  trpc.clients.getAllNotArchived,
+  trpc.clients.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

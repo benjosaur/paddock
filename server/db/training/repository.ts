@@ -1,9 +1,4 @@
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { DbTrainingRecord, dbTrainingRecord } from "./schema";
@@ -113,7 +108,7 @@ export class TrainingRecordRepository {
       const validatedRecord = dbTrainingRecord.parse(fullRecord);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addCreateMiddleware(validatedRecord, user),
+        Item: dropNullFields(validatedRecord),
       });
 
       await client.send(command);
@@ -129,7 +124,7 @@ export class TrainingRecordRepository {
       const validatedRecord = dbTrainingRecord.parse(updatedRecord);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addUpdateMiddleware(validatedRecord, user),
+        Item: dropNullFields(validatedRecord),
       });
 
       await client.send(command);

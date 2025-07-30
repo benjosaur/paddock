@@ -11,6 +11,8 @@ import {
 export const trainingRecordSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
+  // below if parent carer is archived
+  archived: z.enum(booleanTypes),
   expiryDate: z.union([z.string().date(), z.literal("")]).default(""),
   details: z.object({ name: z.string(), recordName: z.string().default("") }),
 });
@@ -31,6 +33,8 @@ const addressSchema = z.object({
 
 export const packageSchema = z.object({
   id: z.string(),
+  //below if parent carer is archived
+  archived: z.enum(booleanTypes),
   carerId: z.string(),
   requestId: z.string(),
   startDate: z.string().date(),
@@ -46,6 +50,8 @@ export const packageSchema = z.object({
 
 export const requestMetadataSchema = z.object({
   id: z.string(),
+  //below if parent client is archived
+  archived: z.enum(booleanTypes),
   requestType: z.enum(requestTypes),
   clientId: z.string(),
   startDate: z.string().date(),
@@ -66,22 +72,27 @@ export const requestFullSchema = requestMetadataSchema.extend({
 
 export const magLogSchema = z.object({
   id: z.string(),
+  archived: z.enum(booleanTypes),
   date: z.string(),
   clients: z.array(
     z.object({
       id: z.string(),
+      //below if parent is archived
+      archived: z.enum(booleanTypes),
       details: z.object({ name: z.string(), address: addressSchema }),
     })
   ),
   mps: z.array(
     z.object({
       id: z.string(),
+      archived: z.enum(booleanTypes),
       details: z.object({ name: z.string() }),
     })
   ),
   volunteers: z.array(
     z.object({
       id: z.string(),
+      archived: z.enum(booleanTypes),
       details: z.object({ name: z.string() }),
     })
   ),

@@ -1,10 +1,5 @@
 import { DbPackage, dbPackage } from "./schema";
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
@@ -168,7 +163,7 @@ export class PackageRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addCreateMiddleware(newItem, user),
+              Item: dropNullFields(newItem),
             })
           )
         )
@@ -187,7 +182,7 @@ export class PackageRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addUpdateMiddleware(log, user),
+              Item: dropNullFields(log),
             })
           )
         )

@@ -7,6 +7,18 @@ import { TrainingRecordService } from "./training/service";
 import { VolunteerService } from "./volunteer/service";
 import { ReportService } from "./analytics/service";
 
+export function addDbMiddleware<T>(
+  input: T,
+  user: User
+): T & { updatedAt: string; updatedBy: string } {
+  const now = new Date().toISOString();
+  return {
+    ...input,
+    updatedAt: now,
+    updatedBy: user.sub,
+  };
+}
+
 export function createServices() {
   return {
     client: new ClientService(),

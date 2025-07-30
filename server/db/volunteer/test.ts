@@ -30,7 +30,6 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
       },
     ],
     specialisms: ["Community Outreach", "Event Management"],
-    transport: true,
     capacity: "Part time",
   },
   packages: [],

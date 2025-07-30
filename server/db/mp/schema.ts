@@ -3,15 +3,18 @@ import { mpMetadataSchema } from "shared";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
 import { dbMagLogMp } from "../mag/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbMpEntity = mpMetadataSchema
-  .omit({
-    id: true,
-    trainingRecords: true,
-  })
+export const dbMpEntity = dbEntrySchema
+  .extend(
+    mpMetadataSchema
+      .omit({
+        id: true,
+        trainingRecords: true,
+      })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("mp"),
   });
 

@@ -2,15 +2,18 @@ import { z } from "zod";
 import { clientMetadataSchema } from "shared";
 import { dbMagLogClient } from "../mag/schema";
 import { dbRequestEntity } from "../requests/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbClientEntity = clientMetadataSchema
-  .omit({
-    id: true,
-    requests: true,
-  })
+export const dbClientEntity = dbEntrySchema
+  .extend(
+    clientMetadataSchema
+      .omit({
+        id: true,
+        requests: true,
+      })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("client"),
   });
 

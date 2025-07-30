@@ -32,9 +32,12 @@ export function Dashboard() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Fetch all required data
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  // "Active" refers to currently ongoing requests/packages NOT archived
+  const clientsQuery = useQuery(trpc.clients.getAllNotArchived.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotArchived.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotArchived.queryOptions()
+  );
   const activeRequestsQuery = useQuery(
     trpc.requests.getAllNotEndedYet.queryOptions()
   );

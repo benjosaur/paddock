@@ -4,7 +4,6 @@
 import { DynamoDB, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
-  PutCommand,
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 
@@ -34,32 +33,7 @@ export const getTableName = (user: User): string => {
 
 export const client = DynamoDBDocumentClient.from(createRawClient());
 
-export function addCreateMiddleware<T>(
-  input: T,
-  user: User
-): T & { createdAt: string; updatedAt: string; updatedBy: string } {
-  const now = new Date().toISOString();
-  return dropNullFields({
-    ...input,
-    createdAt: now,
-    updatedAt: now,
-    updatedBy: user.sub,
-  });
-}
-
-export function addUpdateMiddleware<T>(
-  input: T,
-  user: User
-): T & { updatedAt: string; updatedBy: string } {
-  const now = new Date().toISOString();
-  return dropNullFields({
-    ...input,
-    updatedAt: now,
-    updatedBy: user.sub,
-  });
-}
-
-function dropNullFields<T>(input: T): T {
+export function dropNullFields<T>(input: T): T {
   if (Array.isArray(input)) {
     return input
       .map(dropNullFields)
@@ -83,10 +57,9 @@ function dropNullFields<T>(input: T): T {
   return input;
 }
 
-export async function genericUpdate<T extends Record<string, any>>(
-  items: T[],
-  user: User
-): Promise<void> {
+export async function genericUpdate<
+  T extends { updatedBy: string; updatedAt: string }
+>(items: T[], user: User): Promise<void> {
   // only for use when input validation is intentioanlly agnostic and not necessary
   const tableName = getTableName(user);
 

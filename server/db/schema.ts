@@ -1,3 +1,16 @@
+import { z } from "zod";
+
+// Base database entry schema with required fields for all entities
+export const dbEntrySchema = z.object({
+  pK: z.string(), // Partition key
+  sK: z.string(), // Sort key
+  entityType: z.string(),
+  updatedAt: z.string().datetime(),
+  updatedBy: z.string(),
+});
+
+export type DbEntry = z.infer<typeof dbEntrySchema>;
+
 // DUPLICATIONS TO MANUALLY KEEP CONSISTENT:
 // client postCode
 //    Source: c# c# Dupes: c# mplog#, c# vlog#

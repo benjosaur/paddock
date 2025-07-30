@@ -1,9 +1,4 @@
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import {
   DbRequest,
@@ -185,7 +180,7 @@ export class RequestRepository {
       const validatedRequest = dbRequestEntity.parse(fullRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addCreateMiddleware(validatedRequest, user),
+        Item: dropNullFields(validatedRequest),
       });
 
       await client.send(command);
@@ -201,7 +196,7 @@ export class RequestRepository {
       const validatedRequest = dbRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addUpdateMiddleware(validatedRequest, user),
+        Item: dropNullFields(validatedRequest),
       });
 
       await client.send(command);

@@ -20,6 +20,7 @@ export function PackageForm() {
   const [formData, setFormData] = useState<Omit<Package, "id">>({
     carerId: "",
     requestId: initialRequestId,
+    archived: "N",
     startDate: "",
     endDate: "open",
     details: {

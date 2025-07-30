@@ -6,6 +6,7 @@ const trainingRecordService = new TrainingRecordService();
 
 const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
   ownerId: "mp#test-owner-123",
+  archived: "N",
   expiryDate: "2025-12-31",
   details: {
     name: "Robert Branson",
@@ -27,6 +28,7 @@ export async function testTrainingRecordService() {
     console.log("2. Updating training record...");
     const updatedRecordData: TrainingRecord = {
       id: createdRecordId,
+      archived: "N",
       ownerId: sampleTrainingRecord.ownerId,
       expiryDate: "2026-12-31",
       details: {

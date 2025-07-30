@@ -47,13 +47,9 @@ export const clientsRouter = router({
       );
     }),
 
-  updatePostCode: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newPostCode: z.string() }))
+  toggleArchive: createProtectedProcedure("clients", "update")
+    .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.updatePostCode(
-        input.clientId,
-        input.newPostCode,
-        ctx.user
-      );
+      return await ctx.services.client.toggleArchive(input.id, ctx.user);
     }),
 });

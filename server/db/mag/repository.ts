@@ -1,10 +1,5 @@
 import { DbMagLog, dbMagLog } from "./schema";
-import {
-  addCreateMiddleware,
-  addUpdateMiddleware,
-  client,
-  getTableName,
-} from "../repository";
+import { dropNullFields, client, getTableName } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
@@ -101,7 +96,7 @@ export class MagLogRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addCreateMiddleware(newItem, user),
+              Item: dropNullFields(newItem),
             })
           )
         )
@@ -127,7 +122,7 @@ export class MagLogRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addCreateMiddleware(newItem, user),
+              Item: dropNullFields(newItem),
             })
           )
         )
@@ -147,7 +142,7 @@ export class MagLogRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addUpdateMiddleware(log, user),
+              Item: dropNullFields(log),
             })
           )
         )

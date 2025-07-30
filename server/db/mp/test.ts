@@ -30,7 +30,6 @@ const sampleMp: Omit<MpMetadata, "id"> = {
       },
     ],
     specialisms: ["Health", "Education"],
-    transport: true,
     capacity: "Full time",
   },
   packages: [],

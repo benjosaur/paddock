@@ -36,87 +36,116 @@ export class ReportService {
   packageService = new PackageService();
 
   async generateActiveRequestsCrossSection(user: User): Promise<CrossSection> {
-    const requests = await this.requestService.getAllNotEndedYetWithPackages(
-      user
-    );
-    const crossSection: CrossSection = {
-      totalHours: 0,
-      localities: [],
-      services: [],
-    };
-    for (const request of requests) {
-      const weeklyHours = request.details.weeklyHours;
-      crossSection.totalHours += weeklyHours;
-      this.addHoursToReportLocality(
-        weeklyHours,
-        crossSection.localities,
-        request.details.address.locality,
-        request.details.services
+    try {
+      const requests = await this.requestService.getAllNotEndedYetWithPackages(
+        user
       );
-      this.addHoursToReportService(
-        weeklyHours,
-        crossSection.services,
-        request.details.services
+      const crossSection: CrossSection = {
+        totalHours: 0,
+        localities: [],
+        services: [],
+      };
+      for (const request of requests) {
+        const weeklyHours = request.details.weeklyHours;
+        crossSection.totalHours += weeklyHours;
+        this.addHoursToReportLocality(
+          weeklyHours,
+          crossSection.localities,
+          request.details.address.locality,
+          request.details.services
+        );
+        this.addHoursToReportService(
+          weeklyHours,
+          crossSection.services,
+          request.details.services
+        );
+      }
+      return crossSection;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating active requests cross section:",
+        error
       );
+      throw error;
     }
-    return crossSection;
   }
 
   async generateActivePackagesCrossSection(user: User): Promise<CrossSection> {
-    const packages = await this.packageService.getAllNotEndedYet(user);
-    const crossSection: CrossSection = {
-      totalHours: 0,
-      localities: [],
-      services: [],
-    };
-    for (const pkg of packages) {
-      const weeklyHours = pkg.details.weeklyHours;
-      crossSection.totalHours += weeklyHours;
-      this.addHoursToReportLocality(
-        weeklyHours,
-        crossSection.localities,
-        pkg.details.address.locality,
-        pkg.details.services
+    try {
+      const packages = await this.packageService.getAllNotEndedYet(user);
+      const crossSection: CrossSection = {
+        totalHours: 0,
+        localities: [],
+        services: [],
+      };
+      for (const pkg of packages) {
+        const weeklyHours = pkg.details.weeklyHours;
+        crossSection.totalHours += weeklyHours;
+        this.addHoursToReportLocality(
+          weeklyHours,
+          crossSection.localities,
+          pkg.details.address.locality,
+          pkg.details.services
+        );
+        this.addHoursToReportService(
+          weeklyHours,
+          crossSection.services,
+          pkg.details.services
+        );
+      }
+      return crossSection;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating active packages cross section:",
+        error
       );
-      this.addHoursToReportService(
-        weeklyHours,
-        crossSection.services,
-        pkg.details.services
-      );
+      throw error;
     }
-    return crossSection;
   }
 
   async generateRequestsReport(
     user: User,
     startYear: number = firstYear
   ): Promise<Report> {
-    // construct empty report
-    const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-    const requests = await this.requestService.getAllMetadata(user, startYear);
-    const report = this.constructEmptyReport(startYear, currentYear);
-    // iterate through requests => for each find start date, end date, weekly hours, locality, service
-    for (const request of requests) {
-      this.addItemToReport(request, report);
+    try {
+      // construct empty report
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const requests = await this.requestService.getAllMetadata(
+        user,
+        startYear
+      );
+      const report = this.constructEmptyReport(startYear, currentYear);
+      // iterate through requests => for each find start date, end date, weekly hours, locality, service
+      for (const request of requests) {
+        this.addItemToReport(request, report);
+      }
+      return report;
+    } catch (error) {
+      console.error("Service Layer Error generating requests report:", error);
+      throw error;
     }
-    return report;
   }
 
   async generatePackagesReport(
     user: User,
     startYear: number = firstYear
   ): Promise<Report> {
-    // construct empty report
-    const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-    const packages = await this.packageService.getAll(user, startYear);
-    const report = this.constructEmptyReport(startYear, currentYear);
-    // iterate through packages => for each find start date, end date, weekly hours, locality, service
-    for (const pkg of packages) {
-      this.addItemToReport(pkg, report);
+    try {
+      // construct empty report
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const packages = await this.packageService.getAll(user, startYear);
+      const report = this.constructEmptyReport(startYear, currentYear);
+      // iterate through packages => for each find start date, end date, weekly hours, locality, service
+      for (const pkg of packages) {
+        this.addItemToReport(pkg, report);
+      }
+      return report;
+    } catch (error) {
+      console.error("Service Layer Error generating packages report:", error);
+      throw error;
     }
-    return report;
   }
 
   private constructEmptyReport(startYear: number, currentYear: number): Report {
@@ -151,9 +180,9 @@ export class ReportService {
       item.endDate === "open"
         ? new Date().toISOString().slice(0, 10)
         : item.endDate;
-    const startYear = parseInt(item.startDate.slice(0, 4));
-    const startMonth = parseInt(item.startDate.slice(5, 7));
-    const startDay = parseInt(item.startDate.slice(8, 10));
+    const startYear = parseInt(startDate.slice(0, 4));
+    const startMonth = parseInt(startDate.slice(5, 7));
+    const startDay = parseInt(startDate.slice(8, 10));
     const endYear = parseInt(endDate.slice(0, 4));
     const endMonth = parseInt(endDate.slice(5, 7));
     const endDay = parseInt(endDate.slice(8, 10));

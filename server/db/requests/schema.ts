@@ -2,14 +2,12 @@ import { z } from "zod";
 
 import { requestMetadataSchema } from "shared";
 import { dbPackage } from "../package/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbRequestEntity = requestMetadataSchema
-  .omit({ id: true, clientId: true })
+export const dbRequestEntity = dbEntrySchema
+  .extend(requestMetadataSchema.omit({ id: true, clientId: true }).shape)
   .extend({
-    pK: z.string(),
-    sK: z.string(),
-    entityType: z.string(),
-    // below is actually same as pK but just for indexing purposes
+    // below is actually same as pK but just for indexing purposes it is repeated as "requestId"
     requestId: z.string(),
     // .regex(
     //   /^request#(\d{4}|open)$/,

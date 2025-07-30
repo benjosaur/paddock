@@ -18,6 +18,7 @@ import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
+import { addDbMiddleware } from "../service";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -114,10 +115,14 @@ export class VolunteerService {
         .omit({ id: true })
         .parse(newVolunteer);
 
-      const volunteerToCreate: Omit<DbVolunteerEntity, "pK" | "sK"> = {
-        ...validatedInput,
-        entityType: "volunteer",
-      };
+      const volunteerToCreate: Omit<DbVolunteerEntity, "pK" | "sK"> =
+        addDbMiddleware(
+          {
+            ...validatedInput,
+            entityType: "volunteer",
+          },
+          user
+        );
       const createdVolunteerId = await this.volunteerRepository.create(
         volunteerToCreate,
         user
@@ -135,12 +140,15 @@ export class VolunteerService {
     try {
       const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
       const { id, ...rest } = validatedInput;
-      const dbVolunteer: DbVolunteerEntity = {
-        pK: id,
-        sK: id,
-        entityType: "volunteer",
-        ...rest,
-      };
+      const dbVolunteer: DbVolunteerEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "volunteer",
+          ...rest,
+        },
+        user
+      );
       await this.volunteerRepository.update(dbVolunteer, user);
     } catch (error) {
       console.error("Service Layer Error updating MP:", error);
@@ -178,6 +186,25 @@ export class VolunteerService {
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting MP:", error);
+      throw error;
+    }
+  }
+
+  async toggleArchive(volunteerId: string, user: User): Promise<void> {
+    try {
+      const volunteerRecords = await this.volunteerRepository.getById(
+        volunteerId,
+        user
+      );
+
+      const updatedVolunteerRecords = volunteerRecords.map((record) => ({
+        ...record,
+        archived: record.archived === "Y" ? "N" : "Y",
+      }));
+
+      await genericUpdate(updatedVolunteerRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error toggling volunteer archive:", error);
       throw error;
     }
   }

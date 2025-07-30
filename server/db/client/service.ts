@@ -15,6 +15,7 @@ import { PackageRepository } from "../package/repository";
 import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
 import { genericUpdate } from "../repository";
+import { addDbMiddleware } from "../service";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -28,11 +29,13 @@ export class ClientService {
   async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAllNotArchived(user);
+      console.log(dbClients);
       const dbRequests = await this.requestRepository.getAllNotArchived(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
         ...dbRequests,
       ]);
+      console.log(transformedResult);
       const parsedResult = clientMetadataSchema
         .array()
         .parse(transformedResult);
@@ -46,12 +49,12 @@ export class ClientService {
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
       const dbClients = await this.clientRepository.getAll(user);
+      console.log(dbClients);
       const dbRequests = await this.requestRepository.getAll(user);
       const transformedResult = this.transformDbClientToSharedMetaData([
         ...dbClients,
         ...dbRequests,
       ]);
-      console.log(transformedResult);
       const parsedResult = clientMetadataSchema
         .array()
         .parse(transformedResult);
@@ -102,10 +105,14 @@ export class ClientService {
         .omit({ id: true })
         .parse(newClient);
 
-      const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = {
-        ...validatedInput,
-        entityType: "client",
-      };
+      const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = addDbMiddleware(
+        {
+          ...validatedInput,
+          entityType: "client",
+        },
+        user
+      );
+
       const createdClientId = await this.clientRepository.create(
         clientToCreate,
         user
@@ -122,12 +129,15 @@ export class ClientService {
     try {
       const validatedInput = clientMetadataSchema.parse(updatedClient);
       const { id, ...rest } = validatedInput;
-      const dbClient: DbClientEntity = {
-        pK: id,
-        sK: id,
-        entityType: "client",
-        ...rest,
-      };
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "client",
+          ...rest,
+        },
+        user
+      );
       await this.clientRepository.update(dbClient, user);
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
@@ -146,35 +156,16 @@ export class ClientService {
         clientId,
         user
       );
-      const updatedClientRecords = initialClientRecords.map((record) => ({
-        ...record,
-        details: { ...record.details, name: newName },
-      }));
+      const updatedClientRecords = initialClientRecords.map((record) =>
+        addDbMiddleware(
+          {
+            ...record,
+            details: { ...record.details, name: newName },
+          },
+          user
+        )
+      );
       await genericUpdate(updatedClientRecords, user);
-    } catch (error) {
-      console.error("Service Layer Error updating Client Name:", error);
-      throw error;
-    }
-  }
-
-  async updatePostCode(
-    clientId: string,
-    newPostCode: string,
-    user: User
-  ): Promise<void> {
-    // update clientEntity & magLogClient
-    try {
-      const initialClientRecords = await this.clientRepository.getById(
-        clientId,
-        user
-      );
-      const initialEntityAndMagLogClients = initialClientRecords.filter(
-        (record) => record.sK === "magLogClient" || record.sK === "client"
-      );
-      const updatedEntityAndMagLogClients = initialEntityAndMagLogClients.map(
-        (record) => ({ ...record, postCode: newPostCode })
-      );
-      await genericUpdate(updatedEntityAndMagLogClients, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
       throw error;
@@ -187,6 +178,35 @@ export class ClientService {
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting client:", error);
+      throw error;
+    }
+  }
+
+  async toggleArchive(clientId: string, user: User): Promise<void> {
+    // set client and its associated requests and mag logs to archived (mag attendee search also searches archived, so not affected)
+    // HOWEVER, also need to archive packages owned by MPs/Volunteers. else error on read non archived requests.
+    try {
+      const clientRecords = await this.clientRepository.getById(clientId, user);
+      console.log(clientRecords);
+      const updatedClientEntities = clientRecords
+        .filter((dbResult) => dbResult.sK.startsWith("c"))
+        .map((record) => ({
+          ...record,
+          archived: record.archived === "Y" ? "N" : "Y",
+        }));
+      console.log(updatedClientEntities);
+      const requestIds = clientRecords
+        .filter((dbResult) => dbResult.sK.startsWith("req"))
+        .map((req) => req.sK);
+
+      const clientEntityUpdate = genericUpdate(updatedClientEntities, user);
+      const requestUpdates = requestIds.map((requestId) =>
+        this.requestService.toggleArchive(requestId, user)
+      );
+
+      await Promise.all([clientEntityUpdate, ...requestUpdates]);
+    } catch (error) {
+      console.error("Service Layer Error toggling client archive:", error);
       throw error;
     }
   }
