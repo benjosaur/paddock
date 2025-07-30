@@ -7,10 +7,16 @@ export const clientsRouter = router({
     return await ctx.services.client.getAll(ctx.user);
   }),
 
+  getAllNotArchived: createProtectedProcedure("clients", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.client.getAllNotArchived(ctx.user);
+    }
+  ),
+
   getById: createProtectedProcedure("clients", "read")
     .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
-      return await ctx.services.client.getById(ctx.user, input.id);
+      return await ctx.services.client.getById(input.id, ctx.user);
     }),
 
   create: createProtectedProcedure("clients", "create")
@@ -41,13 +47,9 @@ export const clientsRouter = router({
       );
     }),
 
-  updatePostCode: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newPostCode: z.string() }))
+  toggleArchive: createProtectedProcedure("clients", "update")
+    .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.updatePostCode(
-        input.clientId,
-        input.newPostCode,
-        ctx.user
-      );
+      return await ctx.services.client.toggleArchive(input.id, ctx.user);
     }),
 });

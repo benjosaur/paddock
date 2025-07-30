@@ -1,10 +1,5 @@
 import { DbMagLog, dbMagLog } from "./schema";
-import {
-  addCreateMiddleware,
-  addUpdateMiddleware,
-  client,
-  getTableName,
-} from "../repository";
+import { dropNullFields, client, getTableName } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
@@ -16,7 +11,7 @@ export class MagLogRepository {
       IndexName: "GSI4",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
-        ":pk": "magLog",
+        ":pk": "magLogEntity",
       },
     });
     try {
@@ -24,15 +19,15 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting item:", error);
+      console.error("Repository Layer Error getting item:", error);
       throw error;
     }
   }
 
-  async getById(user: User, magLogId: string): Promise<DbMagLog[]> {
+  async getById(magLogId: string, user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI2",
+      IndexName: "GSI5",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": magLogId,
@@ -44,17 +39,17 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting magLog by ID:", error);
+      console.error("Repository Layer Error getting magLog by ID:", error);
       throw error;
     }
   }
 
   async getByDateInterval(
-    user: User,
     input: {
       startDate: string;
       endDate: string;
-    }
+    },
+    user: User
   ): Promise<DbMagLog[]> {
     const { startDate, endDate } = z
       .object({
@@ -82,25 +77,18 @@ export class MagLogRepository {
       const parsedResult = dbMagLog.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting magLogs by magId:", error);
+      console.error("Repository Layer Error getting magLogs by magId:", error);
       throw error;
     }
   }
 
-  async create(
+  async createMagEntity(
     newMpLogs: (Omit<DbMagLog, "pK" | "sK"> | Omit<DbMagLog, "sK">)[],
     user: User
   ): Promise<string> {
     const uuid = uuidv4();
     const key = `mag#${uuid}`;
-    const newItems = newMpLogs.map((mpLog) =>
-      mpLog.entityOwner == "main"
-        ? { pK: key, sK: key, ...mpLog }
-        : {
-            sK: key,
-            ...mpLog,
-          }
-    );
+    const newItems = newMpLogs.map((mpLog) => ({ pK: key, sK: key, ...mpLog }));
     const validatedItems = dbMagLog.array().parse(newItems);
     try {
       await Promise.all(
@@ -108,7 +96,7 @@ export class MagLogRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addCreateMiddleware(newItem, user),
+              Item: dropNullFields(newItem),
             })
           )
         )
@@ -119,6 +107,33 @@ export class MagLogRepository {
       throw error;
     }
   }
+
+  async createMagReference(
+    newMpLogs: Omit<DbMagLog, "sK">[],
+    user: User
+  ): Promise<string> {
+    const uuid = uuidv4();
+    const key = `mag#${uuid}`;
+    const newItems = newMpLogs.map((mpLog) => ({ sK: key, ...mpLog }));
+    const validatedItems = dbMagLog.array().parse(newItems);
+    try {
+      await Promise.all(
+        validatedItems.map((newItem) =>
+          client.send(
+            new PutCommand({
+              TableName: getTableName(user),
+              Item: dropNullFields(newItem),
+            })
+          )
+        )
+      );
+      return key;
+    } catch (error) {
+      console.error("Repository Layer Error creating mpLogs:", error);
+      throw error;
+    }
+  }
+
   async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
     const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
     try {
@@ -127,7 +142,7 @@ export class MagLogRepository {
           client.send(
             new PutCommand({
               TableName: getTableName(user),
-              Item: addUpdateMiddleware(log, user),
+              Item: dropNullFields(log),
             })
           )
         )
@@ -138,7 +153,7 @@ export class MagLogRepository {
     }
   }
   async delete(magLogId: string, user: User): Promise<number[]> {
-    const existingLogs = await this.getById(user, magLogId);
+    const existingLogs = await this.getById(magLogId, user);
     try {
       await Promise.all(
         existingLogs.map((log) =>

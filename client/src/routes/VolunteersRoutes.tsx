@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
@@ -9,7 +10,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket } from "../utils/helpers";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
-  { key: "id", header: "ID" },
+  {
+    key: "id",
+    header: "ID",
+    render: (item: VolunteerMetadata) => item.id,
+  },
   {
     key: "name",
     header: "Name",
@@ -23,32 +28,25 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
         ? calculateAgeBracket(item.dateOfBirth) + " years"
         : "Unknown",
   },
-  { key: "postCode", header: "Post Code" },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: VolunteerMetadata) => item.details.address.postCode,
+  },
   {
     key: "services",
     header: "Services",
     render: (item: VolunteerMetadata) => item.details.services.join(", "),
   },
   {
-    key: "needTypes",
-    header: "Need Types",
-    render: (item: VolunteerMetadata) => item.details.needs.join(", "),
-  },
-  {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: VolunteerMetadata) => item.recordExpiry,
+    render: (item: VolunteerMetadata) => item.dbsExpiry,
   },
   {
     key: "capacity",
     header: "Capacity?",
     render: (item: VolunteerMetadata) => item.details.capacity,
-  },
-  {
-    key: "transport",
-    header: "Transport?",
-    render: (item: VolunteerMetadata) =>
-      item.details.transport ? "Yes" : "No",
   },
 ];
 
@@ -58,11 +56,28 @@ export function VolunteersRoutes() {
     null
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
-  const volunteersQueryKey = trpc.volunteers.getAll.queryKey();
+  const volunteersQuery = useQuery(
+    showArchived
+      ? trpc.volunteers.getAll.queryOptions()
+      : trpc.volunteers.getAllNotArchived.queryOptions()
+  );
+  const volunteersQueryKey = showArchived
+    ? trpc.volunteers.getAll.queryKey()
+    : trpc.volunteers.getAllNotArchived.queryKey();
+
+  const archiveVolunteerMutation = useMutation(
+    trpc.volunteers.toggleArchive.mutationOptions({
+      onSuccess: () => {
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -74,6 +89,10 @@ export function VolunteersRoutes() {
 
   const handleAddNew = () => {
     navigate("/volunteers/create");
+  };
+
+  const handleArchiveToggle = (id: string) => {
+    archiveVolunteerMutation.mutate({ id });
   };
 
   const handleEditNavigation = (id: string) => {
@@ -105,16 +124,27 @@ export function VolunteersRoutes() {
         element={
           <>
             <DataTable
-              key="volunteers"
+              key={`volunteers-${showArchived}`}
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
               data={volunteersQuery.data || []}
               columns={volunteerColumns}
+              onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onViewItem={handleViewVolunteer as (item: unknown) => void}
               onAddNew={handleAddNew}
               resource="volunteers"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
             {selectedVolunteerId && (
               <VolunteerDetailModal
@@ -135,3 +165,33 @@ export function VolunteersRoutes() {
 }
 
 export default VolunteersRoutes;
+
+const associatedVolunteerRoutes = [
+  // Volunteers
+  trpc.volunteers.getAll,
+  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

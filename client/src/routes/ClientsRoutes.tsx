@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
+import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
 import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
@@ -9,7 +10,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAgeBracket, capitalise } from "@/utils/helpers";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
-  { key: "id", header: "ID" },
+  {
+    key: "id",
+    header: "ID",
+    render: (item: ClientMetadata) => item.id,
+  },
   {
     key: "name",
     header: "Name",
@@ -24,22 +29,15 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
         : "Unknown",
   },
 
-  { key: "postCode", header: "Post Code" },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: ClientMetadata) => item.details.address.postCode,
+  },
   {
     key: "services",
     header: "Services",
     render: (item: ClientMetadata) => item.details.services.join(", "),
-  },
-  {
-    key: "needs",
-    header: "Need Types",
-    render: (item: ClientMetadata) => item.details.needs.join(", "),
-  },
-  {
-    key: "requests",
-    header: "Outstanding Requests?",
-    render: (item: ClientMetadata) =>
-      item.mpRequests.length + item.volunteerRequests.length,
   },
   {
     key: "attendanceAllowance",
@@ -53,11 +51,28 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
-  const clientsQueryKey = trpc.clients.getAll.queryKey();
+  const clientsQuery = useQuery(
+    showArchived
+      ? trpc.clients.getAll.queryOptions()
+      : trpc.clients.getAllNotArchived.queryOptions()
+  );
+  const clientsQueryKey = showArchived
+    ? trpc.clients.getAll.queryKey()
+    : trpc.clients.getAllNotArchived.queryKey();
+
+  const archiveClientMutation = useMutation(
+    trpc.clients.toggleArchive.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
@@ -69,6 +84,10 @@ export default function ClientsRoutes() {
 
   const handleAddNew = () => {
     navigate("/clients/create");
+  };
+
+  const handleArchiveToggle = (id: string) => {
+    archiveClientMutation.mutate({ id });
   };
 
   const handleEdit = (id: string) => {
@@ -100,16 +119,27 @@ export default function ClientsRoutes() {
         element={
           <>
             <DataTable
-              key="clients"
+              key={`clients-${showArchived}`}
               title="Clients"
               searchPlaceholder="Search clients..."
               data={clientsQuery.data || []}
               columns={clientColumns}
+              onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewItem={handleViewClient as (item: unknown) => void}
               onAddNew={handleAddNew}
               resource="clients"
+              customActions={
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="shadow-sm"
+                >
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              }
             />
             {selectedClientId && (
               <ClientDetailModal
@@ -128,3 +158,35 @@ export default function ClientsRoutes() {
     </Routes>
   );
 }
+
+const associatedClientRoutes = [
+  // Dashboard Analytics
+
+  // Clients
+  trpc.clients.getAll,
+  trpc.clients.getAllNotArchived,
+  trpc.clients.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

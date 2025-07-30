@@ -1,19 +1,34 @@
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
-import { DbTrainingRecordEntity, dbTrainingRecordEntity } from "./schema";
+import { DbTrainingRecord, dbTrainingRecord } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 
 export class TrainingRecordRepository {
-  async getAll(user: User): Promise<DbTrainingRecordEntity[]> {
+  async getAllNotArchived(user: User): Promise<DbTrainingRecord[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
+      ExpressionAttributeValues: {
+        ":pk": "trainingRecord",
+        ":sk": "N",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbTrainingRecord.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting item:", error);
+      throw error;
+    }
+  }
+
+  async getAll(user: User): Promise<DbTrainingRecord[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "trainingRecord",
@@ -21,10 +36,11 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbTrainingRecordEntity.array().parse(result.Items);
+      console.log(result.Items);
+      const parsedResult = dbTrainingRecord.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting training record:", error);
+      console.error("Repository Layer Error getting item:", error);
       throw error;
     }
   }
@@ -32,7 +48,7 @@ export class TrainingRecordRepository {
   async getByExpiringBefore(
     user: User,
     expiryDate: string
-  ): Promise<DbTrainingRecordEntity[]> {
+  ): Promise<DbTrainingRecord[]> {
     const validatedExpiryDate = z.string().date().parse(expiryDate);
     const command = new QueryCommand({
       TableName: getTableName(user),
@@ -45,7 +61,7 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbTrainingRecordEntity.array().parse(result.Items);
+      const parsedResult = dbTrainingRecord.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting training records by expiry date:", error);
@@ -57,7 +73,7 @@ export class TrainingRecordRepository {
     user: User,
     ownerId: string,
     recordId: string
-  ): Promise<DbTrainingRecordEntity | null> {
+  ): Promise<DbTrainingRecord | null> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk AND sK = :sk",
@@ -71,7 +87,7 @@ export class TrainingRecordRepository {
       if (!result.Items || result.Items.length === 0) {
         return null;
       }
-      return dbTrainingRecordEntity.parse(result.Items[0]);
+      return dbTrainingRecord.parse(result.Items[0]);
     } catch (error) {
       console.error("Error getting training record by id:", error);
       throw error;
@@ -79,20 +95,20 @@ export class TrainingRecordRepository {
   }
 
   async create(
-    newRecord: Omit<DbTrainingRecordEntity, "sK">,
+    newRecord: Omit<DbTrainingRecord, "sK">,
     user: User
   ): Promise<string> {
     try {
       const uuid = uuidv4();
       const recordKey = `tr#${uuid}`;
-      const fullRecord: DbTrainingRecordEntity = {
+      const fullRecord: DbTrainingRecord = {
         sK: recordKey,
         ...newRecord,
       };
-      const validatedRecord = dbTrainingRecordEntity.parse(fullRecord);
+      const validatedRecord = dbTrainingRecord.parse(fullRecord);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addCreateMiddleware(validatedRecord, user),
+        Item: dropNullFields(validatedRecord),
       });
 
       await client.send(command);
@@ -103,15 +119,12 @@ export class TrainingRecordRepository {
     }
   }
 
-  async update(
-    updatedRecord: DbTrainingRecordEntity,
-    user: User
-  ): Promise<void> {
+  async update(updatedRecord: DbTrainingRecord, user: User): Promise<void> {
     try {
-      const validatedRecord = dbTrainingRecordEntity.parse(updatedRecord);
+      const validatedRecord = dbTrainingRecord.parse(updatedRecord);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addUpdateMiddleware(validatedRecord, user),
+        Item: dropNullFields(validatedRecord),
       });
 
       await client.send(command);

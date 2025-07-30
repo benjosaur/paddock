@@ -1,46 +1,53 @@
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { DbClientRequestEntity, dbClientRequestEntity } from "./schema";
+import {
+  DbRequest,
+  dbRequest,
+  DbRequestEntity,
+  dbRequestEntity,
+} from "./schema";
 import { v4 as uuidv4 } from "uuid";
+import { firstYear } from "shared/const";
 
 export class RequestRepository {
-  async getAll(user: User): Promise<DbClientRequestEntity[]> {
-    // Get MP requests
-    const mpRequestCommand = new QueryCommand({
+  async getAllNotArchived(user: User): Promise<DbRequestEntity[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
+    const commands: QueryCommand[] = [];
+
+    for (let year = firstYear; year <= currentYear; year++) {
+      const packageEndedInYear = new QueryCommand({
+        TableName: getTableName(user),
+        IndexName: "GSI1",
+        KeyConditionExpression: `entityType = :pk AND archived = :sk`,
+        ExpressionAttributeValues: {
+          ":pk": `request#${year}`,
+          ":sk": "N",
+        },
+      });
+      commands.push(packageEndedInYear);
+    }
+
+    const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI6",
-      KeyConditionExpression: "entityType = :pk",
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
-        ":pk": "clientMpRequest",
+        ":pk": `request#open`,
+        ":sk": "N",
       },
     });
 
-    // Get volunteer requests
-    const volunteerRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI6",
-      KeyConditionExpression: "entityType = :pk",
-      ExpressionAttributeValues: {
-        ":pk": "clientVolunteerRequest",
-      },
-    });
+    commands.push(openRequestCommand);
 
     try {
-      const [mpResult, volunteerResult] = await Promise.all([
-        client.send(mpRequestCommand),
-        client.send(volunteerRequestCommand),
-      ]);
+      const results = await Promise.all(
+        commands.map((command) => client.send(command))
+      );
 
-      const allItems = [
-        ...(mpResult.Items || []),
-        ...(volunteerResult.Items || []),
-      ];
-      const parsedResult = dbClientRequestEntity.array().parse(allItems);
+      const allItems = results.flatMap((result) => result.Items);
+      const parsedResult = dbRequestEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
       console.error("Error getting client requests:", error);
@@ -48,68 +55,132 @@ export class RequestRepository {
     }
   }
 
-  async getByClientId(
-    user: User,
-    clientId: string
-  ): Promise<DbClientRequestEntity[]> {
-    const command = new QueryCommand({
+  async getAllNotEndedYet(user: User): Promise<DbRequestEntity[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
+    const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
-      KeyConditionExpression: "pK = :pk AND begins_with(sK, :sk)",
+      IndexName: "GSI3",
+      KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
-        ":pk": clientId,
-        ":sk": "req#",
+        ":pk": `request#open`,
       },
     });
+
+    const endsAfterTodayRequestCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI3",
+      KeyConditionExpression: `entityType = :pk AND endDate >= :sK`,
+      ExpressionAttributeValues: {
+        ":pk": `request#${currentYear}`,
+        ":sK": currentDate,
+      },
+    });
+
     try {
-      const result = await client.send(command);
-      const parsedResult = dbClientRequestEntity.array().parse(result.Items);
+      const [openRequestResult, endsAfterTodayRequestResult] =
+        await Promise.all([
+          client.send(openRequestCommand),
+          client.send(endsAfterTodayRequestCommand),
+        ]);
+
+      const allItems = [
+        ...(openRequestResult.Items || []),
+        ...(endsAfterTodayRequestResult.Items || []),
+      ];
+      const parsedResult = dbRequestEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting client requests by client ID:", error);
+      console.error("Error getting client requests:", error);
       throw error;
     }
   }
 
-  async getById(
+  async getAll(
     user: User,
-    clientId: string,
-    requestId: string
-  ): Promise<DbClientRequestEntity | null> {
+    startYear: number = firstYear
+  ): Promise<DbRequestEntity[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+    const commands: QueryCommand[] = [];
+
+    for (let year = startYear; year <= currentYear; year++) {
+      const packageEndedInYear = new QueryCommand({
+        TableName: getTableName(user),
+        IndexName: "GSI3",
+        KeyConditionExpression: `entityType = :pk`,
+        ExpressionAttributeValues: {
+          ":pk": `request#${year}`,
+        },
+      });
+      commands.push(packageEndedInYear);
+    }
+
+    const openRequestCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI3",
+      KeyConditionExpression: "entityType = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `request#open`,
+      },
+    });
+
+    commands.push(openRequestCommand);
+
+    try {
+      const results = await Promise.all(
+        commands.map((command) => client.send(command))
+      );
+
+      const allItems = results.flatMap((result) => result.Items);
+      const parsedResult = dbRequestEntity.array().parse(allItems);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting client requests:", error);
+      throw error;
+    }
+  }
+
+  async getById(requestId: string, user: User): Promise<DbRequest[]> {
+    // also returns associated packages
     const command = new QueryCommand({
       TableName: getTableName(user),
-      KeyConditionExpression: "pK = :pk AND sK = :sk",
+      IndexName: "GSI2",
+      KeyConditionExpression: "requestId = :requestId",
       ExpressionAttributeValues: {
-        ":pk": clientId,
-        ":sk": requestId,
+        ":requestId": requestId,
       },
     });
     try {
       const result = await client.send(command);
       if (!result.Items || result.Items.length === 0) {
-        return null;
+        throw new Error(`Request with ID ${requestId} not found`);
       }
-      return dbClientRequestEntity.parse(result.Items[0]);
+      console.log(result.Items);
+      return dbRequest.array().parse(result.Items);
     } catch (error) {
-      console.error("Error getting client request by id:", error);
+      console.error("Repository Layer Error getting request by id:", error);
       throw error;
     }
   }
 
   async create(
-    newRequest: Omit<DbClientRequestEntity, "sK">,
+    newRequest: Omit<DbRequestEntity, "sK" | "requestId">,
     user: User
   ): Promise<string> {
     try {
       const uuid = uuidv4();
       const requestKey = `req#${uuid}`;
-      const fullRequest: DbClientRequestEntity = {
+      const fullRequest: DbRequestEntity = {
         sK: requestKey,
+        requestId: requestKey,
         ...newRequest,
       };
-      const validatedRequest = dbClientRequestEntity.parse(fullRequest);
+      const validatedRequest = dbRequestEntity.parse(fullRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addCreateMiddleware(validatedRequest, user),
+        Item: dropNullFields(validatedRequest),
       });
 
       await client.send(command);
@@ -120,15 +191,12 @@ export class RequestRepository {
     }
   }
 
-  async update(
-    updatedRequest: DbClientRequestEntity,
-    user: User
-  ): Promise<void> {
+  async update(updatedRequest: DbRequestEntity, user: User): Promise<void> {
     try {
-      const validatedRequest = dbClientRequestEntity.parse(updatedRequest);
+      const validatedRequest = dbRequestEntity.parse(updatedRequest);
       const command = new PutCommand({
         TableName: getTableName(user),
-        Item: addUpdateMiddleware(validatedRequest, user),
+        Item: dropNullFields(validatedRequest),
       });
 
       await client.send(command);
@@ -138,72 +206,22 @@ export class RequestRepository {
     }
   }
 
-  async delete(
-    user: User,
-    clientId: string,
-    requestId: string
-  ): Promise<number[]> {
+  async delete(requestId: string, user: User): Promise<number[]> {
+    const existingLogs = await this.getById(requestId, user);
     try {
-      const command = new DeleteCommand({
-        TableName: getTableName(user),
-        Key: {
-          pK: clientId,
-          sK: requestId,
-        },
-      });
-
-      await client.send(command);
-      return [1];
+      await Promise.all(
+        existingLogs.map((log) =>
+          client.send(
+            new DeleteCommand({
+              TableName: getTableName(user),
+              Key: { pK: log.pK, sK: log.sK },
+            })
+          )
+        )
+      );
+      return [existingLogs.length];
     } catch (error) {
-      console.error("Repository Layer Error deleting client request:", error);
-      throw error;
-    }
-  }
-
-  async getByStartDateBefore(
-    user: User,
-    startDate: string
-  ): Promise<DbClientRequestEntity[]> {
-    const mpRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI4",
-      KeyConditionExpression: "entityType = :pk AND #date < :startDate",
-      ExpressionAttributeNames: {
-        "#date": "date",
-      },
-      ExpressionAttributeValues: {
-        ":pk": "clientMpRequest",
-        ":startDate": startDate,
-      },
-    });
-
-    const volunteerRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI4",
-      KeyConditionExpression: "entityType = :pk AND #date < :startDate",
-      ExpressionAttributeNames: {
-        "#date": "date",
-      },
-      ExpressionAttributeValues: {
-        ":pk": "clientVolunteerRequest",
-        ":startDate": startDate,
-      },
-    });
-
-    try {
-      const [mpResult, volunteerResult] = await Promise.all([
-        client.send(mpRequestCommand),
-        client.send(volunteerRequestCommand),
-      ]);
-
-      const allItems = [
-        ...(mpResult.Items || []),
-        ...(volunteerResult.Items || []),
-      ];
-      const parsedResult = dbClientRequestEntity.array().parse(allItems);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting requests by start date:", error);
+      console.error("Repository Layer Error deleting requests:", error);
       throw error;
     }
   }

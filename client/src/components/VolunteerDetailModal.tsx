@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import type { VolunteerFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { useQuery } from "@tanstack/react-query";
+import { NotesEditor } from "./NotesEditor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -29,39 +31,98 @@ export function VolunteerDetailModal({
   onEdit,
   onDelete,
 }: VolunteerDetailModalProps) {
+  const queryClient = useQueryClient();
   const volunteerQuery = useQuery(
     trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
   const volunteer = volunteerQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
 
-  const volunteerLogModalColumns: TableColumn<
-    VolunteerFull["volunteerLogs"][number]
+  // Update local notes when volunteer data changes
+  useEffect(() => {
+    if (volunteer?.details.notes) {
+      setCurrentNotes(volunteer.details.notes);
+    }
+  }, [volunteer?.details.notes]);
+
+  const updateVolunteerMutation = useMutation(
+    trpc.volunteers.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.volunteers.getAll.queryKey() 
+        });
+      },
+    })
+  );
+
+  const handleNotesSubmit = () => {
+    if (volunteer) {
+      updateVolunteerMutation.mutate({
+        ...volunteer,
+        details: {
+          ...volunteer.details,
+          notes: currentNotes,
+        },
+      });
+    }
+  };
+
+  const packageModalColumns: TableColumn<
+    VolunteerFull["requests"][number]["packages"][number]
   >[] = [
-    { key: "date", header: "Date" },
     {
-      key: "client",
-      header: "Client",
-      render: (item) =>
-        item.clients.map((client) => client.details.name).join(", "),
+      key: "startDate",
+      header: "Start Date",
+      render: (item) => item.startDate,
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      render: (item) => item.endDate,
+    },
+    {
+      key: "name",
+      header: "Package Name",
+      render: (item) => item.details.name,
     },
     {
       key: "services",
       header: "Service(s)",
       render: (item) => item.details.services.join(", "),
     },
-    { key: "notes", header: "Notes" },
+    {
+      key: "weeklyHours",
+      header: "Weekly Hours",
+      render: (item) => item.details.weeklyHours.toString(),
+    },
+    {
+      key: "notes",
+      header: "Notes",
+      render: (item) => item.details.notes,
+    },
   ];
 
   const trainingRecordModalColumns: TableColumn<
     VolunteerFull["trainingRecords"][number]
   >[] = [
-    { key: "recordName", header: "Title" },
-    { key: "recordExpiry", header: "Expiry" },
+    {
+      key: "name",
+      header: "Title",
+      render: (item) => item.details.name,
+    },
+    {
+      key: "expiryDate",
+      header: "Expiry",
+      render: (item) => item.expiryDate || "N/A",
+    },
   ];
 
   const renderDetailItem = (
     label: string,
-    value?: string | string[] | number
+    value?: string | string[] | number | object
   ) => {
     if (
       value === undefined ||
@@ -70,12 +131,32 @@ export function VolunteerDetailModal({
     ) {
       return null;
     }
+
+    let displayValue: string;
+    if (typeof value === "object" && !Array.isArray(value)) {
+      // Handle address object
+      const addr = value as {
+        streetAddress: string;
+        locality: string;
+        county: string;
+        postCode: string;
+      };
+      displayValue = [
+        addr.streetAddress,
+        addr.locality,
+        addr.county,
+        addr.postCode,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    } else {
+      displayValue = Array.isArray(value) ? value.join(", ") : String(value);
+    }
+
     return (
       <div className="mb-2">
         <span className="font-semibold text-gray-700">{label}: </span>
-        <span className="text-gray-600">
-          {Array.isArray(value) ? value.join(", ") : value}
-        </span>
+        <span className="text-gray-600">{displayValue}</span>
       </div>
     );
   };
@@ -96,11 +177,12 @@ export function VolunteerDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="offerings">Offerings</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
-              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="logs">Packages</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -113,12 +195,14 @@ export function VolunteerDetailModal({
               {renderDetailItem("ID", volunteer.id)}
               {renderDetailItem("Name", volunteer.details.name)}
               {renderDetailItem("Address", volunteer.details.address)}
-              {renderDetailItem("Post Code", volunteer.postCode)}
               {renderDetailItem("Phone", volunteer.details.phone)}
               {renderDetailItem("Email", volunteer.details.email)}
               {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
-              {renderDetailItem("DBS Number", volunteer.recordName)}
-              {renderDetailItem("DBS Expiry", volunteer.recordExpiry)}
+              {renderDetailItem("DBS Expiry", volunteer.dbsExpiry)}
+              {renderDetailItem(
+                "Public Liability Expiry",
+                volunteer.publicLiabilityExpiry
+              )}
               {renderDetailItem("Date of Birth", volunteer.dateOfBirth)}
             </TabsContent>
 
@@ -131,10 +215,6 @@ export function VolunteerDetailModal({
               </h3>
               {renderDetailItem("Services", volunteer.details.services)}
               {renderDetailItem("Specialisms", volunteer.details.specialisms)}
-              {renderDetailItem(
-                "Transport",
-                volunteer.details.transport ? "Yes" : "No"
-              )}
               {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 
@@ -165,21 +245,42 @@ export function VolunteerDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Volunteer Logs
+                Packages
               </h3>
-              {volunteer.volunteerLogs.length > 0 ? (
+              {volunteer.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
-                  data={volunteer.volunteerLogs}
-                  columns={volunteerLogModalColumns}
+                  data={volunteer.requests.flatMap((req) => req.packages)}
+                  columns={packageModalColumns}
                   title=""
-                  searchPlaceholder="Search volunteer logs..."
-                  resource="volunteerLogs"
+                  searchPlaceholder="Search packages..."
+                  resource="packages"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
-                  No logs found for this volunteer.
+                  No packages found for this volunteer.
                 </p>
               )}
+            </TabsContent>
+
+            <TabsContent
+              value="notes"
+              className="p-4 border rounded-lg bg-white/80 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+                <Button
+                  onClick={handleNotesSubmit}
+                  disabled={updateVolunteerMutation.isPending}
+                  size="sm"
+                  className="ml-auto"
+                >
+                  {updateVolunteerMutation.isPending ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <NotesEditor
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

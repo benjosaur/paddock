@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import type { MpFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { useQuery } from "@tanstack/react-query";
+import { NotesEditor } from "./NotesEditor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -29,35 +31,96 @@ export function MpDetailModal({
   onEdit,
   onDelete,
 }: MpDetailModalProps) {
+  const queryClient = useQueryClient();
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
 
-  const mpLogModalColumns: TableColumn<MpFull["mpLogs"][number]>[] = [
-    { key: "date", header: "Date" },
+  // Update local notes when mp data changes
+  useEffect(() => {
+    if (mp?.details.notes) {
+      setCurrentNotes(mp.details.notes);
+    }
+  }, [mp?.details.notes]);
+
+  const updateMpMutation = useMutation(
+    trpc.mps.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.mps.getById.queryKey({ id: mpId }) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.mps.getAll.queryKey() 
+        });
+      },
+    })
+  );
+
+  const handleNotesSubmit = () => {
+    if (mp) {
+      updateMpMutation.mutate({
+        ...mp,
+        details: {
+          ...mp.details,
+          notes: currentNotes,
+        },
+      });
+    }
+  };
+
+  const packageModalColumns: TableColumn<
+    MpFull["requests"][number]["packages"][number]
+  >[] = [
     {
-      key: "client",
-      header: "Client",
-      render: (item) =>
-        item.clients.map((client) => client.details.name).join(", "),
+      key: "startDate",
+      header: "Start Date",
+      render: (item) => item.startDate,
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      render: (item) => item.endDate,
+    },
+    {
+      key: "name",
+      header: "Package Name",
+      render: (item) => item.details.name,
     },
     {
       key: "services",
       header: "Service(s)",
       render: (item) => item.details.services.join(", "),
     },
-    { key: "notes", header: "Notes" },
+    {
+      key: "weeklyHours",
+      header: "Weekly Hours",
+      render: (item) => item.details.weeklyHours.toString(),
+    },
+    {
+      key: "notes",
+      header: "Notes",
+      render: (item) => item.details.notes,
+    },
   ];
 
   const trainingRecordModalColumns: TableColumn<
     MpFull["trainingRecords"][number]
   >[] = [
-    { key: "recordName", header: "Title" },
-    { key: "recordExpiry", header: "Expiry" },
+    {
+      key: "name",
+      header: "Title",
+      render: (item) => item.details.name,
+    },
+    {
+      key: "expiryDate",
+      header: "Expiry",
+      render: (item) => item.expiryDate || "N/A",
+    },
   ];
 
   const renderDetailItem = (
     label: string,
-    value?: string | string[] | number
+    value?: string | string[] | number | object
   ) => {
     if (
       value === undefined ||
@@ -66,12 +129,32 @@ export function MpDetailModal({
     ) {
       return null;
     }
+
+    let displayValue: string;
+    if (typeof value === "object" && !Array.isArray(value)) {
+      // Handle address object
+      const addr = value as {
+        streetAddress: string;
+        locality: string;
+        county: string;
+        postCode: string;
+      };
+      displayValue = [
+        addr.streetAddress,
+        addr.locality,
+        addr.county,
+        addr.postCode,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    } else {
+      displayValue = Array.isArray(value) ? value.join(", ") : String(value);
+    }
+
     return (
       <div className="mb-2">
         <span className="font-semibold text-gray-700">{label}: </span>
-        <span className="text-gray-600">
-          {Array.isArray(value) ? value.join(", ") : value}
-        </span>
+        <span className="text-gray-600">{displayValue}</span>
       </div>
     );
   };
@@ -92,11 +175,12 @@ export function MpDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="offerings">Offerings</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
-              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="logs">Packages</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -109,12 +193,14 @@ export function MpDetailModal({
               {renderDetailItem("ID", mp.id)}
               {renderDetailItem("Name", mp.details.name)}
               {renderDetailItem("Address", mp.details.address)}
-              {renderDetailItem("Post Code", mp.postCode)}
               {renderDetailItem("Phone", mp.details.phone)}
               {renderDetailItem("Email", mp.details.email)}
               {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
-              {renderDetailItem("DBS Number", mp.recordName)}
-              {renderDetailItem("DBS Expiry", mp.recordExpiry)}
+              {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
+              {renderDetailItem(
+                "Public Liability Expiry",
+                mp.publicLiabilityExpiry
+              )}
               {renderDetailItem("Date of Birth", mp.dateOfBirth)}
             </TabsContent>
 
@@ -127,10 +213,6 @@ export function MpDetailModal({
               </h3>
               {renderDetailItem("Services", mp.details.services)}
               {renderDetailItem("Specialisms", mp.details.specialisms)}
-              {renderDetailItem(
-                "Transport",
-                mp.details.transport ? "Yes" : "No"
-              )}
               {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 
@@ -161,21 +243,42 @@ export function MpDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                MP Logs
+                Packages
               </h3>
-              {mp.mpLogs.length > 0 ? (
+              {mp.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
-                  data={mp.mpLogs}
-                  columns={mpLogModalColumns}
+                  data={mp.requests.flatMap((req) => req.packages)}
+                  columns={packageModalColumns}
                   title=""
-                  searchPlaceholder="Search MP logs..."
-                  resource="mpLogs"
+                  searchPlaceholder="Search packages..."
+                  resource="packages"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
-                  No logs found for this MP.
+                  No packages found for this MP.
                 </p>
               )}
+            </TabsContent>
+
+            <TabsContent
+              value="notes"
+              className="p-4 border rounded-lg bg-white/80 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+                <Button
+                  onClick={handleNotesSubmit}
+                  disabled={updateMpMutation.isPending}
+                  size="sm"
+                  className="ml-auto"
+                >
+                  {updateMpMutation.isPending ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <NotesEditor
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

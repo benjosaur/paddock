@@ -1,28 +1,38 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { MpService } from "./service";
 import { MpMetadata } from "shared";
 
 const mpService = new MpService();
 
 const sampleMp: Omit<MpMetadata, "id"> = {
+  archived: "N",
   dateOfBirth: "1990-01-01",
-  postCode: "SW1A 1AA",
-  recordName: "First Aid",
-  recordExpiry: "2025-12-31",
+  dbsExpiry: "2025-12-31",
+  publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
   details: {
     name: "John Smith",
-    address: "House of Commons, Westminster",
+    address: {
+      streetAddress: "House of Commons",
+      locality: "Ashbrittle",
+      county: "London",
+      postCode: "SW1A 1AA",
+    },
     email: "john.smith@parliament.uk",
     phone: "020 7219 3000",
     nextOfKin: "Jane Smith",
-    needs: [],
     services: [],
-    notes: "MP for Westminster",
+    attendsMag: false,
+    notes: [
+      {
+        date: "2025-07-21",
+        note: "MP for Westminster",
+      },
+    ],
     specialisms: ["Health", "Education"],
-    transport: true,
     capacity: "Full time",
   },
+  packages: [],
 };
 
 export async function testMpService() {
@@ -30,19 +40,31 @@ export async function testMpService() {
     console.log("Testing MP Service...");
 
     console.log("1. Creating MP...");
-    const createdMp = await mpService.create(sampleMp, sampleUser);
-    console.log("Created MP:", createdMp);
+    const createdMpId = await mpService.create(sampleMp, sampleUser);
+    console.log("Created MP ID:", createdMpId);
 
     console.log("2. Getting MP by ID...");
-    const retrievedMp = await mpService.getById(sampleUser, createdMp.id);
+    const retrievedMp = await mpService.getById(createdMpId, sampleUser);
     console.log("Retrieved MP:", retrievedMp);
 
     console.log("3. Updating MP...");
     const updatedMpData: MpMetadata = {
-      ...retrievedMp,
+      id: retrievedMp.id,
+      archived: retrievedMp.archived,
+      dateOfBirth: retrievedMp.dateOfBirth,
+      dbsExpiry: retrievedMp.dbsExpiry,
+      publicLiabilityExpiry: retrievedMp.publicLiabilityExpiry,
+      trainingRecords: retrievedMp.trainingRecords,
+      packages: [], // MpMetadata requires packages, MpFull has requests instead
       details: {
         ...retrievedMp.details,
-        notes: "Updated MP for Westminster",
+        notes: [
+          ...retrievedMp.details.notes,
+          {
+            date: "2025-07-21",
+            note: "Updated MP for Westminster",
+          },
+        ],
       },
     };
     const updatedMp = await mpService.update(updatedMpData, sampleUser);
@@ -53,7 +75,7 @@ export async function testMpService() {
     console.log("All MPs:", allMps);
 
     console.log("5. Deleting MP...");
-    const deletedCount = await mpService.delete(sampleUser, createdMp.id);
+    const deletedCount = await mpService.delete(sampleUser, createdMpId);
     console.log("Deleted count:", deletedCount);
 
     console.log("MP Service tests completed successfully!");
@@ -62,4 +84,7 @@ export async function testMpService() {
   }
 }
 
-testMpService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testMpService();
+}

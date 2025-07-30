@@ -1,13 +1,15 @@
 import { trainingRecordSchema } from "shared";
 import { z } from "zod";
+import { dbEntrySchema } from "../schema";
 
-export const dbTrainingRecordEntity = trainingRecordSchema
-  .omit({ id: true, ownerId: true })
+export const dbTrainingRecord = dbEntrySchema
+  .extend(
+    trainingRecordSchema
+      .omit({ id: true, ownerId: true })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("trainingRecord"),
-    entityOwner: z.union([z.literal("mp"), z.literal("volunteer")]),
   });
 
-export type DbTrainingRecordEntity = z.infer<typeof dbTrainingRecordEntity>;
+export type DbTrainingRecord = z.infer<typeof dbTrainingRecord>;

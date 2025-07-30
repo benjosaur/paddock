@@ -17,18 +17,17 @@ export function getVisibleMenuItems(userRole: UserRole) {
       path: "/dashboard",
       resource: "dashboard",
     },
-    { key: "mp-logs", label: "MP Logs", path: "/mp-logs", resource: "mpLogs" },
     {
-      key: "volunteer-logs",
-      label: "Volunteer Logs",
-      path: "/volunteer-logs",
-      resource: "volunteerLogs",
+      key: "packages",
+      label: "Packages",
+      path: "/packages",
+      resource: "packages",
     },
     {
-      key: "mag-logs",
-      label: "MAG Logs",
-      path: "/mag-logs",
-      resource: "magLogs",
+      key: "mag",
+      label: "MAG",
+      path: "/mag",
+      resource: "mag",
     },
     { key: "clients", label: "Clients", path: "/clients", resource: "clients" },
     { key: "mps", label: "MPs", path: "/mps", resource: "mps" },
@@ -45,10 +44,22 @@ export function getVisibleMenuItems(userRole: UserRole) {
       resource: "trainingRecords",
     },
     {
-      key: "new-requests",
-      label: "New Requests",
-      path: "/new-requests",
-      resource: "clientRequests",
+      key: "dbs",
+      label: "DBS",
+      path: "/dbs",
+      resource: "volunteers", // DBS requires both volunteers and mps permissions
+    },
+    {
+      key: "public-liability",
+      label: "Public Liability",
+      path: "/public-liability",
+      resource: "volunteers", // Public Liability requires both volunteers and mps permissions
+    },
+    {
+      key: "requests",
+      label: "Requests",
+      path: "/requests",
+      resource: "requests",
     },
   ];
 
@@ -56,12 +67,29 @@ export function getVisibleMenuItems(userRole: UserRole) {
     // Dashboard should be visible if user has read access to any of the core resources
     if (item.resource === "dashboard") {
       return (
-        hasPermission(userRole, "mpLogs", "read") ||
+        hasPermission(userRole, "packages", "read") ||
         hasPermission(userRole, "clients", "read") ||
         hasPermission(userRole, "mps", "read") ||
         hasPermission(userRole, "volunteers", "read")
       );
     }
+
+    // DBS requires both volunteers and mps permissions
+    if (item.key === "dbs") {
+      return (
+        hasPermission(userRole, "volunteers", "read") &&
+        hasPermission(userRole, "mps", "read")
+      );
+    }
+
+    // Public Liability requires both volunteers and mps permissions
+    if (item.key === "public-liability") {
+      return (
+        hasPermission(userRole, "volunteers", "read") &&
+        hasPermission(userRole, "mps", "read")
+      );
+    }
+
     return hasPermission(userRole, item.resource, "read");
   });
 }

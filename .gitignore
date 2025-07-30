@@ -25,5 +25,5 @@ dist-ssr
 
 test.sql
 
-.env
-.env.local
+*.env
+*.env.local

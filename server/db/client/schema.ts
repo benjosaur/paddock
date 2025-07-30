@@ -1,38 +1,25 @@
 import { z } from "zod";
 import { clientMetadataSchema } from "shared";
-import {
-  dbClientMpRequestEntity,
-  dbClientVolunteerRequestEntity,
-} from "../requests/schema";
-import { dbMpLogClient } from "../mplog/schema";
-import { dbVolunteerLogClient } from "../vlog/schema";
 import { dbMagLogClient } from "../mag/schema";
+import { dbRequestEntity } from "../requests/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbClientEntity = clientMetadataSchema
-  .omit({
-    id: true,
-    mpRequests: true,
-    volunteerRequests: true,
-  })
+export const dbClientEntity = dbEntrySchema
+  .extend(
+    clientMetadataSchema
+      .omit({
+        id: true,
+        requests: true,
+      })
+      .shape
+  )
   .extend({
-    pK: z.string(),
-    sK: z.string(),
     entityType: z.literal("client"),
-    entityOwner: z.literal("client"),
   });
 
-export const dbClientMetadata = z.union([
-  dbClientEntity,
-  dbClientMpRequestEntity,
-  dbClientVolunteerRequestEntity,
-]);
+export const dbClientMetadata = z.union([dbClientEntity, dbRequestEntity]);
 
-export const dbClientFull = z.union([
-  dbClientMetadata,
-  dbMpLogClient,
-  dbVolunteerLogClient,
-  dbMagLogClient,
-]);
+export const dbClientFull = z.union([dbClientMetadata, dbMagLogClient]);
 
 export type DbClientEntity = z.infer<typeof dbClientEntity>;
 export type DbClientMetadata = z.infer<typeof dbClientMetadata>;

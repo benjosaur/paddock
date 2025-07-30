@@ -1,23 +1,48 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { MagLogService } from "./service";
 import { MagLog } from "shared";
 
 const magLogService = new MagLogService();
 
 const sampleMagLog: Omit<MagLog, "id"> = {
+  archived: "N",
   date: "2025-01-15",
   clients: [
     {
       id: "client#test-client-123",
-      details: { name: "John Smith" },
+      archived: "N",
+      details: {
+        name: "John Smith",
+        address: {
+          streetAddress: "61626 Schmidt Divide",
+          locality: "Wiveliscombe",
+          county: "Somerset",
+          postCode: "TA4 2PJ",
+        },
+      },
     },
     {
       id: "client#test-client-456",
-      details: { name: "Jane Doe" },
+      archived: "N",
+      details: {
+        name: "Jane Doe",
+        address: {
+          streetAddress: "123 Main St",
+          locality: "Brompton Ralph",
+          county: "Greater London",
+          postCode: "E1 6AN",
+        },
+      },
     },
   ],
+  mps: [],
+  volunteers: [],
   details: {
-    total: 150.75,
+    totalClients: 2,
+    totalFamily: 0,
+    totalVolunteers: 0,
+    totalMps: 0,
+    otherAttendees: 1,
     notes: "Monthly magistrate session",
   },
 };
@@ -27,18 +52,22 @@ export async function testMagLogService() {
     console.log("Testing Mag Log Service...");
 
     console.log("1. Creating Mag log...");
-    const createdLog = await magLogService.create(sampleMagLog, sampleUser);
-    console.log("Created Mag log:", createdLog);
+    const createdLogId = await magLogService.create(sampleMagLog, sampleUser);
+    console.log("Created Mag log ID:", createdLogId);
 
     console.log("2. Getting Mag log by ID...");
-    const fetchedLog = await magLogService.getById(sampleUser, createdLog.id);
+    const fetchedLog = await magLogService.getById(createdLogId, sampleUser);
     console.log("Fetched Mag log:", fetchedLog);
 
     console.log("3. Updating Mag log...");
     const updatedLogData: MagLog = {
-      ...createdLog,
+      ...fetchedLog,
       details: {
-        total: 200.5,
+        totalClients: 2,
+        totalFamily: 1,
+        totalVolunteers: 1,
+        totalMps: 1,
+        otherAttendees: 2,
         notes: "Extended magistrate session with additional cases",
       },
     };
@@ -57,7 +86,7 @@ export async function testMagLogService() {
     console.log("Mag logs in January 2025:", logsInInterval);
 
     console.log("6. Deleting Mag log...");
-    const deletedCount = await magLogService.delete(sampleUser, createdLog.id);
+    const deletedCount = await magLogService.delete(sampleUser, createdLogId);
     console.log("Deleted count:", deletedCount);
 
     console.log("Mag Log Service tests completed successfully!");
@@ -66,4 +95,7 @@ export async function testMagLogService() {
   }
 }
 
-testMagLogService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testMagLogService();
+}

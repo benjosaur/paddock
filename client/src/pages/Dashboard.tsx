@@ -1,63 +1,85 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import Select, { SingleValue } from "react-select";
 import { trpc } from "../utils/trpc";
 import { AnimatedCounter } from "../components/AnimatedCounter";
-
-function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0];
-}
-
-function getCurrentYear(): { startDate: string; endDate: string } {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  return {
-    startDate: formatDate(startOfYear),
-    endDate: formatDate(now),
-  };
-}
+import { Button } from "../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../components/ui/tabs";
+import { Package, RequestFull } from "shared";
+import type { Report } from "shared";
+import { firstYear } from "shared/const";
 
 export function Dashboard() {
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportType, setReportType] = useState<"requests" | "packages">(
+    "requests"
+  );
+  const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
+  const [generatedReport, setGeneratedReport] = useState<Report | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
   // Fetch all required data
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
-  const mpLogsQuery = useQuery(trpc.mpLogs.getAll.queryOptions());
-
-  // Get year to date range
-  const yearRange = getCurrentYear();
-  const mpLogsYearQuery = useQuery(
-    trpc.mpLogs.getByDateInterval.queryOptions({
-      startDate: yearRange.startDate,
-      endDate: yearRange.endDate,
-    })
+  // "Active" refers to currently ongoing requests/packages NOT archived
+  const clientsQuery = useQuery(trpc.clients.getAllNotArchived.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotArchived.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotArchived.queryOptions()
+  );
+  const activeRequestsQuery = useQuery(
+    trpc.requests.getAllNotEndedYet.queryOptions()
+  );
+  const activePackagesQuery = useQuery(
+    trpc.packages.getAllNotEndedYet.queryOptions()
+  );
+  const analyticsPackagesXsQuery = useQuery(
+    trpc.analytics.getActivePackagesCrossSection.queryOptions()
+  );
+  const analyticsRequestsXsQuery = useQuery(
+    trpc.analytics.getActiveRequestsCrossSection.queryOptions()
   );
 
-  // Get postcode specific data
-  const mpLogsTA41Query = useQuery(
-    trpc.mpLogs.getByPostCode.queryOptions("TA4 1")
-  );
-  const mpLogsTA42Query = useQuery(
-    trpc.mpLogs.getByPostCode.queryOptions("TA4 2")
-  );
+  const requestsReportQuery = useQuery({
+    ...trpc.analytics.getRequestsReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
+
+  const packagesReportQuery = useQuery({
+    ...trpc.analytics.getPackagesReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
 
   // Check if any queries are loading
   const isLoading =
     clientsQuery.isLoading ||
     mpsQuery.isLoading ||
     volunteersQuery.isLoading ||
-    mpLogsQuery.isLoading ||
-    mpLogsYearQuery.isLoading ||
-    mpLogsTA41Query.isLoading ||
-    mpLogsTA42Query.isLoading;
+    activeRequestsQuery.isLoading ||
+    activePackagesQuery.isLoading ||
+    analyticsPackagesXsQuery.isLoading ||
+    analyticsRequestsXsQuery.isLoading;
 
   // Check if any queries have errors
   const hasError =
     clientsQuery.error ||
     mpsQuery.error ||
     volunteersQuery.error ||
-    mpLogsQuery.error ||
-    mpLogsYearQuery.error ||
-    mpLogsTA41Query.error ||
-    mpLogsTA42Query.error;
+    activeRequestsQuery.error ||
+    activePackagesQuery.error ||
+    analyticsPackagesXsQuery.error ||
+    analyticsRequestsXsQuery.error;
 
   if (isLoading) {
     return (
@@ -75,52 +97,455 @@ export function Dashboard() {
     );
   }
 
+  const findUniqueClientIds = (requests: RequestFull[]): string[] => {
+    return [...new Set(requests.map((req) => req.clientId))];
+  };
+  const findUniqueMpIds = (packages: Package[]): string[] => {
+    const uniqueCarerIds = [...new Set(packages.map((pkg) => pkg.carerId))];
+    return uniqueCarerIds.filter((id) => id[0] === "m");
+  };
+  const findUniqueVolunteerIds = (packages: Package[]): string[] => {
+    const uniqueCarerIds = [...new Set(packages.map((pkg) => pkg.carerId))];
+    return uniqueCarerIds.filter((id) => id[0] === "v");
+  };
+
   // Calculate totals
-  const totalClients = clientsQuery.data?.length || 0;
-  const totalMps = mpsQuery.data?.length || 0;
-  const totalVolunteers = volunteersQuery.data?.length || 0;
-  const totalMpLogs = mpLogsQuery.data?.length || 0;
-  const totalMpLogsThisYear = mpLogsYearQuery.data?.length || 0;
-  const totalMpLogsTA41 = mpLogsTA41Query.data?.length || 0;
-  const totalMpLogsTA42 = mpLogsTA42Query.data?.length || 0;
+  const totalActiveClients = findUniqueClientIds(
+    activeRequestsQuery.data ?? []
+  ).length;
+  const totalActiveMps = findUniqueMpIds(activePackagesQuery.data ?? []).length;
+  const totalActiveVolunteers = findUniqueVolunteerIds(
+    activePackagesQuery.data ?? []
+  ).length;
+  const analyticsPackages = analyticsPackagesXsQuery.data!; // throw on isloading above
+  const analyticsRequests = analyticsRequestsXsQuery.data!;
+
+  const reportTypeOptions = [
+    { value: "requests", label: "Requests Report" },
+    { value: "packages", label: "Packages Report" },
+  ];
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      let report: Report;
+      if (reportType === "requests") {
+        const result = await requestsReportQuery.refetch();
+        report = result.data!;
+      } else {
+        const result = await packagesReportQuery.refetch();
+        report = result.data!;
+      }
+      setGeneratedReport(report);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleResetReport = () => {
+    setGeneratedReport(null);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Live Overview</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Live Overview</p>
+          </div>
+          <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="lg">
+                Generate Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Generate Analytics Report</DialogTitle>
+              </DialogHeader>
+
+              {!generatedReport ? (
+                <div className="space-y-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Report Type *
+                      </label>
+                      <Select
+                        options={reportTypeOptions}
+                        value={
+                          reportTypeOptions.find(
+                            (option) => option.value === reportType
+                          ) || null
+                        }
+                        onChange={(
+                          selectedOption: SingleValue<{
+                            value: string;
+                            label: string;
+                          }>
+                        ) => {
+                          if (selectedOption) {
+                            setReportType(
+                              selectedOption.value as "requests" | "packages"
+                            );
+                          }
+                        }}
+                        placeholder="Select report type..."
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Year
+                      </label>
+                      <Input
+                        type="number"
+                        min={firstYear}
+                        max={new Date().getFullYear()}
+                        value={startYear}
+                        onChange={(e) =>
+                          setStartYear(
+                            parseInt(e.target.value) || new Date().getFullYear()
+                          )
+                        }
+                        placeholder="e.g., 2024"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setReportModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleGenerateReport}
+                      disabled={isGeneratingReport}
+                    >
+                      {isGeneratingReport ? "Generating..." : "Generate Report"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 p-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold">
+                        {reportType === "requests" ? "Requests" : "Packages"}{" "}
+                        Analytics Report
+                        {startYear &&
+                          ` (${startYear} - ${new Date().getFullYear()})`}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Comprehensive breakdown by year, month, locality, and
+                        service type
+                      </p>
+                    </div>
+                    <div className="space-x-2">
+                      <Button variant="outline" onClick={handleResetReport}>
+                        Generate New Report
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setReportModalOpen(false)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {generatedReport.years.map((year: any) => (
+                      <div
+                        key={year.year}
+                        className="bg-white rounded-lg border p-6"
+                      >
+                        <h4 className="text-xl font-semibold mb-4 text-blue-600">
+                          {year.year} Annual Summary - Total Hours:{" "}
+                          {year.totalHours.toFixed(2)}h
+                        </h4>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                          <div>
+                            <h5 className="text-lg font-medium mb-3 text-gray-700">
+                              Annual Locality Breakdown
+                            </h5>
+                            <div className="space-y-2">
+                              {year.localities.map((locality: any) => (
+                                <div
+                                  key={locality.name}
+                                  className="bg-gray-50 p-3 rounded"
+                                >
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-medium">
+                                      {locality.name}
+                                    </span>
+                                    <span className="text-blue-600 font-semibold">
+                                      {locality.totalHours.toFixed(2)}h
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-600 mb-2">
+                                    Service distribution for {locality.name}:
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-1 text-sm">
+                                    {locality.services.map((service: any) => (
+                                      <div
+                                        key={service.name}
+                                        className="flex justify-between bg-white px-2 py-1 rounded"
+                                      >
+                                        <span>{service.name}</span>
+                                        <span className="font-medium">
+                                          {service.totalHours.toFixed(2)}h
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h5 className="text-lg font-medium mb-3 text-gray-700">
+                              Annual Service Summary
+                            </h5>
+                            <div className="space-y-2">
+                              {year.services.map((service: any) => (
+                                <div
+                                  key={service.name}
+                                  className="bg-gray-50 p-3 rounded flex justify-between items-center"
+                                >
+                                  <div>
+                                    <span className="font-medium block">
+                                      {service.name}
+                                    </span>
+                                    <span className="text-xs text-gray-600">
+                                      Total across all localities
+                                    </span>
+                                  </div>
+                                  <span className="text-blue-600 font-semibold">
+                                    {service.totalHours.toFixed(2)}h
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="text-lg font-medium mb-4 text-gray-700">
+                            Detailed Monthly Analysis
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {year.months.map((month: any) => {
+                              const monthNames = [
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ];
+                              return (
+                                <div
+                                  key={month.month}
+                                  className="bg-blue-50 border border-blue-200 p-4 rounded-lg"
+                                >
+                                  <div className="mb-3">
+                                    <h6 className="font-semibold text-blue-800 text-base">
+                                      {monthNames[month.month - 1]} {year.year}
+                                    </h6>
+                                    <p className="text-sm text-blue-600">
+                                      Total Hours: {month.totalHours.toFixed(2)}
+                                      h
+                                    </p>
+                                  </div>
+
+                                  {/* Monthly Service Breakdown */}
+                                  <div className="mb-4">
+                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                      Service Distribution:
+                                    </h6>
+                                    <div className="space-y-1">
+                                      {month.services.map((service: any) => (
+                                        <div
+                                          key={service.name}
+                                          className="flex justify-between bg-white px-2 py-1 rounded text-sm"
+                                        >
+                                          <span>{service.name}</span>
+                                          <span className="font-medium">
+                                            {service.totalHours.toFixed(2)}h
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Monthly Locality Breakdown with Services */}
+                                  <div>
+                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                      Locality Breakdown:
+                                    </h6>
+                                    <div className="space-y-2">
+                                      {month.localities.map((locality: any) => (
+                                        <div
+                                          key={locality.name}
+                                          className="bg-white p-2 rounded border"
+                                        >
+                                          <div className="flex justify-between items-center mb-1">
+                                            <span className="font-medium text-sm">
+                                              {locality.name}
+                                            </span>
+                                            <span className="text-blue-600 font-semibold text-sm">
+                                              {locality.totalHours.toFixed(2)}h
+                                            </span>
+                                          </div>
+                                          <div className="space-y-1">
+                                            {locality.services.map(
+                                              (service: any) => (
+                                                <div
+                                                  key={service.name}
+                                                  className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                                                >
+                                                  <span>{service.name}</span>
+                                                  <span>
+                                                    {service.totalHours.toFixed(
+                                                      2
+                                                    )}
+                                                    h
+                                                  </span>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <AnimatedCounter targetValue={totalClients} label="Total Clients" />
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="requests">Active Requests</TabsTrigger>
+          <TabsTrigger value="packages">Active Packages</TabsTrigger>
+        </TabsList>
 
-        <AnimatedCounter targetValue={totalMps} label="Total MPs" />
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <AnimatedCounter
+              targetValue={totalActiveClients}
+              label="Total Active Clients"
+            />
 
-        <AnimatedCounter
-          targetValue={totalVolunteers}
-          label="Total Volunteers"
-        />
+            <AnimatedCounter
+              targetValue={totalActiveMps}
+              label="Total Active MPs"
+            />
 
-        <AnimatedCounter
-          targetValue={totalMpLogs}
-          label="Total Brokered Care Hours"
-        />
+            <AnimatedCounter
+              targetValue={totalActiveVolunteers}
+              label="Total Active Volunteers"
+            />
 
-        <AnimatedCounter
-          targetValue={totalMpLogsTA41}
-          label="Care Hours Completed in TA4 1"
-        />
+            <AnimatedCounter
+              targetValue={analyticsPackages.totalHours}
+              label="Total Active Care Hours"
+            />
 
-        <AnimatedCounter
-          targetValue={totalMpLogsTA42}
-          label="Care Hours Completed in TA4 2"
-        />
+            <AnimatedCounter
+              targetValue={analyticsRequests.totalHours}
+              label="Total Active Request Hours"
+            />
+          </div>
+        </TabsContent>
 
-        <AnimatedCounter
-          targetValue={totalMpLogsThisYear}
-          label={`Care Hours Completed This Year (${new Date().getFullYear()})`}
-        />
-      </div>
+        <TabsContent value="requests" className="mt-6">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">By Locality</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsRequests.localities.map((locality) => (
+                  <AnimatedCounter
+                    key={`request-locality-${locality.name}`}
+                    targetValue={locality.totalHours}
+                    label={`${locality.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">By Service</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsRequests.services.map((service) => (
+                  <AnimatedCounter
+                    key={`request-service-${service.name}`}
+                    targetValue={service.totalHours}
+                    label={`${service.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="packages" className="mt-6">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">By Locality</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsPackages.localities.map((locality) => (
+                  <AnimatedCounter
+                    key={`package-locality-${locality.name}`}
+                    targetValue={locality.totalHours}
+                    label={`${locality.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">By Service</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsPackages.services.map((service) => (
+                  <AnimatedCounter
+                    key={`package-service-${service.name}`}
+                    targetValue={service.totalHours}
+                    label={`${service.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

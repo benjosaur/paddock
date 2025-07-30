@@ -4,7 +4,12 @@ import Select, { MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { MagLog, ClientMetadata } from "../types";
+import type {
+  MagLog,
+  ClientMetadata,
+  MpMetadata,
+  VolunteerMetadata,
+} from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -15,9 +20,16 @@ export function MagLogForm() {
 
   const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
+    archived: "N",
     clients: [],
+    mps: [],
+    volunteers: [],
     details: {
-      total: 0,
+      totalClients: 0,
+      totalFamily: 0,
+      totalVolunteers: 0,
+      totalMps: 0,
+      otherAttendees: 0,
       notes: "",
     },
   });
@@ -25,28 +37,30 @@ export function MagLogForm() {
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 
   const magLogQuery = useQuery({
-    ...trpc.magLogs.getById.queryOptions({ id }),
+    ...trpc.mag.getById.queryOptions({ id }),
     enabled: isEditing && !!id,
   });
 
-  const magLogQueryKey = trpc.magLogs.getAll.queryKey();
+  const magLogQueryKey = trpc.mag.getAll.queryKey();
 
   const createMagLogMutation = useMutation(
-    trpc.magLogs.create.mutationOptions({
+    trpc.mag.create.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: magLogQueryKey });
-        navigate("/mag-logs");
+        navigate("/mag");
       },
     })
   );
 
   const updateMagLogMutation = useMutation(
-    trpc.magLogs.update.mutationOptions({
+    trpc.mag.update.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: magLogQueryKey });
-        navigate("/mag-logs");
+        navigate("/mag");
       },
     })
   );
@@ -54,7 +68,8 @@ export function MagLogForm() {
   // Load existing data when editing
   useEffect(() => {
     if (magLogQuery.data) {
-      setFormData(magLogQuery.data);
+      const { id: _, ...dataWithoutId } = magLogQuery.data as MagLog;
+      setFormData(dataWithoutId);
     }
   }, [magLogQuery.data]);
 
@@ -62,6 +77,18 @@ export function MagLogForm() {
     (client: ClientMetadata) => ({
       value: client.id,
       label: client.details.name,
+    })
+  );
+
+  const mpOptions = (mpsQuery.data || []).map((mp: MpMetadata) => ({
+    value: mp.id,
+    label: mp.details.name,
+  }));
+
+  const volunteerOptions = (volunteersQuery.data || []).map(
+    (volunteer: VolunteerMetadata) => ({
+      value: volunteer.id,
+      label: volunteer.details.name,
     })
   );
 
@@ -79,9 +106,7 @@ export function MagLogForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      updateMagLogMutation.mutate({ ...formData, id } as MagLog & {
-        id: number;
-      });
+      updateMagLogMutation.mutate({ ...formData, id } as MagLog);
     } else {
       createMagLogMutation.mutate(formData as Omit<MagLog, "id">);
     }
@@ -103,7 +128,7 @@ export function MagLogForm() {
   };
 
   const handleCancel = () => {
-    navigate("/mag-logs");
+    navigate("/mag");
   };
 
   return (
@@ -116,13 +141,13 @@ export function MagLogForm() {
 
       <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Log Information
+                Basic Information
               </h3>
 
-              <div>
+              <div className="max-w-md">
                 <label
                   htmlFor="date"
                   className="block text-sm font-medium text-gray-700 mb-1"
@@ -138,24 +163,104 @@ export function MagLogForm() {
                   required
                 />
               </div>
+            </div>
 
-              <div>
-                <label
-                  htmlFor="total"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Total Attendees *
-                </label>
-                <Input
-                  id="total"
-                  name="total"
-                  type="number"
-                  min="0"
-                  value={formData.details.total || ""}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 8"
-                  required
-                />
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Attendance Numbers
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label
+                    htmlFor="totalClients"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Clients *
+                  </label>
+                  <Input
+                    id="totalClients"
+                    name="details.totalClients"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalClients || ""}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 5"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalFamily"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Family Members
+                  </label>
+                  <Input
+                    id="totalFamily"
+                    name="details.totalFamily"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalFamily || ""}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 2"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalVolunteers"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Volunteers
+                  </label>
+                  <Input
+                    id="totalVolunteers"
+                    name="details.totalVolunteers"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalVolunteers || ""}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 3"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalMps"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total MPs
+                  </label>
+                  <Input
+                    id="totalMps"
+                    name="details.totalMps"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalMps || ""}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 1"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="otherAttendees"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Other Attendees
+                  </label>
+                  <Input
+                    id="otherAttendees"
+                    name="details.otherAttendees"
+                    type="number"
+                    min="0"
+                    value={formData.details.otherAttendees || ""}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 2"
+                  />
+                </div>
               </div>
             </div>
 
@@ -167,7 +272,7 @@ export function MagLogForm() {
                   htmlFor="attendees"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Registered Attendees
+                  Registered Attendees (Clients)
                 </label>
                 <Select
                   options={clientOptions}
@@ -186,7 +291,7 @@ export function MagLogForm() {
                       newValues
                     )
                   }
-                  placeholder="Search and select attendees..."
+                  placeholder="Search and select clients..."
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isSearchable
@@ -200,21 +305,96 @@ export function MagLogForm() {
 
               <div>
                 <label
-                  htmlFor="notes"
+                  htmlFor="mps"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Notes
+                  Magistrates (MPs)
                 </label>
-                <textarea
-                  id="notes"
-                  name="details.notes"
-                  value={formData.details.notes || ""}
-                  onChange={handleInputChange}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Additional notes about the MAG log session..."
+                <Select
+                  options={mpOptions}
+                  value={
+                    mpOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.mps?.map((mp) => mp.id).includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "mps",
+                      mpsQuery.data ?? [],
+                      newValues
+                    )
+                  }
+                  placeholder="Search and select MPs..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No MPs found"}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by MP name to add magistrates
+                </p>
               </div>
+
+              <div>
+                <label
+                  htmlFor="volunteers"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Volunteers
+                </label>
+                <Select
+                  options={volunteerOptions}
+                  value={
+                    volunteerOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.volunteers
+                          ?.map((volunteer) => volunteer.id)
+                          .includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "volunteers",
+                      volunteersQuery.data ?? [],
+                      newValues
+                    )
+                  }
+                  placeholder="Search and select volunteers..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No volunteers found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by volunteer name to add volunteers
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-700">
+              Additional Information
+            </h3>
+            <div>
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                name="details.notes"
+                value={formData.details.notes || ""}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Additional notes about the MAG log session..."
+              />
             </div>
           </div>
 

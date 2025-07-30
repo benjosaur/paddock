@@ -1,31 +1,72 @@
 import { TrainingRecord, trainingRecordSchema } from "shared";
 import { TrainingRecordRepository } from "./repository";
-import { DbTrainingRecordEntity } from "./schema";
+import { DbTrainingRecord } from "./schema";
+import { addDbMiddleware } from "../service";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
   async getAll(user: User): Promise<TrainingRecord[]> {
-    const trainingRecordsFromDb = await this.trainingRecordRepository.getAll(
-      user
-    );
-    const transformedRecords = this.transformDbTrainingRecordToShared(
-      trainingRecordsFromDb
-    ) as TrainingRecord[];
-    const parsedResult = trainingRecordSchema.array().parse(transformedRecords);
-    return parsedResult;
+    try {
+      const trainingRecordsFromDb = await this.trainingRecordRepository.getAll(
+        user
+      );
+      const transformedRecords = this.transformDbTrainingRecordToShared(
+        trainingRecordsFromDb
+      ) as TrainingRecord[];
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecords);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all training records:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotArchived(user: User): Promise<TrainingRecord[]> {
+    try {
+      const trainingRecordsFromDb =
+        await this.trainingRecordRepository.getAllNotArchived(user);
+      const transformedRecords = this.transformDbTrainingRecordToShared(
+        trainingRecordsFromDb
+      ) as TrainingRecord[];
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecords);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all non-archived training records:",
+        error
+      );
+      throw error;
+    }
   }
 
   async getByExpiringBefore(
     user: User,
     expiryDate: string
   ): Promise<TrainingRecord[]> {
-    const trainingRecordFromDb =
-      await this.trainingRecordRepository.getByExpiringBefore(user, expiryDate);
-    const transformedRecords = this.transformDbTrainingRecordToShared(
-      trainingRecordFromDb
-    ) as TrainingRecord[];
-    const parsedResult = trainingRecordSchema.array().parse(transformedRecords);
-    return parsedResult;
+    try {
+      const trainingRecordFromDb =
+        await this.trainingRecordRepository.getByExpiringBefore(
+          user,
+          expiryDate
+        );
+      const transformedRecords = this.transformDbTrainingRecordToShared(
+        trainingRecordFromDb
+      ) as TrainingRecord[];
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecords);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting training records expiring before date:",
+        error
+      );
+      throw error;
+    }
   }
 
   async getById(
@@ -33,94 +74,74 @@ export class TrainingRecordService {
     ownerId: string,
     recordId: string
   ): Promise<TrainingRecord | null> {
-    const trainingRecordFromDb = await this.trainingRecordRepository.getById(
-      user,
-      ownerId,
-      recordId
-    );
-    if (!trainingRecordFromDb) {
-      return null;
+    try {
+      const trainingRecordFromDb = await this.trainingRecordRepository.getById(
+        user,
+        ownerId,
+        recordId
+      );
+      if (!trainingRecordFromDb) {
+        return null;
+      }
+      const transformedRecord = this.transformDbTrainingRecordToShared([
+        trainingRecordFromDb,
+      ]);
+      const parsedResult = trainingRecordSchema
+        .array()
+        .parse(transformedRecord);
+      return parsedResult[0];
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting training record by ID:",
+        error
+      );
+      throw error;
     }
-    const transformedRecord = this.transformDbTrainingRecordToShared([
-      trainingRecordFromDb,
-    ]);
-    const parsedResult = trainingRecordSchema.array().parse(transformedRecord);
-    return parsedResult[0];
   }
 
   async create(
     record: Omit<TrainingRecord, "id">,
     user: User
-  ): Promise<TrainingRecord> {
+  ): Promise<string> {
     try {
       const validatedInput = trainingRecordSchema
         .omit({ id: true })
         .parse(record);
-
-      const recordToCreate: Omit<DbTrainingRecordEntity, "sK"> = {
-        pK: validatedInput.ownerId,
-        entityType: "trainingRecord",
-        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
-      };
-      const createdRecordId = await this.trainingRecordRepository.create(
-        recordToCreate,
+      const { ownerId, ...rest } = validatedInput;
+      const newRecord: Omit<DbTrainingRecord, "sK"> = addDbMiddleware(
+        {
+          ...rest,
+          pK: ownerId,
+          entityType: "trainingRecord",
+        },
         user
       );
-      const fetchedRecord = await this.getById(
-        user,
-        validatedInput.ownerId,
-        createdRecordId
+      const createdRecordId = await this.trainingRecordRepository.create(
+        newRecord,
+        user
       );
-      if (!fetchedRecord) {
-        throw new Error("Failed to fetch created training record");
-      }
-
-      const { id, ...restFetched } = fetchedRecord;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error("Created record does not match expected values");
-      }
-
-      return fetchedRecord;
+      return createdRecordId;
     } catch (error) {
       console.error("Service Layer Error creating training record:", error);
       throw error;
     }
   }
-  async update(record: TrainingRecord, user: User): Promise<TrainingRecord> {
+  async update(record: TrainingRecord, user: User): Promise<void> {
     try {
       const validatedInput = trainingRecordSchema.parse(record);
+      const { id, ownerId, ...rest } = validatedInput;
 
-      const dbRecord: DbTrainingRecordEntity = {
-        pK: validatedInput.ownerId,
-        sK: validatedInput.id,
-        entityType: "trainingRecord",
-        entityOwner: validatedInput.ownerId[0] == "v" ? "volunteer" : "mp",
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
-      };
-
-      await this.trainingRecordRepository.update(dbRecord, user);
-
-      const fetchedRecord = await this.getById(
-        user,
-        validatedInput.ownerId,
-        validatedInput.id
+      const updatedRecord: DbTrainingRecord = addDbMiddleware(
+        {
+          pK: ownerId,
+          sK: id,
+          entityType: "trainingRecord",
+          ...rest,
+        },
+        user
       );
-      if (!fetchedRecord) {
-        throw new Error("Failed to fetch updated training record");
-      }
 
-      // Assert exact equality for update
-      if (JSON.stringify(validatedInput) !== JSON.stringify(fetchedRecord)) {
-        throw new Error("Updated record does not match expected values");
-      }
-
-      return fetchedRecord;
+      await this.trainingRecordRepository.update(updatedRecord, user);
     } catch (error) {
       console.error("Service Layer Error updating training record:", error);
       throw error;
@@ -146,33 +167,11 @@ export class TrainingRecordService {
   }
 
   private transformDbTrainingRecordToShared(
-    items: DbTrainingRecordEntity[]
+    records: DbTrainingRecord[]
   ): TrainingRecord[] {
-    const trainingRecordsMap = new Map<string, Partial<TrainingRecord>>();
-
-    for (const item of items) {
-      const trainingRecordId = item.sK;
-
-      if (!trainingRecordsMap.has(trainingRecordId)) {
-        trainingRecordsMap.set(trainingRecordId, {
-          id: trainingRecordId,
-        });
-      }
-
-      const trainingRecord = trainingRecordsMap.get(trainingRecordId)!;
-
-      switch (item.entityType) {
-        case "trainingRecord":
-          trainingRecord.id = item.sK;
-          trainingRecord.ownerId = item.pK;
-          trainingRecord.recordName = item.recordName;
-          trainingRecord.recordExpiry = item.recordExpiry;
-          trainingRecord.details = item.details;
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
-    }
-    return Array.from(trainingRecordsMap.values()) as TrainingRecord[];
+    return records.map((record) => {
+      const { pK, sK, entityType, ...rest } = record;
+      return { id: sK, ownerId: pK, ...rest };
+    });
   }
 }

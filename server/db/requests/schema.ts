@@ -1,34 +1,21 @@
 import { z } from "zod";
 
-import { clientRequestSchema } from "shared";
+import { requestMetadataSchema } from "shared";
+import { dbPackage } from "../package/schema";
+import { dbEntrySchema } from "../schema";
 
-export const dbClientMpRequestEntity = clientRequestSchema
-  .omit({ id: true, clientId: true, requestType: true, startDate: true })
+export const dbRequestEntity = dbEntrySchema
+  .extend(requestMetadataSchema.omit({ id: true, clientId: true }).shape)
   .extend({
-    pK: z.string(),
-    sK: z.string(),
-    entityOwner: z.literal("client"),
-    entityType: z.literal("clientMpRequest"),
-    date: z.string().date(),
+    // below is actually same as pK but just for indexing purposes it is repeated as "requestId"
+    requestId: z.string(),
+    // .regex(
+    //   /^request#(\d{4}|open)$/,
+    //   "Must be 'request#yyyy' (4-digit year) or 'request#open'"
+    // ),
   });
 
-export const dbClientVolunteerRequestEntity = clientRequestSchema
-  .omit({ id: true, clientId: true, requestType: true, startDate: true })
-  .extend({
-    pK: z.string(),
-    sK: z.string(),
-    entityOwner: z.literal("client"),
-    entityType: z.literal("clientVolunteerRequest"),
-    date: z.string().date(),
-  });
+export const dbRequest = z.union([dbRequestEntity, dbPackage]);
 
-export const dbClientRequestEntity = z.union([
-  dbClientMpRequestEntity,
-  dbClientVolunteerRequestEntity,
-]);
-
-export type DbClientMpRequestEntity = z.infer<typeof dbClientMpRequestEntity>;
-export type DbClientVolunteerRequestEntity = z.infer<
-  typeof dbClientVolunteerRequestEntity
->;
-export type DbClientRequestEntity = z.infer<typeof dbClientRequestEntity>;
+export type DbRequestEntity = z.infer<typeof dbRequestEntity>;
+export type DbRequest = z.infer<typeof dbRequest>;

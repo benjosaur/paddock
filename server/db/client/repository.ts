@@ -1,35 +1,27 @@
 import {
-  dbClientMetadata,
-  DbClientMetadata,
   DbClientFull,
   dbClientFull,
   DbClientEntity,
   dbClientEntity,
 } from "./schema";
-import {
-  client,
-  getTableName,
-  addCreateMiddleware,
-  addUpdateMiddleware,
-} from "../repository";
+import { client, getTableName, dropNullFields } from "../repository";
 import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAll(user: User): Promise<DbClientMetadata[]> {
+  async getAllNotArchived(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
-      KeyConditionExpression:
-        "entityOwner = :pk AND begins_with(entityType, :sk)",
+      KeyConditionExpression: "entityType = :pk AND archived = :sk",
       ExpressionAttributeValues: {
         ":pk": "client",
-        ":sk": "client",
+        ":sk": "N",
       },
     });
     try {
       const result = await client.send(command);
-      const parsedResult = dbClientMetadata.array().parse(result.Items);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Repository Layer Error getting item:", error);
@@ -37,14 +29,32 @@ export class ClientRepository {
     }
   }
 
-  async getById(user: User, clientId: string): Promise<DbClientFull[]> {
+  async getAll(user: User): Promise<DbClientEntity[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk",
+      ExpressionAttributeValues: {
+        ":pk": "client",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting item:", error);
+      throw error;
+    }
+  }
+
+  async getById(clientId: string, user: User): Promise<DbClientFull[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
       KeyConditionExpression: "pK = :pk",
       ExpressionAttributeValues: {
         ":pk": clientId,
       },
-      ConsistentRead: true,
     });
 
     try {
@@ -67,7 +77,7 @@ export class ClientRepository {
     const validatedFullClient = dbClientEntity.parse(fullClient);
     const command = new PutCommand({
       TableName: getTableName(user),
-      Item: addCreateMiddleware(validatedFullClient, user),
+      Item: dropNullFields(validatedFullClient),
     });
 
     try {
@@ -83,7 +93,7 @@ export class ClientRepository {
     const validatedFullClient = dbClientEntity.parse(updatedClient);
     const command = new PutCommand({
       TableName: getTableName(user),
-      Item: addUpdateMiddleware(validatedFullClient, user),
+      Item: dropNullFields(validatedFullClient),
     });
 
     try {
@@ -94,9 +104,9 @@ export class ClientRepository {
     }
   }
 
-  async delete(user: User, clientId: string): Promise<number[]> {
+  async delete(clientId: string, user: User): Promise<number[]> {
     try {
-      const clientData = await this.getById(user, clientId);
+      const clientData = await this.getById(clientId, user);
       let deletedCount = 0;
 
       for (const item of clientData) {

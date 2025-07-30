@@ -2,7 +2,10 @@
 // but on way in these need to be stripped so drop null fields after parsing.
 
 import { DynamoDB, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  BatchWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const createRawClient = (): DynamoDBClient => {
   const isProd = process.env.NODE_ENV == "production";
@@ -30,32 +33,7 @@ export const getTableName = (user: User): string => {
 
 export const client = DynamoDBDocumentClient.from(createRawClient());
 
-export function addCreateMiddleware<T>(
-  input: T,
-  user: User
-): T & { createdAt: string; updatedAt: string; updatedBy: string } {
-  const now = new Date().toISOString();
-  return dropNullFields({
-    ...input,
-    createdAt: now,
-    updatedAt: now,
-    updatedBy: user.sub,
-  });
-}
-
-export function addUpdateMiddleware<T>(
-  input: T,
-  user: User
-): T & { updatedAt: string; updatedBy: string } {
-  const now = new Date().toISOString();
-  return dropNullFields({
-    ...input,
-    updatedAt: now,
-    updatedBy: user.sub,
-  });
-}
-
-function dropNullFields<T>(input: T): T {
+export function dropNullFields<T>(input: T): T {
   if (Array.isArray(input)) {
     return input
       .map(dropNullFields)
@@ -77,4 +55,40 @@ function dropNullFields<T>(input: T): T {
     return result as T;
   }
   return input;
+}
+
+export async function genericUpdate<
+  T extends { updatedBy: string; updatedAt: string }
+>(items: T[], user: User): Promise<void> {
+  // only for use when input validation is intentioanlly agnostic and not necessary
+  const tableName = getTableName(user);
+
+  // DynamoDB batch write can handle up to 25 items at a time
+  const batchSize = 25;
+  const batches = [];
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    batches.push(items.slice(i, i + batchSize));
+  }
+
+  for (const batch of batches) {
+    const requestItems = {
+      [tableName]: batch.map((item) => ({
+        PutRequest: {
+          Item: item,
+        },
+      })),
+    };
+
+    const command = new BatchWriteCommand({
+      RequestItems: requestItems,
+    });
+
+    try {
+      await client.send(command);
+    } catch (error) {
+      console.error("Repository Layer Error in generic update:", error);
+      throw error;
+    }
+  }
 }

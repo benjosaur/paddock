@@ -1,25 +1,41 @@
 import { MagLog, magLogSchema } from "shared";
 import { MagLogRepository } from "./repository";
-import { DbMagLog, DbMagLogClient, DbMagLogEntity } from "./schema";
+import {
+  DbMagLog,
+  DbMagLogClient,
+  DbMagLogEntity,
+  DbMagLogMp,
+  DbMagLogVolunteer,
+} from "./schema";
+import { addDbMiddleware } from "../service";
 
 export class MagLogService {
   magLogRepository = new MagLogRepository();
   async getAll(user: User): Promise<MagLog[]> {
-    const magLogs = await this.magLogRepository.getAll(user);
-    const transformedResult = this.transformDbMagLogToShared(
-      magLogs
-    ) as MagLog[];
-    const parsedResult = magLogSchema.array().parse(transformedResult);
-    return parsedResult;
+    try {
+      const magLogs = await this.magLogRepository.getAll(user);
+      const transformedResult = this.transformDbMagLogToShared(
+        magLogs
+      ) as MagLog[];
+      const parsedResult = magLogSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all mag logs:", error);
+      throw error;
+    }
   }
 
-  async getById(user: User, magLogId: string): Promise<MagLog> {
-    const mag = await this.magLogRepository.getById(user, magLogId);
-    const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
-    console.log("MAG");
-    console.log(transformedResult);
-    const parsedResult = magLogSchema.array().parse(transformedResult);
-    return parsedResult[0];
+  async getById(magLogId: string, user: User): Promise<MagLog> {
+    try {
+      const mag = await this.magLogRepository.getById(magLogId, user);
+      console.log(mag);
+      const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
+      const parsedResult = magLogSchema.array().parse(transformedResult);
+      return parsedResult[0];
+    } catch (error) {
+      console.error("Service Layer Error getting mag log by ID:", error);
+      throw error;
+    }
   }
 
   async getByDateInterval(
@@ -29,87 +45,144 @@ export class MagLogService {
       endDate: string;
     }
   ): Promise<MagLog[]> {
-    const mag = await this.magLogRepository.getByDateInterval(user, input);
-    const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
-    const parsedResult = magLogSchema.array().parse(transformedResult);
-    return parsedResult;
+    try {
+      const mag = await this.magLogRepository.getByDateInterval(input, user);
+      const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
+      const parsedResult = magLogSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting mag logs by date interval:",
+        error
+      );
+      throw error;
+    }
   }
 
-  async create(newMagLog: Omit<MagLog, "id">, user: User): Promise<MagLog> {
-    const validatedInput = magLogSchema.omit({ id: true }).parse(newMagLog);
-
-    const magLogMain: Omit<DbMagLogEntity, "pK" | "sK"> = {
-      ...validatedInput,
-      entityType: "magLog",
-      entityOwner: "main",
-    };
-    const magLogClients: Omit<DbMagLogClient, "sK">[] =
-      validatedInput.clients.map((client) => ({
-        date: validatedInput.date,
-        entityType: "magLog",
-        entityOwner: "client",
-        pK: client.id,
-        ...client,
-      }));
+  async create(newMagLog: Omit<MagLog, "id">, user: User): Promise<string> {
     try {
-      const createdLogId = await this.magLogRepository.create(
-        [magLogMain, ...magLogClients],
+      const validatedInput = magLogSchema.omit({ id: true }).parse(newMagLog);
+
+      const magLogMain: Omit<DbMagLogEntity, "pK" | "sK"> = addDbMiddleware(
+        {
+          ...validatedInput,
+          entityType: "magLogEntity",
+        },
+        user
+      );
+      const magLogClients: Omit<DbMagLogClient, "sK">[] =
+        validatedInput.clients.map((client) =>
+          addDbMiddleware(
+            {
+              date: validatedInput.date,
+              entityType: "magLogClient",
+              entityOwner: "client",
+              pK: client.id,
+              ...client,
+            },
+            user
+          )
+        );
+      const magLogMps: Omit<DbMagLogMp, "sK">[] = validatedInput.mps.map((mp) =>
+        addDbMiddleware(
+          {
+            date: validatedInput.date,
+            entityType: "magLogMp",
+            entityOwner: "mp",
+            pK: mp.id,
+            ...mp,
+          },
+          user
+        )
+      );
+      const magLogVolunteers: Omit<DbMagLogVolunteer, "sK">[] =
+        validatedInput.volunteers.map((volunteer) =>
+          addDbMiddleware(
+            {
+              date: validatedInput.date,
+              entityType: "magLogVolunteer",
+              entityOwner: "volunteer",
+              pK: volunteer.id,
+              ...volunteer,
+            },
+            user
+          )
+        );
+      const createdLogId = await this.magLogRepository.createMagEntity(
+        [magLogMain],
+        user
+      );
+      await this.magLogRepository.createMagReference(
+        [...magLogClients, ...magLogMps, ...magLogVolunteers],
         user
       );
 
-      const fetchedLog = await this.getById(user, createdLogId);
-      if (!fetchedLog) {
-        throw new Error("Failed to fetch created mag log");
-      }
-
-      const { id, ...restFetched } = fetchedLog;
-
-      if (JSON.stringify(newMagLog) !== JSON.stringify(restFetched)) {
-        throw new Error("Created mag log does not match expected values");
-      }
-
-      return fetchedLog;
+      return createdLogId;
     } catch (error) {
       console.error("Service Layer Error creating magLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLog: MagLog, user: User): Promise<MagLog> {
-    const validatedInput = magLogSchema.parse(updatedMpLog);
-    const magLogKey = validatedInput.id;
-    this.magLogRepository.delete(magLogKey, user);
-
-    const magLogMain: DbMagLogEntity = {
-      ...validatedInput,
-      pK: magLogKey,
-      sK: magLogKey,
-      entityType: "magLog",
-      entityOwner: "main",
-    };
-    const magLogClients: DbMagLogClient[] = validatedInput.clients.map(
-      (client) => ({
-        pK: client.id,
-        sK: magLogKey,
-        date: validatedInput.date,
-        entityType: "magLog",
-        entityOwner: "client",
-        ...client,
-      })
-    );
+  async update(updatedMpLog: MagLog, user: User): Promise<void> {
     try {
-      await this.magLogRepository.update([magLogMain, ...magLogClients], user);
+      const validatedInput = magLogSchema.parse(updatedMpLog);
+      const { id, clients, mps, volunteers, ...rest } = validatedInput;
 
-      const fetchedLog = await this.getById(user, updatedMpLog.id);
-      if (!fetchedLog) {
-        throw new Error("Failed to fetch updated mag log");
-      }
+      // delete all refs in case mps or volunteers purposely removed
+      this.magLogRepository.delete(id, user);
 
-      if (JSON.stringify(updatedMpLog) !== JSON.stringify(fetchedLog)) {
-        throw new Error("Updated mag log does not match expected values");
-      }
+      const magLogMain: DbMagLogEntity = addDbMiddleware(
+        {
+          ...rest,
+          pK: id,
+          sK: id,
+          entityType: "magLogEntity",
+        },
+        user
+      );
 
-      return fetchedLog;
+      const magLogClients: DbMagLogClient[] = clients.map((client) =>
+        addDbMiddleware(
+          {
+            pK: client.id,
+            sK: id,
+            entityType: "magLogClient",
+            ...client,
+          },
+          user
+        )
+      );
+
+      const magLogMps: DbMagLogMp[] = mps.map((mp) =>
+        addDbMiddleware(
+          {
+            pK: mp.id,
+            sK: id,
+            entityType: "magLogMp",
+            ...mp,
+          },
+          user
+        )
+      );
+
+      const magLogVolunteers: DbMagLogVolunteer[] = volunteers.map(
+        (volunteer) =>
+          addDbMiddleware(
+            {
+              pK: volunteer.id,
+              sK: id,
+              entityType: "magLogVolunteer",
+              ...volunteer,
+            },
+            user
+          )
+      );
+
+      await this.magLogRepository.update(
+        [magLogMain, ...magLogClients, ...magLogMps, ...magLogVolunteers],
+        user
+      );
     } catch (error) {
       console.error("Service Layer Error updating magLogs:", error);
       throw error;
@@ -117,8 +190,13 @@ export class MagLogService {
   }
 
   async delete(user: User, magLogId: string): Promise<number> {
-    const numDeleted = await this.magLogRepository.delete(magLogId, user);
-    return numDeleted[0];
+    try {
+      const numDeleted = await this.magLogRepository.delete(magLogId, user);
+      return numDeleted[0];
+    } catch (error) {
+      console.error("Service Layer Error deleting mag log:", error);
+      throw error;
+    }
   }
 
   private transformDbMagLogToShared(items: DbMagLog[]): MagLog[] {
@@ -135,22 +213,39 @@ export class MagLogService {
 
       const magLog = magLogsMap.get(magLogId)!;
 
-      switch (item.entityOwner) {
-        case "main":
-          magLog.date = item.date;
-          magLog.details = item.details;
-          break;
-        case "client":
-          if (!magLog.clients) magLog.clients = [];
-          magLog.clients.push({
-            id: item.pK,
-            details: item.details,
-          });
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.pK.startsWith("mag")) {
+        // second check below as may not have any associated clients/mps/volunteers
+        if (!magLog.clients) magLog.clients = [];
+        if (!magLog.mps) magLog.mps = [];
+        if (!magLog.volunteers) magLog.volunteers = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogEntity;
+        Object.assign(magLog, rest);
+        continue;
+      } else if (item.pK.startsWith("c")) {
+        if (!magLog.clients) magLog.clients = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogClient;
+        magLog.clients.push({
+          id: item.pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.pK.startsWith("m")) {
+        if (!magLog.mps) magLog.mps = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogMp;
+        magLog.mps.push({
+          id: item.pK,
+          ...rest,
+        });
+      } else if (item.pK.startsWith("v")) {
+        if (!magLog.volunteers) magLog.volunteers = [];
+        const { pK, sK, entityType, ...rest } = item as DbMagLogVolunteer;
+        magLog.volunteers.push({
+          id: item.pK,
+          ...rest,
+        });
+      } else throw new Error(`Undefined Case: ${item}`);
     }
+
     return Array.from(magLogsMap.values()) as MagLog[];
   }
 }

@@ -8,12 +8,18 @@ export const trainingRecordsRouter = router({
     }
   ),
 
+  getAllNotArchived: createProtectedProcedure("trainingRecords", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.training.getAllNotArchived(ctx.user);
+    }
+  ),
+
   getByExpiringBefore: createProtectedProcedure("trainingRecords", "read")
-    .input(trainingRecordSchema.pick({ recordExpiry: true }))
+    .input(trainingRecordSchema.pick({ expiryDate: true }))
     .query(async ({ ctx, input }) => {
       return await ctx.services.training.getByExpiringBefore(
         ctx.user,
-        input.recordExpiry
+        input.expiryDate
       );
     }),
 

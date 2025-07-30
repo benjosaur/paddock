@@ -7,6 +7,9 @@ import type { VolunteerFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
+import { MultiValue } from "react-select";
+import { Select } from "../components/ui/select";
+import { serviceOptions, localities } from "shared/const";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -14,26 +17,29 @@ export function VolunteerForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<VolunteerFull, "id">>({
+    archived: "N",
     dateOfBirth: "",
-    postCode: "",
-    recordName: "",
-    recordExpiry: "",
+    dbsExpiry: "",
+    publicLiabilityExpiry: "",
     details: {
       name: "",
-      address: "",
+      address: {
+        streetAddress: "",
+        locality: "Wiveliscombe",
+        county: "Somerset",
+        postCode: "",
+      },
       phone: "",
       email: "",
       nextOfKin: "",
-      needs: [],
       services: [],
       specialisms: [],
-      transport: false,
       capacity: "",
-      notes: "",
+      attendsMag: false,
+      notes: [],
     },
     trainingRecords: [],
-    // below not edited here
-    volunteerLogs: [],
+    requests: [],
   });
 
   const queryClient = useQueryClient();
@@ -68,7 +74,6 @@ export function VolunteerForm() {
       onSuccess: () => {
         const queryKeys = [
           thisVolunteerQueryKey,
-          trpc.volunteerLogs.getAll.queryKey(),
           trpc.trainingRecords.getAll.queryKey(),
         ];
 
@@ -94,12 +99,31 @@ export function VolunteerForm() {
   };
 
   const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as
-      | "details.services"
-      | "details.needs"
-      | "details.specialisms";
+    const field = e.target.name as "details.services" | "details.specialisms";
     let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedValues = newValues.map((option) => option.value);
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
+  };
+
+  const handleSelectChange = (
+    field: string,
+    newValue: {
+      label: string;
+      value: string;
+    } | null
+  ) => {
+    if (!newValue) return null;
+    setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
@@ -125,6 +149,11 @@ export function VolunteerForm() {
   const handleCancel = () => {
     navigate("/volunteers");
   };
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   if (isEditing && volunteerQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && volunteerQuery.error)
@@ -192,15 +221,62 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="address"
+                  htmlFor="streetAddress"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Address
+                  Street Address
                 </label>
                 <Input
-                  id="address"
-                  name="details.address"
-                  value={formData.details.address || ""}
+                  id="streetAddress"
+                  name="details.address.streetAddress"
+                  value={formData.details.address.streetAddress || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="locality"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Locality *
+                </label>
+                <Select
+                  id="locality"
+                  value={
+                    formData.details.address.locality
+                      ? {
+                          label: formData.details.address.locality,
+                          value: formData.details.address.locality,
+                        }
+                      : null
+                  }
+                  options={localities.map((locality) => ({
+                    label: locality,
+                    value: locality,
+                  }))}
+                  onChange={(selectedOption) =>
+                    handleSelectChange(
+                      "details.address.locality",
+                      selectedOption
+                    )
+                  }
+                  placeholder="Select locality..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="county"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  County
+                </label>
+                <Input
+                  id="county"
+                  name="details.address.county"
+                  value={formData.details.address.county || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -214,8 +290,8 @@ export function VolunteerForm() {
                 </label>
                 <Input
                   id="postCode"
-                  name="postCode"
-                  value={formData.postCode || ""}
+                  name="details.address.postCode"
+                  value={formData.details.address.postCode || ""}
                   onChange={handleInputChange}
                   required
                 />
@@ -270,21 +346,6 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="dbsNumber"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  DBS Number
-                </label>
-                <Input
-                  id="dbsNumber"
-                  name="recordName"
-                  value={formData.recordName || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="dbsExpiry"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -293,8 +354,24 @@ export function VolunteerForm() {
                 <Input
                   id="dbsExpiry"
                   type="date"
-                  name="recordExpiry"
-                  value={formData.recordExpiry || ""}
+                  name="dbsExpiry"
+                  value={formData.dbsExpiry || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="publicLiabilityExpiry"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Public Liability Expiry
+                </label>
+                <Input
+                  id="publicLiabilityExpiry"
+                  type="date"
+                  name="publicLiabilityExpiry"
+                  value={formData.publicLiabilityExpiry || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -307,34 +384,29 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="needs"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Needs Offered (comma-separated)
-                </label>
-                <Input
-                  id="needs"
-                  name="details.needs"
-                  value={formData.details.needs}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Personal Care, Domestic Support"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Offered (comma-separated)
+                  Services Offered
                 </label>
-                <Input
-                  id="services"
-                  name="details.services"
-                  value={formData.details.services}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Personal Care, Domestic Support"
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.details.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("details.services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by service name to add offered services
+                </p>
               </div>
 
               <div>
@@ -347,31 +419,10 @@ export function VolunteerForm() {
                 <Input
                   id="specialisms"
                   name="details.specialisms"
-                  value={formData.details.specialisms}
+                  value={formData.details.specialisms.join(",")}
                   onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="transport"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Transport
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    name="details.transport"
-                    type="checkbox"
-                    checked={formData.details.transport || false}
-                    onChange={handleInputChange}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has Transport?
-                  </span>
-                </label>
               </div>
 
               <div>
@@ -408,7 +459,8 @@ export function VolunteerForm() {
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span className="text-sm">
-                            {record.recordName} - Expires: {record.recordExpiry}
+                            {record.details.recordName} - Expires:{" "}
+                            {record.expiryDate}
                           </span>
                         </div>
                       ))}

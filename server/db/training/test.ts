@@ -1,4 +1,4 @@
-import { sampleUser } from "../test";
+import { sampleUser } from "../../utils/test";
 import { TrainingRecordService } from "./service";
 import { TrainingRecord } from "shared";
 
@@ -6,9 +6,12 @@ const trainingRecordService = new TrainingRecordService();
 
 const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
   ownerId: "mp#test-owner-123",
-  recordName: "First Aid Certification",
-  recordExpiry: "2025-12-31",
-  details: { name: "Robert Branson" },
+  archived: "N",
+  expiryDate: "2025-12-31",
+  details: {
+    name: "Robert Branson",
+    recordName: "First Aid Certification",
+  },
 };
 
 export async function testTrainingRecordService() {
@@ -16,17 +19,22 @@ export async function testTrainingRecordService() {
     console.log("Testing Training Record Service...");
 
     console.log("1. Creating training record...");
-    const createdRecord = await trainingRecordService.create(
+    const createdRecordId = await trainingRecordService.create(
       sampleTrainingRecord,
       sampleUser
     );
-    console.log("Created training record:", createdRecord);
+    console.log("Created training record ID:", createdRecordId);
 
     console.log("2. Updating training record...");
     const updatedRecordData: TrainingRecord = {
-      ...createdRecord,
-      recordName: "Updated First Aid Certification",
-      recordExpiry: "2026-12-31",
+      id: createdRecordId,
+      archived: "N",
+      ownerId: sampleTrainingRecord.ownerId,
+      expiryDate: "2026-12-31",
+      details: {
+        name: "Robert Branson",
+        recordName: "Updated First Aid Certification",
+      },
     };
     const updatedRecord = await trainingRecordService.update(
       updatedRecordData,
@@ -48,8 +56,8 @@ export async function testTrainingRecordService() {
     console.log("5. Deleting training record...");
     const deletedCount = await trainingRecordService.delete(
       sampleUser,
-      createdRecord.ownerId,
-      createdRecord.id
+      sampleTrainingRecord.ownerId,
+      createdRecordId
     );
     console.log("Deleted count:", deletedCount);
 
@@ -59,4 +67,7 @@ export async function testTrainingRecordService() {
   }
 }
 
-testTrainingRecordService();
+// Run test only if this file is executed directly
+if (require.main === module) {
+  testTrainingRecordService();
+}

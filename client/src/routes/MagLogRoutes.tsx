@@ -2,13 +2,22 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MagLogForm } from "../pages/MagLogForm";
 import { trpc } from "../utils/trpc";
-import type { MagLog, TableColumn } from "../types";
+import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "id", header: "ID" },
-  { key: "date", header: "Date" },
-  { key: "total", header: "Total", render: (item) => item.details.total },
+  { key: "id", header: "ID", render: (item) => item.id },
+  { key: "date", header: "Date", render: (item) => item.date },
+  {
+    key: "total",
+    header: "Total Attendees",
+    render: (item: ClientFull["magLogs"][number]) =>
+      item.details.totalVolunteers +
+      item.details.totalClients +
+      item.details.totalFamily +
+      item.details.totalMps +
+      item.details.otherAttendees,
+  },
   {
     key: "attendees",
     header: "Registered Attendees",
@@ -28,35 +37,35 @@ export default function MagLogRoutes() {
 
   const queryClient = useQueryClient();
 
-  const magLogsQuery = useQuery(trpc.magLogs.getAll.queryOptions());
+  const magQuery = useQuery(trpc.mag.getAll.queryOptions());
 
-  const magLogsQueryKey = trpc.magLogs.getAll.queryKey();
+  const magQueryKey = trpc.mag.getAll.queryKey();
 
-  const magLogs = magLogsQuery.data || [];
+  const mag = magQuery.data || [];
 
   const deleteMagLogMutation = useMutation(
-    trpc.magLogs.delete.mutationOptions({
+    trpc.mag.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magLogsQueryKey });
+        queryClient.invalidateQueries({ queryKey: magQueryKey });
       },
     })
   );
 
   const handleAddNew = () => {
-    navigate("/mag-logs/new");
+    navigate("/mag/new");
   };
 
   const handleEdit = (id: string) => {
     const encodedId = encodeURIComponent(id);
-    navigate(`/mag-logs/edit/${encodedId}`);
+    navigate(`/mag/edit/${encodedId}`);
   };
 
   const handleDelete = (id: string) => {
     deleteMagLogMutation.mutate({ id });
   };
 
-  if (magLogsQuery.isLoading) return <div>Loading...</div>;
-  if (magLogsQuery.error) return <div>Error loading MP Logs</div>;
+  if (magQuery.isLoading) return <div>Loading...</div>;
+  if (magQuery.error) return <div>Error loading MP </div>;
 
   return (
     <Routes>
@@ -65,14 +74,14 @@ export default function MagLogRoutes() {
         element={
           <DataTable
             key="mag-logs"
-            title="MAG Logs"
+            title="MAG "
             searchPlaceholder="Search MAG logs..."
-            data={magLogs}
+            data={mag}
             columns={magLogColumns}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddNew={handleAddNew}
-            resource="magLogs"
+            resource="mag"
           />
         }
       />

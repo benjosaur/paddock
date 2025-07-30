@@ -9,27 +9,38 @@ import {
   DbVolunteerFull,
   DbVolunteerMetadata,
   DbVolunteerEntity,
-  DbVolunteerTrainingRecordEntity,
 } from "./schema";
-import { VolunteerLogService } from "../vlog/service";
 import { TrainingRecordService } from "../training/service";
-import { VolunteerLogRepository } from "../vlog/repository";
 import { TrainingRecordRepository } from "../training/repository";
-import { DbVolunteerLogVolunteer } from "../vlog/schema";
+import { DbTrainingRecord } from "../training/schema";
+import { DbPackage } from "../package/schema";
+import { PackageService } from "../package/service";
+import { PackageRepository } from "../package/repository";
+import { RequestService } from "../requests/service";
+import { genericUpdate } from "../repository";
+import { addDbMiddleware } from "../service";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
-  volunteerLogService = new VolunteerLogService();
+  packageService = new PackageService();
+  requestService = new RequestService();
   trainingRecordService = new TrainingRecordService();
-  volunteerLogRepository = new VolunteerLogRepository();
+  packageRepository = new PackageRepository();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAll(user: User): Promise<VolunteerMetadata[]> {
+  async getAllNotArchived(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const volunteers = await this.volunteerRepository.getAll(user);
-      const transformedResult = this.transformDbVolunteertoSharedMetaData(
-        volunteers
-      ) as VolunteerMetadata[];
+      const dbVolunteers = await this.volunteerRepository.getAllNotArchived(
+        user
+      );
+      const dbTrainingRecords =
+        await this.trainingRecordRepository.getAllNotArchived(user);
+      const dbPackages = await this.packageRepository.getAllNotArchived(user);
+      const transformedResult = this.transformDbVolunteerToSharedMetaData([
+        ...dbVolunteers,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
       const parsedResult = volunteerMetadataSchema
         .array()
         .parse(transformedResult);
@@ -40,30 +51,56 @@ export class VolunteerService {
     }
   }
 
-  async getById(user: User, volunteerId: string): Promise<VolunteerFull> {
+  async getAll(user: User): Promise<VolunteerMetadata[]> {
+    try {
+      const dbVolunteers = await this.volunteerRepository.getAll(user);
+      const dbTrainingRecords = await this.trainingRecordRepository.getAll(
+        user
+      );
+      const dbPackages = await this.packageRepository.getAll(user);
+      const transformedResult = this.transformDbVolunteerToSharedMetaData([
+        ...dbVolunteers,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
+      console.log("VOLUNTEERS");
+      console.log(transformedResult);
+      const parsedResult = volunteerMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all volunteers:", error);
+      throw error;
+    }
+  }
+
+  async getById(volunteerId: string, user: User): Promise<VolunteerFull> {
     try {
       const volunteer = await this.volunteerRepository.getById(
-        user,
-        volunteerId
+        volunteerId,
+        user
       );
-      const volunteerLogIds = volunteer
-        .filter((dbResult) => dbResult.entityType == "volunteerLog")
-        .map((volunteerLog) => volunteerLog.sK);
-      const volunteerLogs = await Promise.all(
-        volunteerLogIds.map(
-          async (volunteerLogId) =>
-            await this.volunteerLogService.getById(user, volunteerLogId)
+      const requestIds = volunteer
+        .filter((dbResult): dbResult is DbPackage =>
+          dbResult.sK.startsWith("pkg")
+        )
+        .map((pkg) => pkg.requestId);
+      const requests = await Promise.all(
+        requestIds.map(
+          async (requestId) =>
+            await this.requestService.getById(requestId, user)
         )
       );
       const volunteerMetadata =
-        this.transformDbVolunteertoSharedMetaData(volunteer);
-      const volunteerFull: VolunteerFull[] = [
-        { ...volunteerMetadata[0], volunteerLogs },
+        this.transformDbVolunteerToSharedMetaData(volunteer);
+      const fullVolunteer: VolunteerFull[] = [
+        { ...volunteerMetadata[0], requests },
       ];
-      const parsedResult = volunteerFullSchema.array().parse(volunteerFull);
+      const parsedResult = volunteerFullSchema.array().parse(fullVolunteer);
       return parsedResult[0];
     } catch (error) {
-      console.error("Service Layer Error getting volunteer by ID:", error);
+      console.error("Service Layer Error getting Volunteer by ID:", error);
       throw error;
     }
   }
@@ -71,73 +108,50 @@ export class VolunteerService {
   async create(
     newVolunteer: Omit<VolunteerMetadata, "id">,
     user: User
-  ): Promise<VolunteerFull> {
+  ): Promise<string> {
+    // not for packages
     try {
-      const validatedInput = volunteerFullSchema
+      const validatedInput = volunteerMetadataSchema
         .omit({ id: true })
         .parse(newVolunteer);
 
-      const volunteerToCreate: Omit<DbVolunteerEntity, "id" | "pK" | "sK"> = {
-        ...validatedInput,
-        entityType: "volunteer",
-        entityOwner: "volunteer",
-      };
+      const volunteerToCreate: Omit<DbVolunteerEntity, "pK" | "sK"> =
+        addDbMiddleware(
+          {
+            ...validatedInput,
+            entityType: "volunteer",
+          },
+          user
+        );
       const createdVolunteerId = await this.volunteerRepository.create(
         volunteerToCreate,
         user
       );
-
-      const fetchedVolunteer = await this.getById(user, createdVolunteerId);
-      if (!fetchedVolunteer) {
-        throw new Error("Failed to fetch created volunteer");
-      }
-
-      const { id, ...restFetched } = fetchedVolunteer;
-
-      if (JSON.stringify(validatedInput) !== JSON.stringify(restFetched)) {
-        throw new Error("Created volunteer does not match expected values");
-      }
-
-      return fetchedVolunteer;
+      return createdVolunteerId;
     } catch (error) {
-      console.error("Service Layer Error creating volunteer:", error);
+      console.error("Service Layer Error creating MP:", error);
       throw error;
     }
   }
 
-  async update(
-    updatedVolunteer: VolunteerMetadata,
-    user: User
-  ): Promise<VolunteerFull> {
+  async update(updatedVolunteer: VolunteerMetadata, user: User): Promise<void> {
+    // also not for packages
+    // NB Not for name updates as otherwise need to update associated logs::details and record::details
     try {
       const validatedInput = volunteerMetadataSchema.parse(updatedVolunteer);
-
-      const dbVolunteer: DbVolunteerEntity = {
-        pK: validatedInput.id,
-        sK: validatedInput.id,
-        entityType: "volunteer",
-        entityOwner: "volunteer",
-        dateOfBirth: validatedInput.dateOfBirth,
-        postCode: validatedInput.postCode,
-        recordName: validatedInput.recordName,
-        recordExpiry: validatedInput.recordExpiry,
-        details: validatedInput.details,
-      };
-
+      const { id, ...rest } = validatedInput;
+      const dbVolunteer: DbVolunteerEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "volunteer",
+          ...rest,
+        },
+        user
+      );
       await this.volunteerRepository.update(dbVolunteer, user);
-      const fetchedVolunteer = await this.getById(user, validatedInput.id);
-
-      // below will throw error on name update. input name will be diff to updated training record name. as fetch will occur at same time as record name update.
-      // if (
-      //   JSON.stringify(validatedInput) !==
-      //   JSON.stringify(volunteerMetadataSchema.parse(fetchedVolunteer))
-      // ) {
-      //   throw new Error("Updated volunteer does not match expected values");
-      // }
-
-      return fetchedVolunteer;
     } catch (error) {
-      console.error("Service Layer Error updating volunteer:", error);
+      console.error("Service Layer Error updating MP:", error);
       throw error;
     }
   }
@@ -146,47 +160,17 @@ export class VolunteerService {
     volunteerId: string,
     newName: string,
     user: User
-  ): Promise<VolunteerFull> {
+  ): Promise<void> {
     try {
-      const initialVolunteer = await this.getById(user, volunteerId);
-
-      const updatedVolunteer = {
-        ...initialVolunteer,
-        details: { ...initialVolunteer.details, name: newName },
-      };
-      const updatedVolunteerTrainingRecords: DbVolunteerTrainingRecordEntity[] =
-        initialVolunteer.trainingRecords.map((record) => ({
-          pK: volunteerId,
-          sK: record.id,
-          recordExpiry: record.recordExpiry,
-          recordName: record.recordName,
-          details: { ...record.details, name: newName },
-          entityOwner: "volunteer",
-          entityType: "trainingRecord",
-        }));
-      const updatedVolunteerLogVolunteers: DbVolunteerLogVolunteer[] =
-        initialVolunteer.volunteerLogs.map((log) => ({
-          pK: volunteerId,
-          sK: log.id,
-          postCode: initialVolunteer.postCode,
-          date: log.date,
-          details: { ...log.details, name: newName },
-          entityOwner: "volunteer",
-          entityType: "volunteerLog",
-        }));
-      await Promise.all([
-        this.update(updatedVolunteer, user),
-        ...updatedVolunteerTrainingRecords.map((record) =>
-          this.trainingRecordRepository.update(record, user)
-        ),
-        ...updatedVolunteerLogVolunteers.map((log) =>
-          this.volunteerLogRepository.update([log], user)
-        ),
-      ]);
-
-      const fetchedVolunteer = this.getById(user, volunteerId);
-
-      return fetchedVolunteer;
+      const initialVolunteerRecords = await this.volunteerRepository.getById(
+        volunteerId,
+        user
+      );
+      const updatedVolunteerRecords = initialVolunteerRecords.map((record) => ({
+        ...record,
+        details: { ...record.details, name: newName },
+      }));
+      await genericUpdate(updatedVolunteerRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Volunteer Name:", error);
       throw error;
@@ -196,22 +180,43 @@ export class VolunteerService {
   async delete(user: User, volunteerId: string): Promise<number[]> {
     try {
       const deletedCount = await this.volunteerRepository.delete(
-        user,
-        volunteerId
+        volunteerId,
+        user
       );
       return deletedCount;
     } catch (error) {
-      console.error("Service Layer Error deleting volunteer:", error);
+      console.error("Service Layer Error deleting MP:", error);
       throw error;
     }
   }
 
-  private transformDbVolunteertoSharedMetaData(
+  async toggleArchive(volunteerId: string, user: User): Promise<void> {
+    try {
+      const volunteerRecords = await this.volunteerRepository.getById(
+        volunteerId,
+        user
+      );
+
+      const updatedVolunteerRecords = volunteerRecords.map((record) => ({
+        ...record,
+        archived: record.archived === "Y" ? "N" : "Y",
+      }));
+
+      await genericUpdate(updatedVolunteerRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error toggling volunteer archive:", error);
+      throw error;
+    }
+  }
+
+  private transformDbVolunteerToSharedMetaData(
     items: DbVolunteerMetadata[] | DbVolunteerFull[]
   ): VolunteerMetadata[] {
-    const volunteersMap = new Map<string, Partial<VolunteerFull>>();
+    const volunteersMap = new Map<string, Partial<VolunteerMetadata>>();
 
     for (const item of items) {
+      if (item.pK.startsWith("m")) continue;
+      // this is an volunteer tr/pkg which we do not want to consider
       const volunteerId = item.pK;
 
       if (!volunteersMap.has(volunteerId)) {
@@ -221,30 +226,38 @@ export class VolunteerService {
       }
 
       const volunteer = volunteersMap.get(volunteerId)!;
-
-      switch (item.entityType) {
-        case "volunteer":
-          volunteer.dateOfBirth = item.dateOfBirth;
-          volunteer.postCode = item.postCode;
-          volunteer.details = item.details;
-          volunteer.recordName = item.recordName;
-          volunteer.recordExpiry = item.recordExpiry;
-          break;
-        case "trainingRecord":
-          if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
-          volunteer.trainingRecords.push({
-            id: item.sK,
-            ownerId: item.pK,
-            recordName: item.recordName,
-            recordExpiry: item.recordExpiry,
-            details: item.details,
-          });
-          break;
-        case "volunteerLog":
-          break;
-        default:
-          throw new Error(`Undefined Case: ${item}`);
-      }
+      if (item.sK.startsWith("v")) {
+        const { pK, sK, entityType, ...rest } = item as DbVolunteerEntity;
+        const fetchedVolunteer: Omit<
+          VolunteerMetadata,
+          "packages" | "trainingRecords"
+        > = {
+          id: pK,
+          ...rest,
+        };
+        Object.assign(volunteer, fetchedVolunteer);
+        continue;
+      } else if (item.sK.startsWith("tr")) {
+        if (!volunteer.trainingRecords) volunteer.trainingRecords = [];
+        const { pK, sK, entityType, ...rest } = item as DbTrainingRecord;
+        volunteer.trainingRecords.push({
+          id: sK,
+          ownerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("pkg")) {
+        if (!volunteer.packages) volunteer.packages = [];
+        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        volunteer.packages.push({
+          id: sK,
+          carerId: pK,
+          ...rest,
+        });
+        continue;
+      } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else throw new Error(`Undefined Case: ${item}`);
     }
 
     return Array.from(volunteersMap.values()) as VolunteerMetadata[];
