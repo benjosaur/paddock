@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import type { ClientFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { useQuery } from "@tanstack/react-query";
+import { NotesEditor } from "./NotesEditor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ClientDetailModalProps {
   clientId: string;
@@ -29,10 +31,44 @@ export function ClientDetailModal({
   onEdit,
   onDelete,
 }: ClientDetailModalProps) {
+  const queryClient = useQueryClient();
   const clientQuery = useQuery(
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const client = clientQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+
+  // Update local notes when client data changes
+  useEffect(() => {
+    if (client?.details.notes) {
+      setCurrentNotes(client.details.notes);
+    }
+  }, [client?.details.notes]);
+
+  const updateClientMutation = useMutation(
+    trpc.clients.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.clients.getById.queryKey({ id: clientId }) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.clients.getAll.queryKey() 
+        });
+      },
+    })
+  );
+
+  const handleNotesSubmit = () => {
+    if (client) {
+      updateClientMutation.mutate({
+        ...client,
+        details: {
+          ...client.details,
+          notes: currentNotes,
+        },
+      });
+    }
+  };
 
   const magLogModalColumns: TableColumn<ClientFull["magLogs"][number]>[] = [
     {
@@ -147,11 +183,12 @@ export function ClientDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="services">Services & Needs</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="requests">New Requests</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -269,6 +306,27 @@ export function ClientDetailModal({
                   No new requests found for this client.
                 </p>
               )}
+            </TabsContent>
+
+            <TabsContent
+              value="notes"
+              className="p-4 border rounded-lg bg-white/80 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+                <Button
+                  onClick={handleNotesSubmit}
+                  disabled={updateClientMutation.isPending}
+                  size="sm"
+                  className="ml-auto"
+                >
+                  {updateClientMutation.isPending ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <NotesEditor
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

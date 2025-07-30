@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import type { VolunteerFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { useQuery } from "@tanstack/react-query";
+import { NotesEditor } from "./NotesEditor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -29,10 +31,44 @@ export function VolunteerDetailModal({
   onEdit,
   onDelete,
 }: VolunteerDetailModalProps) {
+  const queryClient = useQueryClient();
   const volunteerQuery = useQuery(
     trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
   const volunteer = volunteerQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+
+  // Update local notes when volunteer data changes
+  useEffect(() => {
+    if (volunteer?.details.notes) {
+      setCurrentNotes(volunteer.details.notes);
+    }
+  }, [volunteer?.details.notes]);
+
+  const updateVolunteerMutation = useMutation(
+    trpc.volunteers.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.volunteers.getAll.queryKey() 
+        });
+      },
+    })
+  );
+
+  const handleNotesSubmit = () => {
+    if (volunteer) {
+      updateVolunteerMutation.mutate({
+        ...volunteer,
+        details: {
+          ...volunteer.details,
+          notes: currentNotes,
+        },
+      });
+    }
+  };
 
   const packageModalColumns: TableColumn<
     VolunteerFull["requests"][number]["packages"][number]
@@ -141,11 +177,12 @@ export function VolunteerDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="offerings">Offerings</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -223,6 +260,27 @@ export function VolunteerDetailModal({
                   No packages found for this volunteer.
                 </p>
               )}
+            </TabsContent>
+
+            <TabsContent
+              value="notes"
+              className="p-4 border rounded-lg bg-white/80 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+                <Button
+                  onClick={handleNotesSubmit}
+                  disabled={updateVolunteerMutation.isPending}
+                  size="sm"
+                  className="ml-auto"
+                >
+                  {updateVolunteerMutation.isPending ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <NotesEditor
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

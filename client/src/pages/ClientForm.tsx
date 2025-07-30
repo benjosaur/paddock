@@ -283,7 +283,7 @@ export function ClientForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code
+                  Post Code *
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -293,6 +293,7 @@ export function ClientForm() {
                     onChange={handleInputChange}
                     disabled={isEditing}
                     className="flex-1"
+                    required
                   />
                   {isEditing && !clientQuery.isLoading && clientQuery.data && (
                     <FieldEditModal

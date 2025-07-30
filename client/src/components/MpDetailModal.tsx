@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import type { MpFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { useQuery } from "@tanstack/react-query";
+import { NotesEditor } from "./NotesEditor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -29,8 +31,42 @@ export function MpDetailModal({
   onEdit,
   onDelete,
 }: MpDetailModalProps) {
+  const queryClient = useQueryClient();
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+
+  // Update local notes when mp data changes
+  useEffect(() => {
+    if (mp?.details.notes) {
+      setCurrentNotes(mp.details.notes);
+    }
+  }, [mp?.details.notes]);
+
+  const updateMpMutation = useMutation(
+    trpc.mps.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.mps.getById.queryKey({ id: mpId }) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: trpc.mps.getAll.queryKey() 
+        });
+      },
+    })
+  );
+
+  const handleNotesSubmit = () => {
+    if (mp) {
+      updateMpMutation.mutate({
+        ...mp,
+        details: {
+          ...mp.details,
+          notes: currentNotes,
+        },
+      });
+    }
+  };
 
   const packageModalColumns: TableColumn<
     MpFull["requests"][number]["packages"][number]
@@ -139,11 +175,12 @@ export function MpDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="offerings">Offerings</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -221,6 +258,27 @@ export function MpDetailModal({
                   No packages found for this MP.
                 </p>
               )}
+            </TabsContent>
+
+            <TabsContent
+              value="notes"
+              className="p-4 border rounded-lg bg-white/80 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+                <Button
+                  onClick={handleNotesSubmit}
+                  disabled={updateMpMutation.isPending}
+                  size="sm"
+                  className="ml-auto"
+                >
+                  {updateMpMutation.isPending ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <NotesEditor
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>
