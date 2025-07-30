@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   attendanceAllowanceStatus,
   booleanTypes,
+  localities,
   requestStatus,
   requestTypes,
   serviceOptions,
@@ -26,7 +27,7 @@ export const viewConfigSchema = z.object({
 
 const addressSchema = z.object({
   streetAddress: z.string().default(""),
-  locality: z.string(),
+  locality: z.enum(localities).default("Wiveliscombe"),
   county: z.string().default("Somerset"),
   postCode: z.string(),
 });
@@ -44,7 +45,7 @@ export const packageSchema = z.object({
     weeklyHours: z.number().default(1),
     address: addressSchema,
     notes: z.string().default(""),
-    services: z.array(z.string()).default([]),
+    services: z.array(z.enum(serviceOptions)).default([]),
   }),
 });
 
@@ -61,7 +62,7 @@ export const requestMetadataSchema = z.object({
     weeklyHours: z.number().default(1),
     address: addressSchema,
     status: z.enum(requestStatus).default("pending"),
-    services: z.array(z.string()).default([]),
+    services: z.array(z.enum(serviceOptions)).default([]),
     notes: z.string().default(""),
   }),
 });
@@ -112,7 +113,7 @@ const basePersonDetails = z.object({
   phone: z.string().default(""),
   email: z.string().default(""),
   nextOfKin: z.string().default(""),
-  services: z.array(z.string()).default([]),
+  services: z.array(z.enum(serviceOptions)).default([]),
   attendsMag: z.boolean().default(false),
   notes: z
     .array(z.object({ date: z.string().date(), note: z.string() }))

@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Select, { MultiValue } from "react-select";
+import { MultiValue } from "react-select";
+import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import { requestStatus, requestTypes, serviceOptions } from "shared/const";
+import { requestStatus, requestTypes, serviceOptions, localities } from "shared/const";
 
 export function RequestForm() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export function RequestForm() {
       weeklyHours: 0,
       address: {
         streetAddress: "",
-        locality: "",
+        locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
       },
@@ -208,8 +209,6 @@ export function RequestForm() {
                   }
                   onChange={handleSelectClientChange}
                   placeholder="Select a client..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   isLoading={clientsQuery.isLoading}
                   required
@@ -235,8 +234,6 @@ export function RequestForm() {
                     handleSelectChange("requestType", selectedOption)
                   }
                   placeholder="Select request type..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   required
                 />
               </div>
@@ -303,8 +300,6 @@ export function RequestForm() {
                     handleMultiSelectChange("details.services", newValues)
                   }
                   placeholder="Search and select services..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   isMulti
                   noOptionsMessage={() => "No services found"}
@@ -349,8 +344,6 @@ export function RequestForm() {
                     handleSelectChange("details.status", selectedOption)
                   }
                   placeholder="Select status..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   required
                 />
               </div>
@@ -383,11 +376,24 @@ export function RequestForm() {
                 >
                   Locality *
                 </label>
-                <Input
+                <Select
                   id="locality"
-                  name="details.address.locality"
-                  value={formData.details.address.locality || ""}
-                  onChange={handleInputChange}
+                  value={
+                    formData.details.address.locality
+                      ? {
+                          label: formData.details.address.locality,
+                          value: formData.details.address.locality,
+                        }
+                      : null
+                  }
+                  options={localities.map((locality) => ({
+                    label: locality,
+                    value: locality,
+                  }))}
+                  onChange={(selectedOption) =>
+                    handleSelectChange("details.address.locality", selectedOption)
+                  }
+                  placeholder="Select locality..."
                   required
                 />
               </div>

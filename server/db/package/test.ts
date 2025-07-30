@@ -14,13 +14,13 @@ const samplePackage: Omit<Package, "id"> = {
     name: "John Smith",
     address: {
       streetAddress: "61626 Schmidt Divide",
-      locality: "Bishops Lydeard",
+      locality: "Bathealton",
       county: "Somerset",
       postCode: "TA4 2PJ",
     },
     weeklyHours: 10,
     notes: "Weekly support visits including shopping and companionship",
-    services: ["companionship", "shopping", "transport"],
+    services: ["Attendance Allowance"],
   },
 };
 
@@ -49,14 +49,14 @@ export async function testPackageService() {
         name: "John Smith",
         address: {
           streetAddress: "61626 Schmidt Divide",
-          locality: "Bishops Lydeard",
+          locality: "Bathealton",
           county: "Somerset",
           postCode: "TA4 2PJ",
         },
         weeklyHours: 15,
         notes:
           "Extended weekly support visits including shopping, companionship, and medical appointments",
-        services: ["companionship", "shopping", "transport", "medical-support"],
+        services: ["Companionship"],
       },
     };
     await packageService.update(updatedPackageData, sampleUser);

@@ -7,8 +7,9 @@ import type { VolunteerFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
-import Select, { MultiValue } from "react-select";
-import { serviceOptions } from "shared/const";
+import { MultiValue } from "react-select";
+import { Select } from "../components/ui/select";
+import { serviceOptions, localities } from "shared/const";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export function VolunteerForm() {
       name: "",
       address: {
         streetAddress: "",
-        locality: "",
+        locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
       },
@@ -112,6 +113,17 @@ export function VolunteerForm() {
   ) => {
     const selectedValues = newValues.map((option) => option.value);
     setFormData((prev) => updateNestedValue(field, selectedValues, prev));
+  };
+
+  const handleSelectChange = (
+    field: string,
+    newValue: {
+      label: string;
+      value: string;
+    } | null
+  ) => {
+    if (!newValue) return null;
+    setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
@@ -229,11 +241,27 @@ export function VolunteerForm() {
                 >
                   Locality *
                 </label>
-                <Input
+                <Select
                   id="locality"
-                  name="details.address.locality"
-                  value={formData.details.address.locality || ""}
-                  onChange={handleInputChange}
+                  value={
+                    formData.details.address.locality
+                      ? {
+                          label: formData.details.address.locality,
+                          value: formData.details.address.locality,
+                        }
+                      : null
+                  }
+                  options={localities.map((locality) => ({
+                    label: locality,
+                    value: locality,
+                  }))}
+                  onChange={(selectedOption) =>
+                    handleSelectChange(
+                      "details.address.locality",
+                      selectedOption
+                    )
+                  }
+                  placeholder="Select locality..."
                   required
                 />
               </div>
@@ -372,8 +400,6 @@ export function VolunteerForm() {
                     handleMultiSelectChange("details.services", newValues)
                   }
                   placeholder="Search and select services..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   isMulti
                   noOptionsMessage={() => "No services found"}

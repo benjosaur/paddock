@@ -11,14 +11,14 @@ const sampleClient: Omit<ClientFull, "id"> = {
     name: "John Doe",
     address: {
       streetAddress: "61626 Schmidt Divide",
-      locality: "Bishops Lydeard",
+      locality: "Wiveliscombe",
       county: "Somerset",
       postCode: "TA4 2PJ",
     },
     phone: "07123456789",
     email: "john.doe@example.com",
     nextOfKin: "Jane Doe (Spouse) - 07987654321",
-    services: ["Home visits", "Telephone support"],
+    services: ["Domestic"],
     notes: [
       {
         date: "2024-01-01",

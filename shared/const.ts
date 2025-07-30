@@ -58,4 +58,4 @@ export const localities = [
   "Milverton",
   "Stawley",
   "Other",
-];
+] as const;

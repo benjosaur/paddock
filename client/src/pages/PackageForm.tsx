@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import Select, { SingleValue, MultiValue } from "react-select";
+import { SingleValue, MultiValue } from "react-select";
+import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { Package, MpMetadata, RequestMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
-import { serviceOptions } from "shared/const";
+import { serviceOptions, localities } from "shared/const";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export function PackageForm() {
       weeklyHours: 0,
       address: {
         streetAddress: "",
-        locality: "",
+        locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
       },
@@ -213,8 +214,6 @@ export function PackageForm() {
                     handleSelectChange("requestId", selectedOption)
                   }
                   placeholder="Select a request..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   noOptionsMessage={() => "No requests found"}
                   isClearable
@@ -239,8 +238,6 @@ export function PackageForm() {
                     handleSelectChange("carerId", selectedOption)
                   }
                   placeholder="Select a carer/MP..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   noOptionsMessage={() => "No carers/MPs found"}
                   isClearable
@@ -325,11 +322,24 @@ export function PackageForm() {
                     value={formData.details.address.streetAddress || ""}
                     onChange={handleInputChange}
                   />
-                  <Input
-                    name="details.address.locality"
-                    placeholder="Town/City *"
-                    value={formData.details.address.locality || ""}
-                    onChange={handleInputChange}
+                  <Select
+                    id="locality"
+                    value={
+                      formData.details.address.locality
+                        ? {
+                            label: formData.details.address.locality,
+                            value: formData.details.address.locality,
+                          }
+                        : null
+                    }
+                    options={localities.map((locality) => ({
+                      label: locality,
+                      value: locality,
+                    }))}
+                    onChange={(selectedOption) =>
+                      handleSelectChange("details.address.locality", selectedOption)
+                    }
+                    placeholder="Select locality..."
                     required
                   />
                   <Input
@@ -366,8 +376,6 @@ export function PackageForm() {
                     handleMultiSelectChange("details.services", newValues)
                   }
                   placeholder="Search and select services..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   isMulti
                   noOptionsMessage={() => "No services found"}

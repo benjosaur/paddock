@@ -6,8 +6,9 @@ import { trpc } from "../utils/trpc";
 import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import Select, { MultiValue } from "react-select";
-import { attendanceAllowanceStatus, serviceOptions } from "shared/const";
+import { MultiValue } from "react-select";
+import { Select } from "../components/ui/select";
+import { attendanceAllowanceStatus, serviceOptions, localities } from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {
@@ -22,7 +23,7 @@ export function ClientForm() {
       name: "",
       address: {
         streetAddress: "",
-        locality: "",
+        locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
       },
@@ -243,11 +244,27 @@ export function ClientForm() {
                 >
                   Locality *
                 </label>
-                <Input
+                <Select
                   id="locality"
-                  name="details.address.locality"
-                  value={formData.details.address.locality || ""}
-                  onChange={handleInputChange}
+                  value={
+                    formData.details.address.locality
+                      ? {
+                          label: formData.details.address.locality,
+                          value: formData.details.address.locality,
+                        }
+                      : null
+                  }
+                  options={localities.map((locality) => ({
+                    label: locality,
+                    value: locality,
+                  }))}
+                  onChange={(selectedOption) =>
+                    handleSelectChange(
+                      "details.address.locality",
+                      selectedOption
+                    )
+                  }
+                  placeholder="Select locality..."
                   required
                 />
               </div>{" "}
@@ -423,8 +440,6 @@ export function ClientForm() {
                     handleMultiSelectChange("details.services", newValues)
                   }
                   placeholder="Search and select services..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   isSearchable
                   isMulti
                   noOptionsMessage={() => "No services found"}
@@ -452,8 +467,6 @@ export function ClientForm() {
                     )
                   }
                   placeholder="Select request type..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
                   required
                 />
               </div>

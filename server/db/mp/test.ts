@@ -14,7 +14,7 @@ const sampleMp: Omit<MpMetadata, "id"> = {
     name: "John Smith",
     address: {
       streetAddress: "House of Commons",
-      locality: "Westminster",
+      locality: "Ashbrittle",
       county: "London",
       postCode: "SW1A 1AA",
     },

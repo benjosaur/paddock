@@ -14,14 +14,14 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
     name: "Sarah Johnson",
     address: {
       streetAddress: "123 Volunteer Street",
-      locality: "London",
+      locality: "Wiveliscombe",
       county: "Greater London",
       postCode: "E1 6AN",
     },
     email: "sarah.johnson@email.com",
     phone: "020 7946 0958",
     nextOfKin: "Michael Johnson",
-    services: ["Food Bank", "Community Support"],
+    services: ["Attendance Allowance"],
     attendsMag: false,
     notes: [
       {

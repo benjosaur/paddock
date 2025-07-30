@@ -15,7 +15,7 @@ const sampleMagLog: Omit<MagLog, "id"> = {
         name: "John Smith",
         address: {
           streetAddress: "61626 Schmidt Divide",
-          locality: "Bishops Lydeard",
+          locality: "Wiveliscombe",
           county: "Somerset",
           postCode: "TA4 2PJ",
         },
@@ -28,7 +28,7 @@ const sampleMagLog: Omit<MagLog, "id"> = {
         name: "Jane Doe",
         address: {
           streetAddress: "123 Main St",
-          locality: "London",
+          locality: "Brompton Ralph",
           county: "Greater London",
           postCode: "E1 6AN",
         },
