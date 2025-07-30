@@ -37,7 +37,7 @@ export const packageSchema = z.object({
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
-    weeklyHours: z.number(),
+    weeklyHours: z.number().default(1),
     address: addressSchema,
     notes: z.string().default(""),
     services: z.array(z.string()).default([]),
@@ -52,7 +52,7 @@ export const requestMetadataSchema = z.object({
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
-    weeklyHours: z.number().default(0),
+    weeklyHours: z.number().default(1),
     address: addressSchema,
     status: z.enum(requestStatus).default("pending"),
     services: z.array(z.string()).default([]),
@@ -143,7 +143,6 @@ export const mpMetadataSchema = z.object({
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     specialisms: z.array(z.string()).default([]),
-    transport: z.boolean().default(false),
     capacity: z.string().default(""),
   }),
   packages: z.array(packageSchema).default([]),

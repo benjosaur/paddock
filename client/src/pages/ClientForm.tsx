@@ -6,8 +6,8 @@ import { trpc } from "../utils/trpc";
 import { ClientFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import Select from "react-select";
-import { attendanceAllowanceStatus } from "shared/const";
+import Select, { MultiValue } from "react-select";
+import { attendanceAllowanceStatus, serviceOptions } from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {
@@ -110,10 +110,15 @@ export function ClientForm() {
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as "details.services";
-    let value = e.target.value.split(",");
-    setFormData((prev) => updateNestedValue(field, value, prev));
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedValues = newValues.map((option) => option.value);
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
   const handleSelectChange = (
@@ -164,6 +169,11 @@ export function ClientForm() {
       label: capitalise(option),
     })
   );
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -420,15 +430,28 @@ export function ClientForm() {
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Requested (comma-separated)
+                  Services Requested
                 </label>
-                <Input
-                  id="services"
-                  name="details.services"
-                  value={formData.details.services?.join(", ") || ""}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Home Care, Meal Preparation"
-                />{" "}
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.details.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("details.services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by service name to add requested services
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

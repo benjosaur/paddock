@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Select from "react-select";
+import Select, { MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import { requestStatus, requestTypes } from "shared/const";
+import { requestStatus, requestTypes, serviceOptions } from "shared/const";
 
 export function RequestForm() {
   const navigate = useNavigate();
@@ -82,11 +82,34 @@ export function RequestForm() {
     label: capitalise(option),
   }));
 
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
+
   useEffect(() => {
     if (isEditing && request) {
       setFormData(request);
     }
   }, [isEditing, request]);
+
+  // Auto-populate services when client is selected (only for new requests)
+  useEffect(() => {
+    if (!isEditing && formData.clientId) {
+      const selectedClient = clients.find(
+        (client) => client.id === formData.clientId
+      );
+      if (selectedClient?.details.services) {
+        setFormData((prev) => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            services: selectedClient.details.services,
+          },
+        }));
+      }
+    }
+  }, [formData.clientId, clients, isEditing]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -123,6 +146,17 @@ export function RequestForm() {
   ) => {
     if (!newValue) return null;
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedValues = newValues.map((option) => option.value);
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
   const handleCancel = () => {
@@ -252,6 +286,36 @@ export function RequestForm() {
 
               <div>
                 <label
+                  htmlFor="services"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Services Required
+                </label>
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.details.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("details.services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Services automatically populated from selected client. Modify
+                  as needed.
+                </p>
+              </div>
+
+              <div>
+                <label
                   htmlFor="notes"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -316,13 +380,14 @@ export function RequestForm() {
                   htmlFor="locality"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Locality
+                  Locality *
                 </label>
                 <Input
                   id="locality"
                   name="details.address.locality"
                   value={formData.details.address.locality || ""}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import Select, { SingleValue } from "react-select";
+import Select, { SingleValue, MultiValue } from "react-select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { Package, MpMetadata, RequestMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { serviceOptions } from "shared/const";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -71,9 +72,9 @@ export function PackageForm() {
     }
   }, [packageQuery.data]);
 
-  // Auto-populate package details when request is selected
+  // Auto-populate package details when request is selected (only for new packages)
   useEffect(() => {
-    if (formData.requestId && requestsQuery.data) {
+    if (!isEditing && formData.requestId && requestsQuery.data) {
       const selectedRequest = requestsQuery.data.find(
         (request: RequestMetadata) => request.id === formData.requestId
       );
@@ -84,11 +85,12 @@ export function PackageForm() {
             ...prev.details,
             name: `${selectedRequest.details.name}`,
             address: selectedRequest.details.address,
+            services: selectedRequest.details.services || [],
           },
         }));
       }
     }
-  }, [formData.requestId, requestsQuery.data]);
+  }, [formData.requestId, requestsQuery.data, isEditing]);
 
   const mpOptions = (mpsQuery.data || [])
     .filter((mp: MpMetadata) => mp.id && mp.details?.name)
@@ -103,6 +105,11 @@ export function PackageForm() {
       value: request.id,
       label: `${request.details.name} - ${request.requestType}`,
     }));
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -132,6 +139,17 @@ export function PackageForm() {
       .map((s) => s.trim())
       .filter(Boolean);
     setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedValues = newValues.map((option) => option.value);
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -308,9 +326,6 @@ export function PackageForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Service Address
                 </label>
-                <small className="text-gray-500 block mb-2">
-                  Auto-filled from selected request (you can modify if needed)
-                </small>
                 <div className="space-y-2">
                   <Input
                     name="details.address.streetAddress"
@@ -346,14 +361,24 @@ export function PackageForm() {
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services (comma-separated)
+                  Services
                 </label>
-                <Input
-                  id="services"
-                  name="details.services"
-                  value={formData.details.services.join(", ")}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., companionship, shopping, transport"
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.details.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("details.services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
                 />
               </div>
 

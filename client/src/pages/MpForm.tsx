@@ -7,6 +7,8 @@ import type { MpFull } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
+import Select, { MultiValue } from "react-select";
+import { serviceOptions } from "shared/const";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -31,7 +33,6 @@ export function MpForm() {
       nextOfKin: "",
       services: [],
       specialisms: [],
-      transport: false,
       capacity: "",
       attendsMag: false,
       notes: [],
@@ -101,6 +102,17 @@ export function MpForm() {
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedValues = newValues.map((option) => option.value);
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
+  };
+
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
 
@@ -125,6 +137,11 @@ export function MpForm() {
   const handleCancel = () => {
     navigate("/mps");
   };
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   if (isEditing && mpQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && mpQuery.error) return <div>Error loading MP</div>;
@@ -340,15 +357,28 @@ export function MpForm() {
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Services Offered (comma-separated)
+                  Services Offered
                 </label>
-                <Input
-                  id="services"
-                  name="details.services"
-                  value={formData.details.services.join(",")}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Personal Care, Domestic Support"
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.details.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("details.services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by service name to add offered services
+                </p>
               </div>
 
               <div>
@@ -365,27 +395,6 @@ export function MpForm() {
                   onChange={handleCSVInputChange}
                   placeholder="e.g., Dementia Care, Mobility Support"
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="transport"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Transport
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    name="details.transport"
-                    type="checkbox"
-                    checked={formData.details.transport || false}
-                    onChange={handleInputChange}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Has Transport?
-                  </span>
-                </label>
               </div>
 
               <div>
@@ -422,7 +431,8 @@ export function MpForm() {
                           className="flex items-center justify-between bg-gray-50 p-2 rounded"
                         >
                           <span className="text-sm">
-                            {record.details.name} - Expires: {record.expiryDate}
+                            {record.details.recordName} - Expires:{" "}
+                            {record.expiryDate}
                           </span>
                         </div>
                       ))}

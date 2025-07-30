@@ -176,10 +176,6 @@ export function MpDetailModal({
               </h3>
               {renderDetailItem("Services", mp.details.services)}
               {renderDetailItem("Specialisms", mp.details.specialisms)}
-              {renderDetailItem(
-                "Transport",
-                mp.details.transport ? "Yes" : "No"
-              )}
               {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 

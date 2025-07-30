@@ -178,10 +178,6 @@ export function VolunteerDetailModal({
               </h3>
               {renderDetailItem("Services", volunteer.details.services)}
               {renderDetailItem("Specialisms", volunteer.details.specialisms)}
-              {renderDetailItem(
-                "Transport",
-                volunteer.details.transport ? "Yes" : "No"
-              )}
               {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 

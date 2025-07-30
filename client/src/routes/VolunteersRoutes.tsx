@@ -47,12 +47,6 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     header: "Capacity?",
     render: (item: VolunteerMetadata) => item.details.capacity,
   },
-  {
-    key: "transport",
-    header: "Transport?",
-    render: (item: VolunteerMetadata) =>
-      item.details.transport ? "Yes" : "No",
-  },
 ];
 
 export function VolunteersRoutes() {

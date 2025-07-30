@@ -83,7 +83,7 @@ export default function PublicLiabilityRoutes() {
               <TabsContent value="mps" className="mt-6">
                 <DataTable
                   key="mps-public-liability"
-                  title="MP Public Liability Records"
+                  title="MPs"
                   searchPlaceholder="Search MPs..."
                   data={mps}
                   columns={mpPublicLiabilityColumns}
@@ -94,7 +94,7 @@ export default function PublicLiabilityRoutes() {
               <TabsContent value="volunteers" className="mt-6">
                 <DataTable
                   key="volunteers-public-liability"
-                  title="Volunteer Public Liability Records"
+                  title="Volunteers"
                   searchPlaceholder="Search volunteers..."
                   data={volunteers}
                   columns={volunteerPublicLiabilityColumns}

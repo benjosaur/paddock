@@ -79,7 +79,7 @@ export default function DbsRoutes() {
               <TabsContent value="mps" className="mt-6">
                 <DataTable
                   key="mps-dbs"
-                  title="MP DBS Records"
+                  title="MPs"
                   searchPlaceholder="Search MPs..."
                   data={mps}
                   columns={mpDbsColumns}
@@ -90,7 +90,7 @@ export default function DbsRoutes() {
               <TabsContent value="volunteers" className="mt-6">
                 <DataTable
                   key="volunteers-dbs"
-                  title="Volunteer DBS Records"
+                  title="Volunteers"
                   searchPlaceholder="Search volunteers..."
                   data={volunteers}
                   columns={volunteerDbsColumns}

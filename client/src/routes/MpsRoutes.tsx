@@ -43,11 +43,6 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     header: "Capacity?",
     render: (item: MpMetadata) => item.details.capacity,
   },
-  {
-    key: "transport",
-    header: "Transport?",
-    render: (item: MpMetadata) => (item.details.transport ? "Yes" : "No"),
-  },
 ];
 
 export function MpsRoutes() {
