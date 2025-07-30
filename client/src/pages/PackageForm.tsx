@@ -132,15 +132,6 @@ export function PackageForm() {
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
-  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as "details.services";
-    let value = e.target.value
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    setFormData((prev) => updateNestedValue(field, value, prev));
-  };
-
   const handleMultiSelectChange = (
     field: string,
     newValues: MultiValue<{

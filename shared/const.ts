@@ -23,6 +23,7 @@ export const serviceOptions = [
   "Overnight",
   "Meal Prep",
   "Transport",
+  "Information",
   "Other",
 ] as const;
 export const trainingRecordTypes = [
@@ -47,3 +48,16 @@ export const wordMonths = [
   "Nov",
   "Dec",
 ] as const;
+export const localities = [
+  "Wiveliscombe",
+  "Ashbrittle",
+  "Bathealton",
+  "Brompton Ralph",
+  "Chipstable",
+  "Waterrow",
+  "Clatworthy",
+  "Huish",
+  "Milverton",
+  "Stawley",
+  "Other",
+];
