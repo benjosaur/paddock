@@ -31,38 +31,35 @@ export class Database extends Construct {
       billingMode: BillingMode.PAY_PER_REQUEST,
       removalPolicy: props.removalPolicy ?? RemovalPolicy.RETAIN,
       pointInTimeRecovery: true,
-      deletionProtection: false, // Set to true for production
+      deletionProtection: false, // change
     });
 
-    // GSI1: entityOwner (PK) + entityType (SK)
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI1",
       partitionKey: {
-        name: "entityOwner",
-        type: AttributeType.STRING,
-      },
-      sortKey: {
         name: "entityType",
         type: AttributeType.STRING,
       },
+      sortKey: {
+        name: "archived",
+        type: AttributeType.STRING,
+      },
       projectionType: ProjectionType.ALL,
     });
 
-    // GSI2: sK (PK) + pK (SK) - Inverted index
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI2",
       partitionKey: {
-        name: "sK",
+        name: "requestId",
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: "pK",
+        name: "sK",
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
     });
 
-    // GSI3: entityType (PK) + recordExpiry (SK)
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI3",
       partitionKey: {
@@ -70,13 +67,12 @@ export class Database extends Construct {
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: "recordExpiry",
+        name: "endDate",
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
     });
 
-    // GSI4: entityType (PK) + date (SK)
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI4",
       partitionKey: {
@@ -90,29 +86,14 @@ export class Database extends Construct {
       projectionType: ProjectionType.ALL,
     });
 
-    // GSI5: entityType (PK) + postCode (SK)
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI5",
       partitionKey: {
-        name: "entityType",
+        name: "sK",
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: "postCode",
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    // GSI6: entityType (PK) + entityOwner (SK)
-    this.table.addGlobalSecondaryIndex({
-      indexName: "GSI6",
-      partitionKey: {
-        name: "entityType",
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: "entityOwner",
+        name: "pK",
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
