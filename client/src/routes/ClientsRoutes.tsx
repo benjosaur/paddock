@@ -125,6 +125,11 @@ export default function ClientsRoutes() {
     setSelectedClientId(null);
   };
 
+  const handleAddRequest = (clientId: string) => {
+    const encodedId = encodeURIComponent(clientId);
+    navigate(`/requests/create?clientId=${encodedId}`);
+  };
+
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
 
@@ -143,6 +148,7 @@ export default function ClientsRoutes() {
               onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onAddRequest={handleAddRequest}
               onViewItem={handleViewClient}
               onCreate={handleAddNew}
               resource="clients"

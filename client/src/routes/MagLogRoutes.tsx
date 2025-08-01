@@ -19,13 +19,6 @@ const magLogColumns: TableColumn<MagLog>[] = [
       item.details.otherAttendees,
   },
   {
-    key: "attendees",
-    header: "Registered Attendees",
-    render: (item) =>
-      item.clients.map((client) => client.details.name).join(", "),
-  },
-
-  {
     key: "notes",
     header: "Notes",
     render: (item) => item.details.notes,

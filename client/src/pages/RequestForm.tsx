@@ -19,6 +19,7 @@ export function RequestForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || "";
+  const clientId = searchParams.get("clientId") || "";
 
   const isEditing = Boolean(id);
 
@@ -103,6 +104,24 @@ export function RequestForm() {
       setFormData(request);
     }
   }, [isEditing, request]);
+
+  // Set initial client from query parameter (only for new requests)
+  useEffect(() => {
+    if (!isEditing && clientId && clients.length > 0 && !formData.clientId) {
+      const selectedClient = clients.find((client) => client.id === clientId);
+      if (selectedClient) {
+        setFormData((prev) => ({
+          ...prev,
+          clientId: selectedClient.id,
+          details: {
+            ...prev.details,
+            name: selectedClient.details.name,
+            services: selectedClient.details.services || [],
+          },
+        }));
+      }
+    }
+  }, [clientId, clients, isEditing, formData.clientId]);
 
   // Auto-populate services when client is selected (only for new requests)
   useEffect(() => {

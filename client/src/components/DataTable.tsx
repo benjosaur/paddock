@@ -39,6 +39,7 @@ interface DataTableProps<T> {
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
   onAddPackage?: (id: string) => void;
+  onAddRequest?: (id: string) => void;
   onAddRecord?: (id: string) => void;
   onEditRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
@@ -58,6 +59,7 @@ export function DataTable<T extends { id: string }>({
   onArchive,
   onDelete,
   onAddPackage,
+  onAddRequest,
   onAddRecord,
   onEditRecord,
   onDeleteRecord,
@@ -195,6 +197,7 @@ export function DataTable<T extends { id: string }>({
                 onDelete ||
                 onRenew ||
                 onAddRecord ||
+                onAddRequest ||
                 onEditRecord) && (
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
@@ -219,6 +222,7 @@ export function DataTable<T extends { id: string }>({
                 onDelete ||
                 onRenew ||
                 onAddRecord ||
+                onAddRequest ||
                 onEditRecord) && <th className="px-6 py-2"></th>}
             </tr>
           </thead>
@@ -248,6 +252,7 @@ export function DataTable<T extends { id: string }>({
                   onDelete ||
                   onRenew ||
                   onAddRecord ||
+                  onAddRequest ||
                   onEditRecord) && (
                   <td
                     className={`px-6 py-4 text-right ${
@@ -266,6 +271,14 @@ export function DataTable<T extends { id: string }>({
                             >
                               <Plus className="mr-2 h-4 w-4" />
                               Package
+                            </DropdownMenuItem>
+                          )}
+                          {onAddRequest && (
+                            <DropdownMenuItem
+                              onClick={() => onAddRequest(item.id)}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Request
                             </DropdownMenuItem>
                           )}
                           {onAddRecord && (
