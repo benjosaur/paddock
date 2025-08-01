@@ -8,7 +8,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
-import { attendanceAllowanceStatus, serviceOptions, localities } from "shared/const";
+import {
+  attendanceAllowanceStatus,
+  serviceOptions,
+  localities,
+} from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
 
 export function ClientForm() {
@@ -296,6 +300,8 @@ export function ClientForm() {
                     value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
                     className="flex-1"
+                    // below if we have a trigger flag for postcode
+                    disabled={isEditing}
                     required
                   />
                 </div>

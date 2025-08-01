@@ -22,6 +22,7 @@ export const serviceOptions = [
   "Meal Prep",
   "Transport",
   "Information",
+  "MAG",
   "Other",
 ] as const;
 export const trainingRecordTypes = [
@@ -59,3 +60,4 @@ export const localities = [
   "Stawley",
   "Other",
 ] as const;
+export const DEPRIVATION_THRESHOLD_DECILE = 3;

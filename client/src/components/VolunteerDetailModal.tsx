@@ -36,7 +36,9 @@ export function VolunteerDetailModal({
     trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
   const volunteer = volunteerQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<
+    { date: string; note: string }[]
+  >([]);
 
   // Update local notes when volunteer data changes
   useEffect(() => {
@@ -48,11 +50,11 @@ export function VolunteerDetailModal({
   const updateVolunteerMutation = useMutation(
     trpc.volunteers.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.volunteers.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.volunteers.getAll.queryKey(),
         });
       },
     })
@@ -85,7 +87,7 @@ export function VolunteerDetailModal({
     },
     {
       key: "name",
-      header: "Package Name",
+      header: "Carer Name",
       render: (item) => item.details.name,
     },
     {
@@ -274,13 +276,12 @@ export function VolunteerDetailModal({
                   size="sm"
                   className="ml-auto"
                 >
-                  {updateVolunteerMutation.isPending ? "Saving..." : "Save Notes"}
+                  {updateVolunteerMutation.isPending
+                    ? "Saving..."
+                    : "Save Notes"}
                 </Button>
               </div>
-              <NotesEditor
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
+              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
             </TabsContent>
           </Tabs>
         </div>

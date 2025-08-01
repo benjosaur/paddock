@@ -34,7 +34,9 @@ export function MpDetailModal({
   const queryClient = useQueryClient();
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<
+    { date: string; note: string }[]
+  >([]);
 
   // Update local notes when mp data changes
   useEffect(() => {
@@ -46,11 +48,11 @@ export function MpDetailModal({
   const updateMpMutation = useMutation(
     trpc.mps.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.mps.getById.queryKey({ id: mpId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.mps.getById.queryKey({ id: mpId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.mps.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.mps.getAll.queryKey(),
         });
       },
     })
@@ -83,7 +85,7 @@ export function MpDetailModal({
     },
     {
       key: "name",
-      header: "Package Name",
+      header: "Carer Name",
       render: (item) => item.details.name,
     },
     {
@@ -275,10 +277,7 @@ export function MpDetailModal({
                   {updateMpMutation.isPending ? "Saving..." : "Save Notes"}
                 </Button>
               </div>
-              <NotesEditor
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
+              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
             </TabsContent>
           </Tabs>
         </div>

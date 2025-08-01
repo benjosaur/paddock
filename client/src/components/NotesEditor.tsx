@@ -71,23 +71,6 @@ export function NotesEditor({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <label className="block text-sm font-medium text-gray-700">Notes</label>
-        {!disabled && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAddingNew(true)}
-            disabled={isAddingNew}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Note
-          </Button>
-        )}
-      </div>
-
       <div className="space-y-3">
         {notes.length === 0 && !isAddingNew && (
           <div className="text-sm text-gray-500 italic bg-gray-50/50 rounded-lg p-3 text-center">
@@ -147,7 +130,7 @@ export function NotesEditor({
                     className="flex items-center gap-1"
                   >
                     <Check className="w-3 h-3" />
-                    Save
+                    Done
                   </Button>
                 </div>
               </div>
@@ -251,6 +234,19 @@ export function NotesEditor({
               </Button>
             </div>
           </div>
+        )}
+        {!disabled && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddingNew(true)}
+            disabled={isAddingNew}
+            className="flex ml-auto items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Note
+          </Button>
         )}
       </div>
     </div>
