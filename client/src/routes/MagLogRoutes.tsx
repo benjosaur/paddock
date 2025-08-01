@@ -39,14 +39,14 @@ export default function MagLogRoutes() {
 
   const magQuery = useQuery(trpc.mag.getAll.queryOptions());
 
-  const magQueryKey = trpc.mag.getAll.queryKey();
-
   const mag = magQuery.data || [];
 
   const deleteMagLogMutation = useMutation(
     trpc.mag.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -90,3 +90,9 @@ export default function MagLogRoutes() {
     </Routes>
   );
 }
+
+export const associatedMagLogRoutes: any[] = [
+  // MAG logs
+  trpc.mag.getAll,
+  trpc.mag.getById,
+];

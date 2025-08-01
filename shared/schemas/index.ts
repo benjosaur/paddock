@@ -117,11 +117,11 @@ export const magLogSchema = z.object({
     })
   ),
   details: z.object({
-    totalClients: z.number(),
-    totalFamily: z.number(),
-    totalVolunteers: z.number(),
-    totalMps: z.number(),
-    otherAttendees: z.number(),
+    totalClients: z.number().default(0),
+    totalFamily: z.number().default(0),
+    totalVolunteers: z.number().default(0),
+    totalMps: z.number().default(0),
+    otherAttendees: z.number().default(0),
     notes: z.string().default(""),
   }),
 });

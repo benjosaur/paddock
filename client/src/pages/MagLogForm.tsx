@@ -12,6 +12,7 @@ import type {
 } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { associatedMagLogRoutes } from "../routes/MagLogRoutes";
 
 export function MagLogForm() {
   const navigate = useNavigate();
@@ -45,12 +46,12 @@ export function MagLogForm() {
     enabled: isEditing && !!id,
   });
 
-  const magLogQueryKey = trpc.mag.getAll.queryKey();
-
   const createMagLogMutation = useMutation(
     trpc.mag.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mag");
       },
     })
@@ -59,7 +60,9 @@ export function MagLogForm() {
   const updateMagLogMutation = useMutation(
     trpc.mag.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mag");
       },
     })
@@ -96,9 +99,11 @@ export function MagLogForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -308,7 +313,7 @@ export function MagLogForm() {
                   htmlFor="mps"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Magistrates (MPs)
+                  MPs
                 </label>
                 <Select
                   options={mpOptions}
@@ -332,9 +337,7 @@ export function MagLogForm() {
                   isMulti
                   noOptionsMessage={() => "No MPs found"}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Search by MP name to add magistrates
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Search by MP name</p>
               </div>
 
               <div>

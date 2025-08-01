@@ -109,12 +109,11 @@ export class MagLogRepository {
   }
 
   async createMagReference(
+    magId: string,
     newMpLogs: Omit<DbMagLog, "sK">[],
     user: User
   ): Promise<string> {
-    const uuid = uuidv4();
-    const key = `mag#${uuid}`;
-    const newItems = newMpLogs.map((mpLog) => ({ sK: key, ...mpLog }));
+    const newItems = newMpLogs.map((mpLog) => ({ ...mpLog, sK: magId }));
     const validatedItems = dbMagLog.array().parse(newItems);
     try {
       await Promise.all(
@@ -127,15 +126,17 @@ export class MagLogRepository {
           )
         )
       );
-      return key;
+      return magId;
     } catch (error) {
       console.error("Repository Layer Error creating mpLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
-    const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
+  async update(updatedagLogs: DbMagLog[], user: User): Promise<void> {
+    const validatedLogs = dbMagLog.array().parse(updatedagLogs);
+    console.log("REPOSITORY LAYER UPDATING MP LOGS", validatedLogs);
+    console.log(validatedLogs.map((log) => dropNullFields(log)));
     try {
       await Promise.all(
         validatedLogs.map((log) =>

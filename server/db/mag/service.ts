@@ -28,7 +28,6 @@ export class MagLogService {
   async getById(magLogId: string, user: User): Promise<MagLog> {
     try {
       const mag = await this.magLogRepository.getById(magLogId, user);
-      console.log(mag);
       const transformedResult = this.transformDbMagLogToShared(mag) as MagLog[];
       const parsedResult = magLogSchema.array().parse(transformedResult);
       return parsedResult[0];
@@ -113,6 +112,7 @@ export class MagLogService {
         user
       );
       await this.magLogRepository.createMagReference(
+        createdLogId,
         [...magLogClients, ...magLogMps, ...magLogVolunteers],
         user
       );
@@ -128,9 +128,9 @@ export class MagLogService {
     try {
       const validatedInput = magLogSchema.parse(updatedMpLog);
       const { id, clients, mps, volunteers, ...rest } = validatedInput;
-
+      console.log(validatedInput);
       // delete all refs in case mps or volunteers purposely removed
-      this.magLogRepository.delete(id, user);
+      await this.magLogRepository.delete(id, user);
 
       const magLogMain: DbMagLogEntity = addDbMiddleware(
         {
@@ -178,7 +178,7 @@ export class MagLogService {
             user
           )
       );
-
+      console.log(magLogMain, magLogClients, magLogMps, magLogVolunteers);
       await this.magLogRepository.update(
         [magLogMain, ...magLogClients, ...magLogMps, ...magLogVolunteers],
         user
