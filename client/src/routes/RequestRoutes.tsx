@@ -2,6 +2,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { RequestForm } from "../pages/RequestForm";
+import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
 import type { RequestFull, RequestMetadata, TableColumn } from "../types";
@@ -109,6 +110,11 @@ export default function RequestRoutes() {
     navigate(`/requests/edit?id=${encodedId}`);
   };
 
+  const handleRenew = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/requests/renew?id=${encodedId}`);
+  };
+
   const handleView = (request: RequestMetadata) => {
     setSelectedRequestId(request.id);
     setIsModalOpen(true);
@@ -157,6 +163,7 @@ export default function RequestRoutes() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAdd={handleAdd}
+              onRenew={handleRenew}
               onAddNew={handleAddNew}
               onViewItem={handleView}
               resource="requests"
@@ -175,6 +182,7 @@ export default function RequestRoutes() {
         />
         <Route path="create" element={<RequestForm />} />
         <Route path="edit" element={<RequestForm />} />
+        <Route path="renew" element={<RenewRequestForm />} />
       </Routes>
       {selectedRequestId && (
         <RequestDetailModal

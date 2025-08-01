@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { requestMetadataSchema } from "shared/schemas/index";
 export const requestsRouter = router({
@@ -44,6 +45,20 @@ export const requestsRouter = router({
     .input(requestMetadataSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.requests.update(input, ctx.user);
+    }),
+  renew: createProtectedProcedure("requests", "update")
+    .input(
+      z.object({
+        oldRequest: requestMetadataSchema,
+        newRequest: requestMetadataSchema.omit({ id: true }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.requests.renew(
+        input.oldRequest,
+        input.newRequest,
+        ctx.user
+      );
     }),
   delete: createProtectedProcedure("requests", "delete")
     .input(requestMetadataSchema.pick({ id: true }))

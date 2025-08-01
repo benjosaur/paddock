@@ -190,7 +190,6 @@ export function PackageForm() {
                   id="name"
                   name="details.name"
                   value={formData.details.name || ""}
-                  placeholder="Auto-generated from selected request"
                   readOnly
                   className="bg-gray-50"
                 />
@@ -337,7 +336,10 @@ export function PackageForm() {
                       value: locality,
                     }))}
                     onChange={(selectedOption) =>
-                      handleSelectChange("details.address.locality", selectedOption)
+                      handleSelectChange(
+                        "details.address.locality",
+                        selectedOption
+                      )
                     }
                     placeholder="Select locality..."
                     required

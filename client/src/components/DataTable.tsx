@@ -25,6 +25,7 @@ import {
   Eye,
   Plus,
   FolderOpen,
+  RefreshCw,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import type { TableColumn } from "../types";
@@ -37,6 +38,7 @@ interface DataTableProps<T> {
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
   onAdd?: (id: string) => void;
+  onRenew?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (item: T) => void;
@@ -52,6 +54,7 @@ export function DataTable<T extends { id: string }>({
   onArchive,
   onDelete,
   onAdd,
+  onRenew,
   title,
   searchPlaceholder,
   onViewItem,
@@ -179,7 +182,7 @@ export function DataTable<T extends { id: string }>({
                   {col.header}
                 </th>
               ))}
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || onRenew) && (
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
             </tr>
@@ -199,7 +202,9 @@ export function DataTable<T extends { id: string }>({
                   />
                 </th>
               ))}
-              {(onEdit || onDelete) && <th className="px-6 py-2"></th>}
+              {(onEdit || onDelete || onRenew) && (
+                <th className="px-6 py-2"></th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
@@ -224,7 +229,7 @@ export function DataTable<T extends { id: string }>({
                       : (item[col.key as keyof T] as React.ReactNode)}
                   </td>
                 ))}
-                {(onEdit || onDelete) && (
+                {(onEdit || onDelete || onRenew) && (
                   <td
                     className={`px-6 py-4 text-right ${
                       index === filteredData.length - 1 ? "rounded-br-xl" : ""
@@ -235,25 +240,33 @@ export function DataTable<T extends { id: string }>({
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
+                        <PermissionGate resource={resource} action="create">
+                          {onAdd && (
+                            <DropdownMenuItem onClick={() => onAdd(item.id)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Package
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
                         {onViewItem && (
                           <DropdownMenuItem onClick={() => onViewItem(item)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
                         )}
-                        <PermissionGate resource={resource} action="create">
-                          {onAdd && (
-                            <DropdownMenuItem onClick={() => onAdd(item.id)}>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Create Package
-                            </DropdownMenuItem>
-                          )}
-                        </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onEdit && (
                             <DropdownMenuItem onClick={() => onEdit(item.id)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="update">
+                          {onRenew && (
+                            <DropdownMenuItem onClick={() => onRenew(item.id)}>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Renew
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

@@ -3,6 +3,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { PackageForm } from "../pages/PackageForm";
+import { RenewPackageForm } from "../pages/RenewPackageForm";
 import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,6 +92,11 @@ export default function PackageRoutes() {
     navigate(`/packages/edit/${encodedId}`);
   };
 
+  const handleRenew = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/packages/renew/${encodedId}`);
+  };
+
   const handleDelete = (id: string) => {
     deletePackageMutation.mutate({ id });
   };
@@ -127,6 +133,7 @@ export default function PackageRoutes() {
             columns={packageColumns}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRenew={handleRenew}
             onAddNew={handleAddNew}
             resource="packages"
             customActions={
@@ -144,6 +151,7 @@ export default function PackageRoutes() {
       />
       <Route path="create" element={<PackageForm />} />
       <Route path="edit/:id" element={<PackageForm />} />
+      <Route path="renew/:id" element={<RenewPackageForm />} />
     </Routes>
   );
 }

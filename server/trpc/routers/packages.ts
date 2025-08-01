@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { packageSchema } from "shared/schemas/index";
 export const packagesRouter = router({
@@ -32,6 +33,20 @@ export const packagesRouter = router({
     .input(packageSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.packages.update(input, ctx.user);
+    }),
+  renew: createProtectedProcedure("packages", "update")
+    .input(
+      z.object({
+        oldPackage: packageSchema,
+        newPackage: packageSchema.omit({ id: true }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.packages.renew(
+        input.oldPackage,
+        input.newPackage,
+        ctx.user
+      );
     }),
   delete: createProtectedProcedure("packages", "delete")
     .input(packageSchema.pick({ id: true }))
