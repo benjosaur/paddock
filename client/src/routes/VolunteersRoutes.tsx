@@ -166,7 +166,7 @@ export function VolunteersRoutes() {
 
 export default VolunteersRoutes;
 
-const associatedVolunteerRoutes = [
+export const associatedVolunteerRoutes: any[] = [
   // Volunteers
   trpc.volunteers.getAll,
   trpc.volunteers.getAllNotArchived,

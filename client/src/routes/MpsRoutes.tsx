@@ -161,7 +161,7 @@ export function MpsRoutes() {
 
 export default MpsRoutes;
 
-const associatedMpRoutes = [
+export const associatedMpRoutes: any[] = [
   // Mps
   trpc.mps.getAll,
   trpc.mps.getAllNotArchived,

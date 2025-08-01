@@ -20,6 +20,10 @@ const samplePaidRequest: Omit<RequestMetadata, "id"> = {
       locality: "Wiveliscombe",
       county: "Somerset",
       postCode: "TA4 2PJ",
+      deprivation: {
+        income: false,
+        health: false,
+      },
     },
     services: ["Companionship", "Attendance Allowance"],
     weeklyHours: 10,
@@ -40,6 +44,10 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
       locality: "Brompton Ralph",
       county: "Somerset",
       postCode: "TA4 2PJ",
+      deprivation: {
+        income: false,
+        health: false,
+      },
     },
     services: ["Companionship", "Attendance Allowance"],
     notes: "Weekly unpaid volunteer visit requested",
@@ -81,6 +89,10 @@ export async function testRequestService() {
           locality: "Wiveliscombe",
           county: "Somerset",
           postCode: "TA1 1AA",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
         notes: "Test package 1",
         services: ["Companionship"],
@@ -101,6 +113,10 @@ export async function testRequestService() {
           locality: "Brompton Ralph",
           county: "Somerset",
           postCode: "TA2 2BB",
+          deprivation: {
+            income: true,
+            health: false,
+          },
         },
         notes: "Test package 2",
         services: ["Attendance Allowance"],

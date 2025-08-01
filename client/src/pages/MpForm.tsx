@@ -10,6 +10,7 @@ import { FieldEditModal } from "@/components/FieldEditModal";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import { serviceOptions, localities } from "shared/const";
+import { associatedMpRoutes } from "../routes/MpsRoutes";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -48,13 +49,13 @@ export function MpForm() {
     ...trpc.mps.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const thisMpQueryKey = trpc.mps.getById.queryKey();
-  const mpQueryKey = trpc.mps.getAll.queryKey();
 
   const createMpMutation = useMutation(
     trpc.mps.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mps");
       },
     })
@@ -63,7 +64,9 @@ export function MpForm() {
   const updateMpMutation = useMutation(
     trpc.mps.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mps");
       },
     })
@@ -72,13 +75,8 @@ export function MpForm() {
   const updateNameMutation = useMutation(
     trpc.mps.updateName.mutationOptions({
       onSuccess: () => {
-        const queryKeys = [
-          thisMpQueryKey,
-          trpc.trainingRecords.getAll.queryKey(),
-        ];
-
-        queryKeys.forEach((queryKey) => {
-          queryClient.invalidateQueries({ queryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
     })

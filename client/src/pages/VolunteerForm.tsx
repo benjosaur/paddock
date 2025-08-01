@@ -10,6 +10,7 @@ import { FieldEditModal } from "@/components/FieldEditModal";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import { serviceOptions, localities } from "shared/const";
+import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
@@ -48,13 +49,13 @@ export function VolunteerForm() {
     ...trpc.volunteers.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const thisVolunteerQueryKey = trpc.volunteers.getById.queryKey();
-  const volunteerQueryKey = trpc.volunteers.getAll.queryKey();
 
   const createVolunteerMutation = useMutation(
     trpc.volunteers.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: volunteerQueryKey });
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/volunteers");
       },
     })
@@ -63,7 +64,9 @@ export function VolunteerForm() {
   const updateVolunteerMutation = useMutation(
     trpc.volunteers.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: volunteerQueryKey });
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/volunteers");
       },
     })
@@ -72,13 +75,8 @@ export function VolunteerForm() {
   const updateNameMutation = useMutation(
     trpc.volunteers.updateName.mutationOptions({
       onSuccess: () => {
-        const queryKeys = [
-          thisVolunteerQueryKey,
-          trpc.trainingRecords.getAll.queryKey(),
-        ];
-
-        queryKeys.forEach((queryKey) => {
-          queryClient.invalidateQueries({ queryKey });
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
     })

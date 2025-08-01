@@ -14,6 +14,8 @@ import {
   localities,
 } from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
+import toast from "react-hot-toast";
+import { associatedClientRoutes } from "../routes/ClientsRoutes";
 
 export function ClientForm() {
   const navigate = useNavigate();
@@ -30,6 +32,10 @@ export function ClientForm() {
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       phone: "",
       email: "",
@@ -57,13 +63,33 @@ export function ClientForm() {
     enabled: isEditing,
   });
 
-  const thisClientQueryKey = trpc.clients.getById.queryKey();
-  const allClientsQueryKey = trpc.clients.getAll.queryKey();
 
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
+      onSuccess: (data) => {
+        // Second toast: Deprivation information
+        const { deprivationData, postcode } = data;
+
+        if (deprivationData.income && deprivationData.health) {
+          toast(
+            `🚩 Postcode ${postcode} indicates both income and health deprivation.`,
+            { duration: 6000 }
+          );
+        } else if (deprivationData.income) {
+          toast(`🚩 Postcode ${postcode} indicates income deprivation.`, {
+            duration: 6000,
+          });
+        } else if (deprivationData.health) {
+          toast(`🚩 Postcode ${postcode} indicates health deprivation.`, {
+            duration: 6000,
+          });
+        } else {
+          toast(`Postcode ${postcode} shows no deprivation indicators.`);
+        }
+
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/clients");
       },
     })
@@ -72,7 +98,10 @@ export function ClientForm() {
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
+        toast.success("Client updated successfully!");
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/clients");
       },
     })
@@ -81,14 +110,9 @@ export function ClientForm() {
   const updateNameMutation = useMutation(
     trpc.clients.updateName.mutationOptions({
       onSuccess: () => {
-        const queryKeys = [
-          thisClientQueryKey,
-          trpc.mag.getAll.queryKey(),
-          trpc.requests.getAllMetadata.queryKey(),
-        ];
-
-        queryKeys.forEach((queryKey) => {
-          queryClient.invalidateQueries({ queryKey });
+        toast.success("Client name updated successfully!");
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
     })

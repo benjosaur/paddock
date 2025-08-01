@@ -17,6 +17,10 @@ const samplePackage: Omit<Package, "id"> = {
       locality: "Bathealton",
       county: "Somerset",
       postCode: "TA4 2PJ",
+      deprivation: {
+        income: false,
+        health: false,
+      },
     },
     weeklyHours: 10,
     notes: "Weekly support visits including shopping and companionship",
@@ -52,6 +56,10 @@ export async function testPackageService() {
           locality: "Bathealton",
           county: "Somerset",
           postCode: "TA4 2PJ",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
         weeklyHours: 15,
         notes:
@@ -94,6 +102,10 @@ export async function testPackageService() {
           locality: "Bathealton",
           county: "Somerset",
           postCode: "TA4 2PJ",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
         weeklyHours: 12,
         notes: "Renewed package with updated weekly hours",
@@ -151,6 +163,10 @@ export async function testPackageService() {
           locality: "Bathealton",
           county: "Somerset",
           postCode: "TA4 2PJ",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
         weeklyHours: 8,
         notes: "Second renewal with updated hours",

@@ -18,6 +18,10 @@ const sampleMagLog: Omit<MagLog, "id"> = {
           locality: "Wiveliscombe",
           county: "Somerset",
           postCode: "TA4 2PJ",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
       },
     },
@@ -31,6 +35,10 @@ const sampleMagLog: Omit<MagLog, "id"> = {
           locality: "Brompton Ralph",
           county: "Greater London",
           postCode: "E1 6AN",
+          deprivation: {
+            income: false,
+            health: false,
+          },
         },
       },
     },

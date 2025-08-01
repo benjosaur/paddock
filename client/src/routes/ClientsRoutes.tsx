@@ -45,6 +45,23 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     render: (item: ClientMetadata) =>
       capitalise(item.details.attendanceAllowance),
   },
+  {
+    key: "deprivationFlags",
+    header: "Deprivation Flags",
+    render: (item: ClientMetadata) => {
+      if (
+        item.details.address.deprivation.income &&
+        item.details.address.deprivation.health
+      ) {
+        return "Both";
+      } else if (item.details.address.deprivation.income) {
+        return "Income";
+      } else if (item.details.address.deprivation.health) {
+        return "Health";
+      }
+      return "None";
+    },
+  },
 ];
 
 export default function ClientsRoutes() {
@@ -60,9 +77,6 @@ export default function ClientsRoutes() {
       ? trpc.clients.getAll.queryOptions()
       : trpc.clients.getAllNotArchived.queryOptions()
   );
-  const clientsQueryKey = showArchived
-    ? trpc.clients.getAll.queryKey()
-    : trpc.clients.getAllNotArchived.queryKey();
 
   const archiveClientMutation = useMutation(
     trpc.clients.toggleArchive.mutationOptions({
@@ -77,7 +91,9 @@ export default function ClientsRoutes() {
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -159,7 +175,7 @@ export default function ClientsRoutes() {
   );
 }
 
-const associatedClientRoutes = [
+export const associatedClientRoutes: any[] = [
   // Dashboard Analytics
 
   // Clients

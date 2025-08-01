@@ -16,6 +16,7 @@ import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
+import { DeprivationService } from "../../services/deprivation";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -25,6 +26,7 @@ export class ClientService {
   packageRepository = new PackageRepository();
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
+  deprivationService = new DeprivationService();
 
   async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
     try {
@@ -97,15 +99,39 @@ export class ClientService {
     }
   }
 
-  async create(newClient: Omit<ClientFull, "id">, user: User): Promise<string> {
+  async create(newClient: Omit<ClientFull, "id">, user: User): Promise<{
+    clientId: string;
+    deprivationData: {
+      income: boolean;
+      health: boolean;
+    };
+    postcode: string;
+  }> {
     try {
       const validatedInput = clientFullSchema
         .omit({ id: true })
         .parse(newClient);
 
+      // Fetch deprivation data for the client's postcode
+      const deprivationData = await this.deprivationService.getDeprivationData(
+        validatedInput.details.address.postCode
+      );
+
+      // Update the client with deprivation data
+      const clientWithDeprivation = {
+        ...validatedInput,
+        details: {
+          ...validatedInput.details,
+          address: {
+            ...validatedInput.details.address,
+            deprivation: deprivationData,
+          },
+        },
+      };
+
       const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = addDbMiddleware(
         {
-          ...validatedInput,
+          ...clientWithDeprivation,
           entityType: "client",
         },
         user
@@ -115,7 +141,12 @@ export class ClientService {
         clientToCreate,
         user
       );
-      return createdClientId;
+      
+      return {
+        clientId: createdClientId,
+        deprivationData,
+        postcode: validatedInput.details.address.postCode,
+      };
     } catch (error) {
       console.error("Service Layer Error creating client:", error);
       throw error;

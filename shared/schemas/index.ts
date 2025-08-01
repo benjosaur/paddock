@@ -29,7 +29,19 @@ const addressSchema = z.object({
   streetAddress: z.string().default(""),
   locality: z.enum(localities).default("Wiveliscombe"),
   county: z.string().default("Somerset"),
-  postCode: z.string(),
+  postCode: z.string().transform((val) => val.toUpperCase()),
+});
+
+const addressSchemaWithDeprivation = addressSchema.extend({
+  deprivation: z
+    .object({
+      income: z.boolean().default(false),
+      health: z.boolean().default(false),
+    })
+    .default({
+      income: false,
+      health: false,
+    }),
 });
 
 export const packageSchema = z.object({
@@ -43,7 +55,7 @@ export const packageSchema = z.object({
   details: z.object({
     name: z.string(),
     weeklyHours: z.number().default(1),
-    address: addressSchema,
+    address: addressSchemaWithDeprivation,
     notes: z.string().default(""),
     services: z.array(z.enum(serviceOptions)).default([]),
   }),
@@ -60,7 +72,7 @@ export const requestMetadataSchema = z.object({
   details: z.object({
     name: z.string(),
     weeklyHours: z.number().default(1),
-    address: addressSchema,
+    address: addressSchemaWithDeprivation,
     status: z.enum(requestStatus).default("pending"),
     services: z.array(z.enum(serviceOptions)).default([]),
     notes: z.string().default(""),
@@ -80,7 +92,10 @@ export const magLogSchema = z.object({
       id: z.string(),
       //below if parent is archived
       archived: z.enum(booleanTypes),
-      details: z.object({ name: z.string(), address: addressSchema }),
+      details: z.object({
+        name: z.string(),
+        address: addressSchemaWithDeprivation,
+      }),
     })
   ),
   mps: z.array(
@@ -124,7 +139,8 @@ export const clientMetadataSchema = z.object({
   id: z.string(),
   archived: z.enum(booleanTypes),
   dateOfBirth: z.string().date(),
-  details: basePersonDetails.extend({
+  details: basePersonDetails.omit({ address: true }).extend({
+    address: addressSchemaWithDeprivation,
     donationScheme: z.boolean().default(false),
     donationAmount: z.number().default(0),
     referredBy: z.string().default(""),

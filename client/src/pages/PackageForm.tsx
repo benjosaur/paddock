@@ -32,6 +32,10 @@ export function PackageForm() {
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       notes: "",
       services: [],

@@ -39,6 +39,10 @@ export function RenewRequestForm() {
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       status: "pending",
       services: [],

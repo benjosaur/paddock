@@ -14,6 +14,10 @@ const sampleClient: Omit<ClientFull, "id"> = {
       locality: "Wiveliscombe",
       county: "Somerset",
       postCode: "TA4 2PJ",
+      deprivation: {
+        income: false,
+        health: false,
+      },
     },
     phone: "07123456789",
     email: "john.doe@example.com",
