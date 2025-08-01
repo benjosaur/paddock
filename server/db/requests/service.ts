@@ -124,7 +124,7 @@ export class RequestService {
   }
 
   async create(
-    request: Omit<RequestMetadata, "id" | "requestId">,
+    request: Omit<RequestMetadata, "id">,
     user: User
   ): Promise<string> {
     try {
@@ -173,6 +173,53 @@ export class RequestService {
       await this.requestRepository.update(dbRequest, user);
     } catch (error) {
       console.error(" Service Layer Error updating client request:", error);
+      throw error;
+    }
+  }
+
+  async renew(
+    oldRequest: RequestMetadata,
+    renewedRequest: Omit<RequestMetadata, "id">,
+    user: User
+  ): Promise<void> {
+    // This function renews a request by setting its old version's end date to ended
+    // but brings forward the packages to new req id.
+    try {
+      const validatedOldRequest = requestMetadataSchema.parse(oldRequest);
+      const validatedRenewedRequest = requestMetadataSchema
+        .omit({ id: true })
+        .parse(renewedRequest);
+
+      // Create new request
+      const newRequestId = await this.create(validatedRenewedRequest, user);
+
+      // Update old request, the reset end date logic will occur in frontend.
+      await this.update(validatedOldRequest, user);
+
+      const oldRequestWithPackages = await this.requestRepository.getById(
+        oldRequest.id,
+        user
+      );
+      const updatedRecords = oldRequestWithPackages.map((record) => {
+        if (record.sK.startsWith("req")) {
+          return addDbMiddleware(record, user);
+        } else if (record.sK.startsWith("pkg")) {
+          // For packages, we need to update the requestId to the new requestId
+          return addDbMiddleware(
+            {
+              ...record,
+              requestId: newRequestId,
+            },
+            user
+          );
+        } else {
+          throw new Error(`Undefined Case: ${record}`);
+        }
+      });
+
+      await genericUpdate(updatedRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error renewing request:", error);
       throw error;
     }
   }

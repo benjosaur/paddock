@@ -114,6 +114,28 @@ export class PackageService {
     }
   }
 
+  async renew(
+    oldPackage: Package,
+    newPackage: Omit<Package, "id">,
+    user: User
+  ): Promise<string> {
+    try {
+      const validatedOldPackage = packageSchema.parse(oldPackage);
+      const validatedNewPackage = packageSchema
+        .omit({ id: true })
+        .parse(newPackage);
+
+      // Create new package
+      const newPackageId = await this.create(validatedNewPackage, user);
+
+      await this.update(validatedOldPackage, user);
+      return newPackageId;
+    } catch (error) {
+      console.error("Service Layer Error renewing package:", error);
+      throw error;
+    }
+  }
+
   async delete(user: User, packageId: string): Promise<number> {
     try {
       const numDeleted = await this.packageRepository.delete(packageId, user);
