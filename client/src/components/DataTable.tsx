@@ -26,9 +26,10 @@ import {
   Plus,
   FolderOpen,
   RefreshCw,
+  Target,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
-import type { TableColumn } from "../types";
+import type { TableColumn, TrainingRecord } from "../types";
 import { AppRouterKeys } from "shared";
 
 interface DataTableProps<T> {
@@ -37,12 +38,15 @@ interface DataTableProps<T> {
   onEdit?: (id: string) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
-  onAdd?: (id: string) => void;
+  onAddPackage?: (id: string) => void;
+  onAddRecord?: (id: string) => void;
+  onEditRecord?: (item: TrainingRecord) => void; // need ownerId for router
+  onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onRenew?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
-  onViewItem?: (item: T) => void;
-  onAddNew?: () => void;
+  onViewItem?: (id: string) => void;
+  onCreate?: () => void;
   resource: AppRouterKeys;
   customActions?: React.ReactNode;
 }
@@ -53,18 +57,21 @@ export function DataTable<T extends { id: string }>({
   onEdit,
   onArchive,
   onDelete,
-  onAdd,
+  onAddPackage,
+  onAddRecord,
+  onEditRecord,
+  onDeleteRecord,
   onRenew,
   title,
   searchPlaceholder,
   onViewItem,
-  onAddNew,
+  onCreate,
   resource,
   customActions,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<T | null>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {}
   );
@@ -110,14 +117,16 @@ export function DataTable<T extends { id: string }>({
     return matchesSearch && matchesColumnFilters;
   });
 
-  const handleDeleteClick = (id: string) => {
-    setItemToDelete(id);
+  const handleDeleteClick = (item: T) => {
+    setItemToDelete(item);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = () => {
     if (itemToDelete && onDelete) {
-      onDelete(itemToDelete);
+      onDelete(itemToDelete.id);
+    } else if (itemToDelete && onDeleteRecord) {
+      onDeleteRecord(itemToDelete as unknown as TrainingRecord);
     }
     setDeleteDialogOpen(false);
     setItemToDelete(null);
@@ -158,8 +167,8 @@ export function DataTable<T extends { id: string }>({
           </div>
           {customActions}
           <PermissionGate resource={resource} action="create">
-            {onAddNew && (
-              <Button className="shadow-sm" onClick={onAddNew}>
+            {onCreate && (
+              <Button className="shadow-sm" onClick={onCreate}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add New
               </Button>
@@ -182,7 +191,11 @@ export function DataTable<T extends { id: string }>({
                   {col.header}
                 </th>
               ))}
-              {(onEdit || onDelete || onRenew) && (
+              {(onEdit ||
+                onDelete ||
+                onRenew ||
+                onAddRecord ||
+                onEditRecord) && (
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
             </tr>
@@ -202,9 +215,11 @@ export function DataTable<T extends { id: string }>({
                   />
                 </th>
               ))}
-              {(onEdit || onDelete || onRenew) && (
-                <th className="px-6 py-2"></th>
-              )}
+              {(onEdit ||
+                onDelete ||
+                onRenew ||
+                onAddRecord ||
+                onEditRecord) && <th className="px-6 py-2"></th>}
             </tr>
           </thead>
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
@@ -229,7 +244,11 @@ export function DataTable<T extends { id: string }>({
                       : (item[col.key as keyof T] as React.ReactNode)}
                   </td>
                 ))}
-                {(onEdit || onDelete || onRenew) && (
+                {(onEdit ||
+                  onDelete ||
+                  onRenew ||
+                  onAddRecord ||
+                  onEditRecord) && (
                   <td
                     className={`px-6 py-4 text-right ${
                       index === filteredData.length - 1 ? "rounded-br-xl" : ""
@@ -241,15 +260,25 @@ export function DataTable<T extends { id: string }>({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <PermissionGate resource={resource} action="create">
-                          {onAdd && (
-                            <DropdownMenuItem onClick={() => onAdd(item.id)}>
+                          {onAddPackage && (
+                            <DropdownMenuItem
+                              onClick={() => onAddPackage(item.id)}
+                            >
                               <Plus className="mr-2 h-4 w-4" />
                               Package
                             </DropdownMenuItem>
                           )}
+                          {onAddRecord && (
+                            <DropdownMenuItem
+                              onClick={() => onAddRecord(item.id)}
+                            >
+                              <Target className="mr-2 h-4 w-4" />
+                              Training
+                            </DropdownMenuItem>
+                          )}
                         </PermissionGate>
                         {onViewItem && (
-                          <DropdownMenuItem onClick={() => onViewItem(item)}>
+                          <DropdownMenuItem onClick={() => onViewItem(item.id)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
@@ -283,7 +312,29 @@ export function DataTable<T extends { id: string }>({
                         <PermissionGate resource={resource} action="delete">
                           {onDelete && (
                             <DropdownMenuItem
-                              onClick={() => handleDeleteClick(item.id)}
+                              onClick={() => handleDeleteClick(item)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="update">
+                          {onEditRecord && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                onEditRecord(item as unknown as TrainingRecord)
+                              }
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="delete">
+                          {onDeleteRecord && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(item)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete

@@ -36,7 +36,9 @@ export function ClientDetailModal({
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const client = clientQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<
+    { date: string; note: string }[]
+  >([]);
 
   // Update local notes when client data changes
   useEffect(() => {
@@ -48,11 +50,11 @@ export function ClientDetailModal({
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.clients.getById.queryKey({ id: clientId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.clients.getById.queryKey({ id: clientId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.clients.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.clients.getAll.queryKey(),
         });
       },
     })
@@ -196,7 +198,7 @@ export function ClientDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Contact Information
+                General Info
               </h3>
               {renderDetailItem("ID", client.id)}
               {renderDetailItem("Date of Birth", client.dateOfBirth)}
@@ -323,10 +325,7 @@ export function ClientDetailModal({
                   {updateClientMutation.isPending ? "Saving..." : "Save Notes"}
                 </Button>
               </div>
-              <NotesEditor
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
+              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
             </TabsContent>
           </Tabs>
         </div>

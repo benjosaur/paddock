@@ -80,7 +80,7 @@ export default function MagLogRoutes() {
             columns={magLogColumns}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onAddNew={handleAddNew}
+            onCreate={handleAddNew}
             resource="mag"
           />
         }

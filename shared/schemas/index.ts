@@ -15,7 +15,11 @@ export const trainingRecordSchema = z.object({
   // below if parent carer is archived
   archived: z.enum(booleanTypes),
   expiryDate: z.union([z.string().date(), z.literal("")]).default(""),
-  details: z.object({ name: z.string(), recordName: z.string().default("") }),
+  details: z.object({
+    name: z.string(),
+    recordName: z.string().default(""),
+    notes: z.string().default(""),
+  }),
 });
 
 export const userRoleSchema = z.enum(userRoles);

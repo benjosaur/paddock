@@ -5,7 +5,7 @@ import { RequestForm } from "../pages/RequestForm";
 import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
-import type { RequestFull, RequestMetadata, TableColumn } from "../types";
+import type { RequestFull, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -101,7 +101,7 @@ export default function RequestRoutes() {
     navigate("/requests/create");
   };
 
-  const handleAdd = (requestId: string) => {
+  const handleAddPackage = (requestId: string) => {
     navigate("/packages/create", { state: { requestId } });
   };
 
@@ -115,8 +115,8 @@ export default function RequestRoutes() {
     navigate(`/requests/renew?id=${encodedId}`);
   };
 
-  const handleView = (request: RequestMetadata) => {
-    setSelectedRequestId(request.id);
+  const handleView = (id: string) => {
+    setSelectedRequestId(id);
     setIsModalOpen(true);
   };
 
@@ -162,9 +162,9 @@ export default function RequestRoutes() {
               columns={requestColumns}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onAdd={handleAdd}
+              onAddPackage={handleAddPackage}
               onRenew={handleRenew}
-              onAddNew={handleAddNew}
+              onCreate={handleAddNew}
               onViewItem={handleView}
               resource="requests"
               customActions={

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import type { TrainingRecord, TableColumn } from "../types";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateTimeToDate } from "@/utils/helpers";
 import {
   Tabs,
@@ -12,6 +12,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
+import { TrainingRecordForm } from "../pages/TrainingRecordForm";
+import { associatedVolunteerRoutes } from "./VolunteersRoutes";
+import { associatedMpRoutes } from "./MpsRoutes";
 
 const mpRecordColumns: TableColumn<TrainingRecord>[] = [
   {
@@ -29,46 +32,71 @@ const mpRecordColumns: TableColumn<TrainingRecord>[] = [
     header: "Expires",
     render: (item) => calculateTimeToDate(item.expiryDate),
   },
+  {
+    key: "notes",
+    header: "Notes",
+    render: (item) => item.details.notes,
+  },
 ];
 
-const volunteerRecordColumns: TableColumn<TrainingRecord>[] = [
-  {
-    key: "personName",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "recordName",
-    header: "Training Record",
-    render: (item) => item.details.recordName,
-  },
-  {
-    key: "date",
-    header: "Expires",
-    render: (item) => calculateTimeToDate(item.expiryDate),
-  },
-];
+const volunteerRecordColumns = mpRecordColumns;
 
 export default function RecordsRoutes() {
+  const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
+  const queryClient = useQueryClient();
 
   const recordsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.trainingRecords.getAll.queryOptions()
       : trpc.trainingRecords.getAllNotArchived.queryOptions()
   );
 
+  const recordsQueryKey = showArchived
+    ? trpc.trainingRecords.getAll.queryKey()
+    : trpc.trainingRecords.getAllNotArchived.queryKey();
+
+  const deleteRecordMutation = useMutation(
+    trpc.trainingRecords.delete.mutationOptions({
+      onSuccess: () => {
+        // Invalidate training records queries and related routes
+        queryClient.invalidateQueries({ queryKey: recordsQueryKey });
+        [...associatedVolunteerRoutes, ...associatedMpRoutes].forEach(
+          (route) => {
+            queryClient.invalidateQueries({ queryKey: route.queryKey() });
+          }
+        );
+      },
+    })
+  );
+
   const allRecords = recordsQuery.data || [];
-  
+
   // Filter records by role post-fetch
-  const mpRecords = allRecords.filter(record => record.ownerId.startsWith("m"));
-  const volunteerRecords = allRecords.filter(record => record.ownerId.startsWith("v"));
+  const mpRecords = allRecords.filter((record) =>
+    record.ownerId.startsWith("m")
+  );
+  const volunteerRecords = allRecords.filter((record) =>
+    record.ownerId.startsWith("v")
+  );
+
+  const handleEditRecord = (item: TrainingRecord) => {
+    const encodedId = encodeURIComponent(item.id);
+    const encodedOwnerId = encodeURIComponent(item.ownerId);
+    navigate(`/records/edit?id=${encodedId}&ownerId=${encodedOwnerId}`);
+  };
+
+  const handleDeleteRecord = (item: TrainingRecord) => {
+    deleteRecordMutation.mutate({ id: item.id, ownerId: item.ownerId });
+  };
 
   if (recordsQuery.isLoading) return <div>Loading...</div>;
   if (recordsQuery.error) return <div>Error loading records</div>;
 
   return (
     <Routes>
+      <Route path="create" element={<TrainingRecordForm />} />
+      <Route path="edit" element={<TrainingRecordForm />} />
       <Route
         index
         element={
@@ -93,7 +121,7 @@ export default function RecordsRoutes() {
                 </Button>
               </div>
             </div>
-            
+
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>
@@ -107,6 +135,8 @@ export default function RecordsRoutes() {
                   searchPlaceholder="Search MP records..."
                   data={mpRecords}
                   columns={mpRecordColumns}
+                  onEditRecord={handleEditRecord}
+                  onDeleteRecord={handleDeleteRecord}
                   resource="trainingRecords"
                 />
               </TabsContent>
@@ -118,6 +148,8 @@ export default function RecordsRoutes() {
                   searchPlaceholder="Search volunteer records..."
                   data={volunteerRecords}
                   columns={volunteerRecordColumns}
+                  onEditRecord={handleEditRecord}
+                  onDeleteRecord={handleDeleteRecord}
                   resource="trainingRecords"
                 />
               </TabsContent>

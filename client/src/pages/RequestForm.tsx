@@ -8,7 +8,12 @@ import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import { requestStatus, requestTypes, serviceOptions, localities } from "shared/const";
+import {
+  requestStatus,
+  requestTypes,
+  serviceOptions,
+  localities,
+} from "shared/const";
 
 export function RequestForm() {
   const navigate = useNavigate();
@@ -31,6 +36,10 @@ export function RequestForm() {
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       status: "pending",
       services: [],
@@ -391,7 +400,10 @@ export function RequestForm() {
                     value: locality,
                   }))}
                   onChange={(selectedOption) =>
-                    handleSelectChange("details.address.locality", selectedOption)
+                    handleSelectChange(
+                      "details.address.locality",
+                      selectedOption
+                    )
                   }
                   placeholder="Select locality..."
                   required

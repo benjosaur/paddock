@@ -100,8 +100,8 @@ export function VolunteersRoutes() {
     navigate(`/volunteers/edit/${encodedId}`);
   };
 
-  const handleViewVolunteer = (volunteer: VolunteerMetadata) => {
-    setSelectedVolunteerId(volunteer.id);
+  const handleViewVolunteer = (id: string) => {
+    setSelectedVolunteerId(id);
     setIsVolunteerModalOpen(true);
   };
 
@@ -112,6 +112,11 @@ export function VolunteersRoutes() {
 
   const handleDelete = (id: string) => {
     deleteVolunteerMutation.mutate({ id });
+  };
+
+  const handleAddRecord = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/records/create?ownerId=${encodedId}&ownerType=volunteer`);
   };
 
   if (volunteersQuery.isLoading) return <div>Loading...</div>;
@@ -132,8 +137,9 @@ export function VolunteersRoutes() {
               onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
+              onAddRecord={handleAddRecord}
               onViewItem={handleViewVolunteer as (item: unknown) => void}
-              onAddNew={handleAddNew}
+              onCreate={handleAddNew}
               resource="volunteers"
               customActions={
                 <Button

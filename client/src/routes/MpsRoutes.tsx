@@ -99,8 +99,13 @@ export function MpsRoutes() {
     deleteMpMutation.mutate({ id });
   };
 
-  const handleViewMp = (mp: MpMetadata) => {
-    setSelectedMpId(mp.id);
+  const handleAddRecord = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/records/create?ownerId=${encodedId}`);
+  };
+
+  const handleViewMp = (id: string) => {
+    setSelectedMpId(id);
     setIsMpModalOpen(true);
   };
 
@@ -127,8 +132,9 @@ export function MpsRoutes() {
               onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
+              onAddRecord={handleAddRecord}
               onViewItem={handleViewMp as (item: unknown) => void}
-              onAddNew={handleAddNew}
+              onCreate={handleAddNew}
               resource="mps"
               customActions={
                 <Button

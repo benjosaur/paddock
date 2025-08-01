@@ -172,14 +172,14 @@ export function MpDetailModal({
           </DialogTitle>
           <DialogDescription>
             View and manage detailed information for this MP including contact
-            info, offerings, training records, and activity logs.
+            info, Services, training records, and activity logs.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-4">
-              <TabsTrigger value="contact">Contact Info</TabsTrigger>
-              <TabsTrigger value="offerings">Offerings</TabsTrigger>
+              <TabsTrigger value="contact">General Info</TabsTrigger>
+              <TabsTrigger value="Services">Services</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -190,7 +190,7 @@ export function MpDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Contact Information
+                General Information
               </h3>
               {renderDetailItem("ID", mp.id)}
               {renderDetailItem("Name", mp.details.name)}
@@ -207,11 +207,11 @@ export function MpDetailModal({
             </TabsContent>
 
             <TabsContent
-              value="offerings"
+              value="Services"
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Offerings
+                Services
               </h3>
               {renderDetailItem("Services", mp.details.services)}
               {renderDetailItem("Specialisms", mp.details.specialisms)}

@@ -54,22 +54,24 @@ const packageColumns: TableColumn<Package>[] = [
 
 export default function PackageRoutes() {
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<'active' | 'completed' | 'archived'>('active');
+  const [viewState, setViewState] = useState<
+    "active" | "completed" | "archived"
+  >("active");
 
   const queryClient = useQueryClient();
 
   const packagesQuery = useQuery(
-    viewState === 'active' 
+    viewState === "active"
       ? trpc.packages.getAllNotEndedYet.queryOptions()
-      : viewState === 'completed'
+      : viewState === "completed"
       ? trpc.packages.getAllNotArchived.queryOptions()
       : trpc.packages.getAll.queryOptions()
   );
 
-  const packagesQueryKey = 
-    viewState === 'active' 
+  const packagesQueryKey =
+    viewState === "active"
       ? trpc.packages.getAllNotEndedYet.queryKey()
-      : viewState === 'completed'
+      : viewState === "completed"
       ? trpc.packages.getAllNotArchived.queryKey()
       : trpc.packages.getAll.queryKey();
 
@@ -102,19 +104,19 @@ export default function PackageRoutes() {
   };
 
   const handleViewToggle = () => {
-    if (viewState === 'active') {
-      setViewState('completed');
-    } else if (viewState === 'completed') {
-      setViewState('archived');
+    if (viewState === "active") {
+      setViewState("completed");
+    } else if (viewState === "completed") {
+      setViewState("archived");
     } else {
-      setViewState('active');
+      setViewState("active");
     }
   };
 
   const getButtonText = () => {
-    if (viewState === 'active') return 'Show Completed';
-    if (viewState === 'completed') return 'Show Archived';
-    return 'Hide Archived';
+    if (viewState === "active") return "Show Completed";
+    if (viewState === "completed") return "Show Archived";
+    return "Hide Archived";
   };
 
   if (packagesQuery.isLoading) return <div>Loading...</div>;
@@ -134,11 +136,11 @@ export default function PackageRoutes() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onRenew={handleRenew}
-            onAddNew={handleAddNew}
+            onCreate={handleAddNew}
             resource="packages"
             customActions={
               <Button
-                variant={viewState !== 'active' ? "default" : "outline"}
+                variant={viewState !== "active" ? "default" : "outline"}
                 size="sm"
                 onClick={handleViewToggle}
                 className="shadow-sm"

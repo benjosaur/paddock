@@ -115,8 +115,8 @@ export default function ClientsRoutes() {
     deleteClientMutation.mutate({ id });
   };
 
-  const handleViewClient = (client: ClientMetadata) => {
-    setSelectedClientId(client.id);
+  const handleViewClient = (id: string) => {
+    setSelectedClientId(id);
     setIsClientModalOpen(true);
   };
 
@@ -143,8 +143,8 @@ export default function ClientsRoutes() {
               onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onViewItem={handleViewClient as (item: unknown) => void}
-              onAddNew={handleAddNew}
+              onViewItem={handleViewClient}
+              onCreate={handleAddNew}
               resource="clients"
               customActions={
                 <Button

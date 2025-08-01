@@ -169,7 +169,7 @@ export function MpForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Contact Information
+                General Information
               </h3>
 
               <div>
@@ -437,32 +437,6 @@ export function MpForm() {
                 />
               </div>
 
-              <div className="space-y-3">
-                <h4 className="text-md font-medium text-gray-700">
-                  Training Records
-                </h4>
-                {/* TODO */}
-                <Button type="button" onClick={() => {}} size="sm">
-                  Edit Records
-                </Button>
-
-                {formData.trainingRecords &&
-                  formData.trainingRecords.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.trainingRecords.map((record, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                        >
-                          <span className="text-sm">
-                            {record.details.recordName} - Expires:{" "}
-                            {record.expiryDate}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-              </div>
             </div>
           </div>
 

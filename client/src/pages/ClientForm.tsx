@@ -63,7 +63,6 @@ export function ClientForm() {
     enabled: isEditing,
   });
 
-
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
       onSuccess: (data) => {
@@ -207,7 +206,7 @@ export function ClientForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Contact Information
+                General Information
               </h3>
               <div>
                 <label
