@@ -45,6 +45,7 @@ export function ClientForm() {
       clientAgreementComments: "",
       riskAssessmentDate: "",
       riskAssessmentComments: "",
+      endDate: "",
       services: [],
       attendanceAllowance: "pending",
       attendsMag: false,
@@ -448,6 +449,21 @@ export function ClientForm() {
                   id="riskAssessmentComments"
                   name="details.riskAssessmentComments"
                   value={formData.details.riskAssessmentComments || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="details.endDate"
+                  type="date"
+                  value={formData.details.endDate || ""}
                   onChange={handleInputChange}
                 />
               </div>

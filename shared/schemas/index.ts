@@ -157,6 +157,7 @@ export const clientMetadataSchema = z.object({
     clientAgreementComments: z.string().default(""),
     riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
+    endDate: z.union([z.string().date(), z.literal("")]).default(""),
     attendanceAllowance: z.enum(attendanceAllowanceStatus),
   }),
   requests: z.array(requestMetadataSchema).default([]),
