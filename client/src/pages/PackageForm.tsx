@@ -9,6 +9,7 @@ import type { Package, MpMetadata, RequestMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
+import { associatedPackageRoutes } from "../routes/PackageRoutes";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -51,12 +52,13 @@ export function PackageForm() {
     ...trpc.packages.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const packageQueryKey = trpc.packages.getAll.queryKey();
 
   const createPackageMutation = useMutation(
     trpc.packages.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/packages");
       },
     })
@@ -65,7 +67,9 @@ export function PackageForm() {
   const updatePackageMutation = useMutation(
     trpc.packages.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/packages");
       },
     })
@@ -123,9 +127,11 @@ export function PackageForm() {
     >
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -356,10 +362,9 @@ export function PackageForm() {
                   />
                   <Input
                     name="details.address.postCode"
-                    placeholder="Post Code *"
+                    placeholder="Post Code"
                     value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
               </div>

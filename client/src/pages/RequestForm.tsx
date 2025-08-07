@@ -14,6 +14,7 @@ import {
   serviceOptions,
   localities,
 } from "shared/const";
+import { associatedRequestRoutes } from "../routes/RequestRoutes";
 
 export function RequestForm() {
   const navigate = useNavigate();
@@ -56,7 +57,6 @@ export function RequestForm() {
     ...trpc.requests.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const requestQueryKey = trpc.requests.getAllMetadata.queryKey();
 
   const clients = clientsQuery.data || [];
   const request = requestQuery.data;
@@ -64,7 +64,9 @@ export function RequestForm() {
   const createMutation = useMutation(
     trpc.requests.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/requests");
       },
     })
@@ -73,7 +75,9 @@ export function RequestForm() {
   const updateMutation = useMutation(
     trpc.requests.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/requests");
       },
     })

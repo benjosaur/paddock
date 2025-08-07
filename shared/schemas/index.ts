@@ -33,7 +33,10 @@ const addressSchema = z.object({
   streetAddress: z.string().default(""),
   locality: z.enum(localities).default("Wiveliscombe"),
   county: z.string().default("Somerset"),
-  postCode: z.string().transform((val) => val.toUpperCase()),
+  postCode: z
+    .string()
+    .transform((val) => val.toUpperCase())
+    .default(""),
 });
 
 const addressSchemaWithDeprivation = addressSchema.extend({

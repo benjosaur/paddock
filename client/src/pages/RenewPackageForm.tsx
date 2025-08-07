@@ -9,6 +9,7 @@ import type { Package, MpMetadata, RequestMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
+import { associatedPackageRoutes } from "../routes/PackageRoutes";
 
 export function RenewPackageForm() {
   const navigate = useNavigate();
@@ -52,28 +53,8 @@ export function RenewPackageForm() {
   const renewPackageMutation = useMutation(
     trpc.packages.renew.mutationOptions({
       onSuccess: () => {
-        // Invalidate all package routes
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAll.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAllNotArchived.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAllNotEndedYet.queryKey(),
-        });
-        // Also invalidate request routes since requests are related to packages
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllMetadata.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAll.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllNotArchived.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllNotEndedYet.queryKey(),
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
         navigate("/packages");
       },

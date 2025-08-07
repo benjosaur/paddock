@@ -14,6 +14,7 @@ import {
   serviceOptions,
   localities,
 } from "shared/const";
+import { associatedRequestRoutes } from "../routes/RequestRoutes";
 
 export function RenewRequestForm() {
   const navigate = useNavigate();
@@ -64,28 +65,8 @@ export function RenewRequestForm() {
   const renewMutation = useMutation(
     trpc.requests.renew.mutationOptions({
       onSuccess: () => {
-        // Invalidate all request routes
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllMetadata.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAll.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllNotArchived.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.requests.getAllNotEndedYet.queryKey(),
-        });
-        // Also invalidate package routes since packages are related to requests
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAll.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAllNotArchived.queryKey(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: trpc.packages.getAllNotEndedYet.queryKey(),
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
         navigate("/requests");
       },

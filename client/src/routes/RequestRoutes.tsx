@@ -92,7 +92,9 @@ export default function RequestRoutes() {
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestsQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -196,3 +198,49 @@ export default function RequestRoutes() {
     </>
   );
 }
+
+export const associatedRequestRoutes: any[] = [
+  // Analytics
+  trpc.analytics.getActivePackagesCrossSection,
+  trpc.analytics.getActiveRequestsCrossSection,
+  trpc.analytics.getRequestsReport,
+  trpc.analytics.getPackagesReport,
+  
+  // Requests
+  trpc.requests.getAll,
+  trpc.requests.getAllNotArchived,
+  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getById,
+  trpc.requests.getAllMetadata,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllNotArchived,
+  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getById,
+
+  // Clients
+  trpc.clients.getAll,
+  trpc.clients.getAllNotArchived,
+  trpc.clients.getById,
+
+  // MPs
+  trpc.mps.getAll,
+  trpc.mps.getAllNotArchived,
+  trpc.mps.getById,
+
+  // Volunteers
+  trpc.volunteers.getAll,
+  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];
