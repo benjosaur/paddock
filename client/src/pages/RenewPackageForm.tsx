@@ -119,9 +119,11 @@ export function RenewPackageForm() {
     isOld: boolean = false
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
         : e.target.value;
 
     if (isOld && oldPackageData) {
@@ -284,7 +286,6 @@ export function RenewPackageForm() {
                 value={formData.startDate || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
                 required
-                disabled={true}
               />
             </div>
 

@@ -363,7 +363,7 @@ export function RenewRequestForm() {
                 min="0"
                 max="168"
                 step="0.5"
-                value={formData.details.weeklyHours || 0}
+                value={formData.details.weeklyHours || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
                 placeholder="e.g., 10"
                 required
