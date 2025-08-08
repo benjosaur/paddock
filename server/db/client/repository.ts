@@ -48,6 +48,27 @@ export class ClientRepository {
     }
   }
 
+  async getAllWithMagService(user: User): Promise<DbClientEntity[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI1",
+      KeyConditionExpression: "entityType = :pk",
+      FilterExpression: "contains(details.services, :magService)",
+      ExpressionAttributeValues: {
+        ":pk": "client",
+        ":magService": "MAG",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting MAG clients:", error);
+      throw error;
+    }
+  }
+
   async getById(clientId: string, user: User): Promise<DbClientFull[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),

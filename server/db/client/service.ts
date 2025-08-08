@@ -65,6 +65,24 @@ export class ClientService {
     }
   }
 
+  async getAllWithMagService(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllWithMagService(user);
+      const dbRequests = await this.requestRepository.getAll(user);
+      const transformedResult = this.transformDbClientToSharedMetaData([
+        ...dbClients,
+        ...dbRequests,
+      ]);
+      const parsedResult = clientMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting MAG clients:", error);
+      throw error;
+    }
+  }
+
   async getById(clientId: string, user: User): Promise<ClientFull> {
     try {
       const client = await this.clientRepository.getById(clientId, user);
