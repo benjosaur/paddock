@@ -11,11 +11,6 @@ import { useState } from "react";
 
 const requestColumns: TableColumn<RequestFull>[] = [
   {
-    key: "id",
-    header: "Request ID",
-    render: (item) => item.id,
-  },
-  {
     key: "clientName",
     header: "Client Name",
     render: (item) => item.details.name,

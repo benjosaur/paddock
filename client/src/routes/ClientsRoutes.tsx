@@ -7,13 +7,13 @@ import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket, capitalise } from "@/utils/helpers";
+import { capitalise } from "@/utils/helpers";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
   {
-    key: "id",
-    header: "ID",
-    render: (item: ClientMetadata) => item.id,
+    key: "customId",
+    header: "Custom ID",
+    render: (item: ClientMetadata) => item.details.customId || "—",
   },
   {
     key: "name",
@@ -22,11 +22,8 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   },
   {
     key: "dob",
-    header: "Age",
-    render: (item: ClientMetadata) =>
-      item.dateOfBirth
-        ? calculateAgeBracket(item.dateOfBirth) + " years"
-        : "Unknown",
+    header: "Date of Birth",
+    render: (item: ClientMetadata) => item.dateOfBirth || "Unknown",
   },
 
   {

@@ -6,7 +6,6 @@ import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "id", header: "ID", render: (item) => item.id },
   { key: "date", header: "Date", render: (item) => item.date },
   {
     key: "total",

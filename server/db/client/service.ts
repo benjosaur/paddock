@@ -117,7 +117,10 @@ export class ClientService {
     }
   }
 
-  async create(newClient: Omit<ClientFull, "id">, user: User): Promise<{
+  async create(
+    newClient: Omit<ClientFull, "id">,
+    user: User
+  ): Promise<{
     clientId: string;
     deprivationData: {
       income: boolean;
@@ -159,7 +162,7 @@ export class ClientService {
         clientToCreate,
         user
       );
-      
+
       return {
         clientId: createdClientId,
         deprivationData,

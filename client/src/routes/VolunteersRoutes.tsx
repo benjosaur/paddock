@@ -7,14 +7,8 @@ import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
 import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket } from "../utils/helpers";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "id",
-    header: "ID",
-    render: (item: VolunteerMetadata) => item.id,
-  },
   {
     key: "name",
     header: "Name",
@@ -22,11 +16,8 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   },
   {
     key: "dob",
-    header: "Age",
-    render: (item: VolunteerMetadata) =>
-      item.dateOfBirth
-        ? calculateAgeBracket(item.dateOfBirth) + " years"
-        : "Unknown",
+    header: "Date of Birth",
+    render: (item: VolunteerMetadata) => item.dateOfBirth || "Unknown",
   },
   {
     key: "postCode",
@@ -41,7 +32,7 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: VolunteerMetadata) => item.dbsExpiry,
+    render: (item: VolunteerMetadata) => item.dbsExpiry || "No DBS",
   },
   {
     key: "capacity",

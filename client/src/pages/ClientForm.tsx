@@ -26,6 +26,7 @@ export function ClientForm() {
     archived: "N",
     dateOfBirth: "",
     details: {
+      customId: "",
       name: "",
       address: {
         streetAddress: "",
@@ -98,7 +99,6 @@ export function ClientForm() {
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        toast.success("Client updated successfully!");
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
@@ -110,7 +110,6 @@ export function ClientForm() {
   const updateNameMutation = useMutation(
     trpc.clients.updateName.mutationOptions({
       onSuccess: () => {
-        toast.success("Client name updated successfully!");
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
@@ -215,6 +214,21 @@ export function ClientForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 General Information
               </h3>
+              <div>
+                <label
+                  htmlFor="customId"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Custom ID
+                </label>
+                <Input
+                  id="customId"
+                  name="details.customId"
+                  value={formData.details.customId || ""}
+                  onChange={handleInputChange}
+                  placeholder="Optional custom identifier"
+                />
+              </div>
               <div>
                 <label
                   htmlFor="name"

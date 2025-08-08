@@ -5,7 +5,6 @@ import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import type { TrainingRecord, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateTimeToDate } from "@/utils/helpers";
 import {
   Tabs,
   TabsContent,
@@ -29,8 +28,8 @@ const mpRecordColumns: TableColumn<TrainingRecord>[] = [
   },
   {
     key: "date",
-    header: "Expires",
-    render: (item) => calculateTimeToDate(item.expiryDate),
+    header: "Expiry Date",
+    render: (item) => item.expiryDate,
   },
   {
     key: "notes",

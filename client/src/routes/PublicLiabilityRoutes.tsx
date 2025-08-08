@@ -5,7 +5,6 @@ import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { calculateTimeToDate } from "@/utils/helpers";
 import {
   Tabs,
   TabsContent,
@@ -26,11 +25,9 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
   },
   {
     key: "publicLiabilityExpiry",
-    header: "Public Liability Expires",
+    header: "Public Liability Expiry",
     render: (item) =>
-      item.publicLiabilityExpiry
-        ? calculateTimeToDate(item.publicLiabilityExpiry)
-        : "No Public Liability",
+      item.publicLiabilityExpiry || "No Public Liability",
   },
 ];
 
@@ -47,11 +44,9 @@ const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] = [
   },
   {
     key: "publicLiabilityExpiry",
-    header: "Public Liability Expires",
+    header: "Public Liability Expiry",
     render: (item) =>
-      item.publicLiabilityExpiry
-        ? calculateTimeToDate(item.publicLiabilityExpiry)
-        : "No Public Liability",
+      item.publicLiabilityExpiry || "No Public Liability",
   },
 ];
 

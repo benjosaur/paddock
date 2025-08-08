@@ -8,7 +8,12 @@ export const userRoles = [
 ] as const;
 export const requestTypes = ["paid", "unpaid"] as const;
 export const requestStatus = ["pending", "urgent"] as const;
-export const attendanceAllowanceStatus = ["no", "pending", "yes"] as const;
+export const attendanceAllowanceStatus = [
+  "no",
+  "pending",
+  "Low",
+  "High",
+] as const;
 export const booleanTypes = ["Y", "N"] as const;
 export const serviceOptions = [
   "Personal Care",

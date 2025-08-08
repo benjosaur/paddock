@@ -33,7 +33,10 @@ const addressSchema = z.object({
   streetAddress: z.string().default(""),
   locality: z.enum(localities).default("Wiveliscombe"),
   county: z.string().default("Somerset"),
-  postCode: z.string().min(1, "Post code is required").transform((val) => val.toUpperCase()),
+  postCode: z
+    .string()
+    .min(1, "Post code is required")
+    .transform((val) => val.toUpperCase()),
 });
 
 const addressSchemaWithDeprivation = addressSchema.extend({
@@ -144,6 +147,7 @@ export const clientMetadataSchema = z.object({
   archived: z.enum(booleanTypes),
   dateOfBirth: z.string().date(),
   details: basePersonDetails.omit({ address: true }).extend({
+    customId: z.string().default(""),
     address: addressSchemaWithDeprivation,
     donationScheme: z.boolean().default(false),
     donationAmount: z.number().default(0),
@@ -175,7 +179,6 @@ export const mpMetadataSchema = z.object({
     .default(""),
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
-    specialisms: z.array(z.string()).default([]),
     capacity: z.string().default(""),
   }),
   packages: z.array(packageSchema).default([]),

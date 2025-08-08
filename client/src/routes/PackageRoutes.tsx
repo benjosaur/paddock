@@ -10,11 +10,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const packageColumns: TableColumn<Package>[] = [
   {
-    key: "id",
-    header: "ID",
-    render: (item: Package) => item.id,
-  },
-  {
     key: "name",
     header: "Package Name",
     render: (item: Package) => item.details.name,
