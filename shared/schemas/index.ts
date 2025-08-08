@@ -3,6 +3,7 @@ import {
   attendanceAllowanceStatus,
   booleanTypes,
   localities,
+  notesSource,
   requestStatus,
   requestTypes,
   serviceOptions,
@@ -60,6 +61,7 @@ export const packageSchema = z.object({
   startDate: z.string().date(),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
+    // mp/v owner name
     name: z.string(),
     weeklyHours: z.number().default(1),
     address: addressSchemaWithDeprivation,
@@ -77,6 +79,8 @@ export const requestMetadataSchema = z.object({
   startDate: z.string().date(),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
+    customId: z.string().default(""),
+    //client owner name
     name: z.string(),
     weeklyHours: z.number().default(1),
     address: addressSchemaWithDeprivation,
@@ -138,7 +142,14 @@ const basePersonDetails = z.object({
   services: z.array(z.enum(serviceOptions)).default([]),
   attendsMag: z.boolean().default(false),
   notes: z
-    .array(z.object({ date: z.string().date(), note: z.string() }))
+    .array(
+      z.object({
+        date: z.string().date(),
+        note: z.string(),
+        source: z.enum(notesSource),
+        minutesTaken: z.number().min(0),
+      })
+    )
     .default([]),
 });
 
@@ -218,17 +229,59 @@ export const crossSectionSchema = z.object({
     .default([]),
 });
 
+export const deprivationCrossSectionSchema = z.object({
+  totalHours: z.number().default(0),
+  deprivationCategories: z
+    .array(
+      z.object({
+        name: z.string(), // "Health Only", "Income Only", "Both", "Neither"
+        services: z.array(
+          z.object({
+            name: z.enum(serviceOptions),
+            totalHours: z.number().default(0),
+          })
+        ),
+        totalHours: z.number().default(0),
+      })
+    )
+    .default([]),
+  services: z
+    .array(
+      z.object({
+        name: z.enum(serviceOptions),
+        totalHours: z.number().default(0),
+      })
+    )
+    .default([]),
+});
+
 export const reportMonthSchema = crossSectionSchema.extend({
   month: z.number(),
 });
+
+export const deprivationReportMonthSchema =
+  deprivationCrossSectionSchema.extend({
+    month: z.number(),
+  });
 
 export const reportYearSchema = crossSectionSchema.extend({
   year: z.number(),
   months: z.array(reportMonthSchema),
 });
 
+export const deprivationReportYearSchema = deprivationCrossSectionSchema.extend(
+  {
+    year: z.number(),
+    months: z.array(deprivationReportMonthSchema),
+  }
+);
+
 export const reportSchema = z.object({
   years: z.array(reportYearSchema),
+});
+
+export const deprivationReportSchema = z.object({
+  years: z.array(deprivationReportYearSchema),
 });
 
 export type MpMetadata = z.infer<typeof mpMetadataSchema>;
@@ -245,6 +298,14 @@ export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
 export type CrossSection = z.infer<typeof crossSectionSchema>;
+export type DeprivationCrossSection = z.infer<
+  typeof deprivationCrossSectionSchema
+>;
 export type ReportMonth = z.infer<typeof reportMonthSchema>;
+export type DeprivationReportMonth = z.infer<
+  typeof deprivationReportMonthSchema
+>;
 export type ReportYear = z.infer<typeof reportYearSchema>;
+export type DeprivationReportYear = z.infer<typeof deprivationReportYearSchema>;
 export type Report = z.infer<typeof reportSchema>;
+export type DeprivationReport = z.infer<typeof deprivationReportSchema>;

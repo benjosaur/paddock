@@ -1,4 +1,4 @@
-import { crossSectionSchema, reportSchema } from "shared";
+import { crossSectionSchema, deprivationCrossSectionSchema, reportSchema, deprivationReportSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { z } from "zod";
 
@@ -34,6 +34,42 @@ export const analyticsRouter = router({
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generatePackagesReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  getActiveRequestsDeprivationCrossSection: createProtectedProcedure("analytics", "read")
+    .output(deprivationCrossSectionSchema)
+    .query(async ({ ctx }) => {
+      return await ctx.services.analytics.generateActiveRequestsDeprivationCrossSection(
+        ctx.user
+      );
+    }),
+
+  getActivePackagesDeprivationCrossSection: createProtectedProcedure("analytics", "read")
+    .output(deprivationCrossSectionSchema)
+    .query(async ({ ctx }) => {
+      return await ctx.services.analytics.generateActivePackagesDeprivationCrossSection(
+        ctx.user
+      );
+    }),
+
+  getRequestsDeprivationReport: createProtectedProcedure("analytics", "read")
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(deprivationReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateRequestsDeprivationReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  getPackagesDeprivationReport: createProtectedProcedure("analytics", "read")
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(deprivationReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generatePackagesDeprivationReport(
         ctx.user,
         input.startYear
       );

@@ -26,9 +26,13 @@ import {
   Package,
   RequestMetadata,
   CrossSection,
+  DeprivationCrossSection,
   Report,
+  DeprivationReport,
   reportMonthSchema,
+  deprivationReportMonthSchema,
   ReportYear,
+  DeprivationReportYear,
 } from "shared";
 
 export class ReportService {
@@ -103,6 +107,76 @@ export class ReportService {
     }
   }
 
+  async generateActiveRequestsDeprivationCrossSection(user: User): Promise<DeprivationCrossSection> {
+    try {
+      const requests = await this.requestService.getAllNotEndedYetWithPackages(
+        user
+      );
+      const crossSection: DeprivationCrossSection = {
+        totalHours: 0,
+        deprivationCategories: [],
+        services: [],
+      };
+      for (const request of requests) {
+        const weeklyHours = request.details.weeklyHours;
+        crossSection.totalHours = parseFloat((crossSection.totalHours + weeklyHours).toFixed(2));
+        const deprivationCategory = this.getDeprivationCategory(request.details.address.deprivation);
+        this.addHoursToReportDeprivationCategory(
+          weeklyHours,
+          crossSection.deprivationCategories,
+          deprivationCategory,
+          request.details.services
+        );
+        this.addHoursToReportService(
+          weeklyHours,
+          crossSection.services,
+          request.details.services
+        );
+      }
+      return crossSection;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating active requests deprivation cross section:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  async generateActivePackagesDeprivationCrossSection(user: User): Promise<DeprivationCrossSection> {
+    try {
+      const packages = await this.packageService.getAllNotEndedYet(user);
+      const crossSection: DeprivationCrossSection = {
+        totalHours: 0,
+        deprivationCategories: [],
+        services: [],
+      };
+      for (const pkg of packages) {
+        const weeklyHours = pkg.details.weeklyHours;
+        crossSection.totalHours = parseFloat((crossSection.totalHours + weeklyHours).toFixed(2));
+        const deprivationCategory = this.getDeprivationCategory(pkg.details.address.deprivation);
+        this.addHoursToReportDeprivationCategory(
+          weeklyHours,
+          crossSection.deprivationCategories,
+          deprivationCategory,
+          pkg.details.services
+        );
+        this.addHoursToReportService(
+          weeklyHours,
+          crossSection.services,
+          pkg.details.services
+        );
+      }
+      return crossSection;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating active packages deprivation cross section:",
+        error
+      );
+      throw error;
+    }
+  }
+
   async generateRequestsReport(
     user: User,
     startYear: number = firstYear
@@ -148,6 +222,51 @@ export class ReportService {
     }
   }
 
+  async generateRequestsDeprivationReport(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<DeprivationReport> {
+    try {
+      // construct empty report
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const requests = await this.requestService.getAllMetadata(
+        user,
+        startYear
+      );
+      const report = this.constructEmptyDeprivationReport(startYear, currentYear);
+      // iterate through requests => for each find start date, end date, weekly hours, deprivation category, service
+      for (const request of requests) {
+        this.addItemToDeprivationReport(request, report);
+      }
+      return report;
+    } catch (error) {
+      console.error("Service Layer Error generating requests deprivation report:", error);
+      throw error;
+    }
+  }
+
+  async generatePackagesDeprivationReport(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<DeprivationReport> {
+    try {
+      // construct empty report
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const packages = await this.packageService.getAll(user, startYear);
+      const report = this.constructEmptyDeprivationReport(startYear, currentYear);
+      // iterate through packages => for each find start date, end date, weekly hours, deprivation category, service
+      for (const pkg of packages) {
+        this.addItemToDeprivationReport(pkg, report);
+      }
+      return report;
+    } catch (error) {
+      console.error("Service Layer Error generating packages deprivation report:", error);
+      throw error;
+    }
+  }
+
   private constructEmptyReport(startYear: number, currentYear: number): Report {
     const emptyReport: Report = {
       years: [],
@@ -167,6 +286,30 @@ export class ReportService {
       year: year,
       totalHours: 0,
       localities: [],
+      services: [],
+      months: monthReports,
+    };
+  }
+
+  private constructEmptyDeprivationReport(startYear: number, currentYear: number): DeprivationReport {
+    const emptyReport: DeprivationReport = {
+      years: [],
+    };
+    for (let year = startYear; year <= currentYear; year++) {
+      emptyReport.years.push(this.generateEmptyDeprivationYear(year));
+    }
+    return emptyReport;
+  }
+
+  private generateEmptyDeprivationYear(year: number): DeprivationReportYear {
+    const monthReports = [];
+    for (const month of months) {
+      monthReports.push(deprivationReportMonthSchema.parse({ month: month }));
+    }
+    return {
+      year: year,
+      totalHours: 0,
+      deprivationCategories: [],
       services: [],
       months: monthReports,
     };
@@ -320,5 +463,123 @@ export class ReportService {
         }
       }
     }
+  }
+
+  private getDeprivationCategory(deprivation: { income: boolean; health: boolean }): string {
+    if (deprivation.health && deprivation.income) {
+      return "Health & Income";
+    } else if (deprivation.health && !deprivation.income) {
+      return "Health Only";
+    } else if (!deprivation.health && deprivation.income) {
+      return "Income Only";
+    } else {
+      return "Neither";
+    }
+  }
+
+  private addItemToDeprivationReport(
+    item: RequestMetadata | Package,
+    report: DeprivationReport
+  ): void {
+    const startDate = item.startDate;
+    const endDate =
+      item.endDate === "open"
+        ? new Date().toISOString().slice(0, 10)
+        : item.endDate;
+    const startYear = parseInt(startDate.slice(0, 4));
+    const startMonth = parseInt(startDate.slice(5, 7));
+    const startDay = parseInt(startDate.slice(8, 10));
+    const endYear = parseInt(endDate.slice(0, 4));
+    const endMonth = parseInt(endDate.slice(5, 7));
+    const endDay = parseInt(endDate.slice(8, 10));
+    let currentDay = startDay;
+    let currentMonth = startMonth;
+    let currentYear = startYear;
+    while (
+      currentYear < endYear ||
+      (currentYear == endYear && currentMonth < endMonth)
+    ) {
+      const daysInMonth = this.getDaysInMonth(currentYear, currentMonth);
+      const hoursToAdd =
+        item.details.weeklyHours * ((daysInMonth - currentDay + 1) / 7);
+      this.addHoursToDeprivationReport(
+        hoursToAdd,
+        report,
+        item,
+        currentYear,
+        currentMonth
+      );
+      currentDay = 1;
+      if (currentMonth == 12) {
+        currentMonth = 1;
+        currentYear++;
+      } else {
+        currentMonth++;
+      }
+    }
+    //now in final month of final year
+    const hoursToAdd = item.details.weeklyHours * ((endDay - currentDay) / 7);
+    this.addHoursToDeprivationReport(hoursToAdd, report, item, currentYear, currentMonth);
+  }
+
+  private addHoursToDeprivationReport(
+    hours: number,
+    report: DeprivationReport,
+    item: RequestMetadata | Package,
+    year: number,
+    month: number
+  ) {
+    const serviceNames = item.details.services;
+    const deprivationCategory = this.getDeprivationCategory(item.details.address.deprivation);
+    const reportYear = report.years.find(
+      (reportYear) => reportYear.year === year
+    );
+    if (!reportYear) {
+      throw new Error(`Year ${year} not found in deprivation report`);
+    }
+    reportYear.totalHours = parseFloat((reportYear.totalHours + hours).toFixed(2));
+    this.addHoursToReportService(hours, reportYear.services, serviceNames);
+    this.addHoursToReportDeprivationCategory(
+      hours,
+      reportYear.deprivationCategories,
+      deprivationCategory,
+      serviceNames
+    );
+    const reportMonth = reportYear.months.find(
+      (reportMonth) => reportMonth.month == month
+    );
+    if (!reportMonth) {
+      throw new Error(`Month ${month} not found in deprivation report year ${year}`);
+    }
+    reportMonth.totalHours = parseFloat((reportMonth.totalHours + hours).toFixed(2));
+    this.addHoursToReportService(hours, reportMonth.services, serviceNames);
+    this.addHoursToReportDeprivationCategory(
+      hours,
+      reportMonth.deprivationCategories,
+      deprivationCategory,
+      serviceNames
+    );
+  }
+
+  private addHoursToReportDeprivationCategory(
+    hours: number,
+    reportDeprivationCategories:
+      | DeprivationReport["years"][number]["deprivationCategories"]
+      | DeprivationReport["years"][number]["months"][number]["deprivationCategories"],
+    deprivationCategory: string,
+    serviceNames: string[]
+  ) {
+    let reportDeprivationCategory = reportDeprivationCategories.find((d) => d.name == deprivationCategory);
+    if (!reportDeprivationCategory) {
+      reportDeprivationCategory = {
+        name: deprivationCategory,
+        totalHours: parseFloat(hours.toFixed(2)),
+        services: [],
+      };
+      reportDeprivationCategories.push(reportDeprivationCategory);
+    } else {
+      reportDeprivationCategory.totalHours = parseFloat((reportDeprivationCategory.totalHours + hours).toFixed(2));
+    }
+    this.addHoursToReportService(hours, reportDeprivationCategory.services, serviceNames);
   }
 }

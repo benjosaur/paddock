@@ -27,9 +27,10 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
       {
         date: "2025-07-21",
         note: "Experienced volunteer coordinator",
+        source: "Phone",
+        minutesTaken: 0.5,
       },
     ],
-    specialisms: ["Community Outreach", "Event Management"],
     capacity: "Part time",
   },
   packages: [],
@@ -69,6 +70,8 @@ export async function testVolunteerService() {
           {
             date: "2025-07-21",
             note: "Updated experienced volunteer coordinator",
+            source: "Email",
+            minutesTaken: 1.0,
           },
         ],
       },

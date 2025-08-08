@@ -13,6 +13,7 @@ const samplePaidRequest: Omit<RequestMetadata, "id"> = {
   startDate: "2025-01-10",
   endDate: "open",
   details: {
+    customId: "",
     name: "Test Client",
     notes: "Urgent paid support needed",
     address: {
@@ -38,6 +39,7 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
   startDate: "2025-01-15",
   endDate: "open",
   details: {
+    customId: "",
     name: "Test Client",
     address: {
       streetAddress: "61626 Schmidt Divide",

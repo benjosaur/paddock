@@ -75,13 +75,6 @@ export default function RequestRoutes() {
       : trpc.requests.getAll.queryOptions()
   );
 
-  const requestsQueryKey =
-    viewState === "active"
-      ? trpc.requests.getAllNotEndedYet.queryKey()
-      : viewState === "completed"
-      ? trpc.requests.getAllNotArchived.queryKey()
-      : trpc.requests.getAll.queryKey();
-
   const requests = requestsQuery.data || [];
 
   const deleteRequestMutation = useMutation(
@@ -200,7 +193,7 @@ export const associatedRequestRoutes: any[] = [
   trpc.analytics.getActiveRequestsCrossSection,
   trpc.analytics.getRequestsReport,
   trpc.analytics.getPackagesReport,
-  
+
   // Requests
   trpc.requests.getAll,
   trpc.requests.getAllNotArchived,

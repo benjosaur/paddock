@@ -31,6 +31,7 @@ export function RequestForm() {
     startDate: "",
     endDate: "open",
     details: {
+      customId: "",
       name: "",
       weeklyHours: 0,
       address: {

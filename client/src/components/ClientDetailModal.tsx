@@ -37,7 +37,7 @@ export function ClientDetailModal({
   );
   const client = clientQuery.data;
   const [currentNotes, setCurrentNotes] = useState<
-    { date: string; note: string }[]
+    { date: string; note: string; source: "Phone" | "Email" | "In Person"; minutesTaken: number }[]
   >([]);
 
   // Update local notes when client data changes

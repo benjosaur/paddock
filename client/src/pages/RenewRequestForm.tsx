@@ -33,6 +33,7 @@ export function RenewRequestForm() {
     startDate: "",
     endDate: "open",
     details: {
+      customId: "",
       name: "",
       weeklyHours: 0,
       address: {

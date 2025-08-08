@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { Select } from "./ui/select";
 import { Plus, Trash2, Edit, Check, X } from "lucide-react";
+import { notesSource } from "shared/const";
 
 interface Note {
   date: string;
   note: string;
+  source: (typeof notesSource)[number];
+  minutesTaken: number;
 }
 
 interface NotesEditorProps {
@@ -21,17 +25,29 @@ export function NotesEditor({
   disabled = false,
 }: NotesEditorProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingNote, setEditingNote] = useState<Note>({ date: "", note: "" });
+  const [editingNote, setEditingNote] = useState<Note>({
+    date: "",
+    note: "",
+    source: "Phone",
+    minutesTaken: 0,
+  });
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newNote, setNewNote] = useState<Note>({
     date: new Date().toISOString().split("T")[0],
     note: "",
+    source: "Phone",
+    minutesTaken: 0,
   });
 
   const handleAddNote = () => {
     if (newNote.note.trim()) {
       onChange([...notes, newNote]);
-      setNewNote({ date: new Date().toISOString().split("T")[0], note: "" });
+      setNewNote({
+        date: new Date().toISOString().split("T")[0],
+        note: "",
+        source: "Phone",
+        minutesTaken: 0,
+      });
       setIsAddingNew(false);
     }
   };
@@ -47,13 +63,23 @@ export function NotesEditor({
       updatedNotes[editingIndex] = editingNote;
       onChange(updatedNotes);
       setEditingIndex(null);
-      setEditingNote({ date: "", note: "" });
+      setEditingNote({
+        date: "",
+        note: "",
+        source: "Phone",
+        minutesTaken: 0,
+      });
     }
   };
 
   const handleCancelEdit = () => {
     setEditingIndex(null);
-    setEditingNote({ date: "", note: "" });
+    setEditingNote({
+      date: "",
+      note: "",
+      source: "Phone",
+      minutesTaken: 0,
+    });
   };
 
   const handleDeleteNote = (index: number) => {
@@ -111,6 +137,50 @@ export function NotesEditor({
                     className="min-h-[80px] text-sm"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Source
+                    </label>
+                    <Select
+                      value={{
+                        label: editingNote.source,
+                        value: editingNote.source,
+                      }}
+                      onChange={(selectedOption) =>
+                        setEditingNote({
+                          ...editingNote,
+                          source:
+                            (selectedOption?.value as typeof editingNote.source) ||
+                            "Phone",
+                        })
+                      }
+                      options={notesSource.map((source) => ({
+                        label: source,
+                        value: source,
+                      }))}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Time Taken (hours)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      value={editingNote.minutesTaken}
+                      onChange={(e) =>
+                        setEditingNote({
+                          ...editingNote,
+                          minutesTaken: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
                 <div className="flex gap-2 justify-end">
                   <Button
                     type="button"
@@ -138,8 +208,18 @@ export function NotesEditor({
               <div>
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1 space-y-2">
-                    <div className="text-xs font-medium text-gray-500">
-                      {formatDate(note.date)}
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="font-medium text-gray-500">
+                        {formatDate(note.date)}
+                      </span>
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+                        {note.source}
+                      </span>
+                      {note.minutesTaken > 0 && (
+                        <span className="text-gray-500">
+                          {note.minutesTaken}h
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-gray-700 whitespace-pre-wrap">
                       {note.note}
@@ -205,6 +285,47 @@ export function NotesEditor({
                 autoFocus
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Source
+                </label>
+                <Select
+                  value={{ label: newNote.source, value: newNote.source }}
+                  onChange={(selectedOption) =>
+                    setNewNote({
+                      ...newNote,
+                      source:
+                        (selectedOption?.value as typeof newNote.source) ||
+                        "Phone",
+                    })
+                  }
+                  options={notesSource.map((source) => ({
+                    label: source,
+                    value: source,
+                  }))}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Time Taken (mins)
+                </label>
+                <Input
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  value={newNote.minutesTaken}
+                  onChange={(e) =>
+                    setNewNote({
+                      ...newNote,
+                      minutesTaken: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-sm"
+                />
+              </div>
+            </div>
             <div className="flex gap-2 justify-end">
               <Button
                 type="button"
@@ -215,6 +336,8 @@ export function NotesEditor({
                   setNewNote({
                     date: new Date().toISOString().split("T")[0],
                     note: "",
+                    source: "Phone",
+                    minutesTaken: 0,
                   });
                 }}
                 className="flex items-center gap-1"

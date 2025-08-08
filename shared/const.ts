@@ -15,6 +15,7 @@ export const attendanceAllowanceStatus = [
   "High",
 ] as const;
 export const booleanTypes = ["Y", "N"] as const;
+export const notesSource = ["Phone", "Email", "In Person"] as const;
 export const serviceOptions = [
   "Personal Care",
   "Domestic",

@@ -34,7 +34,6 @@ export function VolunteerForm() {
       email: "",
       nextOfKin: "",
       services: [],
-      specialisms: [],
       capacity: "",
       attendsMag: false,
       notes: [],
@@ -99,12 +98,6 @@ export function VolunteerForm() {
         : e.target instanceof HTMLInputElement && e.target.type === "number"
         ? Number(e.target.value)
         : e.target.value;
-    setFormData((prev) => updateNestedValue(field, value, prev));
-  };
-
-  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as "details.services" | "details.specialisms";
-    let value = e.target.value.split(",");
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
@@ -415,22 +408,6 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="specialisms"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Specialisms (comma-separated)
-                </label>
-                <Input
-                  id="specialisms"
-                  name="details.specialisms"
-                  value={formData.details.specialisms.join(",")}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Dementia Care, Mobility Support"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="capacity"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -444,7 +421,6 @@ export function VolunteerForm() {
                   placeholder="e.g., Full Time, Part Time"
                 />
               </div>
-
             </div>
           </div>
 

@@ -19,7 +19,7 @@ import {
   TabsContent,
 } from "../components/ui/tabs";
 import { Package, RequestFull } from "shared";
-import type { Report } from "shared";
+import type { Report, DeprivationReport } from "shared";
 import { firstYear } from "shared/const";
 
 export function Dashboard() {
@@ -27,8 +27,13 @@ export function Dashboard() {
   const [reportType, setReportType] = useState<"requests" | "packages">(
     "requests"
   );
+  const [breakdownType, setBreakdownType] = useState<
+    "locality" | "deprivation"
+  >("locality");
   const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
-  const [generatedReport, setGeneratedReport] = useState<Report | null>(null);
+  const [generatedReport, setGeneratedReport] = useState<
+    Report | DeprivationReport | null
+  >(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Fetch all required data
@@ -58,6 +63,16 @@ export function Dashboard() {
 
   const packagesReportQuery = useQuery({
     ...trpc.analytics.getPackagesReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
+
+  const requestsDeprivationReportQuery = useQuery({
+    ...trpc.analytics.getRequestsDeprivationReport.queryOptions({ startYear }),
+    enabled: false, // Don't auto-fetch, only when user requests it
+  });
+
+  const packagesDeprivationReportQuery = useQuery({
+    ...trpc.analytics.getPackagesDeprivationReport.queryOptions({ startYear }),
     enabled: false, // Don't auto-fetch, only when user requests it
   });
 
@@ -125,16 +140,32 @@ export function Dashboard() {
     { value: "packages", label: "Packages Report" },
   ];
 
+  const breakdownTypeOptions = [
+    { value: "locality", label: "By Locality" },
+    { value: "deprivation", label: "By Deprivation" },
+  ];
+
   const handleGenerateReport = async () => {
     setIsGeneratingReport(true);
     try {
-      let report: Report;
-      if (reportType === "requests") {
-        const result = await requestsReportQuery.refetch();
-        report = result.data!;
+      let report: Report | DeprivationReport;
+      if (breakdownType === "locality") {
+        if (reportType === "requests") {
+          const result = await requestsReportQuery.refetch();
+          report = result.data!;
+        } else {
+          const result = await packagesReportQuery.refetch();
+          report = result.data!;
+        }
       } else {
-        const result = await packagesReportQuery.refetch();
-        report = result.data!;
+        // deprivation breakdown
+        if (reportType === "requests") {
+          const result = await requestsDeprivationReportQuery.refetch();
+          report = result.data!;
+        } else {
+          const result = await packagesDeprivationReportQuery.refetch();
+          report = result.data!;
+        }
       }
       setGeneratedReport(report);
     } catch (error) {
@@ -146,6 +177,16 @@ export function Dashboard() {
 
   const handleResetReport = () => {
     setGeneratedReport(null);
+  };
+
+  const getBreakdownDisplayName = () => {
+    return breakdownType === "locality" ? "Locality" : "Deprivation Category";
+  };
+
+  const getBreakdownItems = (yearData: any) => {
+    return breakdownType === "locality"
+      ? yearData.localities
+      : yearData.deprivationCategories;
   };
 
   return (
@@ -169,7 +210,7 @@ export function Dashboard() {
 
               {!generatedReport ? (
                 <div className="space-y-6 p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Report Type *
@@ -194,6 +235,35 @@ export function Dashboard() {
                           }
                         }}
                         placeholder="Select report type..."
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Breakdown Type *
+                      </label>
+                      <Select
+                        options={breakdownTypeOptions}
+                        value={
+                          breakdownTypeOptions.find(
+                            (option) => option.value === breakdownType
+                          ) || null
+                        }
+                        onChange={(
+                          selectedOption: SingleValue<{
+                            value: string;
+                            label: string;
+                          }>
+                        ) => {
+                          if (selectedOption) {
+                            setBreakdownType(
+                              selectedOption.value as "locality" | "deprivation"
+                            );
+                          }
+                        }}
+                        placeholder="Select breakdown type..."
                         className="react-select-container"
                         classNamePrefix="react-select"
                       />
@@ -244,8 +314,9 @@ export function Dashboard() {
                           ` (${startYear} - ${new Date().getFullYear()})`}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1">
-                        Comprehensive breakdown by year, month, locality, and
-                        service type
+                        Comprehensive breakdown by year, month,{" "}
+                        {getBreakdownDisplayName().toLowerCase()}, and service
+                        type
                       </p>
                     </div>
                     <div className="space-x-2">
@@ -275,27 +346,27 @@ export function Dashboard() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                           <div>
                             <h5 className="text-lg font-medium mb-3 text-gray-700">
-                              Annual Locality Breakdown
+                              Annual {getBreakdownDisplayName()} Breakdown
                             </h5>
                             <div className="space-y-2">
-                              {year.localities.map((locality: any) => (
+                              {getBreakdownItems(year).map((item: any) => (
                                 <div
-                                  key={locality.name}
+                                  key={item.name}
                                   className="bg-gray-50 p-3 rounded"
                                 >
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="font-medium">
-                                      {locality.name}
+                                      {item.name}
                                     </span>
                                     <span className="text-blue-600 font-semibold">
-                                      {locality.totalHours.toFixed(2)}h
+                                      {item.totalHours.toFixed(2)}h
                                     </span>
                                   </div>
                                   <div className="text-xs text-gray-600 mb-2">
-                                    Service distribution for {locality.name}:
+                                    Service distribution for {item.name}:
                                   </div>
                                   <div className="grid grid-cols-1 gap-1 text-sm">
-                                    {locality.services.map((service: any) => (
+                                    {item.services.map((service: any) => (
                                       <div
                                         key={service.name}
                                         className="flex justify-between bg-white px-2 py-1 rounded"
@@ -394,45 +465,47 @@ export function Dashboard() {
                                     </div>
                                   </div>
 
-                                  {/* Monthly Locality Breakdown with Services */}
+                                  {/* Monthly Breakdown with Services */}
                                   <div>
                                     <h6 className="text-sm font-medium text-gray-700 block mb-2">
-                                      Locality Breakdown:
+                                      {getBreakdownDisplayName()} Breakdown:
                                     </h6>
                                     <div className="space-y-2">
-                                      {month.localities.map((locality: any) => (
-                                        <div
-                                          key={locality.name}
-                                          className="bg-white p-2 rounded border"
-                                        >
-                                          <div className="flex justify-between items-center mb-1">
-                                            <span className="font-medium text-sm">
-                                              {locality.name}
-                                            </span>
-                                            <span className="text-blue-600 font-semibold text-sm">
-                                              {locality.totalHours.toFixed(2)}h
-                                            </span>
+                                      {getBreakdownItems(month).map(
+                                        (item: any) => (
+                                          <div
+                                            key={item.name}
+                                            className="bg-white p-2 rounded border"
+                                          >
+                                            <div className="flex justify-between items-center mb-1">
+                                              <span className="font-medium text-sm">
+                                                {item.name}
+                                              </span>
+                                              <span className="text-blue-600 font-semibold text-sm">
+                                                {item.totalHours.toFixed(2)}h
+                                              </span>
+                                            </div>
+                                            <div className="space-y-1">
+                                              {item.services.map(
+                                                (service: any) => (
+                                                  <div
+                                                    key={service.name}
+                                                    className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                                                  >
+                                                    <span>{service.name}</span>
+                                                    <span>
+                                                      {service.totalHours.toFixed(
+                                                        2
+                                                      )}
+                                                      h
+                                                    </span>
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
                                           </div>
-                                          <div className="space-y-1">
-                                            {locality.services.map(
-                                              (service: any) => (
-                                                <div
-                                                  key={service.name}
-                                                  className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
-                                                >
-                                                  <span>{service.name}</span>
-                                                  <span>
-                                                    {service.totalHours.toFixed(
-                                                      2
-                                                    )}
-                                                    h
-                                                  </span>
-                                                </div>
-                                              )
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
+                                        )
+                                      )}
                                     </div>
                                   </div>
                                 </div>

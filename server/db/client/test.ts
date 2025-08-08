@@ -8,6 +8,7 @@ const sampleClient: Omit<ClientFull, "id"> = {
   archived: "N",
   dateOfBirth: "1990-01-15",
   details: {
+    customId: "",
     name: "John Doe",
     address: {
       streetAddress: "61626 Schmidt Divide",
@@ -27,6 +28,8 @@ const sampleClient: Omit<ClientFull, "id"> = {
       {
         date: "2024-01-01",
         note: "Regular check-ups required. Diabetes management.",
+        source: "Phone",
+        minutesTaken: 10,
       },
     ],
     donationScheme: true,
@@ -36,7 +39,8 @@ const sampleClient: Omit<ClientFull, "id"> = {
     clientAgreementComments: "All terms agreed",
     riskAssessmentDate: "2024-01-01",
     riskAssessmentComments: "Low risk assessment completed",
-    attendanceAllowance: "yes",
+    endDate: "",
+    attendanceAllowance: "no",
     attendsMag: true,
   },
   requests: [],
@@ -56,7 +60,7 @@ export async function testClientService() {
 
     console.log("\n2. Getting client by ID...");
     const retrievedClient = await clientService.getById(
-      createdClientId,
+      createdClientId.clientId,
       sampleUser
     );
     console.log("Retrieved client:", retrievedClient.details.name);
@@ -79,7 +83,7 @@ export async function testClientService() {
     console.log("\n5. Deleting client...");
     const deletedCount = await clientService.delete(
       sampleUser,
-      createdClientId
+      createdClientId.clientId
     );
     console.log("Deleted items count:", deletedCount[0]);
 

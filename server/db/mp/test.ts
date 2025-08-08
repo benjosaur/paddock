@@ -27,9 +27,10 @@ const sampleMp: Omit<MpMetadata, "id"> = {
       {
         date: "2025-07-21",
         note: "MP for Westminster",
+        source: "In Person",
+        minutesTaken: 2.0,
       },
     ],
-    specialisms: ["Health", "Education"],
     capacity: "Full time",
   },
   packages: [],
@@ -63,6 +64,8 @@ export async function testMpService() {
           {
             date: "2025-07-21",
             note: "Updated MP for Westminster",
+            source: "Phone",
+            minutesTaken: 0.75,
           },
         ],
       },

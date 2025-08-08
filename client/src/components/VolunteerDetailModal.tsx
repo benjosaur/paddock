@@ -37,7 +37,7 @@ export function VolunteerDetailModal({
   );
   const volunteer = volunteerQuery.data;
   const [currentNotes, setCurrentNotes] = useState<
-    { date: string; note: string }[]
+    { date: string; note: string; source: "Phone" | "Email" | "In Person"; minutesTaken: number }[]
   >([]);
 
   // Update local notes when volunteer data changes
@@ -216,7 +216,6 @@ export function VolunteerDetailModal({
                 Services
               </h3>
               {renderDetailItem("Services", volunteer.details.services)}
-              {renderDetailItem("Specialisms", volunteer.details.specialisms)}
               {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 

@@ -35,7 +35,7 @@ export function MpDetailModal({
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
   const [currentNotes, setCurrentNotes] = useState<
-    { date: string; note: string }[]
+    { date: string; note: string; source: "Phone" | "Email" | "In Person"; minutesTaken: number }[]
   >([]);
 
   // Update local notes when mp data changes
@@ -214,7 +214,6 @@ export function MpDetailModal({
                 Services
               </h3>
               {renderDetailItem("Services", mp.details.services)}
-              {renderDetailItem("Specialisms", mp.details.specialisms)}
               {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 

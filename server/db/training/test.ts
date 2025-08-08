@@ -11,6 +11,7 @@ const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
   details: {
     name: "Robert Branson",
     recordName: "First Aid Certification",
+    notes: "",
   },
 };
 
@@ -34,6 +35,7 @@ export async function testTrainingRecordService() {
       details: {
         name: "Robert Branson",
         recordName: "Updated First Aid Certification",
+        notes: "",
       },
     };
     const updatedRecord = await trainingRecordService.update(

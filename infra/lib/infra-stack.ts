@@ -71,19 +71,19 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // cooling off
-    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-    //   customDomain: {
-    //     domainName: authDomainName,
-    //     certificate: certificate,
-    //   },
-    // });
-
+    //    cooling off
     const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-      cognitoDomain: {
-        domainPrefix: "auth-paddock-health",
+      customDomain: {
+        domainName: authDomainName,
+        certificate: certificate,
       },
     });
+
+    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
+    //   cognitoDomain: {
+    //     domainPrefix: "auth-paddock-health",
+    //   },
+    // });
 
     // Cognito User Pool Client
     const userPoolClient = new cognito.UserPoolClient(
@@ -170,15 +170,15 @@ export class InfraStack extends cdk.Stack {
             ],
           },
         ],
-        // Add custom domain configuration
-        // viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
-        //   certificate,
-        //   {
-        //     aliases: [domainName, subdomainName],
-        //     securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-        //     sslMethod: cloudfront.SSLMethod.SNI,
-        //   }
-        // ),
+        //        Add custom domain configuration
+        viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
+          certificate,
+          {
+            aliases: [domainName, subdomainName],
+            securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+            sslMethod: cloudfront.SSLMethod.SNI,
+          }
+        ),
         errorConfigurations: [
           {
             errorCode: 404,
