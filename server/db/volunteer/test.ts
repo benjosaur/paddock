@@ -32,6 +32,7 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
       },
     ],
     capacity: "Part time",
+    currentRole: "Volunteer",
   },
   packages: [],
 };

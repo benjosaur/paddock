@@ -15,6 +15,11 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     render: (item: VolunteerMetadata) => item.details.name,
   },
   {
+    key: "currentRole",
+    header: "Role",
+    render: (item: VolunteerMetadata) => item.details.currentRole,
+  },
+  {
     key: "dob",
     header: "Date of Birth",
     render: (item: VolunteerMetadata) => item.dateOfBirth || "Unknown",

@@ -9,7 +9,7 @@ import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
-import { serviceOptions, localities } from "shared/const";
+import { serviceOptions, localities, volunteerRoles } from "shared/const";
 import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
 
 export function VolunteerForm() {
@@ -35,6 +35,7 @@ export function VolunteerForm() {
       nextOfKin: "",
       services: [],
       capacity: "",
+      currentRole: "Volunteer",
       attendsMag: false,
       notes: [],
     },
@@ -150,6 +151,11 @@ export function VolunteerForm() {
   const serviceSelectOptions = serviceOptions.map((service) => ({
     value: service,
     label: service,
+  }));
+
+  const roleSelectOptions = volunteerRoles.map((role) => ({
+    value: role,
+    label: role,
   }));
 
   if (isEditing && volunteerQuery.isLoading) return <div>Loading...</div>;
@@ -378,6 +384,32 @@ export function VolunteerForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Services & Capacity
               </h3>
+
+              <div>
+                <label
+                  htmlFor="currentRole"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Current Role *
+                </label>
+                <Select
+                  id="currentRole"
+                  value={
+                    formData.details.currentRole
+                      ? {
+                          label: formData.details.currentRole,
+                          value: formData.details.currentRole,
+                        }
+                      : null
+                  }
+                  options={roleSelectOptions}
+                  onChange={(selectedOption) =>
+                    handleSelectChange("details.currentRole", selectedOption)
+                  }
+                  placeholder="Select role..."
+                  required
+                />
+              </div>
 
               <div>
                 <label

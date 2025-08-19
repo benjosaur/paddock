@@ -8,6 +8,7 @@ import {
   requestTypes,
   serviceOptions,
   userRoles,
+  volunteerRoles,
 } from "../const";
 
 export const trainingRecordSchema = z.object({
@@ -199,9 +200,22 @@ export const mpFullSchema = mpMetadataSchema.omit({ packages: true }).extend({
   requests: z.array(requestFullSchema).default([]),
 });
 
-export const volunteerMetadataSchema = mpMetadataSchema;
+export const volunteerMetadataSchema = mpMetadataSchema
+  .omit({
+    details: true,
+  })
+  .extend({
+    details: basePersonDetails.extend({
+      capacity: z.string().default(""),
+      currentRole: z.enum(volunteerRoles).default("Volunteer"),
+    }),
+  });
 
-export const volunteerFullSchema = mpFullSchema;
+export const volunteerFullSchema = volunteerMetadataSchema
+  .omit({ packages: true })
+  .extend({
+    requests: z.array(requestFullSchema).default([]),
+  });
 
 export const crossSectionSchema = z.object({
   totalHours: z.number().default(0),
