@@ -96,11 +96,17 @@ export function RenewRequestForm() {
 
   useEffect(() => {
     if (request) {
-      const currentDate = new Date().toISOString().split("T")[0];
+      const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+      const today = new Date();
+      const currentDate = formatDate(today);
+
+      today.setDate(today.getDate() - 1);
+      const previousDate = formatDate(today);
 
       setOldRequestData({
         ...request,
-        endDate: currentDate,
+        endDate: previousDate,
       });
 
       setNewRequestData({
@@ -119,9 +125,13 @@ export function RenewRequestForm() {
   // Sync new request start date with old request end date
   useEffect(() => {
     if (oldRequestData?.endDate && oldRequestData.endDate !== "open") {
+      const nextDay = new Date(oldRequestData.endDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayString = nextDay.toISOString().split("T")[0];
+
       setNewRequestData((prev) => ({
         ...prev,
-        startDate: oldRequestData.endDate,
+        startDate: nextDayString,
       }));
     }
   }, [oldRequestData?.endDate]);

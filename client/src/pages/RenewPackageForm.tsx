@@ -82,11 +82,17 @@ export function RenewPackageForm() {
 
   useEffect(() => {
     if (packageQuery.data) {
-      const currentDate = new Date().toISOString().split("T")[0];
+      const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+      const today = new Date();
+      const currentDate = formatDate(today);
+
+      today.setDate(today.getDate() - 1);
+      const previousDate = formatDate(today);
 
       setOldPackageData({
         ...packageQuery.data,
-        endDate: currentDate,
+        endDate: previousDate,
       });
 
       setNewPackageData({
@@ -105,9 +111,13 @@ export function RenewPackageForm() {
   // Sync new package start date with old package end date
   useEffect(() => {
     if (oldPackageData?.endDate && oldPackageData.endDate !== "open") {
+      const nextDay = new Date(oldPackageData.endDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayString = nextDay.toISOString().split("T")[0];
+      
       setNewPackageData((prev) => ({
         ...prev,
-        startDate: oldPackageData.endDate,
+        startDate: nextDayString,
       }));
     }
   }, [oldPackageData?.endDate]);
