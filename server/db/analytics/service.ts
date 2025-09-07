@@ -33,11 +33,68 @@ import {
   deprivationReportMonthSchema,
   ReportYear,
   DeprivationReportYear,
+  AttendanceAllowanceReport,
 } from "shared";
+import { ClientService } from "../client/service";
 
 export class ReportService {
+  clientService = new ClientService();
   requestService = new RequestService();
   packageService = new PackageService();
+
+  async generateAttendanceAllowanceReport(
+    user: User
+  ): Promise<AttendanceAllowanceReport> {
+    try {
+      const report: AttendanceAllowanceReport = {
+        overallInReceipt: {
+          total: 0,
+          totalHigh: 0,
+        },
+        thisMonthConfirmed: {
+          total: 0,
+          totalHigh: 0,
+        },
+      };
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const currentMonth = parseInt(currentDate.slice(5, 7));
+
+      const clients = await this.clientService.getAllNotArchived(user);
+      for (const client of clients) {
+        if (client.details.endDate) {
+          // probably should be archived
+          continue;
+        }
+        const isReceivingHigh =
+          client.details.attendanceAllowance.status === "High";
+
+        let confirmationYear, confirmationMonth;
+        if (client.details.attendanceAllowance.confirmationDate) {
+          const confirmationDate =
+            client.details.attendanceAllowance.confirmationDate;
+          confirmationYear = parseInt(confirmationDate.slice(0, 4));
+          confirmationMonth = parseInt(confirmationDate.slice(5, 7));
+        }
+        if (
+          confirmationYear === currentYear &&
+          confirmationMonth === currentMonth
+        ) {
+          report.thisMonthConfirmed.total++;
+          report.thisMonthConfirmed.totalHigh += isReceivingHigh ? 1 : 0;
+        }
+        report.overallInReceipt.total++;
+        report.overallInReceipt.totalHigh += isReceivingHigh ? 1 : 0;
+      }
+      return report;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating attendance allowance report:",
+        error
+      );
+      throw error;
+    }
+  }
 
   async generateActiveRequestsCrossSection(user: User): Promise<CrossSection> {
     try {

@@ -56,6 +56,10 @@ export function Dashboard() {
     trpc.analytics.getActiveRequestsCrossSection.queryOptions()
   );
 
+  const attendanceAllowanceQuery = useQuery(
+    trpc.analytics.generateAttendanceAllowanceReport.queryOptions()
+  );
+
   const requestsReportQuery = useQuery({
     ...trpc.analytics.getRequestsReport.queryOptions({ startYear }),
     enabled: false, // Don't auto-fetch, only when user requests it
@@ -84,7 +88,8 @@ export function Dashboard() {
     activeRequestsQuery.isLoading ||
     activePackagesQuery.isLoading ||
     analyticsPackagesXsQuery.isLoading ||
-    analyticsRequestsXsQuery.isLoading;
+    analyticsRequestsXsQuery.isLoading ||
+    attendanceAllowanceQuery.isLoading;
 
   // Check if any queries have errors
   const hasError =
@@ -94,7 +99,8 @@ export function Dashboard() {
     activeRequestsQuery.error ||
     activePackagesQuery.error ||
     analyticsPackagesXsQuery.error ||
-    analyticsRequestsXsQuery.error;
+    analyticsRequestsXsQuery.error ||
+    attendanceAllowanceQuery.error;
 
   if (isLoading) {
     return (
@@ -134,6 +140,12 @@ export function Dashboard() {
   ).length;
   const analyticsPackages = analyticsPackagesXsQuery.data!; // throw on isloading above
   const analyticsRequests = analyticsRequestsXsQuery.data!;
+  const attendanceAllowanceData = attendanceAllowanceQuery.data!;
+
+  // Helper function to calculate percentage
+  const calculatePercentage = (part: number, total: number): number => {
+    return total > 0 ? Math.round((part / total) * 100) : 0;
+  };
 
   const reportTypeOptions = [
     { value: "requests", label: "Requests Report" },
@@ -524,10 +536,13 @@ export function Dashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="requests">Active Requests</TabsTrigger>
           <TabsTrigger value="packages">Active Packages</TabsTrigger>
+          <TabsTrigger value="attendance-allowance">
+            Attendance Allowance
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -614,6 +629,48 @@ export function Dashboard() {
                     label={`${service.name} Hours`}
                   />
                 ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="attendance-allowance" className="mt-6">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">
+                Overall In Receipt
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AnimatedCounter
+                  targetValue={attendanceAllowanceData.overallInReceipt.total}
+                  label="Total Clients"
+                />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.overallInReceipt.totalHigh,
+                    attendanceAllowanceData.overallInReceipt.total
+                  )}
+                  label="% High"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">
+                Confirmed This Month
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AnimatedCounter
+                  targetValue={attendanceAllowanceData.thisMonthConfirmed.total}
+                  label="Total Clients"
+                />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.thisMonthConfirmed.totalHigh,
+                    attendanceAllowanceData.thisMonthConfirmed.total
+                  )}
+                  label="% High"
+                />
               </div>
             </div>
           </div>

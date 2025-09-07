@@ -223,6 +223,18 @@ export const volunteerFullSchema = volunteerMetadataSchema
     requests: z.array(requestFullSchema).default([]),
   });
 
+export const attendanceAllowanceReportSchema = z.object({
+  // need to infer not in receipt of AA if termination date given.
+  overallInReceipt: z.object({
+    total: z.number().default(0),
+    totalHigh: z.number().min(0).max(100).default(0),
+  }),
+  thisMonthConfirmed: z.object({
+    total: z.number().default(0),
+    totalHigh: z.number().min(0).max(100).default(0),
+  }),
+});
+
 export const crossSectionSchema = z.object({
   totalHours: z.number().default(0),
   localities: z
@@ -317,6 +329,9 @@ export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
+export type AttendanceAllowanceReport = z.infer<
+  typeof attendanceAllowanceReportSchema
+>;
 export type CrossSection = z.infer<typeof crossSectionSchema>;
 export type DeprivationCrossSection = z.infer<
   typeof deprivationCrossSectionSchema
