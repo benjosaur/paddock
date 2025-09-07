@@ -73,9 +73,11 @@ export class ClientService {
         ...dbClients,
         ...dbRequests,
       ]);
-      const parsedResult = clientMetadataSchema
-        .array()
-        .parse(transformedResult);
+      // transformed results will include partial non-mag clients (with only id and requests) as requests fetches all, so parsing will fail.
+      const parsedResult = transformedResult
+        .map((client) => clientMetadataSchema.safeParse(client))
+        .filter((result) => result.success)
+        .map((result) => result.data);
       return parsedResult;
     } catch (error) {
       console.error("Service Layer Error getting MAG clients:", error);
