@@ -5,7 +5,7 @@ import { trpc } from "../utils/trpc";
 import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const magLogColumns: TableColumn<MagLog>[] = [
+export const magLogColumns: TableColumn<MagLog>[] = [
   { key: "date", header: "Date", render: (item) => item.date },
   {
     key: "total",

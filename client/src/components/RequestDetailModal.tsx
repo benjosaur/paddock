@@ -4,15 +4,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { RequestFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { useQuery } from "@tanstack/react-query";
+import { packageColumns } from "@/routes/PackageRoutes";
 
 interface RequestDetailModalProps {
   requestId: string;
@@ -33,47 +32,6 @@ export function RequestDetailModal({
     trpc.requests.getById.queryOptions({ id: requestId })
   );
   const request = requestQuery.data;
-
-  const packageModalColumns: TableColumn<RequestFull["packages"][number]>[] = [
-    {
-      key: "id",
-      header: "Package ID",
-      render: (item: RequestFull["packages"][number]) => item.id,
-    },
-    {
-      key: "name",
-      header: "Package Name",
-      render: (item: RequestFull["packages"][number]) => item.details.name,
-    },
-    {
-      key: "carerId",
-      header: "Carer ID",
-      render: (item: RequestFull["packages"][number]) => item.carerId,
-    },
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item: RequestFull["packages"][number]) => item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item: RequestFull["packages"][number]) =>
-        item.endDate === "open" ? "Ongoing" : item.endDate,
-    },
-    {
-      key: "weeklyHours",
-      header: "Weekly Hours",
-      render: (item: RequestFull["packages"][number]) =>
-        item.details.weeklyHours.toString(),
-    },
-    {
-      key: "services",
-      header: "Services",
-      render: (item: RequestFull["packages"][number]) =>
-        item.details.services.join(", "),
-    },
-  ];
 
   const renderDetailItem = (
     label: string,
@@ -107,10 +65,6 @@ export function RequestDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Request Details: {request.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View detailed information for this request including request details
-            and associated packages.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="details" className="w-full mt-4">
@@ -167,7 +121,7 @@ export function RequestDetailModal({
               {request.packages && request.packages.length > 0 ? (
                 <DataTable
                   data={request.packages}
-                  columns={packageModalColumns}
+                  columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
                   resource="packages"

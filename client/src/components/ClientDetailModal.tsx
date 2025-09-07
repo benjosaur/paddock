@@ -11,10 +11,12 @@ import {
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { ClientFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { NotesEditor } from "./NotesEditor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { magLogColumns } from "@/routes/MagLogRoutes";
+import { requestColumns } from "@/routes/RequestRoutes";
+import { packageColumns } from "@/routes/PackageRoutes";
 
 interface ClientDetailModalProps {
   clientId: string;
@@ -37,7 +39,12 @@ export function ClientDetailModal({
   );
   const client = clientQuery.data;
   const [currentNotes, setCurrentNotes] = useState<
-    { date: string; note: string; source: "Phone" | "Email" | "In Person"; minutesTaken: number }[]
+    {
+      date: string;
+      note: string;
+      source: "Phone" | "Email" | "In Person";
+      minutesTaken: number;
+    }[]
   >([]);
 
   // Update local notes when client data changes
@@ -71,82 +78,6 @@ export function ClientDetailModal({
       });
     }
   };
-
-  const magLogModalColumns: TableColumn<ClientFull["magLogs"][number]>[] = [
-    {
-      key: "date",
-      header: "Date",
-      render: (item: ClientFull["magLogs"][number]) => item.date,
-    },
-    {
-      key: "total",
-      header: "Total Attendees",
-      render: (item: ClientFull["magLogs"][number]) =>
-        item.details.totalVolunteers +
-        item.details.totalClients +
-        item.details.totalFamily +
-        item.details.totalMps +
-        item.details.otherAttendees,
-    },
-    {
-      key: "notes",
-      header: "Notes",
-      render: (item: ClientFull["magLogs"][number]) => item.details.notes,
-    },
-  ];
-
-  const requestModalColumns: TableColumn<ClientFull["requests"][number]>[] = [
-    {
-      key: "requestType",
-      header: "Type",
-      render: (item: ClientFull["requests"][number]) => item.requestType,
-    },
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item: ClientFull["requests"][number]) => item.startDate,
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (item: ClientFull["requests"][number]) => item.details.status,
-    },
-  ];
-
-  const packageModalColumns: TableColumn<
-    ClientFull["requests"][number]["packages"][number]
-  >[] = [
-    {
-      key: "id",
-      header: "Package ID",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.id,
-    },
-    {
-      key: "name",
-      header: "Package Name",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.details.name,
-    },
-    {
-      key: "carerId",
-      header: "Carer ID",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.carerId,
-    },
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.endDate === "open" ? "Ongoing" : item.endDate,
-    },
-  ];
 
   const renderDetailItem = (
     label: string,
@@ -257,7 +188,7 @@ export function ClientDetailModal({
                 {client.requests.flatMap((req) => req.packages).length > 0 ? (
                   <DataTable
                     data={client.requests.flatMap((req) => req.packages)}
-                    columns={packageModalColumns}
+                    columns={packageColumns}
                     title=""
                     searchPlaceholder="Search packages..."
                     resource="packages"
@@ -275,7 +206,7 @@ export function ClientDetailModal({
                 {client.magLogs.length > 0 ? (
                   <DataTable
                     data={client.magLogs}
-                    columns={magLogModalColumns}
+                    columns={magLogColumns}
                     title=""
                     searchPlaceholder="Search MAG logs..."
                     resource="mag"
@@ -298,7 +229,7 @@ export function ClientDetailModal({
               {client.requests.length > 0 ? (
                 <DataTable
                   data={client.requests}
-                  columns={requestModalColumns}
+                  columns={requestColumns}
                   title=""
                   searchPlaceholder="Search requests..."
                   resource="requests"

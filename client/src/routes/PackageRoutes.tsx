@@ -8,16 +8,11 @@ import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const packageColumns: TableColumn<Package>[] = [
+export const packageColumns: TableColumn<Package>[] = [
   {
     key: "name",
-    header: "Package Name",
+    header: "Carer Name",
     render: (item: Package) => item.details.name,
-  },
-  {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item: Package) => item.carerId,
   },
   {
     key: "startDate",

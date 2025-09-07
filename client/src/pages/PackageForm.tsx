@@ -5,7 +5,7 @@ import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Package, MpMetadata, RequestMetadata } from "../types";
+import type { Package, MpMetadata } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
@@ -17,6 +17,7 @@ export function PackageForm() {
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
+  // below will now always be provided
   const initialRequestId = location.state?.requestId || "";
 
   const [formData, setFormData] = useState<Omit<Package, "id">>({
@@ -46,11 +47,16 @@ export function PackageForm() {
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),
     enabled: isEditing,
+  });
+
+  // below only fetches after above query returns (or given by state if adding from requests screen)
+  const requestQuery = useQuery({
+    ...trpc.requests.getById.queryOptions({ id: formData.requestId }),
+    enabled: Boolean(formData.requestId),
   });
 
   const createPackageMutation = useMutation(
@@ -84,36 +90,27 @@ export function PackageForm() {
 
   // Auto-populate package details when request is selected (only for new packages)
   useEffect(() => {
-    if (!isEditing && formData.requestId && requestsQuery.data) {
-      const selectedRequest = requestsQuery.data.find(
-        (request: RequestMetadata) => request.id === formData.requestId
-      );
+    if (!isEditing && formData.requestId && requestQuery.data) {
+      const selectedRequest = requestQuery.data;
       if (selectedRequest) {
         setFormData((prev) => ({
           ...prev,
           details: {
             ...prev.details,
-            name: `${selectedRequest.details.name}`,
             address: selectedRequest.details.address,
             services: selectedRequest.details.services || [],
           },
+          request: selectedRequest,
         }));
       }
     }
-  }, [formData.requestId, requestsQuery.data, isEditing]);
+  }, [formData.requestId, requestQuery.data, isEditing]);
 
   const mpOptions = (mpsQuery.data || [])
     .filter((mp: MpMetadata) => mp.id && mp.details?.name)
     .map((mp: MpMetadata) => ({
       value: mp.id,
       label: mp.details.name,
-    }));
-
-  const requestOptions = (requestsQuery.data || [])
-    .filter((request: RequestMetadata) => request.id && request.details?.name)
-    .map((request: RequestMetadata) => ({
-      value: request.id,
-      label: `${request.details.name} - ${request.requestType}`,
     }));
 
   const serviceSelectOptions = serviceOptions.map((service) => ({
@@ -170,7 +167,7 @@ export function PackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error) return <div>Error loading package</div>;
-  if (mpsQuery.isLoading || requestsQuery.isLoading)
+  if (mpsQuery.isLoading || requestQuery.isLoading)
     return <div>Loading...</div>;
 
   return (
@@ -191,15 +188,17 @@ export function PackageForm() {
 
               <div>
                 <label
-                  htmlFor="name"
+                  htmlFor="requestId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client Name
+                  Request
                 </label>
                 <Input
-                  id="name"
-                  name="details.name"
-                  value={formData.details.name || ""}
+                  id="requestId"
+                  name="requestId"
+                  value={`${requestQuery.data?.details.customId || ""} - ${
+                    requestQuery.data?.startDate || ""
+                  }`}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -207,25 +206,17 @@ export function PackageForm() {
 
               <div>
                 <label
-                  htmlFor="requestId"
+                  htmlFor="clientName"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Request *
+                  Client Name
                 </label>
-                <Select
-                  options={requestOptions}
-                  value={
-                    requestOptions.find(
-                      (option) => option.value === formData.requestId
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    handleSelectChange("requestId", selectedOption)
-                  }
-                  placeholder="Select a request..."
-                  isSearchable
-                  noOptionsMessage={() => "No requests found"}
-                  isClearable
+                <Input
+                  id="clientName"
+                  name="details.name"
+                  value={requestQuery.data?.details.name || ""}
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
 
@@ -243,9 +234,16 @@ export function PackageForm() {
                       (option) => option.value === formData.carerId
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleSelectChange("carerId", selectedOption)
-                  }
+                  onChange={(selectedOption) => {
+                    handleSelectChange("carerId", selectedOption);
+                    setFormData((prev) =>
+                      updateNestedValue(
+                        "details.name",
+                        selectedOption?.label ?? "",
+                        prev
+                      )
+                    );
+                  }}
                   placeholder="Select a carer/MP..."
                   isSearchable
                   noOptionsMessage={() => "No carers/MPs found"}

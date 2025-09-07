@@ -11,10 +11,11 @@ import {
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { MpFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { NotesEditor } from "./NotesEditor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { packageColumns } from "@/routes/PackageRoutes";
+import { trainingRecordColumns } from "@/routes/RecordsRoutes";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -35,7 +36,12 @@ export function MpDetailModal({
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
   const [currentNotes, setCurrentNotes] = useState<
-    { date: string; note: string; source: "Phone" | "Email" | "In Person"; minutesTaken: number }[]
+    {
+      date: string;
+      note: string;
+      source: "Phone" | "Email" | "In Person";
+      minutesTaken: number;
+    }[]
   >([]);
 
   // Update local notes when mp data changes
@@ -69,56 +75,6 @@ export function MpDetailModal({
       });
     }
   };
-
-  const packageModalColumns: TableColumn<
-    MpFull["requests"][number]["packages"][number]
-  >[] = [
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item) => item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item) => item.endDate,
-    },
-    {
-      key: "name",
-      header: "Carer Name",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "services",
-      header: "Service(s)",
-      render: (item) => item.details.services.join(", "),
-    },
-    {
-      key: "weeklyHours",
-      header: "Weekly Hours",
-      render: (item) => item.details.weeklyHours.toString(),
-    },
-    {
-      key: "notes",
-      header: "Notes",
-      render: (item) => item.details.notes,
-    },
-  ];
-
-  const trainingRecordModalColumns: TableColumn<
-    MpFull["trainingRecords"][number]
-  >[] = [
-    {
-      key: "name",
-      header: "Title",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "expiryDate",
-      header: "Expiry",
-      render: (item) => item.expiryDate || "N/A",
-    },
-  ];
 
   const renderDetailItem = (
     label: string,
@@ -227,7 +183,7 @@ export function MpDetailModal({
               {mp.trainingRecords.length > 0 ? (
                 <DataTable
                   data={mp.trainingRecords}
-                  columns={trainingRecordModalColumns}
+                  columns={trainingRecordColumns}
                   title=""
                   searchPlaceholder="Search training records..."
                   resource="mps"
@@ -249,7 +205,7 @@ export function MpDetailModal({
               {mp.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
                   data={mp.requests.flatMap((req) => req.packages)}
-                  columns={packageModalColumns}
+                  columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
                   resource="packages"

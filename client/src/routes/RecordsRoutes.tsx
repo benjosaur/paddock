@@ -15,7 +15,7 @@ import { TrainingRecordForm } from "../pages/TrainingRecordForm";
 import { associatedVolunteerRoutes } from "./VolunteersRoutes";
 import { associatedMpRoutes } from "./MpsRoutes";
 
-const mpRecordColumns: TableColumn<TrainingRecord>[] = [
+export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
   {
     key: "personName",
     header: "Name",
@@ -38,7 +38,8 @@ const mpRecordColumns: TableColumn<TrainingRecord>[] = [
   },
 ];
 
-const volunteerRecordColumns = mpRecordColumns;
+const mpRecordColumns = trainingRecordColumns;
+const volunteerRecordColumns = trainingRecordColumns;
 
 export default function RecordsRoutes() {
   const navigate = useNavigate();

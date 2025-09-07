@@ -9,7 +9,7 @@ import type { RequestFull, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-const requestColumns: TableColumn<RequestFull>[] = [
+export const requestColumns: TableColumn<RequestFull>[] = [
   {
     key: "clientName",
     header: "Client Name",
