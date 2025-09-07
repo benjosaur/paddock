@@ -18,6 +18,32 @@ import { FieldEditModal } from "../components/FieldEditModal";
 import toast from "react-hot-toast";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
 
+const deprivationToastLogic = (
+  deprivationData: { matched: boolean; income: boolean; health: boolean },
+  postcode: string
+) => {
+  if (!deprivationData.matched) {
+    toast.error(
+      `Postcode ${postcode} not live in database. Please double check entry.`
+    );
+  } else if (deprivationData.income && deprivationData.health) {
+    toast(
+      `🚩 Postcode ${postcode} indicates both income and health deprivation.`,
+      { duration: 6000 }
+    );
+  } else if (deprivationData.income) {
+    toast(`🚩 Postcode ${postcode} indicates income deprivation.`, {
+      duration: 6000,
+    });
+  } else if (deprivationData.health) {
+    toast(`🚩 Postcode ${postcode} indicates health deprivation.`, {
+      duration: 6000,
+    });
+  } else {
+    toast(`Postcode ${postcode} shows no deprivation indicators.`);
+  }
+};
+
 export function ClientForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
@@ -76,32 +102,7 @@ export function ClientForm() {
       onSuccess: (data) => {
         // Second toast: Deprivation information
         const { deprivationData, postcode } = data;
-
-        if (!deprivationData.matched) {
-          toast.error(
-            `Postcode ${postcode} not live in database. Please double check entry.`
-          );
-          navigate("/clients");
-          return;
-        }
-
-        if (deprivationData.income && deprivationData.health) {
-          toast(
-            `🚩 Postcode ${postcode} indicates both income and health deprivation.`,
-            { duration: 6000 }
-          );
-        } else if (deprivationData.income) {
-          toast(`🚩 Postcode ${postcode} indicates income deprivation.`, {
-            duration: 6000,
-          });
-        } else if (deprivationData.health) {
-          toast(`🚩 Postcode ${postcode} indicates health deprivation.`, {
-            duration: 6000,
-          });
-        } else {
-          toast(`Postcode ${postcode} shows no deprivation indicators.`);
-        }
-
+        deprivationToastLogic(deprivationData, postcode);
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
@@ -134,6 +135,18 @@ export function ClientForm() {
   const updateCustomIdMutation = useMutation(
     trpc.clients.updateCustomId.mutationOptions({
       onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
+  const updatePostCodeMutation = useMutation(
+    trpc.clients.updatePostCode.mutationOptions({
+      onSuccess: (data) => {
+        const { deprivationData, postcode } = data;
+        deprivationToastLogic(deprivationData, postcode);
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
@@ -209,6 +222,11 @@ export function ClientForm() {
       updateCustomIdMutation.mutate({
         clientId: id,
         newCustomId: newValue,
+      });
+    } else if (field == "details.address.postCode") {
+      updatePostCodeMutation.mutate({
+        clientId: id,
+        newPostcode: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
   };
@@ -396,6 +414,14 @@ export function ClientForm() {
                     disabled={isEditing}
                     required
                   />
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.address.postCode"
+                      currentValue={formData.details.address.postCode}
+                      onSubmit={handleFieldChangeSubmit}
+                      customDescription="This will not update postcodes attached to this client's existing requests."
+                    />
+                  )}
                 </div>
               </div>{" "}
               <div>

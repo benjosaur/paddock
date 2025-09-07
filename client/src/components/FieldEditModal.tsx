@@ -17,12 +17,14 @@ interface FieldEditModalProps {
   field: string;
   currentValue: string;
   onSubmit: (field: string, fieldValue: string) => void;
+  customDescription?: string;
 }
 
 export function FieldEditModal({
   field,
   currentValue,
   onSubmit,
+  customDescription,
 }: FieldEditModalProps) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(currentValue);
@@ -52,7 +54,7 @@ export function FieldEditModal({
         <DialogHeader>
           <DialogTitle>Edit {friendlyFieldName}</DialogTitle>
           <DialogDescription hidden>
-            Update the value of {friendlyFieldName}
+            Update the value of {friendlyFieldName}. {customDescription}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">

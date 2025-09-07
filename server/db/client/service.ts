@@ -182,6 +182,7 @@ export class ClientService {
     try {
       const validatedInput = clientMetadataSchema.parse(updatedClient);
       const { id, ...rest } = validatedInput;
+
       const dbClient: DbClientEntity = addDbMiddleware(
         {
           pK: id,
@@ -192,6 +193,59 @@ export class ClientService {
         user
       );
       await this.clientRepository.update(dbClient, user);
+    } catch (error) {
+      console.error("Service Layer Error updating client:", error);
+      throw error;
+    }
+  }
+
+  async updatePostCode(
+    updatedClientId: string,
+    newPostcode: string,
+    user: User
+  ): Promise<{
+    deprivationData: {
+      matched: boolean;
+      income: boolean;
+      health: boolean;
+    };
+    postcode: string;
+  }> {
+    // does not update associated records
+    try {
+      const matchedClient = await this.getById(updatedClientId, user);
+
+      const { id, ...rest } = matchedClient;
+
+      // Fetch deprivation data for the client's postcode
+      const deprivationData = await this.deprivationService.getDeprivationData(
+        newPostcode
+      );
+
+      // Update the client with deprivation data
+      const clientWithDeprivation = {
+        ...rest,
+        details: {
+          ...rest.details,
+          address: {
+            ...rest.details.address,
+            postCode: newPostcode,
+            deprivation: deprivationData,
+          },
+        },
+      };
+
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "client",
+          ...clientWithDeprivation,
+        },
+        user
+      );
+      await this.clientRepository.update(dbClient, user);
+      return { deprivationData, postcode: newPostcode };
     } catch (error) {
       console.error("Service Layer Error updating client:", error);
       throw error;
