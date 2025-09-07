@@ -125,6 +125,7 @@ export class ClientService {
   ): Promise<{
     clientId: string;
     deprivationData: {
+      matched: boolean;
       income: boolean;
       health: boolean;
     };

@@ -140,6 +140,43 @@ export function ClientDetailModal({
               {renderDetailItem("Locality", client.details.address.locality)}
               {renderDetailItem("County", client.details.address.county)}
               {renderDetailItem("Post Code", client.details.address.postCode)}
+              {client.details.address.deprivation && (
+                <div className="mb-2">
+                  <span className="font-semibold text-gray-700">
+                    Deprivation Indicators:{" "}
+                  </span>
+                  <div className="ml-4 mt-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Income:</span>
+                      <span
+                        className={`text-sm px-2 py-1 rounded ${
+                          client.details.address.deprivation.income
+                            ? "bg-red-100 text-orange-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {client.details.address.deprivation.income
+                          ? "High"
+                          : "Low"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Health:</span>
+                      <span
+                        className={`text-sm px-2 py-1 rounded ${
+                          client.details.address.deprivation.health
+                            ? "bg-red-100 text-orange-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {client.details.address.deprivation.health
+                          ? "High"
+                          : "Low"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               {renderDetailItem("Phone", client.details.phone)}
               {renderDetailItem("Email", client.details.email)}
               {renderDetailItem("Next of Kin", client.details.nextOfKin)}

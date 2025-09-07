@@ -1,13 +1,15 @@
 import { DEPRIVATION_THRESHOLD_DECILE } from "../../shared/const";
 
 interface DeprivationData {
+  matched: boolean;
   income: boolean;
   health: boolean;
 }
 
 interface IMDResponseData {
-  incomeDecile: number;
-  healthDecile: number;
+  matched: boolean;
+  incomeDecile: number | null;
+  healthDecile: number | null;
 }
 
 interface PollResponse {
@@ -126,6 +128,9 @@ export class DeprivationService {
     const headers = lines[0]
       .split(",")
       .map((h) => h.trim().replace(/['"]/g, ""));
+    const postcodeStatusIndex = headers.findIndex(
+      (h) => h === "Postcode Status"
+    );
     const healthDecileIndex = headers.findIndex(
       (h) => h === "Health and Disability Decile"
     );
@@ -148,6 +153,15 @@ export class DeprivationService {
         .split(",")
         .map((v) => v.trim().replace(/['"]/g, ""));
 
+      if (values[postcodeStatusIndex] !== "Live") {
+        console.log(values[postcodeStatusIndex]);
+        return {
+          matched: false,
+          healthDecile: null,
+          incomeDecile: null,
+        };
+      }
+
       if (
         values[postcodeIndex] &&
         values[postcodeIndex].replace(/\s/g, "").toLowerCase() ===
@@ -161,6 +175,7 @@ export class DeprivationService {
         }
 
         return {
+          matched: true,
           healthDecile,
           incomeDecile,
         };
@@ -189,20 +204,28 @@ export class DeprivationService {
 
       // Download and parse CSV
       const csvContent = await this.downloadCSV(csvUrl);
-      const { healthDecile, incomeDecile } = this.parseCSVForDeprivation(
-        csvContent,
-        postcode
-      );
+      const { matched, healthDecile, incomeDecile } =
+        this.parseCSVForDeprivation(csvContent, postcode);
+
+      if (!matched) {
+        return {
+          matched: false,
+          income: false,
+          health: false,
+        };
+      }
 
       // Apply threshold logic
       return {
-        income: incomeDecile <= DEPRIVATION_THRESHOLD_DECILE,
-        health: healthDecile <= DEPRIVATION_THRESHOLD_DECILE,
+        matched: true,
+        income: incomeDecile! <= DEPRIVATION_THRESHOLD_DECILE,
+        health: healthDecile! <= DEPRIVATION_THRESHOLD_DECILE,
       };
     } catch (error) {
       console.error("Error fetching deprivation data:", error);
       // Return default values if API fails
       return {
+        matched: false,
         income: false,
         health: false,
       };

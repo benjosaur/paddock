@@ -77,6 +77,14 @@ export function ClientForm() {
         // Second toast: Deprivation information
         const { deprivationData, postcode } = data;
 
+        if (!deprivationData.matched) {
+          toast.error(
+            `Postcode ${postcode} not live in database. Please double check entry.`
+          );
+          navigate("/clients");
+          return;
+        }
+
         if (deprivationData.income && deprivationData.health) {
           toast(
             `🚩 Postcode ${postcode} indicates both income and health deprivation.`,
