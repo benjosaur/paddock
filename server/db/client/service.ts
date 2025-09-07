@@ -195,6 +195,37 @@ export class ClientService {
     }
   }
 
+  async updateCustomId(
+    clientId: string,
+    newCustomId: string,
+    user: User
+  ): Promise<void> {
+    // update reqs
+    try {
+      const initialClientRecords = await this.clientRepository.getById(
+        clientId,
+        user
+      );
+
+      //filter out mags (these dont contain customId)
+      const updatedClientRecords = initialClientRecords
+        .filter((record) => !record.sK.startsWith("mag"))
+        .map((record) =>
+          addDbMiddleware(
+            {
+              ...record,
+              details: { ...record.details, customId: newCustomId },
+            },
+            user
+          )
+        );
+      await genericUpdate(updatedClientRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error updating Client Custom ID:", error);
+      throw error;
+    }
+  }
+
   async updateName(
     clientId: string,
     newName: string,

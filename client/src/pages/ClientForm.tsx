@@ -117,6 +117,16 @@ export function ClientForm() {
     })
   );
 
+  const updateCustomIdMutation = useMutation(
+    trpc.clients.updateCustomId.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
   useEffect(() => {
     if (clientQuery.data) {
       setFormData(clientQuery.data);
@@ -181,6 +191,11 @@ export function ClientForm() {
         clientId: id,
         newName: newValue,
       });
+    } else if (field == "details.customId") {
+      updateCustomIdMutation.mutate({
+        clientId: id,
+        newCustomId: newValue,
+      });
     } else throw new Error(`${field} not a recognised field`);
   };
 
@@ -219,15 +234,27 @@ export function ClientForm() {
                   htmlFor="customId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Custom ID
+                  Custom ID *
                 </label>
-                <Input
-                  id="customId"
-                  name="details.customId"
-                  value={formData.details.customId || ""}
-                  onChange={handleInputChange}
-                  placeholder="Optional custom identifier"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="customId"
+                    name="details.customId"
+                    value={formData.details.customId || ""}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isEditing}
+                    className="flex-1"
+                    placeholder="Custom identifier"
+                  />
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.customId"
+                      currentValue={formData.details.customId}
+                      onSubmit={handleFieldChangeSubmit}
+                    />
+                  )}
+                </div>
               </div>
               <div>
                 <label
@@ -254,7 +281,7 @@ export function ClientForm() {
                     />
                   )}
                 </div>
-              </div>{" "}
+              </div>
               <div>
                 <label
                   htmlFor="dob"

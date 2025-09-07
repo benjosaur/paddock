@@ -231,7 +231,7 @@ export function RequestForm() {
                   htmlFor="client"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client *
+                  Client
                 </label>
                 <Select
                   options={clientOptions}
