@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -10,6 +11,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
+import { PermissionGate } from "./PermissionGate";
+import { DeleteAlert } from "./DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 
@@ -32,6 +35,23 @@ export function RequestDetailModal({
     trpc.requests.getById.queryOptions({ id: requestId })
   );
   const request = requestQuery.data;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (onDelete && request) {
+      onDelete(request.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
 
   const renderDetailItem = (
     label: string,
@@ -135,21 +155,36 @@ export function RequestDetailModal({
           </Tabs>
         </div>
         <DialogFooter>
-          {onEdit && (
-            <Button onClick={() => onEdit(request.id)} variant="outline">
-              Edit
-            </Button>
-          )}
-          {onDelete && (
-            <Button onClick={() => onDelete(request.id)} variant="destructive">
-              Delete
-            </Button>
-          )}
+          <div className="flex gap-2">
+            <PermissionGate resource="requests" action="update">
+              {onEdit && (
+                <Button onClick={() => onEdit(request.id)} variant="outline">
+                  Edit
+                </Button>
+              )}
+            </PermissionGate>
+            <PermissionGate resource="requests" action="delete">
+              {onDelete && (
+                <Button onClick={handleDeleteClick} variant="destructive">
+                  Delete
+                </Button>
+              )}
+            </PermissionGate>
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={request?.details.name}
+        itemType="request"
+      />
     </Dialog>
   );
 }

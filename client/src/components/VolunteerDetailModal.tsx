@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
 import { NotesEditor } from "./NotesEditor";
+import { PermissionGate } from "./PermissionGate";
+import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { trainingRecordColumns } from "@/routes/RecordsRoutes";
@@ -45,6 +47,7 @@ export function VolunteerDetailModal({
       minutesTaken: number;
     }[]
   >([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when volunteer data changes
   useEffect(() => {
@@ -76,6 +79,22 @@ export function VolunteerDetailModal({
         },
       });
     }
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (onDelete && volunteer) {
+      onDelete(volunteer.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
   };
 
   const renderDetailItem = (
@@ -242,28 +261,36 @@ export function VolunteerDetailModal({
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
-          {volunteer && (
-            <>
+          <div className="flex gap-2">
+            <PermissionGate resource="volunteers" action="update">
               {onEdit && (
                 <Button onClick={() => onEdit(volunteer.id)} variant="default">
                   Edit
                 </Button>
               )}
+            </PermissionGate>
+            <PermissionGate resource="volunteers" action="delete">
               {onDelete && (
-                <Button
-                  onClick={() => onDelete(volunteer.id)}
-                  variant="destructive"
-                >
+                <Button onClick={handleDeleteClick} variant="destructive">
                   Delete
                 </Button>
               )}
-            </>
-          )}
+            </PermissionGate>
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={volunteer?.details.name}
+        itemType="volunteer"
+      />
     </Dialog>
   );
 }

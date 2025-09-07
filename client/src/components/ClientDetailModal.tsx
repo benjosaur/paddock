@@ -9,10 +9,12 @@ import {
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
+import { DeleteAlert } from "./DeleteAlert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
 import { NotesEditor } from "./NotesEditor";
+import { PermissionGate } from "./PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
 import { requestColumns } from "@/routes/RequestRoutes";
@@ -46,6 +48,7 @@ export function ClientDetailModal({
       minutesTaken: number;
     }[]
   >([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when client data changes
   useEffect(() => {
@@ -77,6 +80,22 @@ export function ClientDetailModal({
         },
       });
     }
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (onDelete && client) {
+      onDelete(client.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
   };
 
   const renderDetailItem = (
@@ -318,22 +337,35 @@ export function ClientDetailModal({
         </div>
         <DialogFooter className="mt-4">
           <div className="flex gap-2">
-            {onEdit && (
-              <Button variant="default" onClick={() => onEdit(client.id)}>
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button variant="destructive" onClick={() => onDelete(client.id)}>
-                Delete
-              </Button>
-            )}
+            <PermissionGate resource="clients" action="update">
+              {onEdit && (
+                <Button variant="default" onClick={() => onEdit(client.id)}>
+                  Edit
+                </Button>
+              )}
+            </PermissionGate>
+            <PermissionGate resource="clients" action="delete">
+              {onDelete && (
+                <Button variant="destructive" onClick={handleDeleteClick}>
+                  Delete
+                </Button>
+              )}
+            </PermissionGate>
           </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={client?.details.name}
+        itemType="client"
+      />
     </Dialog>
   );
 }
