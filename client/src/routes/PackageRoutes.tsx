@@ -4,6 +4,7 @@ import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { PackageForm } from "../pages/PackageForm";
 import { RenewPackageForm } from "../pages/RenewPackageForm";
+import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,6 +48,10 @@ export default function PackageRoutes() {
   const [viewState, setViewState] = useState<
     "active" | "completed" | "archived"
   >("active");
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -88,6 +93,27 @@ export default function PackageRoutes() {
     deletePackageMutation.mutate({ id });
   };
 
+  const handleViewRequest = (requestId: string) => {
+    setSelectedRequestId(requestId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequestId(null);
+  };
+
+  const handleEditRequest = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/requests/edit?id=${encodedId}`);
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    // This would need a request delete mutation
+    // For now, just close the modal
+    handleCloseModal();
+  };
+
   const handleViewToggle = () => {
     if (viewState === "active") {
       setViewState("completed");
@@ -108,38 +134,50 @@ export default function PackageRoutes() {
   if (packagesQuery.error) return <div>Error loading packages</div>;
 
   return (
-    <Routes>
-      <Route
-        index
-        element={
-          <DataTable
-            key={`packages-${viewState}`}
-            title="Packages"
-            searchPlaceholder="Search packages..."
-            data={packages}
-            columns={packageColumns}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRenew={handleRenew}
-            onCreate={handleAddNew}
-            resource="packages"
-            customActions={
-              <Button
-                variant={viewState !== "active" ? "default" : "outline"}
-                size="sm"
-                onClick={handleViewToggle}
-                className="shadow-sm"
-              >
-                {getButtonText()}
-              </Button>
-            }
-          />
-        }
-      />
-      <Route path="create" element={<PackageForm />} />
-      <Route path="edit/:id" element={<PackageForm />} />
-      <Route path="renew/:id" element={<RenewPackageForm />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          index
+          element={
+            <DataTable
+              key={`packages-${viewState}`}
+              title="Packages"
+              searchPlaceholder="Search packages..."
+              data={packages}
+              columns={packageColumns}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onRenew={handleRenew}
+              onCreate={handleAddNew}
+              onViewRequest={handleViewRequest}
+              resource="packages"
+              customActions={
+                <Button
+                  variant={viewState !== "active" ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleViewToggle}
+                  className="shadow-sm"
+                >
+                  {getButtonText()}
+                </Button>
+              }
+            />
+          }
+        />
+        <Route path="create" element={<PackageForm />} />
+        <Route path="edit/:id" element={<PackageForm />} />
+        <Route path="renew/:id" element={<RenewPackageForm />} />
+      </Routes>
+      {selectedRequestId && (
+        <RequestDetailModal
+          requestId={selectedRequestId}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onEdit={handleEditRequest}
+          onDelete={handleDeleteRequest}
+        />
+      )}
+    </>
   );
 }
 

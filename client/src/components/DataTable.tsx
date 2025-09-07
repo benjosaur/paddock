@@ -38,12 +38,13 @@ interface DataTableProps<T> {
   title: string;
   searchPlaceholder: string;
   onViewItem?: (id: string) => void;
+  onViewRequest?: (requestId: string) => void;
   onCreate?: () => void;
   resource: AppRouterKeys;
   customActions?: React.ReactNode;
 }
 
-export function DataTable<T extends { id: string }>({
+export function DataTable<T extends { id: string; requestId?: string }>({
   data,
   columns,
   onEdit,
@@ -58,6 +59,7 @@ export function DataTable<T extends { id: string }>({
   title,
   searchPlaceholder,
   onViewItem,
+  onViewRequest,
   onCreate,
   resource,
   customActions,
@@ -285,6 +287,14 @@ export function DataTable<T extends { id: string }>({
                           <DropdownMenuItem onClick={() => onViewItem(item.id)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View
+                          </DropdownMenuItem>
+                        )}
+                        {onViewRequest && (
+                          <DropdownMenuItem
+                            onClick={() => onViewRequest(item.requestId ?? "")}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Request
                           </DropdownMenuItem>
                         )}
                         <PermissionGate resource={resource} action="update">
