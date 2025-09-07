@@ -21,6 +21,7 @@ export class ClientRepository {
     });
     try {
       const result = await client.send(command);
+      console.dir(result, { depth: null });
       const parsedResult = dbClientEntity.array().parse(result.Items);
       return parsedResult;
     } catch (error) {

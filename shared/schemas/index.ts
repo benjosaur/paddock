@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
-  attendanceAllowanceStatus,
+  attendanceAllowanceLevels,
+  attendanceAllowanceStatuses,
   booleanTypes,
   localities,
   notesSource,
@@ -171,7 +172,12 @@ export const clientMetadataSchema = z.object({
     riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
     endDate: z.union([z.string().date(), z.literal("")]).default(""),
-    attendanceAllowance: z.enum(attendanceAllowanceStatus),
+    attendanceAllowance: z.object({
+      requestedLevel: z.enum(attendanceAllowanceLevels).default("None"),
+      requestedDate: z.union([z.string().date(), z.literal("")]).default(""),
+      status: z.enum(attendanceAllowanceStatuses).default("None"),
+      confirmationDate: z.union([z.string().date(), z.literal("")]).default(""),
+    }),
   }),
   requests: z.array(requestMetadataSchema).default([]),
 });

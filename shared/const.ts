@@ -9,9 +9,11 @@ export const userRoles = [
 export const volunteerRoles = ["Coordinator", "Volunteer", "Trustee"] as const;
 export const requestTypes = ["paid", "unpaid"] as const;
 export const requestStatus = ["pending", "urgent"] as const;
-export const attendanceAllowanceStatus = [
-  "no",
-  "pending",
+export const attendanceAllowanceLevels = ["None", "Low", "High"] as const;
+export const attendanceAllowanceStatuses = [
+  "None",
+  "Unsent",
+  "Pending",
   "Low",
   "High",
 ] as const;

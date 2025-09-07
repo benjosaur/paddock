@@ -9,7 +9,8 @@ import { capitalise, updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import {
-  attendanceAllowanceStatus,
+  attendanceAllowanceLevels,
+  attendanceAllowanceStatuses,
   serviceOptions,
   localities,
 } from "shared/const";
@@ -48,7 +49,12 @@ export function ClientForm() {
       riskAssessmentComments: "",
       endDate: "",
       services: [],
-      attendanceAllowance: "pending",
+      attendanceAllowance: {
+        requestedLevel: "None",
+        requestedDate: "",
+        status: "None",
+        confirmationDate: "",
+      },
       attendsMag: false,
       donationScheme: false,
       donationAmount: 0,
@@ -199,7 +205,14 @@ export function ClientForm() {
     } else throw new Error(`${field} not a recognised field`);
   };
 
-  const attendanceAllowanceOptions = attendanceAllowanceStatus.map(
+  const attendanceAllowanceLevelOptions = attendanceAllowanceLevels.map(
+    (option) => ({
+      value: option,
+      label: capitalise(option),
+    })
+  );
+
+  const attendanceAllowanceStatusOptions = attendanceAllowanceStatuses.map(
     (option) => ({
       value: option,
       label: capitalise(option),
@@ -540,27 +553,131 @@ export function ClientForm() {
                   Search by service name to add requested services
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Attendance Allowance?
-                </label>
-                <Select
-                  options={attendanceAllowanceOptions}
-                  value={
-                    attendanceAllowanceOptions.find(
-                      (option) =>
-                        option.value === formData.details.attendanceAllowance
-                    ) || null
+              {/* Attendance Allowance Section */}
+              <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+                <h4 className="text-md font-semibold text-gray-700 mb-3">
+                  Attendance Allowance
+                </h4>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Requested Level
+                  </label>
+                  <Select
+                    options={attendanceAllowanceLevelOptions}
+                    value={
+                      attendanceAllowanceLevelOptions.find(
+                        (option) =>
+                          option.value ===
+                          formData.details.attendanceAllowance.requestedLevel
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      handleSelectChange(
+                        "details.attendanceAllowance.requestedLevel",
+                        selectedOption
+                      )
+                    }
+                    placeholder="Select level..."
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
                   }
-                  onChange={(selectedOption) =>
-                    handleSelectChange(
-                      "details.attendanceAllowance",
-                      selectedOption
-                    )
+                >
+                  <label
+                    htmlFor="attendanceAllowanceRequestedDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Requested Date
+                  </label>
+                  <Input
+                    id="attendanceAllowanceRequestedDate"
+                    name="details.attendanceAllowance.requestedDate"
+                    type="date"
+                    value={
+                      formData.details.attendanceAllowance.requestedDate || ""
+                    }
+                    onChange={handleInputChange}
+                    disabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
                   }
-                  placeholder="Select request type..."
-                  required
-                />
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Select
+                    options={attendanceAllowanceStatusOptions}
+                    value={
+                      attendanceAllowanceStatusOptions.find(
+                        (option) =>
+                          option.value ===
+                          formData.details.attendanceAllowance.status
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      handleSelectChange(
+                        "details.attendanceAllowance.status",
+                        selectedOption
+                      )
+                    }
+                    placeholder="Select status..."
+                    isDisabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                      "None" ||
+                    (formData.details.attendanceAllowance.status !== "Low" &&
+                      formData.details.attendanceAllowance.status !== "High")
+                      ? "opacity-50 pointer-events-none"
+                      : ""
+                  }
+                >
+                  <label
+                    htmlFor="attendanceAllowanceConfirmationDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Confirmation Date
+                  </label>
+                  <Input
+                    id="attendanceAllowanceConfirmationDate"
+                    name="details.attendanceAllowance.confirmationDate"
+                    type="date"
+                    value={
+                      formData.details.attendanceAllowance.confirmationDate ||
+                      ""
+                    }
+                    onChange={handleInputChange}
+                    disabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                        "None" ||
+                      (formData.details.attendanceAllowance.status !== "Low" &&
+                        formData.details.attendanceAllowance.status !== "High")
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>

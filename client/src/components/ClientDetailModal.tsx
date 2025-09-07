@@ -171,10 +171,29 @@ export function ClientDetailModal({
               )}
               {renderDetailItem("Services Provided", client.details.services)}
               {renderDetailItem("Requests", client.requests.length)}
-              {renderDetailItem(
-                "Attendance Allowance?",
-                client.details.attendanceAllowance
-              )}
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-700 mb-2">
+                  Attendance Allowance
+                </h4>
+                <div className="ml-4 space-y-1">
+                  {renderDetailItem(
+                    "Requested Level",
+                    client.details.attendanceAllowance.requestedLevel
+                  )}
+                  {renderDetailItem(
+                    "Requested Date",
+                    client.details.attendanceAllowance.requestedDate
+                  )}
+                  {renderDetailItem(
+                    "Status",
+                    client.details.attendanceAllowance.status
+                  )}
+                  {renderDetailItem(
+                    "Confirmation Date",
+                    client.details.attendanceAllowance.confirmationDate
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent

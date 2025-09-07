@@ -38,9 +38,9 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   },
   {
     key: "attendanceAllowance",
-    header: "Has AA?",
+    header: "AA Status",
     render: (item: ClientMetadata) =>
-      capitalise(item.details.attendanceAllowance),
+      capitalise(item.details.attendanceAllowance.status),
   },
   {
     key: "deprivationFlags",
