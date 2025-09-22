@@ -66,6 +66,7 @@ export const packageSchema = z.object({
     // mp/v owner name
     name: z.string(),
     weeklyHours: z.number().default(1),
+    oneOffStartDateHours: z.number().default(0),
     address: addressSchemaWithDeprivation,
     notes: z.string().default(""),
     services: z.array(z.enum(serviceOptions)).default([]),
@@ -85,6 +86,7 @@ export const requestMetadataSchema = z.object({
     //client owner name
     name: z.string(),
     weeklyHours: z.number().default(1),
+    oneOffStartDateHours: z.number().default(0),
     address: addressSchemaWithDeprivation,
     status: z.enum(requestStatus).default("pending"),
     services: z.array(z.enum(serviceOptions)).default([]),

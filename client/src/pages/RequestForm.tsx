@@ -34,6 +34,7 @@ export function RequestForm() {
       customId: "",
       name: "",
       weeklyHours: 0,
+      oneOffStartDateHours: 0,
       address: {
         streetAddress: "",
         locality: "Wiveliscombe",
@@ -312,6 +313,25 @@ export function RequestForm() {
                   onChange={handleInputChange}
                   placeholder="e.g., 10"
                   required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="oneOffStartDateHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  One-off Hours (on Start Date)
+                </label>
+                <Input
+                  id="oneOffStartDateHours"
+                  name="details.oneOffStartDateHours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.details.oneOffStartDateHours || ""}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 5"
                 />
               </div>
 

@@ -63,7 +63,7 @@ export class ReportService {
       const clients = await this.clientService.getAllNotArchived(user);
       for (const client of clients) {
         if (client.details.endDate) {
-          // probably should be archived
+          // probably should be archived (client end dates present mean terminated)
           continue;
         }
         const isReceivingHigh =
@@ -427,6 +427,14 @@ export class ReportService {
     let currentMonth = startMonth;
     let currentYear = startYear;
 
+    this.addHoursToReport(
+      item.details.oneOffStartDateHours,
+      report,
+      item,
+      startYear,
+      startMonth
+    );
+
     while (
       currentYear < endYear ||
       (currentYear == endYear && currentMonth < endMonth)
@@ -609,6 +617,15 @@ export class ReportService {
     let currentDay = startDay;
     let currentMonth = startMonth;
     let currentYear = startYear;
+
+    this.addHoursToDeprivationReport(
+      item.details.oneOffStartDateHours,
+      report,
+      item,
+      startYear,
+      startMonth
+    );
+
     while (
       currentYear < endYear ||
       (currentYear == endYear && currentMonth < endMonth)
