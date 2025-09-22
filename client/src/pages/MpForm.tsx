@@ -36,6 +36,8 @@ export function MpForm() {
       services: [],
       capacity: "",
       attendsMag: false,
+      publicLiabilityNumber: "",
+      dbsNumber: "",
       notes: [],
     },
     trainingRecords: [],
@@ -342,6 +344,21 @@ export function MpForm() {
 
               <div>
                 <label
+                  htmlFor="dbsNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  DBS Number
+                </label>
+                <Input
+                  id="dbsNumber"
+                  name="details.dbsNumber"
+                  value={formData.details.dbsNumber || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="dbsExpiry"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -352,6 +369,21 @@ export function MpForm() {
                   type="date"
                   name="dbsExpiry"
                   value={formData.dbsExpiry || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="publicLiabilityNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Public Liability Number
+                </label>
+                <Input
+                  id="publicLiabilityNumber"
+                  name="details.publicLiabilityNumber"
+                  value={formData.details.publicLiabilityNumber || ""}
                   onChange={handleInputChange}
                 />
               </div>

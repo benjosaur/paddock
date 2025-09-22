@@ -21,6 +21,7 @@ export const trainingRecordSchema = z.object({
   details: z.object({
     name: z.string(),
     recordName: z.string().default(""),
+    recordNumber: z.string().default(""),
     notes: z.string().default(""),
   }),
 });
@@ -200,6 +201,8 @@ export const mpMetadataSchema = z.object({
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     capacity: z.string().default(""),
+    dbsNumber: z.string().default(""),
+    publicLiabilityNumber: z.string().default(""),
   }),
   packages: z.array(packageSchema).default([]),
 });
@@ -215,6 +218,8 @@ export const volunteerMetadataSchema = mpMetadataSchema
   .extend({
     details: basePersonDetails.extend({
       capacity: z.string().default(""),
+      dbsNumber: z.string().default(""),
+      publicLiabilityNumber: z.string().default(""),
       currentRole: z.enum(volunteerRoles).default("Volunteer"),
     }),
   });

@@ -19,9 +19,9 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
     render: (item) => item.details.name,
   },
   {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
+    key: "dbsNumber",
+    header: "DBS Number",
+    render: (item) => item.details.dbsNumber || "No DBS",
   },
   {
     key: "dbsExpiry",
@@ -30,34 +30,18 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
   },
 ];
 
-const volunteerDbsColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "name",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
-  },
-  {
-    key: "dbsExpiry",
-    header: "DBS Expiry",
-    render: (item) => item.dbsExpiry || "No DBS",
-  },
-];
+const volunteerDbsColumns: TableColumn<VolunteerMetadata>[] = mpDbsColumns;
 
 export default function DbsRoutes() {
   const [showArchived, setShowArchived] = useState(false);
 
   const mpsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.mps.getAll.queryOptions()
       : trpc.mps.getAllNotArchived.queryOptions()
   );
   const volunteersQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.volunteers.getAll.queryOptions()
       : trpc.volunteers.getAllNotArchived.queryOptions()
   );
@@ -96,7 +80,7 @@ export default function DbsRoutes() {
                 </Button>
               </div>
             </div>
-            
+
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>

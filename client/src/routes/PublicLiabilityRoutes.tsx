@@ -19,47 +19,31 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
     render: (item) => item.details.name,
   },
   {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
+    key: "publicLiabilityNumber",
+    header: "Public Liability Number",
+    render: (item) =>
+      item.details.publicLiabilityNumber || "No Public Liability",
   },
   {
     key: "publicLiabilityExpiry",
     header: "Public Liability Expiry",
-    render: (item) =>
-      item.publicLiabilityExpiry || "No Public Liability",
+    render: (item) => item.publicLiabilityExpiry || "No Public Liability",
   },
 ];
 
-const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "name",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
-  },
-  {
-    key: "publicLiabilityExpiry",
-    header: "Public Liability Expiry",
-    render: (item) =>
-      item.publicLiabilityExpiry || "No Public Liability",
-  },
-];
+const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] =
+  mpPublicLiabilityColumns;
 
 export default function PublicLiabilityRoutes() {
   const [showArchived, setShowArchived] = useState(false);
 
   const mpsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.mps.getAll.queryOptions()
       : trpc.mps.getAllNotArchived.queryOptions()
   );
   const volunteersQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.volunteers.getAll.queryOptions()
       : trpc.volunteers.getAllNotArchived.queryOptions()
   );
@@ -98,7 +82,7 @@ export default function PublicLiabilityRoutes() {
                 </Button>
               </div>
             </div>
-            
+
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>

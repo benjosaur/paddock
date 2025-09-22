@@ -27,6 +27,11 @@ export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
     render: (item) => item.details.recordName,
   },
   {
+    key: "recordNumber",
+    header: "Training Record Number",
+    render: (item) => item.details.recordNumber,
+  },
+  {
     key: "date",
     header: "Expiry Date",
     render: (item) => item.expiryDate,

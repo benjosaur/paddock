@@ -25,6 +25,7 @@ export function TrainingRecordForm() {
     details: {
       name: "",
       recordName: "",
+      recordNumber: "",
       notes: "",
     },
   });
@@ -223,6 +224,21 @@ export function TrainingRecordForm() {
                   }
                   placeholder="Select training record type..."
                   required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="dbsNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Record Number
+                </label>
+                <Input
+                  id="recordNumber"
+                  name="details.recordNumber"
+                  value={formData.details.recordNumber || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
