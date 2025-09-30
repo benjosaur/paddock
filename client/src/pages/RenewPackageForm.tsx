@@ -24,6 +24,7 @@ export function RenewPackageForm() {
     endDate: "open",
     details: {
       name: "",
+      oneOffStartDateHours: 0,
       weeklyHours: 0,
       address: {
         streetAddress: "",
@@ -114,7 +115,7 @@ export function RenewPackageForm() {
       const nextDay = new Date(oldPackageData.endDate);
       nextDay.setDate(nextDay.getDate() + 1);
       const nextDayString = nextDay.toISOString().split("T")[0];
-      
+
       setNewPackageData((prev) => ({
         ...prev,
         startDate: nextDayString,

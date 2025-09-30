@@ -17,6 +17,7 @@ import {
   FolderOpen,
   RefreshCw,
   Target,
+  TreePalm,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
@@ -35,6 +36,7 @@ interface DataTableProps<T> {
   onEditRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onRenew?: (id: string) => void;
+  onCover?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (id: string) => void;
@@ -56,6 +58,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
   onEditRecord,
   onDeleteRecord,
   onRenew,
+  onCover,
   title,
   searchPlaceholder,
   onViewItem,
@@ -310,6 +313,14 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                             <DropdownMenuItem onClick={() => onRenew(item.id)}>
                               <RefreshCw className="mr-2 h-4 w-4" />
                               Renew
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="update">
+                          {onCover && (
+                            <DropdownMenuItem onClick={() => onCover(item.id)}>
+                              <TreePalm className="mr-2 h-4 w-4" />
+                              Cover
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

@@ -123,6 +123,29 @@ export class RequestService {
     }
   }
 
+  async getRequestWithOnePackageByPackageId(
+    packageId: string,
+    user: User
+  ): Promise<RequestFull> {
+    try {
+      const packageFromDb = await this.packageService.getById(packageId, user);
+      const requestId = packageFromDb.requestId;
+      const requestFull = await this.getById(requestId, user);
+      const filteredRequest: RequestFull = {
+        ...requestFull,
+        packages:
+          requestFull.packages?.filter((pkg) => pkg.id === packageId) || [],
+      };
+      return filteredRequest;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting request by package ID:",
+        error
+      );
+      throw error;
+    }
+  }
+
   async create(
     request: Omit<RequestMetadata, "id">,
     user: User

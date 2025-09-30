@@ -36,6 +36,7 @@ export function RenewRequestForm() {
       customId: "",
       name: "",
       weeklyHours: 0,
+      oneOffStartDateHours: 0,
       address: {
         streetAddress: "",
         locality: "Wiveliscombe",

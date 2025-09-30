@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { packageSchema } from "shared/schemas/index";
+import { coverDetailsSchema } from "shared/schemas/convenience";
 export const packagesRouter = router({
   getAll: createProtectedProcedure("packages", "read").query(
     async ({ ctx }) => {
@@ -45,6 +46,20 @@ export const packagesRouter = router({
       return await ctx.services.packages.renew(
         input.oldPackage,
         input.newPackage,
+        ctx.user
+      );
+    }),
+  addCoverPeriod: createProtectedProcedure("packages", "update")
+    .input(
+      z.object({
+        oldPackage: packageSchema,
+        coverDetails: coverDetailsSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.packages.addCoverPeriod(
+        input.oldPackage,
+        input.coverDetails,
         ctx.user
       );
     }),

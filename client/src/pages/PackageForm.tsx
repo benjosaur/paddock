@@ -314,7 +314,7 @@ export function PackageForm() {
                   min="0"
                   value={formData.details.weeklyHours || ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 10"
+                  placeholder="0"
                   required
                 />
               </div>
@@ -324,7 +324,7 @@ export function PackageForm() {
                   htmlFor="oneOffStartDateHours"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  One-off Hours (on Start Date)
+                  One-off Hours
                 </label>
                 <Input
                   id="oneOffStartDateHours"
@@ -334,7 +334,7 @@ export function PackageForm() {
                   step="0.5"
                   value={formData.details.oneOffStartDateHours || ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 5"
+                  placeholder="0"
                 />
               </div>
 

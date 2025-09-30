@@ -36,6 +36,17 @@ export const requestsRouter = router({
     .query(async ({ ctx, input }) => {
       return await ctx.services.requests.getById(input.id, ctx.user);
     }),
+  getRequestWithOnePackageByPackageId: createProtectedProcedure(
+    "requests",
+    "read"
+  )
+    .input(z.object({ packageId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.requests.getRequestWithOnePackageByPackageId(
+        input.packageId,
+        ctx.user
+      );
+    }),
   create: createProtectedProcedure("requests", "create")
     .input(requestMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {

@@ -8,6 +8,7 @@ import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CoverPackageForm } from "@/pages/CoverPackageForm";
 
 export const packageColumns: TableColumn<Package>[] = [
   {
@@ -79,6 +80,11 @@ export default function PackageRoutes() {
     navigate("/packages/create");
   };
 
+  const handleCover = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/packages/cover/${encodedId}`);
+  };
+
   const handleEdit = (id: string) => {
     const encodedId = encodeURIComponent(id);
     navigate(`/packages/edit/${encodedId}`);
@@ -146,6 +152,7 @@ export default function PackageRoutes() {
               data={packages}
               columns={packageColumns}
               onEdit={handleEdit}
+              onCover={handleCover}
               onDelete={handleDelete}
               onRenew={handleRenew}
               onCreate={handleAddNew}
@@ -165,6 +172,7 @@ export default function PackageRoutes() {
           }
         />
         <Route path="create" element={<PackageForm />} />
+        <Route path="cover/:id" element={<CoverPackageForm />} />
         <Route path="edit/:id" element={<PackageForm />} />
         <Route path="renew/:id" element={<RenewPackageForm />} />
       </Routes>
