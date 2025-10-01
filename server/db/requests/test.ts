@@ -54,7 +54,7 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
     services: ["Companionship", "Attendance Allowance"],
     notes: "Weekly unpaid volunteer visit requested",
     weeklyHours: 5,
-    status: "pending",
+    status: "normal",
   },
 };
 
@@ -142,7 +142,7 @@ export async function testRequestService() {
       details: {
         ...paidRequest.details,
         notes: "Updated paid support requirements",
-        status: "pending",
+        status: "normal",
       },
     };
     await requestService.update(updatedPaidRequestData as any, sampleUser);
@@ -164,7 +164,7 @@ export async function testRequestService() {
       details: {
         ...paidRequest.details,
         notes: "Renewed request for 2025",
-        status: "pending",
+        status: "normal",
       },
     };
 

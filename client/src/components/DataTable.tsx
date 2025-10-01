@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Target,
   TreePalm,
+  Info,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
@@ -32,6 +33,7 @@ interface DataTableProps<T> {
   onDelete?: (id: string) => void;
   onAddPackage?: (id: string) => void;
   onAddRequest?: (id: string) => void;
+  onAddInfo?: (id: string) => void;
   onAddRecord?: (id: string) => void;
   onEditRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
@@ -54,6 +56,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
   onDelete,
   onAddPackage,
   onAddRequest,
+  onAddInfo,
   onAddRecord,
   onEditRecord,
   onDeleteRecord,
@@ -194,6 +197,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                 onRenew ||
                 onAddRecord ||
                 onAddRequest ||
+                onAddInfo ||
                 onEditRecord) && (
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
@@ -219,6 +223,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                 onRenew ||
                 onAddRecord ||
                 onAddRequest ||
+                onAddInfo ||
                 onEditRecord) && <th className="px-6 py-2"></th>}
             </tr>
           </thead>
@@ -249,6 +254,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                   onRenew ||
                   onAddRecord ||
                   onAddRequest ||
+                  onAddInfo ||
                   onEditRecord) && (
                   <td
                     className={`px-6 py-4 text-right ${
@@ -275,6 +281,14 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                             >
                               <Plus className="mr-2 h-4 w-4" />
                               Request
+                            </DropdownMenuItem>
+                          )}
+                          {onAddInfo && (
+                            <DropdownMenuItem
+                              onClick={() => onAddInfo(item.id)}
+                            >
+                              <Info className="mr-2 h-4 w-4" />
+                              Info
                             </DropdownMenuItem>
                           )}
                           {onAddRecord && (

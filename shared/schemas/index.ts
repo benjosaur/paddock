@@ -89,7 +89,7 @@ export const requestMetadataSchema = z.object({
     weeklyHours: z.number().default(0),
     oneOffStartDateHours: z.number().default(0),
     address: addressSchemaWithDeprivation,
-    status: z.enum(requestStatus).default("pending"),
+    status: z.enum(requestStatus).default("normal"),
     services: z.array(z.enum(serviceOptions)).default([]),
     notes: z.string().default(""),
   }),
@@ -220,7 +220,7 @@ export const volunteerMetadataSchema = mpMetadataSchema
       capacity: z.string().default(""),
       dbsNumber: z.string().default(""),
       publicLiabilityNumber: z.string().default(""),
-      currentRole: z.enum(volunteerRoles).default("Volunteer"),
+      role: z.enum(volunteerRoles).default("Volunteer"),
     }),
   });
 

@@ -171,7 +171,7 @@ export function VolunteerDetailModal({
               </h3>
               {renderDetailItem("ID", volunteer.id)}
               {renderDetailItem("Name", volunteer.details.name)}
-              {renderDetailItem("Role", volunteer.details.currentRole)}
+              {renderDetailItem("Role", volunteer.details.role)}
               {renderDetailItem("Address", volunteer.details.address)}
               {renderDetailItem("Phone", volunteer.details.phone)}
               {renderDetailItem("Email", volunteer.details.email)}

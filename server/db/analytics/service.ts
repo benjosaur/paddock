@@ -19,7 +19,7 @@
 	- For each request. Get weekly hours. Get Start Date. Get End Date. Derive total days covered in each month / 7 * weeklyHours and append to totalHours. Get village add to village entry. Get service(s), add to each service. Repeat
 */
 
-import { firstYear, months, serviceOptions } from "shared/const";
+import { firstYear, months, ServiceOption, serviceOptions } from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
 import {
@@ -36,6 +36,8 @@ import {
   AttendanceAllowanceReport,
 } from "shared";
 import { ClientService } from "../client/service";
+
+const infoOption: ServiceOption = "Information";
 
 export class ReportService {
   clientService = new ClientService();
@@ -417,6 +419,13 @@ export class ReportService {
       return;
     }
 
+    if (
+      item.details.services.includes(infoOption) &&
+      item.details.services.length == 1
+    ) {
+      return;
+    }
+
     const startYear = parseInt(startDate.slice(0, 4));
     const startMonth = parseInt(startDate.slice(5, 7));
     const startDay = parseInt(startDate.slice(8, 10));
@@ -605,6 +614,13 @@ export class ReportService {
 
     // avoid negative hours if start date in future and end date is open (i.e. set to today)
     if (startDate > endDate) {
+      return;
+    }
+
+    if (
+      item.details.services.includes(infoOption) &&
+      item.details.services.length == 1
+    ) {
       return;
     }
 

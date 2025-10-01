@@ -3,6 +3,10 @@ import {
   clientFullSchema,
   ClientMetadata,
   clientMetadataSchema,
+  InfoDetails,
+  infoDetailsSchema,
+  VolunteerMetadata,
+  volunteerMetadataSchema,
 } from "shared";
 import { ClientRepository } from "./repository";
 import { DbClientEntity } from "./schema";
@@ -173,6 +177,78 @@ export class ClientService {
       };
     } catch (error) {
       console.error("Service Layer Error creating client:", error);
+      throw error;
+    }
+  }
+
+  async createInfoEntry(
+    client: ClientMetadata,
+    carer: VolunteerMetadata,
+    infoDetails: InfoDetails,
+    user: User
+  ): Promise<string[]> {
+    try {
+      const validatedClient = clientMetadataSchema.parse(client);
+      const validatedCarer = volunteerMetadataSchema.parse(carer);
+      const validatedInfoDetails = infoDetailsSchema.parse(infoDetails);
+      const newRequestId = await this.requestService.create(
+        {
+          clientId: client.id,
+          startDate: validatedInfoDetails.date,
+          endDate: validatedInfoDetails.date,
+          archived: "N",
+          requestType: "unpaid",
+          details: {
+            ...validatedClient.details,
+            weeklyHours: 0,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken,
+            notes: "",
+            status: "normal",
+            services: ["Information"],
+          },
+        },
+        user
+      );
+
+      const newPackageId = await this.packageService.create(
+        {
+          carerId: validatedCarer.id,
+          requestId: newRequestId,
+          startDate: validatedInfoDetails.date,
+          endDate: validatedInfoDetails.date,
+          archived: "N",
+          details: {
+            address: validatedClient.details.address,
+            name: validatedCarer.details.name,
+            weeklyHours: 0,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken,
+            services: ["Information"],
+            notes: "",
+          },
+        },
+        user
+      );
+
+      if (validatedInfoDetails.note) {
+        const dbClientWithUpdatedNotes: DbClientEntity = addDbMiddleware(
+          {
+            ...validatedClient,
+            pK: validatedClient.id,
+            sK: validatedClient.id,
+            entityType: "client",
+            details: {
+              ...validatedClient.details,
+              notes: [...validatedClient.details.notes, validatedInfoDetails],
+            },
+          },
+          user
+        );
+        await this.clientRepository.update(dbClientWithUpdatedNotes, user);
+      }
+
+      return [newRequestId, newPackageId];
+    } catch (error) {
+      console.error("Service Layer Error creating info entry:", error);
       throw error;
     }
   }

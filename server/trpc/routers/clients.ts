@@ -1,5 +1,9 @@
+import { infoDetailsSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { clientFullSchema } from "shared/schemas/index";
+import {
+  clientFullSchema,
+  volunteerMetadataSchema,
+} from "shared/schemas/index";
 import { z } from "zod";
 
 export const clientsRouter = router({
@@ -29,6 +33,23 @@ export const clientsRouter = router({
     .input(clientFullSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.create(input, ctx.user);
+    }),
+
+  createInfoEntry: createProtectedProcedure("clients", "create")
+    .input(
+      z.object({
+        client: clientFullSchema,
+        carer: volunteerMetadataSchema,
+        infoDetails: infoDetailsSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.createInfoEntry(
+        input.client,
+        input.carer,
+        input.infoDetails,
+        ctx.user
+      );
     }),
 
   update: createProtectedProcedure("clients", "update")

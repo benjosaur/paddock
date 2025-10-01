@@ -47,7 +47,7 @@ export function RenewRequestForm() {
           health: false,
         },
       },
-      status: "pending",
+      status: "normal",
       services: [],
       notes: "",
     },

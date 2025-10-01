@@ -3,6 +3,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
+import { InfoForm } from "../pages/InfoForm";
 import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
@@ -127,6 +128,11 @@ export default function ClientsRoutes() {
     navigate(`/requests/create?clientId=${encodedId}`);
   };
 
+  const handleAddInfo = (clientId: string) => {
+    const encodedId = encodeURIComponent(clientId);
+    navigate(`/clients/info?clientId=${encodedId}`);
+  };
+
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
 
@@ -146,6 +152,7 @@ export default function ClientsRoutes() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAddRequest={handleAddRequest}
+              onAddInfo={handleAddInfo}
               onViewItem={handleViewClient}
               onCreate={handleAddNew}
               resource="clients"
@@ -174,6 +181,7 @@ export default function ClientsRoutes() {
       />
       <Route path="create" element={<ClientForm />} />
       <Route path="edit/:id" element={<ClientForm />} />
+      <Route path="info" element={<InfoForm />} />
     </Routes>
   );
 }

@@ -45,7 +45,7 @@ export function RequestForm() {
           health: false,
         },
       },
-      status: "pending",
+      status: "normal",
       services: [],
       notes: "",
     },
@@ -288,6 +288,30 @@ export function RequestForm() {
                   required
                 />
               </div>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  value={formData.endDate === "open" ? "" : formData.endDate}
+                  onChange={(e) => {
+                    const value = e.target.value || "open";
+                    setFormData((prev) =>
+                      updateNestedValue("endDate", value, prev)
+                    );
+                  }}
+                />
+                <small className="text-gray-500">
+                  Leave empty for ongoing request
+                </small>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -311,7 +335,7 @@ export function RequestForm() {
                   step="0.5"
                   value={formData.details.weeklyHours || ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 10"
+                  placeholder="0"
                   required
                 />
               </div>
@@ -331,7 +355,7 @@ export function RequestForm() {
                   step="0.5"
                   value={formData.details.oneOffStartDateHours || ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 5"
+                  placeholder="0"
                 />
               </div>
 

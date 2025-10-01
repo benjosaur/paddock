@@ -35,7 +35,7 @@ export function VolunteerForm() {
       nextOfKin: "",
       services: [],
       capacity: "",
-      currentRole: "Volunteer",
+      role: "Volunteer",
       attendsMag: false,
       publicLiabilityNumber: "",
       dbsNumber: "",
@@ -419,24 +419,24 @@ export function VolunteerForm() {
 
               <div>
                 <label
-                  htmlFor="currentRole"
+                  htmlFor="role"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Current Role *
                 </label>
                 <Select
-                  id="currentRole"
+                  id="role"
                   value={
-                    formData.details.currentRole
+                    formData.details.role
                       ? {
-                          label: formData.details.currentRole,
-                          value: formData.details.currentRole,
+                          label: formData.details.role,
+                          value: formData.details.role,
                         }
                       : null
                   }
                   options={roleSelectOptions}
                   onChange={(selectedOption) =>
-                    handleSelectChange("details.currentRole", selectedOption)
+                    handleSelectChange("details.role", selectedOption)
                   }
                   placeholder="Select role..."
                   required
