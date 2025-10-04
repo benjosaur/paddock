@@ -21,6 +21,7 @@ import { RequestRepository } from "../requests/repository";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { DeprivationService } from "../../services/deprivation";
+import { EndPersonDetails, endPersonDetailsSchema } from "shared";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -400,14 +401,12 @@ export class ClientService {
     // HOWEVER, also need to archive packages owned by MPs/Volunteers. else error on read non archived requests.
     try {
       const clientRecords = await this.clientRepository.getById(clientId, user);
-      console.log(clientRecords);
       const updatedClientEntities = clientRecords
         .filter((dbResult) => dbResult.sK.startsWith("c"))
         .map((record) => ({
           ...record,
           archived: record.archived === "Y" ? "N" : "Y",
         }));
-      console.log(updatedClientEntities);
       const requestIds = clientRecords
         .filter((dbResult) => dbResult.sK.startsWith("req"))
         .map((req) => req.sK);
@@ -464,5 +463,36 @@ export class ClientService {
     }
 
     return Array.from(clientsMap.values()) as ClientMetadata[];
+  }
+
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    try {
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.clientRepository.getById(
+        validated.personId,
+        user
+      );
+      const meta = this.transformDbClientToSharedMetaData(records)[0];
+      if (!meta) throw new Error("Client record not found");
+      const { id, requests, ...rest } = meta as any;
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "client",
+          ...rest,
+          archived: "Y",
+          details: {
+            ...rest.details,
+            endDate: validated.endDate,
+          },
+        },
+        user
+      );
+      await this.clientRepository.update(dbClient, user);
+    } catch (error) {
+      console.error("Service Layer Error ending client:", error);
+      throw error;
+    }
   }
 }

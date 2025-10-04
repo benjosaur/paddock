@@ -1,4 +1,4 @@
-import { infoDetailsSchema } from "shared";
+import { infoDetailsSchema, endPersonDetailsSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import {
   clientFullSchema,
@@ -27,6 +27,11 @@ export const clientsRouter = router({
     .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       return await ctx.services.client.getById(input.id, ctx.user);
+    }),
+  end: createProtectedProcedure("clients", "update")
+    .input(endPersonDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.end(ctx.user, input);
     }),
 
   create: createProtectedProcedure("clients", "create")

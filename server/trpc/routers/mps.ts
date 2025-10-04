@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpFullSchema, mpMetadataSchema } from "shared/schemas/index";
+import { endPersonDetailsSchema } from "shared";
 
 export const mpsRouter = router({
   getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
@@ -45,6 +46,11 @@ export const mpsRouter = router({
     .input(mpFullSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.delete(ctx.user, input.id);
+    }),
+  end: createProtectedProcedure("mps", "update")
+    .input(endPersonDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.mp.end(ctx.user, input);
     }),
 
   toggleArchive: createProtectedProcedure("mps", "update")

@@ -7,6 +7,16 @@ import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
 import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { EndPersonDetails } from "shared";
+import { Input } from "../components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
@@ -53,6 +63,8 @@ export function VolunteersRoutes() {
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -79,6 +91,16 @@ export function VolunteersRoutes() {
     trpc.volunteers.delete.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: volunteersQueryKey });
+      },
+    })
+  );
+
+  const endVolunteerMutation = useMutation(
+    trpc.volunteers.end.mutationOptions({
+      onSuccess: () => {
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -115,6 +137,11 @@ export function VolunteersRoutes() {
     navigate(`/records/create?ownerId=${encodedId}&ownerType=volunteer`);
   };
 
+  const handleEnd = (id: string) => {
+    setEndDetails({ personId: id, endDate: "" });
+    setIsEndDialogOpen(true);
+  };
+
   if (volunteersQuery.isLoading) return <div>Loading...</div>;
   if (volunteersQuery.error) return <div>Error loading Volunteers</div>;
 
@@ -134,6 +161,7 @@ export function VolunteersRoutes() {
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}
+              onEnd={handleEnd}
               onViewItem={handleViewVolunteer as (item: unknown) => void}
               onCreate={handleAddNew}
               resource="volunteers"
@@ -157,6 +185,57 @@ export function VolunteersRoutes() {
                 onDelete={handleDelete}
               />
             )}
+            <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>End Volunteer</DialogTitle>
+                  <DialogDescription>
+                    Select an end date. This will also archive the volunteer.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <label className="text-sm text-gray-700">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDetails?.endDate ?? ""}
+                    onChange={(e) =>
+                      setEndDetails((prev) =>
+                        prev ? { ...prev, endDate: e.target.value } : prev
+                      )
+                    }
+                    required
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={
+                      !endDetails?.endDate ||
+                      !endDetails?.personId ||
+                      endVolunteerMutation.isPending
+                    }
+                    onClick={() => {
+                      if (!endDetails?.personId || !endDetails.endDate) return;
+                      endVolunteerMutation.mutate(endDetails);
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         }
       />

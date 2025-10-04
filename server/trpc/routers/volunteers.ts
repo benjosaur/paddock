@@ -4,6 +4,7 @@ import {
   volunteerFullSchema,
   volunteerMetadataSchema,
 } from "shared/schemas/index";
+import { endPersonDetailsSchema } from "shared";
 
 export const volunteersRouter = router({
   getAll: createProtectedProcedure("volunteers", "read").query(
@@ -56,5 +57,11 @@ export const volunteersRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.toggleArchive(input.id, ctx.user);
+    }),
+
+  end: createProtectedProcedure("volunteers", "update")
+    .input(endPersonDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.volunteer.end(ctx.user, input);
     }),
 });

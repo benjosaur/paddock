@@ -7,6 +7,16 @@ import { MpDetailModal } from "../components/MpDetailModal";
 import { trpc } from "../utils/trpc";
 import type { MpMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { EndPersonDetails } from "shared";
+import { Input } from "../components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 
 const mpColumns: TableColumn<MpMetadata>[] = [
   {
@@ -46,6 +56,8 @@ export function MpsRoutes() {
   const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -73,6 +85,16 @@ export function MpsRoutes() {
     trpc.mps.delete.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: mpsQueryKey });
+      },
+    })
+  );
+
+  const endMpMutation = useMutation(
+    trpc.mps.end.mutationOptions({
+      onSuccess: () => {
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -109,6 +131,11 @@ export function MpsRoutes() {
     setSelectedMpId(null);
   };
 
+  const handleEnd = (id: string) => {
+    setEndDetails({ personId: id, endDate: "" });
+    setIsEndDialogOpen(true);
+  };
+
   if (mpsQuery.isLoading) return <div>Loading...</div>;
   if (mpsQuery.error) return <div>Error loading MPs</div>;
 
@@ -128,6 +155,7 @@ export function MpsRoutes() {
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}
+              onEnd={handleEnd}
               onViewItem={handleViewMp as (item: unknown) => void}
               onCreate={handleAddNew}
               resource="mps"
@@ -151,6 +179,57 @@ export function MpsRoutes() {
                 onDelete={handleDelete}
               />
             )}
+            <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>End MP</DialogTitle>
+                  <DialogDescription>
+                    Select an end date. This will also archive the MP.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <label className="text-sm text-gray-700">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDetails?.endDate ?? ""}
+                    onChange={(e) =>
+                      setEndDetails((prev) =>
+                        prev ? { ...prev, endDate: e.target.value } : prev
+                      )
+                    }
+                    required
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={
+                      !endDetails?.endDate ||
+                      !endDetails?.personId ||
+                      endMpMutation.isPending
+                    }
+                    onClick={() => {
+                      if (!endDetails?.personId || !endDetails.endDate) return;
+                      endMpMutation.mutate(endDetails);
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         }
       />

@@ -19,6 +19,7 @@ import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
+import { EndPersonDetails, endPersonDetailsSchema } from "shared";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -261,5 +262,36 @@ export class VolunteerService {
     }
 
     return Array.from(volunteersMap.values()) as VolunteerMetadata[];
+  }
+
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    try {
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.volunteerRepository.getById(
+        validated.personId,
+        user
+      );
+      const meta = this.transformDbVolunteerToSharedMetaData(records)[0];
+      if (!meta) throw new Error("Volunteer record not found");
+      const { id, trainingRecords, packages, ...rest } = meta as any;
+      const dbVolunteer: DbVolunteerEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "volunteer",
+          ...rest,
+          archived: "Y",
+          details: {
+            ...rest.details,
+            endDate: validated.endDate,
+          },
+        },
+        user
+      );
+      await this.volunteerRepository.update(dbVolunteer, user);
+    } catch (error) {
+      console.error("Service Layer Error ending volunteer:", error);
+      throw error;
+    }
   }
 }

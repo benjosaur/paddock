@@ -559,6 +559,7 @@ export function ClientForm() {
                   type="date"
                   value={formData.details.endDate || ""}
                   onChange={handleInputChange}
+                  disabled
                 />
               </div>
               <div>

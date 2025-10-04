@@ -39,6 +39,7 @@ export function MpForm() {
       publicLiabilityNumber: "",
       dbsNumber: "",
       notes: [],
+      endDate: "",
     },
     trainingRecords: [],
     requests: [],
@@ -205,7 +206,7 @@ export function MpForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth *
+                  Date of Birth
                 </label>
                 <Input
                   id="dob"
@@ -213,7 +214,6 @@ export function MpForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -401,6 +401,23 @@ export function MpForm() {
                   name="publicLiabilityExpiry"
                   value={formData.publicLiabilityExpiry || ""}
                   onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="details.endDate"
+                  type="date"
+                  value={formData.details.endDate || ""}
+                  onChange={handleInputChange}
+                  disabled
                 />
               </div>
             </div>

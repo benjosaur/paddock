@@ -9,6 +9,16 @@ import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise } from "@/utils/helpers";
+import { Input } from "../components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import type { EndPersonDetails } from "shared";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
   {
@@ -67,6 +77,8 @@ export default function ClientsRoutes() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -88,6 +100,16 @@ export default function ClientsRoutes() {
 
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
+  const endClientMutation = useMutation(
+    trpc.clients.end.mutationOptions({
       onSuccess: () => {
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
@@ -133,6 +155,11 @@ export default function ClientsRoutes() {
     navigate(`/clients/info?clientId=${encodedId}`);
   };
 
+  const handleEnd = (id: string) => {
+    setEndDetails({ personId: id, endDate: "" });
+    setIsEndDialogOpen(true);
+  };
+
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
 
@@ -153,6 +180,7 @@ export default function ClientsRoutes() {
               onDelete={handleDelete}
               onAddRequest={handleAddRequest}
               onAddInfo={handleAddInfo}
+              onEnd={handleEnd}
               onViewItem={handleViewClient}
               onCreate={handleAddNew}
               resource="clients"
@@ -176,6 +204,57 @@ export default function ClientsRoutes() {
                 onDelete={handleDelete}
               />
             )}
+            <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>End Client</DialogTitle>
+                  <DialogDescription>
+                    Select an end date. This will also archive the client.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <label className="text-sm text-gray-700">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDetails?.endDate ?? ""}
+                    onChange={(e) =>
+                      setEndDetails((prev) =>
+                        prev ? { ...prev, endDate: e.target.value } : prev
+                      )
+                    }
+                    required
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={
+                      !endDetails?.endDate ||
+                      !endDetails?.personId ||
+                      endClientMutation.isPending
+                    }
+                    onClick={() => {
+                      if (!endDetails?.personId || !endDetails.endDate) return;
+                      endClientMutation.mutate(endDetails);
+                      setIsEndDialogOpen(false);
+                      setEndDetails(null);
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         }
       />

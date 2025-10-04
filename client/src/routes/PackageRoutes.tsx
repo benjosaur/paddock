@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { PackageForm } from "../pages/PackageForm";
 import { RenewPackageForm } from "../pages/RenewPackageForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
+import { PackageDetailModal } from "../components/PackageDetailModal";
 import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +27,11 @@ export const packageColumns: TableColumn<Package>[] = [
     header: "End Date",
     render: (item: Package) =>
       item.endDate === "open" ? "Ongoing" : item.endDate,
+  },
+  {
+    key: "oneOff",
+    header: "One-Off Hours",
+    render: (item: Package) => item.details.oneOffStartDateHours || 0,
   },
   {
     key: "weeklyHours",
@@ -53,6 +59,10 @@ export default function PackageRoutes() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+    null
+  );
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -104,6 +114,11 @@ export default function PackageRoutes() {
     setIsModalOpen(true);
   };
 
+  const handleViewPackage = (packageId: string) => {
+    setSelectedPackageId(packageId);
+    setIsPackageModalOpen(true);
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedRequestId(null);
@@ -114,7 +129,7 @@ export default function PackageRoutes() {
     navigate(`/requests/edit?id=${encodedId}`);
   };
 
-  const handleDeleteRequest = (id: string) => {
+  const handleDeleteRequest = (_id: string) => {
     // This would need a request delete mutation
     // For now, just close the modal
     handleCloseModal();
@@ -156,6 +171,7 @@ export default function PackageRoutes() {
               onDelete={handleDelete}
               onRenew={handleRenew}
               onCreate={handleAddNew}
+              onViewItem={handleViewPackage}
               onViewRequest={handleViewRequest}
               resource="packages"
               customActions={
@@ -183,6 +199,18 @@ export default function PackageRoutes() {
           onClose={handleCloseModal}
           onEdit={handleEditRequest}
           onDelete={handleDeleteRequest}
+        />
+      )}
+      {selectedPackageId && (
+        <PackageDetailModal
+          pkgId={selectedPackageId}
+          isOpen={isPackageModalOpen}
+          onClose={() => {
+            setIsPackageModalOpen(false);
+            setSelectedPackageId(null);
+          }}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       )}
     </>

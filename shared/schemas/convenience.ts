@@ -22,6 +22,12 @@ export const endRequestDetailsSchema = z.object({
   endDate: z.string().date(),
 });
 
+export const endPersonDetailsSchema = z.object({
+  personId: z.string(),
+  endDate: z.string().date(),
+});
+
 export type CoverDetails = z.infer<typeof coverDetailsSchema>;
 export type InfoDetails = z.infer<typeof infoDetailsSchema>;
 export type EndRequestDetails = z.infer<typeof endRequestDetailsSchema>;
+export type EndPersonDetails = z.infer<typeof endPersonDetailsSchema>;

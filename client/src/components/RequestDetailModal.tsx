@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -15,6 +16,7 @@ import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
+import { PackageDetailModal } from "./PackageDetailModal";
 
 interface RequestDetailModalProps {
   requestId: string;
@@ -31,11 +33,16 @@ export function RequestDetailModal({
   onEdit,
   onDelete,
 }: RequestDetailModalProps) {
+  const navigate = useNavigate();
   const requestQuery = useQuery(
     trpc.requests.getById.queryOptions({ id: requestId })
   );
   const request = requestQuery.data;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+    null
+  );
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
 
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
@@ -144,6 +151,10 @@ export function RequestDetailModal({
                   columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
+                  onViewItem={(id) => {
+                    setSelectedPackageId(id);
+                    setIsPackageModalOpen(true);
+                  }}
                   resource="packages"
                 />
               ) : (
@@ -185,6 +196,24 @@ export function RequestDetailModal({
         itemName={request?.details.name}
         itemType="request"
       />
+      {selectedPackageId && (
+        <PackageDetailModal
+          pkgId={selectedPackageId}
+          isOpen={isPackageModalOpen}
+          onClose={() => {
+            setIsPackageModalOpen(false);
+            setSelectedPackageId(null);
+          }}
+          onEdit={(id) => {
+            const encodedId = encodeURIComponent(id);
+            navigate(`/packages/edit/${encodedId}`);
+          }}
+          onDelete={() => {
+            setIsPackageModalOpen(false);
+            setSelectedPackageId(null);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

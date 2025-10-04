@@ -40,6 +40,7 @@ export function VolunteerForm() {
       publicLiabilityNumber: "",
       dbsNumber: "",
       notes: [],
+      endDate: "",
     },
     trainingRecords: [],
     requests: [],
@@ -212,7 +213,7 @@ export function VolunteerForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth *
+                  Date of Birth
                 </label>
                 <Input
                   id="dob"
@@ -220,7 +221,6 @@ export function VolunteerForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -408,6 +408,23 @@ export function VolunteerForm() {
                   name="publicLiabilityExpiry"
                   value={formData.publicLiabilityExpiry || ""}
                   onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="details.endDate"
+                  type="date"
+                  value={formData.details.endDate || ""}
+                  onChange={handleInputChange}
+                  disabled
                 />
               </div>
             </div>

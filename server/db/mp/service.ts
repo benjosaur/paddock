@@ -1,4 +1,11 @@
-import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
+import {
+  MpFull,
+  mpFullSchema,
+  MpMetadata,
+  mpMetadataSchema,
+  EndPersonDetails,
+  endPersonDetailsSchema,
+} from "shared";
 import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { PackageService } from "../package/service";
@@ -213,5 +220,33 @@ export class MpService {
     }
 
     return Array.from(mpsMap.values()) as MpMetadata[];
+  }
+
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    try {
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.mpRepository.getById(validated.personId, user);
+      const meta = this.transformDbMpToSharedMetaData(records)[0];
+      if (!meta) throw new Error("MP record not found");
+      const { id, trainingRecords, packages, ...rest } = meta as any;
+      const dbMp: DbMpEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "mp",
+          ...rest,
+          archived: "Y",
+          details: {
+            ...rest.details,
+            endDate: validated.endDate,
+          },
+        },
+        user
+      );
+      await this.mpRepository.update(dbMp, user);
+    } catch (error) {
+      console.error("Service Layer Error ending MP:", error);
+      throw error;
+    }
   }
 }

@@ -65,11 +65,11 @@ export function DataTable<T extends { id: string; requestId?: string }>({
   onRenew,
   onCover,
   onEnd,
-  title,
-  searchPlaceholder,
   onViewItem,
   onViewRequest,
   onCreate,
+  title,
+  searchPlaceholder,
   resource,
   customActions,
 }: DataTableProps<T>) {
@@ -148,6 +148,23 @@ export function DataTable<T extends { id: string; requestId?: string }>({
     }));
   };
 
+  const functionProvided =
+    onEdit ||
+    onArchive ||
+    onDelete ||
+    onAddPackage ||
+    onAddRequest ||
+    onAddInfo ||
+    onAddRecord ||
+    onEditRecord ||
+    onDeleteRecord ||
+    onRenew ||
+    onCover ||
+    onEnd ||
+    onViewItem ||
+    onViewRequest ||
+    onCreate;
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
@@ -195,14 +212,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                   {col.header}
                 </th>
               ))}
-              {(onEdit ||
-                onDelete ||
-                onRenew ||
-                onEnd ||
-                onAddRecord ||
-                onAddRequest ||
-                onAddInfo ||
-                onEditRecord) && (
+              {functionProvided && (
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-800 rounded-tr-xl"></th>
               )}
             </tr>
@@ -222,14 +232,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                   />
                 </th>
               ))}
-              {(onEdit ||
-                onDelete ||
-                onRenew ||
-                onEnd ||
-                onAddRecord ||
-                onAddRequest ||
-                onAddInfo ||
-                onEditRecord) && <th className="px-6 py-2"></th>}
+              {functionProvided && <th className="px-6 py-2"></th>}
             </tr>
           </thead>
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
@@ -254,14 +257,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                       : (item[col.key as keyof T] as React.ReactNode)}
                   </td>
                 ))}
-                {(onEdit ||
-                  onDelete ||
-                  onRenew ||
-                  onEnd ||
-                  onAddRecord ||
-                  onAddRequest ||
-                  onAddInfo ||
-                  onEditRecord) && (
+                {functionProvided && (
                   <td
                     className={`px-6 py-4 text-right ${
                       index === filteredData.length - 1 ? "rounded-br-xl" : ""
