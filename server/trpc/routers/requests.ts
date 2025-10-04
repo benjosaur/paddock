@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { requestMetadataSchema } from "shared/schemas/index";
+import { endRequestDetailsSchema } from "shared";
 export const requestsRouter = router({
   getAllMetadata: createProtectedProcedure("requests", "read").query(
     // not w/ associated packages
@@ -70,6 +71,11 @@ export const requestsRouter = router({
         input.newRequest,
         ctx.user
       );
+    }),
+  endRequestAndPackages: createProtectedProcedure("requests", "update")
+    .input(endRequestDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.requests.endRequestAndPackages(ctx.user, input);
     }),
   delete: createProtectedProcedure("requests", "delete")
     .input(requestMetadataSchema.pick({ id: true }))

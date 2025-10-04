@@ -45,6 +45,8 @@ export function PackageForm() {
     },
   });
 
+  // no local error state; rely on max attribute for validation
+
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
@@ -59,6 +61,15 @@ export function PackageForm() {
     ...trpc.requests.getById.queryOptions({ id: formData.requestId }),
     enabled: Boolean(formData.requestId),
   });
+
+  const requestEndDate = requestQuery.data?.endDate;
+
+  const formatDateDmy = (date?: string | null) => {
+    if (!date) return "";
+    if (date === "open") return "open";
+    const [y, m, d] = date.split("-");
+    return y && m && d ? `${d} ${m} ${y}` : date;
+  };
 
   const createPackageMutation = useMutation(
     trpc.packages.create.mutationOptions({
@@ -89,7 +100,6 @@ export function PackageForm() {
     }
   }, [packageQuery.data]);
 
-  // Auto-populate package details when request is selected (only for new packages)
   useEffect(() => {
     if (!isEditing && formData.requestId && requestQuery.data) {
       const selectedRequest = requestQuery.data;
@@ -153,8 +163,11 @@ export function PackageForm() {
     setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
+  // removed custom end date validation; the input's max enforces this
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (isEditing) {
       updatePackageMutation.mutate({ ...formData, id } as Package);
     } else {
@@ -197,9 +210,9 @@ export function PackageForm() {
                 <Input
                   id="requestId"
                   name="requestId"
-                  value={`${requestQuery.data?.details.customId || ""} - ${
-                    requestQuery.data?.startDate || ""
-                  }`}
+                  value={`${
+                    requestQuery.data?.details.customId || ""
+                  } - ${formatDateDmy(requestQuery.data?.startDate)}`}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -281,6 +294,11 @@ export function PackageForm() {
                   name="endDate"
                   type="date"
                   value={formData.endDate === "open" ? "" : formData.endDate}
+                  max={
+                    requestEndDate && requestEndDate !== "open"
+                      ? requestEndDate
+                      : undefined
+                  }
                   onChange={(e) => {
                     const value = e.target.value || "open";
                     setFormData((prev) =>
@@ -291,6 +309,12 @@ export function PackageForm() {
                 <small className="text-gray-500">
                   Leave empty for ongoing package
                 </small>
+                {requestEndDate && requestEndDate !== "open" && (
+                  <small className="text-gray-500 block">
+                    Package must end before request end date:{" "}
+                    {formatDateDmy(requestEndDate)}
+                  </small>
+                )}
               </div>
             </div>
 

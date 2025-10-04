@@ -40,7 +40,6 @@ export class ClientService {
         ...dbClients,
         ...dbRequests,
       ]);
-      console.log(transformedResult);
       const parsedResult = clientMetadataSchema
         .array()
         .parse(transformedResult);

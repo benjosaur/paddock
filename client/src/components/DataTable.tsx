@@ -19,6 +19,7 @@ import {
   Target,
   TreePalm,
   Info,
+  CalendarCheck,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
@@ -39,6 +40,7 @@ interface DataTableProps<T> {
   onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onRenew?: (id: string) => void;
   onCover?: (id: string) => void;
+  onEnd?: (id: string) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (id: string) => void;
@@ -62,6 +64,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
   onDeleteRecord,
   onRenew,
   onCover,
+  onEnd,
   title,
   searchPlaceholder,
   onViewItem,
@@ -195,6 +198,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
               {(onEdit ||
                 onDelete ||
                 onRenew ||
+                onEnd ||
                 onAddRecord ||
                 onAddRequest ||
                 onAddInfo ||
@@ -221,6 +225,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
               {(onEdit ||
                 onDelete ||
                 onRenew ||
+                onEnd ||
                 onAddRecord ||
                 onAddRequest ||
                 onAddInfo ||
@@ -252,6 +257,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                 {(onEdit ||
                   onDelete ||
                   onRenew ||
+                  onEnd ||
                   onAddRecord ||
                   onAddRequest ||
                   onAddInfo ||
@@ -327,6 +333,14 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                             <DropdownMenuItem onClick={() => onRenew(item.id)}>
                               <RefreshCw className="mr-2 h-4 w-4" />
                               Renew
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
+                        <PermissionGate resource={resource} action="update">
+                          {onEnd && (
+                            <DropdownMenuItem onClick={() => onEnd(item.id)}>
+                              <CalendarCheck className="mr-2 h-4 w-4" />
+                              End Date
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

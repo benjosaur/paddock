@@ -90,6 +90,7 @@ export class RequestRepository {
         ...(endsAfterTodayRequestResult.Items || []),
       ];
       const parsedResult = dbRequestEntity.array().parse(allItems);
+      console.log(currentDate, parsedResult);
       return parsedResult;
     } catch (error) {
       console.error("Error getting client requests:", error);

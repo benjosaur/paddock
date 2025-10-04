@@ -1,11 +1,21 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { RequestForm } from "../pages/RequestForm";
 import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
 import type { RequestFull, TableColumn } from "../types";
+import type { EndRequestDetails } from "shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -69,6 +79,9 @@ export default function RequestRoutes() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endRequestDetails, setEndRequestDetails] =
+    useState<EndRequestDetails | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -84,6 +97,16 @@ export default function RequestRoutes() {
 
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
+      onSuccess: () => {
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
+  const endRequestMutation = useMutation(
+    trpc.requests.endRequestAndPackages.mutationOptions({
       onSuccess: () => {
         associatedRequestRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
@@ -113,6 +136,11 @@ export default function RequestRoutes() {
   const handleView = (id: string) => {
     setSelectedRequestId(id);
     setIsModalOpen(true);
+  };
+
+  const handleEnd = (id: string) => {
+    setEndRequestDetails({ requestId: id, endDate: "" });
+    setIsEndDialogOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -159,6 +187,7 @@ export default function RequestRoutes() {
               onDelete={handleDelete}
               onAddPackage={handleAddPackage}
               onRenew={handleRenew}
+              onEnd={handleEnd}
               onCreate={handleAddNew}
               onViewItem={handleView}
               resource="requests"
@@ -188,6 +217,59 @@ export default function RequestRoutes() {
           onDelete={handleDelete}
         />
       )}
+      <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>End Request</DialogTitle>
+            <DialogDescription>
+              Select an end date. This will also end all associated ongoing
+              packages.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <label className="text-sm text-gray-700">End Date</label>
+            <Input
+              type="date"
+              value={endRequestDetails?.endDate ?? ""}
+              onChange={(e) =>
+                setEndRequestDetails((prev) =>
+                  prev ? { ...prev, endDate: e.target.value } : prev
+                )
+              }
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsEndDialogOpen(false);
+                setEndRequestDetails(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                !endRequestDetails?.endDate ||
+                !endRequestDetails?.requestId ||
+                endRequestMutation.isPending
+              }
+              onClick={() => {
+                if (!endRequestDetails?.requestId || !endRequestDetails.endDate)
+                  return;
+                endRequestMutation.mutate(endRequestDetails);
+                setIsEndDialogOpen(false);
+                setEndRequestDetails(null);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

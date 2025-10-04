@@ -3,6 +3,7 @@ import {
   RequestMetadata,
   requestMetadataSchema,
   requestFullSchema,
+  EndRequestDetails,
 } from "shared";
 import { RequestRepository } from "./repository";
 import { DbRequest, DbRequestEntity } from "./schema";
@@ -65,8 +66,7 @@ export class RequestService {
       const requestsFromDb = await this.requestRepository.getAllNotEndedYet(
         user
       );
-      // below as we want all packages associated with the request (though archived wont be fetched)
-      const packagesFromDb = await this.packageRepository.getAllNotArchived(
+      const packagesFromDb = await this.packageRepository.getAllNotEndedYet(
         user
       );
       const transformedRequests = this.transformDbRequestToSharedFull([
@@ -243,6 +243,43 @@ export class RequestService {
       await genericUpdate(updatedRecords, user);
     } catch (error) {
       console.error("Service Layer Error renewing request:", error);
+      throw error;
+    }
+  }
+
+  async endRequestAndPackages(
+    user: User,
+    endRequestDetails: EndRequestDetails
+  ): Promise<void> {
+    try {
+      const requestWithPackagesRecords = await this.requestRepository.getById(
+        endRequestDetails.requestId,
+        user
+      );
+
+      const requestSuffix = endRequestDetails.endDate.slice(0, 4);
+
+      const updatedRequestRecords = requestWithPackagesRecords.map((record) => {
+        const currentEnd = record.endDate;
+        const shouldUpdate =
+          currentEnd === "open" ||
+          new Date(endRequestDetails.endDate) < new Date(currentEnd);
+
+        return addDbMiddleware(
+          {
+            ...record,
+            entityType: shouldUpdate
+              ? `request#${requestSuffix}`
+              : record.entityType,
+            endDate: shouldUpdate ? endRequestDetails.endDate : currentEnd,
+          },
+          user
+        );
+      });
+
+      await genericUpdate(updatedRequestRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error ending request:", error);
       throw error;
     }
   }

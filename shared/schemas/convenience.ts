@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { clientMetadataSchema } from ".";
-import { notesSource } from "../const";
 
 export const coverDetailsSchema = z.object({
   carerId: z.string(),
@@ -18,5 +17,11 @@ export const infoDetailsSchema = clientMetadataSchema.shape.details.shape.notes
   .element.omit({ note: true })
   .extend({ note: z.string().default("") });
 
+export const endRequestDetailsSchema = z.object({
+  requestId: z.string(),
+  endDate: z.string().date(),
+});
+
 export type CoverDetails = z.infer<typeof coverDetailsSchema>;
 export type InfoDetails = z.infer<typeof infoDetailsSchema>;
+export type EndRequestDetails = z.infer<typeof endRequestDetailsSchema>;

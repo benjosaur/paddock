@@ -307,9 +307,12 @@ export function RequestForm() {
                       updateNestedValue("endDate", value, prev)
                     );
                   }}
+                  disabled={isEditing}
                 />
                 <small className="text-gray-500">
-                  Leave empty for ongoing request
+                  {isEditing
+                    ? "End via the table button. This is to also end all ongoing packages."
+                    : "Leave empty for ongoing request"}
                 </small>
               </div>
             </div>
