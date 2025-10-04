@@ -7,7 +7,9 @@ import { Select } from "../components/ui/select";
 import { trpc } from "../utils/trpc";
 import type { ClientFull, VolunteerMetadata, InfoDetails } from "../types";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
-import { notesSource } from "shared/const";
+import { notesSource, serviceOptions } from "shared/const";
+import { updateNestedValue } from "@/utils/helpers";
+import { MultiValue } from "react-select";
 
 type VolunteerOption = { label: string; value: string };
 
@@ -57,6 +59,7 @@ export function InfoForm() {
     minutesTaken: 0,
     source: "Phone",
     note: "",
+    services: [],
   });
 
   // Seed default volunteer once data loads
@@ -76,6 +79,24 @@ export function InfoForm() {
       },
     })
   );
+
+  const handleMultiSelectChange = (
+    field: string,
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }> | null
+  ) => {
+    const selectedValues = newValues
+      ? newValues.map((option) => option.value)
+      : [];
+    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
+  };
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +192,30 @@ export function InfoForm() {
                   }
                   options={notesSource.map((s) => ({ label: s, value: s }))}
                   placeholder="Select source..."
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="services"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Services Enquired
+                </label>
+                <Select
+                  options={serviceSelectOptions}
+                  value={
+                    serviceSelectOptions.filter((option) =>
+                      formData.services?.includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange("services", newValues)
+                  }
+                  placeholder="Search and select services..."
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No services found"}
                 />
               </div>
 

@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,14 +39,7 @@ export function VolunteerDetailModal({
     trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
   const volunteer = volunteerQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<
-    {
-      date: string;
-      note: string;
-      source: "Phone" | "Email" | "In Person";
-      minutesTaken: number;
-    }[]
-  >([]);
+  const [currentNotes, setCurrentNotes] = useState<Note[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when volunteer data changes
@@ -69,14 +62,20 @@ export function VolunteerDetailModal({
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (volunteer) {
       updateVolunteerMutation.mutate({
         ...volunteer,
         details: {
           ...volunteer.details,
-          notes: currentNotes,
+          notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.volunteers.getAll.queryKey(),
       });
     }
   };
@@ -243,20 +242,13 @@ export function VolunteerDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateVolunteerMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateVolunteerMutation.isPending
-                    ? "Saving..."
-                    : "Save Notes"}
-                </Button>
-              </div>
-              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+              <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateVolunteerMutation.isPending}
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

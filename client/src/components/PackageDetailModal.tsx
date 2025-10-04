@@ -13,8 +13,6 @@ import { trpc } from "../utils/trpc";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
-import { DataTable } from "./DataTable";
-import { packageColumns } from "@/routes/PackageRoutes";
 
 interface PackageDetailModalProps {
   pkgId: string;

@@ -204,7 +204,7 @@ export class ClientService {
             oneOffStartDateHours: validatedInfoDetails.minutesTaken,
             notes: "",
             status: "normal",
-            services: ["Information"],
+            services: [...infoDetails.services, "Information"],
           },
         },
         user

@@ -268,6 +268,28 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
+                        {onViewItem && (
+                          <DropdownMenuItem onClick={() => onViewItem(item.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                        )}
+                        {onViewRequest && (
+                          <DropdownMenuItem
+                            onClick={() => onViewRequest(item.requestId ?? "")}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Request
+                          </DropdownMenuItem>
+                        )}
+                        <PermissionGate resource={resource} action="update">
+                          {onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                        </PermissionGate>
                         <PermissionGate resource={resource} action="create">
                           {onAddPackage && (
                             <DropdownMenuItem
@@ -289,7 +311,7 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                             <DropdownMenuItem
                               onClick={() => onAddInfo(item.id)}
                             >
-                              <Info className="mr-2 h-4 w-4" />
+                              <Plus className="mr-2 h-4 w-4" />
                               Info
                             </DropdownMenuItem>
                           )}
@@ -299,28 +321,6 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                             >
                               <Target className="mr-2 h-4 w-4" />
                               Training
-                            </DropdownMenuItem>
-                          )}
-                        </PermissionGate>
-                        {onViewItem && (
-                          <DropdownMenuItem onClick={() => onViewItem(item.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                        )}
-                        {onViewRequest && (
-                          <DropdownMenuItem
-                            onClick={() => onViewRequest(item.requestId ?? "")}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            Request
-                          </DropdownMenuItem>
-                        )}
-                        <PermissionGate resource={resource} action="update">
-                          {onEdit && (
-                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

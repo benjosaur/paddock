@@ -5,8 +5,9 @@ import { Textarea } from "./ui/textarea";
 import { Select } from "./ui/select";
 import { Plus, Trash2, Edit, Check, X } from "lucide-react";
 import { notesSource } from "shared/const";
+import { DeleteAlert } from "./DeleteAlert";
 
-interface Note {
+export interface Note {
   date: string;
   note: string;
   source: (typeof notesSource)[number];
@@ -16,6 +17,8 @@ interface Note {
 interface NotesEditorProps {
   notes: Note[];
   onChange: (notes: Note[]) => void;
+  onSubmit: (notes: Note[]) => void;
+  isPending: boolean;
   disabled?: boolean;
 }
 
@@ -23,6 +26,7 @@ export function NotesEditor({
   notes,
   onChange,
   disabled = false,
+  onSubmit,
 }: NotesEditorProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingNote, setEditingNote] = useState<Note>({
@@ -38,10 +42,14 @@ export function NotesEditor({
     source: "Phone",
     minutesTaken: 0,
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const handleAddNote = () => {
     if (newNote.note.trim()) {
-      onChange([...notes, newNote]);
+      const updatedNotes = [...notes, newNote];
+      onChange(updatedNotes);
+      onSubmit(updatedNotes);
       setNewNote({
         date: new Date().toISOString().split("T")[0],
         note: "",
@@ -69,6 +77,7 @@ export function NotesEditor({
         source: "Phone",
         minutesTaken: 0,
       });
+      onSubmit(updatedNotes);
     }
   };
 
@@ -82,9 +91,22 @@ export function NotesEditor({
     });
   };
 
-  const handleDeleteNote = (index: number) => {
-    const updatedNotes = notes.filter((_, i) => i !== index);
-    onChange(updatedNotes);
+  const handleDeleteClick = (index: number) => {
+    setDeleteIndex(index);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteIndex !== null) {
+      const updatedNotes = notes.filter((_, i) => i !== deleteIndex);
+      onChange(updatedNotes);
+      onSubmit(updatedNotes);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeleteIndex(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -164,11 +186,11 @@ export function NotesEditor({
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Time Taken (hours)
+                      Time Taken (mins)
                     </label>
                     <Input
                       type="number"
-                      step="0.25"
+                      step="1"
                       min="0"
                       value={editingNote.minutesTaken}
                       onChange={(e) =>
@@ -208,7 +230,7 @@ export function NotesEditor({
               <div>
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-3 text-sm">
                       <span className="font-medium text-gray-500">
                         {formatDate(note.date)}
                       </span>
@@ -217,11 +239,11 @@ export function NotesEditor({
                       </span>
                       {note.minutesTaken > 0 && (
                         <span className="text-gray-500">
-                          {note.minutesTaken}h
+                          {note.minutesTaken}m
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                    <div className="text-md text-gray-700 whitespace-pre-wrap">
                       {note.note}
                     </div>
                   </div>
@@ -234,16 +256,16 @@ export function NotesEditor({
                         onClick={() => handleEditNote(index)}
                         className="p-1 h-auto"
                       >
-                        <Edit className="w-3 h-3" />
+                        <Edit className="w-6 h-6" />
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteNote(index)}
+                        onClick={() => handleDeleteClick(index)}
                         className="p-1 h-auto text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-6 h-6" />
                       </Button>
                     </div>
                   )}
@@ -313,7 +335,7 @@ export function NotesEditor({
                 </label>
                 <Input
                   type="number"
-                  step="0.25"
+                  step="1"
                   min="0"
                   value={newNote.minutesTaken}
                   onChange={(e) =>
@@ -372,6 +394,12 @@ export function NotesEditor({
           </Button>
         )}
       </div>
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 }

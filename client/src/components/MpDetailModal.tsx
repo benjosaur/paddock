@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,14 +67,20 @@ export function MpDetailModal({
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (mp) {
       updateMpMutation.mutate({
         ...mp,
         details: {
           ...mp.details,
-          notes: currentNotes,
+          notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.mps.getById.queryKey({ id: mpId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.mps.getAll.queryKey(),
       });
     }
   };
@@ -240,18 +246,13 @@ export function MpDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateMpMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateMpMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
-              </div>
-              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+              <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateMpMutation.isPending}
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

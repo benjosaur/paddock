@@ -13,7 +13,7 @@ import { DeleteAlert } from "./DeleteAlert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
 import { PermissionGate } from "./PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
@@ -70,14 +70,20 @@ export function ClientDetailModal({
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (client) {
       updateClientMutation.mutate({
         ...client,
         details: {
           ...client.details,
-          notes: currentNotes,
+          notes: notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.clients.getById.queryKey({ id: clientId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.clients.getAll.queryKey(),
       });
     }
   };
@@ -320,18 +326,13 @@ export function ClientDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateClientMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateClientMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
-              </div>
-              <NotesEditor notes={currentNotes} onChange={setCurrentNotes} />
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
+              <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateClientMutation.isPending}
+                notes={currentNotes}
+                onChange={setCurrentNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>
