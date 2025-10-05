@@ -9,31 +9,12 @@ import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class ClientRepository {
-  async getAllNotArchived(user: User): Promise<DbClientEntity[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": "client",
-        ":sk": "N",
-      },
-    });
-    try {
-      const result = await client.send(command);
-      console.dir(result, { depth: null });
-      const parsedResult = dbClientEntity.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Repository Layer Error getting item:", error);
-      throw error;
-    }
-  }
+  // archived methods removed
 
   async getAll(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI1",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "client",
@@ -49,10 +30,32 @@ export class ClientRepository {
     }
   }
 
+  async getAllNotEnded(user: User): Promise<DbClientEntity[]> {
+    // Clients cannot end in the future; treat open endDate as active
+    const openClientCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      ExpressionAttributeValues: {
+        ":pk": `client`,
+        ":sK": "open",
+      },
+    });
+
+    try {
+      const dbClients = await client.send(openClientCommand);
+      const parsedResult = dbClientEntity.array().parse(dbClients.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting clients not ended:", error);
+      throw error;
+    }
+  }
+
   async getAllWithMagService(user: User): Promise<DbClientEntity[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI1",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       FilterExpression: "contains(details.services, :magService)",
       ExpressionAttributeValues: {

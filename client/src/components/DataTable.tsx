@@ -18,8 +18,8 @@ import {
   RefreshCw,
   Target,
   TreePalm,
-  Info,
   CalendarCheck,
+  Undo2,
 } from "lucide-react";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
@@ -40,7 +40,7 @@ interface DataTableProps<T> {
   onDeleteRecord?: (item: TrainingRecord) => void; // need ownerId for router
   onRenew?: (id: string) => void;
   onCover?: (id: string) => void;
-  onEnd?: (id: string) => void;
+  onEnd?: (item: T) => void;
   title: string;
   searchPlaceholder: string;
   onViewItem?: (id: string) => void;
@@ -50,7 +50,9 @@ interface DataTableProps<T> {
   customActions?: React.ReactNode;
 }
 
-export function DataTable<T extends { id: string; requestId?: string }>({
+export function DataTable<
+  T extends { id: string; requestId?: string; endDate?: string }
+>({
   data,
   columns,
   onEdit,
@@ -334,9 +336,13 @@ export function DataTable<T extends { id: string; requestId?: string }>({
                         </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onEnd && (
-                            <DropdownMenuItem onClick={() => onEnd(item.id)}>
-                              <CalendarCheck className="mr-2 h-4 w-4" />
-                              End Date
+                            <DropdownMenuItem onClick={() => onEnd(item)}>
+                              {item.endDate === "open" ? (
+                                <CalendarCheck className="mr-2 h-4 w-4" />
+                              ) : (
+                                <Undo2 className="mr-2 h-4 w-4" />
+                              )}
+                              {item.endDate === "open" ? "End" : "Un-End"}
                             </DropdownMenuItem>
                           )}
                         </PermissionGate>

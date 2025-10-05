@@ -5,12 +5,10 @@ import { MagLog } from "shared";
 const magLogService = new MagLogService();
 
 const sampleMagLog: Omit<MagLog, "id"> = {
-  archived: "N",
   date: "2025-01-15",
   clients: [
     {
       id: "client#test-client-123",
-      archived: "N",
       details: {
         name: "John Smith",
         address: {
@@ -27,7 +25,6 @@ const sampleMagLog: Omit<MagLog, "id"> = {
     },
     {
       id: "client#test-client-456",
-      archived: "N",
       details: {
         name: "Jane Doe",
         address: {
@@ -103,7 +100,7 @@ export async function testMagLogService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testMagLogService();
 }

@@ -26,24 +26,7 @@ export class MpService {
   trainingRecordService = new TrainingRecordService();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAllNotArchived(user: User): Promise<MpMetadata[]> {
-    try {
-      const dbMps = await this.mpRepository.getAllNotArchived(user);
-      const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllNotArchived(user);
-      const dbPackages = await this.packageRepository.getAllNotArchived(user);
-      const transformedResult = this.transformDbMpToSharedMetaData([
-        ...dbMps,
-        ...dbTrainingRecords,
-        ...dbPackages,
-      ]);
-      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
-      return parsedResult;
-    } catch (error) {
-      console.error("Service Layer Error getting all mps:", error);
-      throw error;
-    }
-  }
+  // archived concept removed; use getAll and filter by endDate where needed
 
   async getAll(user: User): Promise<MpMetadata[]> {
     try {
@@ -61,6 +44,18 @@ export class MpService {
       return parsedResult;
     } catch (error) {
       console.error("Service Layer Error getting all mps:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEnded(user: User): Promise<MpMetadata[]> {
+    try {
+      const dbMps = await this.mpRepository.getAllNotEnded(user);
+      const transformedResult = this.transformDbMpToSharedMetaData(dbMps);
+      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all not ended mps:", error);
       throw error;
     }
   }
@@ -155,21 +150,7 @@ export class MpService {
     }
   }
 
-  async toggleArchive(mpId: string, user: User): Promise<void> {
-    try {
-      const mpRecords = await this.mpRepository.getById(mpId, user);
-
-      const updatedMpRecords = mpRecords.map((record) => ({
-        ...record,
-        archived: record.archived === "Y" ? "N" : "Y",
-      }));
-
-      await genericUpdate(updatedMpRecords, user);
-    } catch (error) {
-      console.error("Service Layer Error toggling MP archive:", error);
-      throw error;
-    }
-  }
+  // toggleArchive removed – use end()
 
   private transformDbMpToSharedMetaData(
     items: DbMpMetadata[] | DbMpFull[]
@@ -231,15 +212,10 @@ export class MpService {
       const { id, trainingRecords, packages, ...rest } = meta as any;
       const dbMp: DbMpEntity = addDbMiddleware(
         {
+          ...rest,
           pK: id,
           sK: id,
           entityType: "mp",
-          ...rest,
-          archived: "Y",
-          details: {
-            ...rest.details,
-            endDate: validated.endDate,
-          },
         },
         user
       );

@@ -8,9 +8,9 @@ export const mpsRouter = router({
     return await ctx.services.mp.getAll(ctx.user);
   }),
 
-  getAllNotArchived: createProtectedProcedure("mps", "read").query(
+  getAllNotEnded: createProtectedProcedure("mps", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.mp.getAllNotArchived(ctx.user);
+      return await ctx.services.mp.getAllNotEnded(ctx.user);
     }
   ),
 
@@ -51,11 +51,5 @@ export const mpsRouter = router({
     .input(endPersonDetailsSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.end(ctx.user, input);
-    }),
-
-  toggleArchive: createProtectedProcedure("mps", "update")
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.services.mp.toggleArchive(input.id, ctx.user);
     }),
 });

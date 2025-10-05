@@ -4,7 +4,7 @@
 
 - **Generate Requests Report** (start yyyy)
 	- Monthly with Yearly metrics
-	- GSI3-PK == request#{yyyy, yyyy, open}
+	- GSI2-PK == request#{yyyy, yyyy, open}
 	- Post Process:
 	- Init array
 		- [{year:"yyyy", months: [{month: "Jan", villages: [wivey: {service: }, milverton: 0], services: [befriending: 0, transport: 0]}, ...]}, ...]
@@ -12,7 +12,7 @@
 
 - **Generate Packages Report** Starting from year yyyy
 	- Monthly with Yearly metrics
-	- GSI3-PK == package#{yyyy, yyyy, open}
+	- GSI2-PK == package#{yyyy, yyyy, open}
 	- Post Process:
 	- Init array
 		- [{year:"yyyy", months: [{month: "Jan", totalHours: 0, villages: [wivey: 0, milverton: 0], services: [befriending: 0, transport: 0]}, ...]}, ...]
@@ -36,6 +36,7 @@ import {
   AttendanceAllowanceReport,
 } from "shared";
 import { ClientService } from "../client/service";
+import { VolunteerService } from "../volunteer/service";
 
 const infoOption: ServiceOption = "Information";
 
@@ -43,6 +44,7 @@ export class ReportService {
   clientService = new ClientService();
   requestService = new RequestService();
   packageService = new PackageService();
+  volunteerService = new VolunteerService();
 
   async generateAttendanceAllowanceReport(
     user: User
@@ -62,9 +64,9 @@ export class ReportService {
       const currentYear = parseInt(currentDate.slice(0, 4));
       const currentMonth = parseInt(currentDate.slice(5, 7));
 
-      const clients = await this.clientService.getAllNotArchived(user);
+      const clients = await this.clientService.getAllNotEnded(user);
       for (const client of clients) {
-        if (client.details.endDate) {
+        if (client.endDate) {
           // probably should be archived (client end dates present mean terminated)
           continue;
         }
@@ -100,9 +102,10 @@ export class ReportService {
 
   async generateActiveRequestsCrossSection(user: User): Promise<CrossSection> {
     try {
-      const requests = await this.requestService.getAllNotEndedYetWithPackages(
-        user
-      );
+      const requests =
+        await this.requestService.getAllWithoutInfoNotEndedYetWithPackages(
+          user
+        );
       const crossSection: CrossSection = {
         totalHours: 0,
         localities: [],
@@ -137,7 +140,9 @@ export class ReportService {
 
   async generateActivePackagesCrossSection(user: User): Promise<CrossSection> {
     try {
-      const packages = await this.packageService.getAllNotEndedYet(user);
+      const packages = await this.packageService.getAllWithoutInfoNotEndedYet(
+        user
+      );
       const crossSection: CrossSection = {
         totalHours: 0,
         localities: [],
@@ -174,9 +179,10 @@ export class ReportService {
     user: User
   ): Promise<DeprivationCrossSection> {
     try {
-      const requests = await this.requestService.getAllNotEndedYetWithPackages(
-        user
-      );
+      const requests =
+        await this.requestService.getAllWithoutInfoNotEndedYetWithPackages(
+          user
+        );
       const crossSection: DeprivationCrossSection = {
         totalHours: 0,
         deprivationCategories: [],
@@ -216,7 +222,9 @@ export class ReportService {
     user: User
   ): Promise<DeprivationCrossSection> {
     try {
-      const packages = await this.packageService.getAllNotEndedYet(user);
+      const packages = await this.packageService.getAllWithoutInfoNotEndedYet(
+        user
+      );
       const crossSection: DeprivationCrossSection = {
         totalHours: 0,
         deprivationCategories: [],
@@ -254,16 +262,16 @@ export class ReportService {
 
   async generateRequestsReport(
     user: User,
+    isInfo: boolean,
     startYear: number = firstYear
   ): Promise<Report> {
     try {
       // construct empty report
       const currentDate = new Date().toISOString().slice(0, 10);
       const currentYear = parseInt(currentDate.slice(0, 4));
-      const requests = await this.requestService.getAllMetadata(
-        user,
-        startYear
-      );
+      const requests = isInfo
+        ? await this.requestService.getAllInfoMetadata(user, startYear)
+        : await this.requestService.getAllMetadataWithoutInfo(user, startYear);
       const report = this.constructEmptyReport(startYear, currentYear);
       // iterate through requests => for each find start date, end date, weekly hours, locality, service
       for (const request of requests) {
@@ -284,7 +292,10 @@ export class ReportService {
       // construct empty report
       const currentDate = new Date().toISOString().slice(0, 10);
       const currentYear = parseInt(currentDate.slice(0, 4));
-      const packages = await this.packageService.getAll(user, startYear);
+      const packages = await this.packageService.getAllWithoutInfo(
+        user,
+        startYear
+      );
       const report = this.constructEmptyReport(startYear, currentYear);
       // iterate through packages => for each find start date, end date, weekly hours, locality, service
       for (const pkg of packages) {
@@ -297,18 +308,45 @@ export class ReportService {
     }
   }
 
+  async generateCoordinatorReport(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<Report> {
+    try {
+      // construct empty report
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const currentYear = parseInt(currentDate.slice(0, 4));
+      const packages = await this.volunteerService.getAllPackagesByCoordinator(
+        user,
+        startYear
+      );
+      const report = this.constructEmptyReport(startYear, currentYear);
+      // iterate through packages => for each find start date, end date, weekly hours, locality, service
+      for (const pkg of packages) {
+        this.addItemToReport(pkg, report);
+      }
+      return report;
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating coordinator report:",
+        error
+      );
+      throw error;
+    }
+  }
+
   async generateRequestsDeprivationReport(
     user: User,
+    isInfo: boolean,
     startYear: number = firstYear
   ): Promise<DeprivationReport> {
     try {
       // construct empty report
       const currentDate = new Date().toISOString().slice(0, 10);
       const currentYear = parseInt(currentDate.slice(0, 4));
-      const requests = await this.requestService.getAllMetadata(
-        user,
-        startYear
-      );
+      const requests = isInfo
+        ? await this.requestService.getAllInfoMetadata(user, startYear)
+        : await this.requestService.getAllMetadataWithoutInfo(user, startYear);
       const report = this.constructEmptyDeprivationReport(
         startYear,
         currentYear
@@ -335,7 +373,10 @@ export class ReportService {
       // construct empty report
       const currentDate = new Date().toISOString().slice(0, 10);
       const currentYear = parseInt(currentDate.slice(0, 4));
-      const packages = await this.packageService.getAll(user, startYear);
+      const packages = await this.packageService.getAllWithoutInfo(
+        user,
+        startYear
+      );
       const report = this.constructEmptyDeprivationReport(
         startYear,
         currentYear

@@ -6,7 +6,6 @@ const packageService = new PackageService();
 
 const samplePackage: Omit<Package, "id"> = {
   carerId: "mp#test-carer-123",
-  archived: "N",
   requestId: "request#test-request-456",
   startDate: "2025-01-15",
   endDate: "2025-12-31",
@@ -23,6 +22,7 @@ const samplePackage: Omit<Package, "id"> = {
       },
     },
     weeklyHours: 10,
+    oneOffStartDateHours: 0,
     notes: "Weekly support visits including shopping and companionship",
     services: ["Attendance Allowance"],
   },
@@ -62,6 +62,7 @@ export async function testPackageService() {
           },
         },
         weeklyHours: 15,
+        oneOffStartDateHours: 0,
         notes:
           "Extended weekly support visits including shopping, companionship, and medical appointments",
         services: ["Companionship"],
@@ -74,12 +75,10 @@ export async function testPackageService() {
     const allPackages = await packageService.getAll(sampleUser);
     console.log("All packages:", allPackages);
 
-    console.log("5. Getting all active packages...");
-    const activePackages = await packageService.getAllNotArchived(sampleUser);
-    console.log("Active packages:", activePackages);
-
-    console.log("6. Getting all open packages...");
-    const openPackages = await packageService.getAllNotEndedYet(sampleUser);
+    console.log("5. Getting all open packages...");
+    const openPackages = await packageService.getAllWithoutInfoNotEndedYet(
+      sampleUser
+    );
     console.log("Open packages:", openPackages);
 
     console.log("7. Testing renew function...");
@@ -91,7 +90,6 @@ export async function testPackageService() {
 
     const renewedPackageData: Omit<Package, "id"> = {
       carerId: fetchedPackage.carerId,
-      archived: "N",
       requestId: fetchedPackage.requestId,
       startDate: "2025-02-01",
       endDate: "open",
@@ -108,6 +106,7 @@ export async function testPackageService() {
           },
         },
         weeklyHours: 12,
+        oneOffStartDateHours: 0,
         notes: "Renewed package with updated weekly hours",
         services: ["Companionship", "Attendance Allowance"],
       },
@@ -152,7 +151,6 @@ export async function testPackageService() {
 
     const secondRenewedPackageData: Omit<Package, "id"> = {
       carerId: fetchedPackage.carerId,
-      archived: "N",
       requestId: fetchedPackage.requestId,
       startDate: "2025-03-01",
       endDate: "open",
@@ -169,6 +167,7 @@ export async function testPackageService() {
           },
         },
         weeklyHours: 8,
+        oneOffStartDateHours: 0,
         notes: "Second renewal with updated hours",
         services: ["Companionship"],
       },
@@ -206,7 +205,7 @@ export async function testPackageService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testPackageService();
 }

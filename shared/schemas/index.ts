@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
-  booleanTypes,
   localities,
   notesSource,
   requestStatus,
@@ -15,8 +14,6 @@ import {
 export const trainingRecordSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
-  // below if parent carer is archived
-  archived: z.enum(booleanTypes),
   expiryDate: z.union([z.string().date(), z.literal("")]).default(""),
   details: z.object({
     name: z.string(),
@@ -57,8 +54,6 @@ const addressSchemaWithDeprivation = addressSchema.extend({
 
 export const packageSchema = z.object({
   id: z.string(),
-  //below if parent carer is archived
-  archived: z.enum(booleanTypes),
   carerId: z.string(),
   requestId: z.string(),
   startDate: z.string().date(),
@@ -76,8 +71,6 @@ export const packageSchema = z.object({
 
 export const requestMetadataSchema = z.object({
   id: z.string(),
-  //below if parent client is archived
-  archived: z.enum(booleanTypes),
   requestType: z.enum(requestTypes),
   clientId: z.string(),
   startDate: z.string().date(),
@@ -101,13 +94,10 @@ export const requestFullSchema = requestMetadataSchema.extend({
 
 export const magLogSchema = z.object({
   id: z.string(),
-  archived: z.enum(booleanTypes),
   date: z.string(),
   clients: z.array(
     z.object({
       id: z.string(),
-      //below if parent is archived
-      archived: z.enum(booleanTypes),
       details: z.object({
         name: z.string(),
         address: addressSchemaWithDeprivation,
@@ -117,14 +107,12 @@ export const magLogSchema = z.object({
   mps: z.array(
     z.object({
       id: z.string(),
-      archived: z.enum(booleanTypes),
       details: z.object({ name: z.string() }),
     })
   ),
   volunteers: z.array(
     z.object({
       id: z.string(),
-      archived: z.enum(booleanTypes),
       details: z.object({ name: z.string() }),
     })
   ),
@@ -160,8 +148,8 @@ const basePersonDetails = z.object({
 
 export const clientMetadataSchema = z.object({
   id: z.string(),
-  archived: z.enum(booleanTypes),
   dateOfBirth: z.string().date(),
+  endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: basePersonDetails.omit({ address: true }).extend({
     customId: z.string().default(""),
     address: addressSchemaWithDeprivation,
@@ -174,7 +162,6 @@ export const clientMetadataSchema = z.object({
     clientAgreementComments: z.string().default(""),
     riskAssessmentDate: z.union([z.string().date(), z.literal("")]).default(""),
     riskAssessmentComments: z.string().default(""),
-    endDate: z.union([z.string().date(), z.literal("")]).default(""),
     attendanceAllowance: z.object({
       requestedLevel: z.enum(attendanceAllowanceLevels).default("None"),
       requestedDate: z.union([z.string().date(), z.literal("")]).default(""),
@@ -192,8 +179,8 @@ export const clientFullSchema = clientMetadataSchema.extend({
 
 export const mpMetadataSchema = z.object({
   id: z.string(),
-  archived: z.enum(booleanTypes),
   dateOfBirth: z.string().default(""),
+  endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   dbsExpiry: z.union([z.string().date(), z.literal("")]).default(""),
   publicLiabilityExpiry: z
     .union([z.string().date(), z.literal("")])
@@ -203,7 +190,6 @@ export const mpMetadataSchema = z.object({
     capacity: z.string().default(""),
     dbsNumber: z.string().default(""),
     publicLiabilityNumber: z.string().default(""),
-    endDate: z.union([z.string().date(), z.literal("")]).default(""),
   }),
   packages: z.array(packageSchema).default([]),
 });
@@ -222,7 +208,6 @@ export const volunteerMetadataSchema = mpMetadataSchema
       dbsNumber: z.string().default(""),
       publicLiabilityNumber: z.string().default(""),
       role: z.enum(volunteerRoles).default("Volunteer"),
-      endDate: z.union([z.string().date(), z.literal("")]).default(""),
     }),
   });
 

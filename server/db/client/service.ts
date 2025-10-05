@@ -33,23 +33,7 @@ export class ClientService {
   requestRepository = new RequestRepository();
   deprivationService = new DeprivationService();
 
-  async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
-    try {
-      const dbClients = await this.clientRepository.getAllNotArchived(user);
-      const dbRequests = await this.requestRepository.getAllNotArchived(user);
-      const transformedResult = this.transformDbClientToSharedMetaData([
-        ...dbClients,
-        ...dbRequests,
-      ]);
-      const parsedResult = clientMetadataSchema
-        .array()
-        .parse(transformedResult);
-      return parsedResult;
-    } catch (error) {
-      console.error("Service Layer Error getting all clients:", error);
-      throw error;
-    }
-  }
+  // Archived concept removed in favor of end dates. Use getAll and filter by endDate where needed.
 
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
@@ -65,6 +49,24 @@ export class ClientService {
       return parsedResult;
     } catch (error) {
       console.error("Service Layer Error getting all clients:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEnded(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllNotEnded(user);
+      const transformedResult =
+        this.transformDbClientToSharedMetaData(dbClients);
+      const parsedResult = clientMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all not ended clients:",
+        error
+      );
       throw error;
     }
   }
@@ -196,12 +198,11 @@ export class ClientService {
           clientId: client.id,
           startDate: validatedInfoDetails.date,
           endDate: validatedInfoDetails.date,
-          archived: "N",
           requestType: "unpaid",
           details: {
             ...validatedClient.details,
             weeklyHours: 0,
-            oneOffStartDateHours: validatedInfoDetails.minutesTaken,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
             notes: "",
             status: "normal",
             services: [...infoDetails.services, "Information"],
@@ -216,12 +217,11 @@ export class ClientService {
           requestId: newRequestId,
           startDate: validatedInfoDetails.date,
           endDate: validatedInfoDetails.date,
-          archived: "N",
           details: {
             address: validatedClient.details.address,
             name: validatedCarer.details.name,
             weeklyHours: 0,
-            oneOffStartDateHours: validatedInfoDetails.minutesTaken,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
             services: ["Information"],
             notes: "",
           },
@@ -396,29 +396,30 @@ export class ClientService {
     }
   }
 
-  async toggleArchive(clientId: string, user: User): Promise<void> {
-    // set client and its associated requests and mag logs to archived (mag attendee search also searches archived, so not affected)
-    // HOWEVER, also need to archive packages owned by MPs/Volunteers. else error on read non archived requests.
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    // TODO also end reqs and pkgs
     try {
-      const clientRecords = await this.clientRepository.getById(clientId, user);
-      const updatedClientEntities = clientRecords
-        .filter((dbResult) => dbResult.sK.startsWith("c"))
-        .map((record) => ({
-          ...record,
-          archived: record.archived === "Y" ? "N" : "Y",
-        }));
-      const requestIds = clientRecords
-        .filter((dbResult) => dbResult.sK.startsWith("req"))
-        .map((req) => req.sK);
-
-      const clientEntityUpdate = genericUpdate(updatedClientEntities, user);
-      const requestUpdates = requestIds.map((requestId) =>
-        this.requestService.toggleArchive(requestId, user)
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.clientRepository.getById(
+        validated.personId,
+        user
       );
-
-      await Promise.all([clientEntityUpdate, ...requestUpdates]);
+      const meta = this.transformDbClientToSharedMetaData(records)[0];
+      if (!meta) throw new Error("Client record not found");
+      const { id, requests, ...rest } = meta as any;
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          ...rest,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          endDate: validated.endDate,
+        },
+        user
+      );
+      await this.clientRepository.update(dbClient, user);
     } catch (error) {
-      console.error("Service Layer Error toggling client archive:", error);
+      console.error("Service Layer Error ending client:", error);
       throw error;
     }
   }
@@ -463,36 +464,5 @@ export class ClientService {
     }
 
     return Array.from(clientsMap.values()) as ClientMetadata[];
-  }
-
-  async end(user: User, input: EndPersonDetails): Promise<void> {
-    try {
-      const validated = endPersonDetailsSchema.parse(input);
-      const records = await this.clientRepository.getById(
-        validated.personId,
-        user
-      );
-      const meta = this.transformDbClientToSharedMetaData(records)[0];
-      if (!meta) throw new Error("Client record not found");
-      const { id, requests, ...rest } = meta as any;
-      const dbClient: DbClientEntity = addDbMiddleware(
-        {
-          pK: id,
-          sK: id,
-          entityType: "client",
-          ...rest,
-          archived: "Y",
-          details: {
-            ...rest.details,
-            endDate: validated.endDate,
-          },
-        },
-        user
-      );
-      await this.clientRepository.update(dbClient, user);
-    } catch (error) {
-      console.error("Service Layer Error ending client:", error);
-      throw error;
-    }
   }
 }

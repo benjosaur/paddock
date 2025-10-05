@@ -1,4 +1,6 @@
 import {
+  mpFullSchema,
+  Package,
   VolunteerFull,
   volunteerFullSchema,
   VolunteerMetadata,
@@ -20,6 +22,7 @@ import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
+import { firstYear } from "shared/const";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -29,14 +32,13 @@ export class VolunteerService {
   packageRepository = new PackageRepository();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAllNotArchived(user: User): Promise<VolunteerMetadata[]> {
+  async getAll(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const dbVolunteers = await this.volunteerRepository.getAllNotArchived(
+      const dbVolunteers = await this.volunteerRepository.getAll(user);
+      const dbTrainingRecords = await this.trainingRecordRepository.getAll(
         user
       );
-      const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllNotArchived(user);
-      const dbPackages = await this.packageRepository.getAllNotArchived(user);
+      const dbPackages = await this.packageRepository.getAll(user);
       const transformedResult = this.transformDbVolunteerToSharedMetaData([
         ...dbVolunteers,
         ...dbTrainingRecords,
@@ -52,26 +54,20 @@ export class VolunteerService {
     }
   }
 
-  async getAll(user: User): Promise<VolunteerMetadata[]> {
+  async getAllNotEnded(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const dbVolunteers = await this.volunteerRepository.getAll(user);
-      const dbTrainingRecords = await this.trainingRecordRepository.getAll(
-        user
-      );
-      const dbPackages = await this.packageRepository.getAll(user);
-      const transformedResult = this.transformDbVolunteerToSharedMetaData([
-        ...dbVolunteers,
-        ...dbTrainingRecords,
-        ...dbPackages,
-      ]);
-      console.log("VOLUNTEERS");
-      console.log(transformedResult);
+      const dbVolunteers = await this.volunteerRepository.getAllNotEnded(user);
+      const transformedResult =
+        this.transformDbVolunteerToSharedMetaData(dbVolunteers);
       const parsedResult = volunteerMetadataSchema
         .array()
         .parse(transformedResult);
       return parsedResult;
     } catch (error) {
-      console.error("Service Layer Error getting all volunteers:", error);
+      console.error(
+        "Service Layer Error getting all not ended volunteers:",
+        error
+      );
       throw error;
     }
   }
@@ -102,6 +98,29 @@ export class VolunteerService {
       return parsedResult[0];
     } catch (error) {
       console.error("Service Layer Error getting Volunteer by ID:", error);
+      throw error;
+    }
+  }
+
+  async getAllPackagesByCoordinator(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<Package[]> {
+    try {
+      const mps = await this.getAll(user);
+      const coordinatorId = mps.find(
+        (mp) => mp.details.role === "Coordinator"
+      )?.id;
+      const packages = await this.packageService.getAll(user, startYear);
+      const coordinatorPackages = packages.filter(
+        (pkg) => pkg.carerId === coordinatorId
+      );
+      return coordinatorPackages;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all packages for coordinator:",
+        error
+      );
       throw error;
     }
   }
@@ -191,24 +210,7 @@ export class VolunteerService {
     }
   }
 
-  async toggleArchive(volunteerId: string, user: User): Promise<void> {
-    try {
-      const volunteerRecords = await this.volunteerRepository.getById(
-        volunteerId,
-        user
-      );
-
-      const updatedVolunteerRecords = volunteerRecords.map((record) => ({
-        ...record,
-        archived: record.archived === "Y" ? "N" : "Y",
-      }));
-
-      await genericUpdate(updatedVolunteerRecords, user);
-    } catch (error) {
-      console.error("Service Layer Error toggling volunteer archive:", error);
-      throw error;
-    }
-  }
+  // toggleArchive removed – use end()
 
   private transformDbVolunteerToSharedMetaData(
     items: DbVolunteerMetadata[] | DbVolunteerFull[]
@@ -276,15 +278,10 @@ export class VolunteerService {
       const { id, trainingRecords, packages, ...rest } = meta as any;
       const dbVolunteer: DbVolunteerEntity = addDbMiddleware(
         {
+          ...rest,
           pK: id,
           sK: id,
           entityType: "volunteer",
-          ...rest,
-          archived: "Y",
-          details: {
-            ...rest.details,
-            endDate: validated.endDate,
-          },
         },
         user
       );

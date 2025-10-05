@@ -11,30 +11,12 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class VolunteerRepository {
-  async getAllNotArchived(user: User): Promise<DbVolunteerMetadata[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": "volunteer",
-        ":sk": "N",
-      },
-    });
-    try {
-      const result = await client.send(command);
-      const parsedResult = dbVolunteerMetadata.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting item:", error);
-      throw error;
-    }
-  }
+  // archived methods removed
 
   async getAll(user: User): Promise<DbVolunteerMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI1",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "volunteer",
@@ -48,6 +30,30 @@ export class VolunteerRepository {
       return parsedResult;
     } catch (error) {
       console.error("Error getting item:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEnded(user: User): Promise<DbVolunteerMetadata[]> {
+    // cant end volunteer in future (unlike pkg/reqs) so just check if endDate is "open"
+    const openVolunteerCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      ExpressionAttributeValues: {
+        ":pk": `volunteer`,
+        ":sK": "open",
+      },
+    });
+
+    try {
+      const dbVolunteers = await client.send(openVolunteerCommand);
+      const parsedResult = dbVolunteerMetadata
+        .array()
+        .parse(dbVolunteers.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting client requests:", error);
       throw error;
     }
   }

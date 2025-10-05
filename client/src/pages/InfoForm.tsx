@@ -26,7 +26,7 @@ export function InfoForm() {
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const volunteersQuery = useQuery(
-    trpc.volunteers.getAllNotArchived.queryOptions()
+    trpc.volunteers.getAllNotEnded.queryOptions()
   );
 
   const client = clientQuery.data as ClientFull | undefined;

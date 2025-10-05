@@ -13,9 +13,9 @@ export const volunteersRouter = router({
     }
   ),
 
-  getAllNotArchived: createProtectedProcedure("volunteers", "read").query(
+  getAllNotEnded: createProtectedProcedure("volunteers", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.volunteer.getAllNotArchived(ctx.user);
+      return await ctx.services.volunteer.getAllNotEnded(ctx.user);
     }
   ),
 
@@ -47,16 +47,17 @@ export const volunteersRouter = router({
       );
     }),
 
+  getAllPackagesByCoordinator: createProtectedProcedure(
+    "volunteers",
+    "read"
+  ).query(async ({ ctx }) => {
+    return await ctx.services.volunteer.getAllPackagesByCoordinator(ctx.user);
+  }),
+
   delete: createProtectedProcedure("volunteers", "delete")
     .input(volunteerFullSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.delete(ctx.user, input.id);
-    }),
-
-  toggleArchive: createProtectedProcedure("volunteers", "update")
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.services.volunteer.toggleArchive(input.id, ctx.user);
     }),
 
   end: createProtectedProcedure("volunteers", "update")

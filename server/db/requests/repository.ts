@@ -10,50 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
 export class RequestRepository {
-  async getAllNotArchived(user: User): Promise<DbRequestEntity[]> {
-    const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-
-    const commands: QueryCommand[] = [];
-
-    for (let year = firstYear; year <= currentYear; year++) {
-      const packageEndedInYear = new QueryCommand({
-        TableName: getTableName(user),
-        IndexName: "GSI1",
-        KeyConditionExpression: `entityType = :pk AND archived = :sk`,
-        ExpressionAttributeValues: {
-          ":pk": `request#${year}`,
-          ":sk": "N",
-        },
-      });
-      commands.push(packageEndedInYear);
-    }
-
-    const openRequestCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": `request#open`,
-        ":sk": "N",
-      },
-    });
-
-    commands.push(openRequestCommand);
-
-    try {
-      const results = await Promise.all(
-        commands.map((command) => client.send(command))
-      );
-
-      const allItems = results.flatMap((result) => result.Items);
-      const parsedResult = dbRequestEntity.array().parse(allItems);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting client requests:", error);
-      throw error;
-    }
-  }
+  // archived methods removed
 
   async getAllNotEndedYet(user: User): Promise<DbRequestEntity[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
@@ -61,7 +18,7 @@ export class RequestRepository {
 
     const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": `request#open`,
@@ -70,7 +27,7 @@ export class RequestRepository {
 
     const endsAfterTodayRequestCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI2",
       KeyConditionExpression: `entityType = :pk AND endDate >= :sK`,
       ExpressionAttributeValues: {
         ":pk": `request#${currentYear}`,
@@ -90,7 +47,6 @@ export class RequestRepository {
         ...(endsAfterTodayRequestResult.Items || []),
       ];
       const parsedResult = dbRequestEntity.array().parse(allItems);
-      console.log(currentDate, parsedResult);
       return parsedResult;
     } catch (error) {
       console.error("Error getting client requests:", error);
@@ -109,7 +65,7 @@ export class RequestRepository {
     for (let year = startYear; year <= currentYear; year++) {
       const packageEndedInYear = new QueryCommand({
         TableName: getTableName(user),
-        IndexName: "GSI3",
+        IndexName: "GSI2",
         KeyConditionExpression: `entityType = :pk`,
         ExpressionAttributeValues: {
           ":pk": `request#${year}`,
@@ -120,7 +76,7 @@ export class RequestRepository {
 
     const openRequestCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": `request#open`,
@@ -147,7 +103,7 @@ export class RequestRepository {
     // also returns associated packages
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI2",
+      IndexName: "GSI1",
       KeyConditionExpression: "requestId = :requestId",
       ExpressionAttributeValues: {
         ":requestId": requestId,

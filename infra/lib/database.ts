@@ -37,19 +37,6 @@ export class Database extends Construct {
     this.table.addGlobalSecondaryIndex({
       indexName: "GSI1",
       partitionKey: {
-        name: "entityType",
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: "archived",
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    this.table.addGlobalSecondaryIndex({
-      indexName: "GSI2",
-      partitionKey: {
         name: "requestId",
         type: AttributeType.STRING,
       },
@@ -61,7 +48,7 @@ export class Database extends Construct {
     });
 
     this.table.addGlobalSecondaryIndex({
-      indexName: "GSI3",
+      indexName: "GSI2",
       partitionKey: {
         name: "entityType",
         type: AttributeType.STRING,
@@ -74,7 +61,7 @@ export class Database extends Construct {
     });
 
     this.table.addGlobalSecondaryIndex({
-      indexName: "GSI4",
+      indexName: "GSI3",
       partitionKey: {
         name: "entityType",
         type: AttributeType.STRING,
@@ -87,7 +74,7 @@ export class Database extends Construct {
     });
 
     this.table.addGlobalSecondaryIndex({
-      indexName: "GSI5",
+      indexName: "GSI4",
       partitionKey: {
         name: "sK",
         type: AttributeType.STRING,

@@ -12,28 +12,14 @@ import { addDbMiddleware } from "../service";
 export class PackageService {
   packageRepository = new PackageRepository();
 
-  async getAllNotArchived(user: User): Promise<Package[]> {
-    try {
-      const packages = await this.packageRepository.getAllNotArchived(user);
-      const transformedResult = this.groupAndTransformPackageData(
-        packages
-      ) as Package[];
-      const parsedResult = packageSchema.array().parse(transformedResult);
-      return parsedResult;
-    } catch (error) {
-      console.error(
-        "Service Layer Error getting all non-archived packages:",
-        error
-      );
-      throw error;
-    }
-  }
-
-  async getAllNotEndedYet(user: User): Promise<Package[]> {
+  async getAllWithoutInfoNotEndedYet(user: User): Promise<Package[]> {
     try {
       const packages = await this.packageRepository.getAllNotEndedYet(user);
+      const packagesWithoutInfo = packages.filter(
+        (pkg) => !pkg.details.services.includes("Information")
+      );
       const transformedResult = this.groupAndTransformPackageData(
-        packages
+        packagesWithoutInfo
       ) as Package[];
       const parsedResult = packageSchema.array().parse(transformedResult);
       return parsedResult;
@@ -51,6 +37,46 @@ export class PackageService {
       const packages = await this.packageRepository.getAll(user, startYear);
       const transformedResult = this.groupAndTransformPackageData(
         packages
+      ) as Package[];
+      const parsedResult = packageSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all packages:", error);
+      throw error;
+    }
+  }
+
+  async getAllInfo(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<Package[]> {
+    try {
+      const packages = await this.packageRepository.getAll(user, startYear);
+      const packagesWithInfo = packages.filter((pkg) =>
+        pkg.details.services.includes("Information")
+      );
+      const transformedResult = this.groupAndTransformPackageData(
+        packagesWithInfo
+      ) as Package[];
+      const parsedResult = packageSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all packages:", error);
+      throw error;
+    }
+  }
+
+  async getAllWithoutInfo(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<Package[]> {
+    try {
+      const packages = await this.packageRepository.getAll(user, startYear);
+      const packagesWithoutInfo = packages.filter((pkg) =>
+        pkg.details.services.includes("Information")
+      );
+      const transformedResult = this.groupAndTransformPackageData(
+        packagesWithoutInfo
       ) as Package[];
       const parsedResult = packageSchema.array().parse(transformedResult);
       return parsedResult;

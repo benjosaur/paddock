@@ -8,7 +8,7 @@ export class MagLogRepository {
   async getAll(user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI4",
+      IndexName: "GSI3",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "magLogEntity",
@@ -27,7 +27,7 @@ export class MagLogRepository {
   async getById(magLogId: string, user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI5",
+      IndexName: "GSI4",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": magLogId,
@@ -59,7 +59,7 @@ export class MagLogRepository {
       .parse(input);
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI4",
+      IndexName: "GSI3",
       KeyConditionExpression:
         "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
       ExpressionAttributeNames: {

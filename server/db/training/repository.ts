@@ -5,30 +5,12 @@ import { DbTrainingRecord, dbTrainingRecord } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 
 export class TrainingRecordRepository {
-  async getAllNotArchived(user: User): Promise<DbTrainingRecord[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": "trainingRecord",
-        ":sk": "N",
-      },
-    });
-    try {
-      const result = await client.send(command);
-      const parsedResult = dbTrainingRecord.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Repository Layer Error getting item:", error);
-      throw error;
-    }
-  }
+  // archived methods removed
 
   async getAll(user: User): Promise<DbTrainingRecord[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI1",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "trainingRecord",
@@ -36,11 +18,33 @@ export class TrainingRecordRepository {
     });
     try {
       const result = await client.send(command);
-      console.log(result.Items);
       const parsedResult = dbTrainingRecord.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
-      console.error("Repository Layer Error getting item:", error);
+      console.error("Repository Layer Error getting training records:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEnded(user: User): Promise<DbTrainingRecord[]> {
+    // Here we make a distinction between ended and expired, else views cluttered with expired records of ended carers.
+    const openTrainingRecordCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      ExpressionAttributeValues: {
+        ":pk": `trainingRecord`,
+        ":sK": "open",
+      },
+    });
+    try {
+      const dbTrainingRecords = await client.send(openTrainingRecordCommand);
+      const parsedResult = dbTrainingRecord
+        .array()
+        .parse(dbTrainingRecords.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting training records not ended:", error);
       throw error;
     }
   }
@@ -52,8 +56,8 @@ export class TrainingRecordRepository {
     const validatedExpiryDate = z.string().date().parse(expiryDate);
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
-      KeyConditionExpression: "entityType = :pk AND recordExpiry < :expiryDate",
+      IndexName: "GSI5",
+      KeyConditionExpression: "entityType = :pk AND expiryDate < :expiryDate",
       ExpressionAttributeValues: {
         ":pk": "trainingRecord",
         ":expiryDate": validatedExpiryDate,

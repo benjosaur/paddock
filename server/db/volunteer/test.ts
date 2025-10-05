@@ -5,8 +5,8 @@ import { VolunteerMetadata } from "shared";
 const volunteerService = new VolunteerService();
 
 const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
-  archived: "N",
   dateOfBirth: "1985-05-15",
+  endDate: "open",
   dbsExpiry: "2025-12-31",
   publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
@@ -33,6 +33,8 @@ const sampleVolunteer: Omit<VolunteerMetadata, "id"> = {
     ],
     capacity: "Part time",
     role: "Volunteer",
+    dbsNumber: "",
+    publicLiabilityNumber: "",
   },
   packages: [],
 };
@@ -58,8 +60,8 @@ export async function testVolunteerService() {
     console.log("3. Updating volunteer...");
     const updatedVolunteerData: VolunteerMetadata = {
       id: retrievedVolunteer.id,
-      archived: retrievedVolunteer.archived,
       dateOfBirth: retrievedVolunteer.dateOfBirth,
+      endDate: retrievedVolunteer.endDate,
       dbsExpiry: retrievedVolunteer.dbsExpiry,
       publicLiabilityExpiry: retrievedVolunteer.publicLiabilityExpiry,
       trainingRecords: retrievedVolunteer.trainingRecords,
@@ -100,7 +102,7 @@ export async function testVolunteerService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testVolunteerService();
 }

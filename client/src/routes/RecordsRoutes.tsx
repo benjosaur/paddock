@@ -54,12 +54,12 @@ export default function RecordsRoutes() {
   const recordsQuery = useQuery(
     showArchived
       ? trpc.trainingRecords.getAll.queryOptions()
-      : trpc.trainingRecords.getAllNotArchived.queryOptions()
+      : trpc.trainingRecords.getAllNotEnded.queryOptions()
   );
 
   const recordsQueryKey = showArchived
     ? trpc.trainingRecords.getAll.queryKey()
-    : trpc.trainingRecords.getAllNotArchived.queryKey();
+    : trpc.trainingRecords.getAllNotEnded.queryKey();
 
   const deleteRecordMutation = useMutation(
     trpc.trainingRecords.delete.mutationOptions({

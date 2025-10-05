@@ -1,5 +1,6 @@
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { magLogSchema } from "shared/schemas/index";
+import { z } from "zod";
 
 export const magRouter = router({
   getAll: createProtectedProcedure("mag", "read").query(async ({ ctx }) => {
@@ -10,6 +11,12 @@ export const magRouter = router({
     .input(magLogSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       return await ctx.services.magLog.getById(input.id, ctx.user);
+    }),
+
+  getByDateInterval: createProtectedProcedure("mag", "read")
+    .input(z.object({ startDate: z.string(), endDate: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.magLog.getByDateInterval(ctx.user, input);
     }),
 
   create: createProtectedProcedure("mag", "create")

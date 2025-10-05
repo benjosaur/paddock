@@ -9,15 +9,7 @@ import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise } from "@/utils/helpers";
-import { Input } from "../components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
+import EndDialog from "../components/EndDialog";
 import type { EndPersonDetails } from "shared";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
@@ -76,20 +68,31 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showEnded, setShowEnded] = useState(false);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(
-    showArchived
+    showEnded
       ? trpc.clients.getAll.queryOptions()
-      : trpc.clients.getAllNotArchived.queryOptions()
+      : trpc.clients.getAllNotEnded.queryOptions()
   );
 
-  const archiveClientMutation = useMutation(
-    trpc.clients.toggleArchive.mutationOptions({
+  const updateClientMutation = useMutation(
+    trpc.clients.update.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+        navigate("/clients");
+      },
+    })
+  );
+
+  const endClientMutation = useMutation(
+    trpc.clients.end.mutationOptions({
       onSuccess: () => {
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
@@ -108,22 +111,8 @@ export default function ClientsRoutes() {
     })
   );
 
-  const endClientMutation = useMutation(
-    trpc.clients.end.mutationOptions({
-      onSuccess: () => {
-        associatedClientRoutes.forEach((route) => {
-          queryClient.invalidateQueries({ queryKey: route.queryKey() });
-        });
-      },
-    })
-  );
-
   const handleAddNew = () => {
     navigate("/clients/create");
-  };
-
-  const handleArchiveToggle = (id: string) => {
-    archiveClientMutation.mutate({ id });
   };
 
   const handleEdit = (id: string) => {
@@ -155,9 +144,35 @@ export default function ClientsRoutes() {
     navigate(`/clients/info?clientId=${encodedId}`);
   };
 
-  const handleEnd = (id: string) => {
-    setEndDetails({ personId: id, endDate: "" });
-    setIsEndDialogOpen(true);
+  const handleEnd = (client: ClientMetadata) => {
+    if (client.endDate === "open") {
+      // if now open then need to prepare for ending
+      setEndDetails({ personId: client.id, endDate: "" });
+      setIsEndDialogOpen(true);
+    } else {
+      // if now not open then endDetails set BACK TO "open" TO prepare for end UNDO
+      setEndDetails({ personId: client.id, endDate: "open" });
+      setIsEndDialogOpen(true);
+    }
+  };
+
+  const handleConfirmEnd = () => {
+    if (!endDetails?.personId || !endDetails.endDate) return;
+    if (endDetails.endDate === "open") {
+      const selectedClient = clientsQuery.data?.find(
+        (c) => c.id === endDetails.personId
+      );
+      if (!selectedClient) return;
+      const client = { ...selectedClient, endDate: null };
+      updateClientMutation.mutate({
+        ...client,
+        endDate: "open",
+      });
+    } else {
+      endClientMutation.mutate(endDetails);
+    }
+    setIsEndDialogOpen(false);
+    setEndDetails(null);
   };
 
   if (clientsQuery.isLoading) return <div>Loading...</div>;
@@ -170,12 +185,11 @@ export default function ClientsRoutes() {
         element={
           <>
             <DataTable
-              key={`clients-${showArchived}`}
+              key={`clients-${showEnded}`}
               title="Clients"
               searchPlaceholder="Search clients..."
               data={clientsQuery.data || []}
               columns={clientColumns}
-              onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAddRequest={handleAddRequest}
@@ -186,12 +200,12 @@ export default function ClientsRoutes() {
               resource="clients"
               customActions={
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
+                  onClick={() => setShowEnded(!showEnded)}
                   className="shadow-sm"
                 >
-                  {showArchived ? "Hide Archived" : "Show Archived"}
+                  {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
             />
@@ -204,57 +218,28 @@ export default function ClientsRoutes() {
                 onDelete={handleDelete}
               />
             )}
-            <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>End Client</DialogTitle>
-                  <DialogDescription>
-                    Select an end date. This will also archive the client.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-4 py-4">
-                  <label className="text-sm text-gray-700">End Date</label>
-                  <Input
-                    type="date"
-                    value={endDetails?.endDate ?? ""}
-                    onChange={(e) =>
-                      setEndDetails((prev) =>
-                        prev ? { ...prev, endDate: e.target.value } : prev
-                      )
-                    }
-                    required
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEndDialogOpen(false);
-                      setEndDetails(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={
-                      !endDetails?.endDate ||
-                      !endDetails?.personId ||
-                      endClientMutation.isPending
-                    }
-                    onClick={() => {
-                      if (!endDetails?.personId || !endDetails.endDate) return;
-                      endClientMutation.mutate(endDetails);
-                      setIsEndDialogOpen(false);
-                      setEndDetails(null);
-                    }}
-                  >
-                    Confirm
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <EndDialog
+              isOpen={isEndDialogOpen}
+              onOpenChange={(open) => {
+                setIsEndDialogOpen(open);
+                if (!open) setEndDetails(null);
+              }}
+              entityLabel="Client"
+              endDate={endDetails?.endDate}
+              onEndDateChange={(date) =>
+                setEndDetails((prev) =>
+                  prev ? { ...prev, endDate: date } : prev
+                )
+              }
+              onConfirm={handleConfirmEnd}
+              confirmDisabled={
+                (endDetails?.endDate !== "open" && !endDetails?.endDate) ||
+                !endDetails?.personId ||
+                endClientMutation.isPending
+              }
+              endDescription="Select an end date. This will also archive the client."
+              undoDescription="This will undo ending the client. Associated requests will not be affected."
+            />
           </>
         }
       />
@@ -270,7 +255,7 @@ export const associatedClientRoutes: any[] = [
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotArchived,
+  trpc.clients.getAllNotEnded,
   trpc.clients.getById,
 
   // MAG
@@ -279,20 +264,21 @@ export const associatedClientRoutes: any[] = [
 
   // Packages
   trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
   trpc.packages.getById,
 
   // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
-  trpc.requests.getAllMetadata,
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEnded,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

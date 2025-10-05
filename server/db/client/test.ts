@@ -5,7 +5,7 @@ import { ClientFull } from "shared";
 const clientService = new ClientService();
 
 const sampleClient: Omit<ClientFull, "id"> = {
-  archived: "N",
+  endDate: "open",
   dateOfBirth: "1990-01-15",
   details: {
     customId: "",
@@ -15,10 +15,7 @@ const sampleClient: Omit<ClientFull, "id"> = {
       locality: "Wiveliscombe",
       county: "Somerset",
       postCode: "TA4 2PJ",
-      deprivation: {
-        income: false,
-        health: false,
-      },
+      deprivation: { income: false, health: false },
     },
     phone: "07123456789",
     email: "john.doe@example.com",
@@ -39,9 +36,13 @@ const sampleClient: Omit<ClientFull, "id"> = {
     clientAgreementComments: "All terms agreed",
     riskAssessmentDate: "2024-01-01",
     riskAssessmentComments: "Low risk assessment completed",
-    endDate: "",
-    attendanceAllowance: "no",
     attendsMag: true,
+    attendanceAllowance: {
+      requestedLevel: "None",
+      requestedDate: "",
+      status: "None",
+      confirmationDate: "",
+    },
   },
   requests: [],
   magLogs: [],
@@ -93,7 +94,7 @@ export async function testClientService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testClientService();
 }

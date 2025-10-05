@@ -52,9 +52,7 @@ export const packageColumns: TableColumn<Package>[] = [
 
 export default function PackageRoutes() {
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<
-    "active" | "completed" | "archived"
-  >("active");
+  const [showEnded, setShowEnded] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
@@ -67,11 +65,9 @@ export default function PackageRoutes() {
   const queryClient = useQueryClient();
 
   const packagesQuery = useQuery(
-    viewState === "active"
-      ? trpc.packages.getAllNotEndedYet.queryOptions()
-      : viewState === "completed"
-      ? trpc.packages.getAllNotArchived.queryOptions()
-      : trpc.packages.getAll.queryOptions()
+    showEnded
+      ? trpc.packages.getAllWithoutInfo.queryOptions()
+      : trpc.packages.getAllWithoutInfoNotEndedYet.queryOptions()
   );
 
   const packages = packagesQuery.data || [];
@@ -136,19 +132,11 @@ export default function PackageRoutes() {
   };
 
   const handleViewToggle = () => {
-    if (viewState === "active") {
-      setViewState("completed");
-    } else if (viewState === "completed") {
-      setViewState("archived");
-    } else {
-      setViewState("active");
-    }
+    setShowEnded((prev) => !prev);
   };
 
   const getButtonText = () => {
-    if (viewState === "active") return "Show Completed";
-    if (viewState === "completed") return "Show Archived";
-    return "Hide Archived";
+    return showEnded ? "Hide Ended" : "Show Ended";
   };
 
   if (packagesQuery.isLoading) return <div>Loading...</div>;
@@ -161,7 +149,7 @@ export default function PackageRoutes() {
           index
           element={
             <DataTable
-              key={`packages-${viewState}`}
+              key={`packages-${showEnded ? "ended" : "active"}`}
               title="Packages"
               searchPlaceholder="Search packages..."
               data={packages}
@@ -176,7 +164,7 @@ export default function PackageRoutes() {
               resource="packages"
               customActions={
                 <Button
-                  variant={viewState !== "active" ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
                   onClick={handleViewToggle}
                   className="shadow-sm"
@@ -224,32 +212,26 @@ export const associatedPackageRoutes: any[] = [
   trpc.analytics.getRequestsReport,
   trpc.analytics.getPackagesReport,
 
-  // Packages
-  trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
-  trpc.packages.getById,
-
   // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
-  trpc.requests.getAllMetadata,
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotArchived,
+  trpc.clients.getAllNotEnded,
   trpc.clients.getById,
 
   // MPs
   trpc.mps.getAll,
-  trpc.mps.getAllNotArchived,
+  trpc.mps.getAllNotEnded,
   trpc.mps.getById,
 
   // Volunteers
   trpc.volunteers.getAll,
-  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getAllNotEnded,
   trpc.volunteers.getById,
 
   // MAG
@@ -258,7 +240,7 @@ export const associatedPackageRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEnded,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

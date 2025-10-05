@@ -18,19 +18,20 @@ import {
   TabsTrigger,
   TabsContent,
 } from "../components/ui/tabs";
-import { Package, RequestFull } from "shared";
-import type { Report, DeprivationReport } from "shared";
+import { Package } from "shared";
+import type { Report, DeprivationReport, RequestMetadata } from "shared";
 import { firstYear } from "shared/const";
 
 export function Dashboard() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportType, setReportType] = useState<"requests" | "packages">(
-    "requests"
-  );
+  const [reportType, setReportType] = useState<
+    "requests" | "packages" | "coordinator"
+  >("requests");
   const [breakdownType, setBreakdownType] = useState<
     "locality" | "deprivation"
   >("locality");
   const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
+  const [isInfo, setIsInfo] = useState<boolean>(false);
   const [generatedReport, setGeneratedReport] = useState<
     Report | DeprivationReport | null
   >(null);
@@ -38,16 +39,16 @@ export function Dashboard() {
 
   // Fetch all required data
   // "Active" refers to currently ongoing requests/packages NOT archived
-  const clientsQuery = useQuery(trpc.clients.getAllNotArchived.queryOptions());
-  const mpsQuery = useQuery(trpc.mps.getAllNotArchived.queryOptions());
+  const clientsQuery = useQuery(trpc.clients.getAllNotEnded.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotEnded.queryOptions());
   const volunteersQuery = useQuery(
-    trpc.volunteers.getAllNotArchived.queryOptions()
+    trpc.volunteers.getAllNotEnded.queryOptions()
   );
   const activeRequestsQuery = useQuery(
-    trpc.requests.getAllNotEndedYet.queryOptions()
+    trpc.requests.getAllMetadataWithoutInfoNotEndedYet.queryOptions()
   );
   const activePackagesQuery = useQuery(
-    trpc.packages.getAllNotEndedYet.queryOptions()
+    trpc.packages.getAllWithoutInfoNotEndedYet.queryOptions()
   );
   const analyticsPackagesXsQuery = useQuery(
     trpc.analytics.getActivePackagesCrossSection.queryOptions()
@@ -55,13 +56,19 @@ export function Dashboard() {
   const analyticsRequestsXsQuery = useQuery(
     trpc.analytics.getActiveRequestsCrossSection.queryOptions()
   );
+  const analyticsRequestsDeprivationXsQuery = useQuery(
+    trpc.analytics.getActiveRequestsDeprivationCrossSection.queryOptions()
+  );
+  const analyticsPackagesDeprivationXsQuery = useQuery(
+    trpc.analytics.getActivePackagesDeprivationCrossSection.queryOptions()
+  );
 
   const attendanceAllowanceQuery = useQuery(
     trpc.analytics.generateAttendanceAllowanceReport.queryOptions()
   );
 
   const requestsReportQuery = useQuery({
-    ...trpc.analytics.getRequestsReport.queryOptions({ startYear }),
+    ...trpc.analytics.getRequestsReport.queryOptions({ startYear, isInfo }),
     enabled: false, // Don't auto-fetch, only when user requests it
   });
 
@@ -71,13 +78,21 @@ export function Dashboard() {
   });
 
   const requestsDeprivationReportQuery = useQuery({
-    ...trpc.analytics.getRequestsDeprivationReport.queryOptions({ startYear }),
+    ...trpc.analytics.getRequestsDeprivationReport.queryOptions({
+      startYear,
+      isInfo,
+    }),
     enabled: false, // Don't auto-fetch, only when user requests it
   });
 
   const packagesDeprivationReportQuery = useQuery({
     ...trpc.analytics.getPackagesDeprivationReport.queryOptions({ startYear }),
     enabled: false, // Don't auto-fetch, only when user requests it
+  });
+
+  const coordinatorReportQuery = useQuery({
+    ...trpc.analytics.getCoordinatorReport.queryOptions({ startYear }),
+    enabled: false,
   });
 
   // Check if any queries are loading
@@ -89,6 +104,8 @@ export function Dashboard() {
     activePackagesQuery.isLoading ||
     analyticsPackagesXsQuery.isLoading ||
     analyticsRequestsXsQuery.isLoading ||
+    analyticsRequestsDeprivationXsQuery.isLoading ||
+    analyticsPackagesDeprivationXsQuery.isLoading ||
     attendanceAllowanceQuery.isLoading;
 
   // Check if any queries have errors
@@ -100,6 +117,8 @@ export function Dashboard() {
     activePackagesQuery.error ||
     analyticsPackagesXsQuery.error ||
     analyticsRequestsXsQuery.error ||
+    analyticsRequestsDeprivationXsQuery.error ||
+    analyticsPackagesDeprivationXsQuery.error ||
     attendanceAllowanceQuery.error;
 
   if (isLoading) {
@@ -118,7 +137,7 @@ export function Dashboard() {
     );
   }
 
-  const findUniqueClientIds = (requests: RequestFull[]): string[] => {
+  const findUniqueClientIds = (requests: RequestMetadata[]): string[] => {
     return [...new Set(requests.map((req) => req.clientId))];
   };
   const findUniqueMpIds = (packages: Package[]): string[] => {
@@ -140,6 +159,10 @@ export function Dashboard() {
   ).length;
   const analyticsPackages = analyticsPackagesXsQuery.data!; // throw on isloading above
   const analyticsRequests = analyticsRequestsXsQuery.data!;
+  const analyticsRequestsDeprivation =
+    analyticsRequestsDeprivationXsQuery.data!;
+  const analyticsPackagesDeprivation =
+    analyticsPackagesDeprivationXsQuery.data!;
   const attendanceAllowanceData = attendanceAllowanceQuery.data!;
 
   // Helper function to calculate percentage
@@ -150,6 +173,7 @@ export function Dashboard() {
   const reportTypeOptions = [
     { value: "requests", label: "Requests Report" },
     { value: "packages", label: "Packages Report" },
+    { value: "coordinator", label: "Coordinator Report" },
   ];
 
   const breakdownTypeOptions = [
@@ -161,7 +185,10 @@ export function Dashboard() {
     setIsGeneratingReport(true);
     try {
       let report: Report | DeprivationReport;
-      if (breakdownType === "locality") {
+      if (reportType === "coordinator") {
+        const result = await coordinatorReportQuery.refetch();
+        report = result.data!;
+      } else if (breakdownType === "locality") {
         if (reportType === "requests") {
           const result = await requestsReportQuery.refetch();
           report = result.data!;
@@ -241,9 +268,14 @@ export function Dashboard() {
                           }>
                         ) => {
                           if (selectedOption) {
-                            setReportType(
-                              selectedOption.value as "requests" | "packages"
-                            );
+                            const newType = selectedOption.value as
+                              | "requests"
+                              | "packages"
+                              | "coordinator";
+                            setReportType(newType);
+                            if (newType === "coordinator") {
+                              setBreakdownType("locality");
+                            }
                           }
                         }}
                         placeholder="Select report type..."
@@ -263,6 +295,7 @@ export function Dashboard() {
                             (option) => option.value === breakdownType
                           ) || null
                         }
+                        isDisabled={reportType === "coordinator"}
                         onChange={(
                           selectedOption: SingleValue<{
                             value: string;
@@ -279,6 +312,23 @@ export function Dashboard() {
                         className="react-select-container"
                         classNamePrefix="react-select"
                       />
+                      {reportType === "requests" && (
+                        <div className="flex items-center space-x-2 mt-6">
+                          <input
+                            id="isInfo"
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            checked={isInfo}
+                            onChange={(e) => setIsInfo(e.target.checked)}
+                          />
+                          <label
+                            htmlFor="isInfo"
+                            className="text-sm font-medium text-gray-700"
+                          >
+                            Information
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -320,15 +370,19 @@ export function Dashboard() {
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-lg font-semibold">
-                        {reportType === "requests" ? "Requests" : "Packages"}{" "}
+                        {reportType === "requests"
+                          ? "Requests"
+                          : reportType === "packages"
+                          ? "Packages"
+                          : "Coordinator"}{" "}
                         Analytics Report
                         {startYear &&
                           ` (${startYear} - ${new Date().getFullYear()})`}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1">
-                        Comprehensive breakdown by year, month,{" "}
-                        {getBreakdownDisplayName().toLowerCase()}, and service
-                        type
+                        {reportType === "coordinator"
+                          ? "Comprehensive breakdown by year, month, locality, and service type"
+                          : `Comprehensive breakdown by year, month, ${getBreakdownDisplayName().toLowerCase()}, and service type`}
                       </p>
                     </div>
                     <div className="space-x-2">
@@ -590,6 +644,21 @@ export function Dashboard() {
             </div>
 
             <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">
+                By Deprivation
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsRequestsDeprivation.deprivationCategories.map((d) => (
+                  <AnimatedCounter
+                    key={`request-deprivation-${d.name}`}
+                    targetValue={d.totalHours}
+                    label={`${d.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <h3 className="text-lg font-medium text-gray-700">By Service</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {analyticsRequests.services.map((service) => (
@@ -614,6 +683,21 @@ export function Dashboard() {
                     key={`package-locality-${locality.name}`}
                     targetValue={locality.totalHours}
                     label={`${locality.name} Hours`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-700">
+                By Deprivation
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {analyticsPackagesDeprivation.deprivationCategories.map((d) => (
+                  <AnimatedCounter
+                    key={`package-deprivation-${d.name}`}
+                    targetValue={d.totalHours}
+                    label={`${d.name} Hours`}
                   />
                 ))}
               </div>

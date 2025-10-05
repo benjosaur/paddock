@@ -26,7 +26,6 @@ export function RequestForm() {
 
   const [formData, setFormData] = useState<Omit<RequestMetadata, "id">>({
     clientId: "",
-    archived: "N",
     requestType: "paid",
     startDate: "",
     endDate: "open",
@@ -299,8 +298,16 @@ export function RequestForm() {
                 <Input
                   id="endDate"
                   name="endDate"
-                  type="date"
-                  value={formData.endDate === "open" ? "" : formData.endDate}
+                  type={
+                    isEditing && formData.endDate === "open" ? "text" : "date"
+                  }
+                  value={
+                    isEditing && formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate === "open"
+                      ? ""
+                      : formData.endDate
+                  }
                   onChange={(e) => {
                     const value = e.target.value || "open";
                     setFormData((prev) =>

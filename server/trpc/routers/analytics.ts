@@ -4,6 +4,7 @@ import {
   reportSchema,
   deprivationReportSchema,
   attendanceAllowanceReportSchema,
+  analyticsDetailsSchema,
 } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { z } from "zod";
@@ -37,11 +38,12 @@ export const analyticsRouter = router({
     }),
 
   getRequestsReport: createProtectedProcedure("analytics", "read")
-    .input(z.object({ startYear: z.number().optional() }))
+    .input(analyticsDetailsSchema)
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generateRequestsReport(
         ctx.user,
+        input.isInfo,
         input.startYear
       );
     }),
@@ -51,6 +53,16 @@ export const analyticsRouter = router({
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generatePackagesReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  getCoordinatorReport: createProtectedProcedure("analytics", "read")
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(reportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateCoordinatorReport(
         ctx.user,
         input.startYear
       );
@@ -79,11 +91,12 @@ export const analyticsRouter = router({
     }),
 
   getRequestsDeprivationReport: createProtectedProcedure("analytics", "read")
-    .input(z.object({ startYear: z.number().optional() }))
+    .input(analyticsDetailsSchema)
     .output(deprivationReportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generateRequestsDeprivationReport(
         ctx.user,
+        input.isInfo,
         input.startYear
       );
     }),

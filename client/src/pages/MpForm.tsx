@@ -18,7 +18,7 @@ export function MpForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<MpFull, "id">>({
-    archived: "N",
+    endDate: "open",
     dateOfBirth: "",
     dbsExpiry: "",
     publicLiabilityExpiry: "",
@@ -39,7 +39,6 @@ export function MpForm() {
       publicLiabilityNumber: "",
       dbsNumber: "",
       notes: [],
-      endDate: "",
     },
     trainingRecords: [],
     requests: [],
@@ -413,9 +412,13 @@ export function MpForm() {
                 </label>
                 <Input
                   id="endDate"
-                  name="details.endDate"
-                  type="date"
-                  value={formData.details.endDate || ""}
+                  name="endDate"
+                  type={formData.endDate === "open" ? "text" : "date"}
+                  value={
+                    formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate || ""
+                  }
                   onChange={handleInputChange}
                   disabled
                 />

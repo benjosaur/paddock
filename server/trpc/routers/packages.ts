@@ -9,15 +9,22 @@ export const packagesRouter = router({
     }
   ),
 
-  getAllNotArchived: createProtectedProcedure("packages", "read").query(
+  getAllWithoutInfoNotEndedYet: createProtectedProcedure(
+    "packages",
+    "read"
+  ).query(async ({ ctx }) => {
+    return await ctx.services.packages.getAllWithoutInfoNotEndedYet(ctx.user);
+  }),
+
+  getAllInfo: createProtectedProcedure("packages", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.packages.getAllNotArchived(ctx.user);
+      return await ctx.services.packages.getAllInfo(ctx.user);
     }
   ),
 
-  getAllNotEndedYet: createProtectedProcedure("packages", "read").query(
+  getAllWithoutInfo: createProtectedProcedure("packages", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.packages.getAllNotEndedYet(ctx.user);
+      return await ctx.services.packages.getAllWithoutInfo(ctx.user);
     }
   ),
   getById: createProtectedProcedure("packages", "read")

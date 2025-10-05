@@ -31,6 +31,12 @@ export const endPersonDetailsSchema = z.object({
   endDate: z.string().date(),
 });
 
+export const analyticsDetailsSchema = z.object({
+  startYear: z.number().min(2000).max(2100).default(new Date().getFullYear()),
+  isInfo: z.boolean().default(false),
+});
+
+export type AnalyticsDetails = z.infer<typeof analyticsDetailsSchema>;
 export type CoverDetails = z.infer<typeof coverDetailsSchema>;
 export type InfoDetails = z.infer<typeof infoDetailsSchema>;
 export type EndRequestDetails = z.infer<typeof endRequestDetailsSchema>;

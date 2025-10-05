@@ -103,6 +103,10 @@ export function PackageDetailModal({
                 pkg.endDate === "open" ? "Ongoing" : pkg.endDate
               )}
               {renderDetailItem("Weekly Hours", pkg.details.weeklyHours)}
+              {renderDetailItem(
+                "One-Off Hours",
+                pkg.details.oneOffStartDateHours
+              )}
 
               <div className="mt-4">
                 <h4 className="text-md font-semibold mb-2 text-gray-700">

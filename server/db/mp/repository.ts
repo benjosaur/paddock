@@ -11,30 +11,12 @@ import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 export class MpRepository {
-  async getAllNotArchived(user: User): Promise<DbMpMetadata[]> {
-    const command = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": "mp",
-        ":sk": "N",
-      },
-    });
-    try {
-      const result = await client.send(command);
-      const parsedResult = dbMpMetadata.array().parse(result.Items);
-      return parsedResult;
-    } catch (error) {
-      console.error("Repository Layer Error getting all active Mps:", error);
-      throw error;
-    }
-  }
+  // archived methods removed
 
   async getAll(user: User): Promise<DbMpMetadata[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI1",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "mp",
@@ -46,6 +28,28 @@ export class MpRepository {
       return parsedResult;
     } catch (error) {
       console.error("Repository Layer Error getting all Mps:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEnded(user: User): Promise<DbMpMetadata[]> {
+    // MPs cannot end in the future; treat open endDate as active
+    const openMpCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      ExpressionAttributeValues: {
+        ":pk": `mp`,
+        ":sK": "open",
+      },
+    });
+
+    try {
+      const dbMps = await client.send(openMpCommand);
+      const parsedResult = dbMpMetadata.array().parse(dbMps.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Error getting MPs not ended:", error);
       throw error;
     }
   }

@@ -11,9 +11,9 @@ export const clientsRouter = router({
     return await ctx.services.client.getAll(ctx.user);
   }),
 
-  getAllNotArchived: createProtectedProcedure("clients", "read").query(
+  getAllNotEnded: createProtectedProcedure("clients", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.client.getAllNotArchived(ctx.user);
+      return await ctx.services.client.getAllNotEnded(ctx.user);
     }
   ),
 
@@ -95,11 +95,5 @@ export const clientsRouter = router({
         input.newPostcode,
         ctx.user
       );
-    }),
-
-  toggleArchive: createProtectedProcedure("clients", "update")
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.toggleArchive(input.id, ctx.user);
     }),
 });

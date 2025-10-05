@@ -23,10 +23,10 @@ export class TrainingRecordService {
     }
   }
 
-  async getAllNotArchived(user: User): Promise<TrainingRecord[]> {
+  async getAllNotEnded(user: User): Promise<TrainingRecord[]> {
     try {
       const trainingRecordsFromDb =
-        await this.trainingRecordRepository.getAllNotArchived(user);
+        await this.trainingRecordRepository.getAllNotEnded(user);
       const transformedRecords = this.transformDbTrainingRecordToShared(
         trainingRecordsFromDb
       ) as TrainingRecord[];
@@ -36,7 +36,7 @@ export class TrainingRecordService {
       return parsedResult;
     } catch (error) {
       console.error(
-        "Service Layer Error getting all non-archived training records:",
+        "Service Layer Error getting not-ended training records:",
         error
       );
       throw error;

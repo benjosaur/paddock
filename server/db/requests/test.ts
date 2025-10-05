@@ -8,7 +8,6 @@ const packageService = new PackageService();
 
 const samplePaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
-  archived: "N",
   requestType: "paid",
   startDate: "2025-01-10",
   endDate: "open",
@@ -28,13 +27,13 @@ const samplePaidRequest: Omit<RequestMetadata, "id"> = {
     },
     services: ["Companionship", "Attendance Allowance"],
     weeklyHours: 10,
+    oneOffStartDateHours: 0,
     status: "urgent",
   },
 };
 
 const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
   clientId: "c#test-client-123",
-  archived: "N",
   requestType: "unpaid",
   startDate: "2025-01-15",
   endDate: "open",
@@ -54,6 +53,7 @@ const sampleUnpaidRequest: Omit<RequestMetadata, "id"> = {
     services: ["Companionship", "Attendance Allowance"],
     notes: "Weekly unpaid volunteer visit requested",
     weeklyHours: 5,
+    oneOffStartDateHours: 0,
     status: "normal",
   },
 };
@@ -80,12 +80,12 @@ export async function testRequestService() {
     const samplePackage1: Omit<Package, "id"> = {
       carerId: "carer-123",
       requestId: createdPaidRequestId,
-      archived: "N",
       startDate: "2025-01-15",
       endDate: "open",
       details: {
         name: "John Carer",
         weeklyHours: 5,
+        oneOffStartDateHours: 0,
         address: {
           streetAddress: "123 Test Street",
           locality: "Wiveliscombe",
@@ -104,12 +104,12 @@ export async function testRequestService() {
     const samplePackage2: Omit<Package, "id"> = {
       carerId: "carer-456",
       requestId: createdPaidRequestId,
-      archived: "N",
       startDate: "2025-01-20",
       endDate: "open",
       details: {
         name: "Jane Carer",
         weeklyHours: 3,
+        oneOffStartDateHours: 0,
         address: {
           streetAddress: "456 Test Avenue",
           locality: "Brompton Ralph",
@@ -157,7 +157,6 @@ export async function testRequestService() {
 
     const renewedRequestData: Omit<RequestMetadata, "id"> = {
       clientId: paidRequest.clientId,
-      archived: "N",
       requestType: "paid",
       startDate: "2025-02-01",
       endDate: "open",
@@ -187,12 +186,12 @@ export async function testRequestService() {
     );
 
     console.log("8. Getting all requests metadata...");
-    const allRequests = await requestService.getAllMetadata(sampleUser);
+    const allRequests = await requestService.getAllInfoMetadata(sampleUser);
     console.log("Total requests after renewal:", allRequests.length);
 
     // Find the new request (should have the old packages transferred)
     const newRequest = allRequests.find(
-      (req) =>
+      (req: RequestMetadata) =>
         req.startDate === "2025-02-01" &&
         req.details.notes === "Renewed request for 2025"
     );
@@ -212,14 +211,11 @@ export async function testRequestService() {
     }
 
     console.log("10. Getting all active requests with packages...");
-    const activeRequests = await requestService.getAllNotArchivedWithPackages(
-      sampleUser
-    );
+    const activeRequests =
+      await requestService.getAllWithoutInfoNotEndedYetWithPackages(sampleUser);
     console.log("Active requests count:", activeRequests.length);
 
-    console.log("11. Testing archive toggle...");
-    await requestService.toggleArchive(createdUnpaidRequestId, sampleUser);
-    console.log("Toggled archive status for unpaid request");
+    // skipping archive toggle as archived concept removed
 
     console.log("12. Cleanup - Deleting all test requests...");
     const deletedPaidCount = await requestService.delete(
@@ -248,7 +244,7 @@ export async function testRequestService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testRequestService();
 }

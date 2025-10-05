@@ -50,7 +50,7 @@ export function ClientForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
-    archived: "N",
+    endDate: "open",
     dateOfBirth: "",
     details: {
       customId: "",
@@ -73,7 +73,6 @@ export function ClientForm() {
       clientAgreementComments: "",
       riskAssessmentDate: "",
       riskAssessmentComments: "",
-      endDate: "",
       services: [],
       attendanceAllowance: {
         requestedLevel: "None",
@@ -245,10 +244,12 @@ export function ClientForm() {
     })
   );
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
-    value: service,
-    label: service,
-  }));
+  const serviceSelectOptions = serviceOptions
+    .filter((service) => service !== "Information")
+    .map((service) => ({
+      value: service,
+      label: service,
+    }));
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -555,9 +556,13 @@ export function ClientForm() {
                 </label>
                 <Input
                   id="endDate"
-                  name="details.endDate"
-                  type="date"
-                  value={formData.details.endDate || ""}
+                  name="endDate"
+                  type={formData.endDate === "open" ? "text" : "date"}
+                  value={
+                    formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate || ""
+                  }
                   onChange={handleInputChange}
                   disabled
                 />

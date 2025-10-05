@@ -1,15 +1,7 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
+import EndDialog from "../components/EndDialog";
 import { RequestForm } from "../pages/RequestForm";
 import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
@@ -72,9 +64,7 @@ export const requestColumns: TableColumn<RequestFull>[] = [
 
 export default function RequestRoutes() {
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<
-    "active" | "completed" | "archived"
-  >("active");
+  const [showEnded, setShowEnded] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
@@ -86,11 +76,9 @@ export default function RequestRoutes() {
   const queryClient = useQueryClient();
 
   const requestsQuery = useQuery(
-    viewState === "active"
-      ? trpc.requests.getAllNotEndedYet.queryOptions()
-      : viewState === "completed"
-      ? trpc.requests.getAllNotArchived.queryOptions()
-      : trpc.requests.getAll.queryOptions()
+    showEnded
+      ? trpc.requests.getAllWithoutInfoWithPackages.queryOptions()
+      : trpc.requests.getAllWithoutInfoNotEndedYetWithPackages.queryOptions()
   );
 
   const requests = requestsQuery.data || [];
@@ -138,7 +126,8 @@ export default function RequestRoutes() {
     setIsModalOpen(true);
   };
 
-  const handleEnd = (id: string) => {
+  const handleEnd = (item: RequestFull) => {
+    const id = item.id;
     setEndRequestDetails({ requestId: id, endDate: "" });
     setIsEndDialogOpen(true);
   };
@@ -153,19 +142,11 @@ export default function RequestRoutes() {
   };
 
   const handleViewToggle = () => {
-    if (viewState === "active") {
-      setViewState("completed");
-    } else if (viewState === "completed") {
-      setViewState("archived");
-    } else {
-      setViewState("active");
-    }
+    setShowEnded((prev) => !prev);
   };
 
   const getButtonText = () => {
-    if (viewState === "active") return "Show Completed";
-    if (viewState === "completed") return "Show Archived";
-    return "Hide Archived";
+    return showEnded ? "Hide Ended" : "Show Ended";
   };
 
   if (requestsQuery.isLoading) return <div>Loading...</div>;
@@ -178,7 +159,7 @@ export default function RequestRoutes() {
           index
           element={
             <DataTable
-              key={`requests-${viewState}`}
+              key={`requests-${showEnded ? "ended" : "active"}`}
               title="Requests"
               searchPlaceholder="Search requests..."
               data={requests}
@@ -193,7 +174,7 @@ export default function RequestRoutes() {
               resource="requests"
               customActions={
                 <Button
-                  variant={viewState !== "active" ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
                   onClick={handleViewToggle}
                   className="shadow-sm"
@@ -217,59 +198,34 @@ export default function RequestRoutes() {
           onDelete={handleDelete}
         />
       )}
-      <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>End Request</DialogTitle>
-            <DialogDescription>
-              Select an end date. This will also end all associated ongoing
-              packages.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <label className="text-sm text-gray-700">End Date</label>
-            <Input
-              type="date"
-              value={endRequestDetails?.endDate ?? ""}
-              onChange={(e) =>
-                setEndRequestDetails((prev) =>
-                  prev ? { ...prev, endDate: e.target.value } : prev
-                )
-              }
-              required
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsEndDialogOpen(false);
-                setEndRequestDetails(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                !endRequestDetails?.endDate ||
-                !endRequestDetails?.requestId ||
-                endRequestMutation.isPending
-              }
-              onClick={() => {
-                if (!endRequestDetails?.requestId || !endRequestDetails.endDate)
-                  return;
-                endRequestMutation.mutate(endRequestDetails);
-                setIsEndDialogOpen(false);
-                setEndRequestDetails(null);
-              }}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EndDialog
+        isOpen={isEndDialogOpen}
+        onOpenChange={(open) => {
+          setIsEndDialogOpen(open);
+          if (!open) setEndRequestDetails(null);
+        }}
+        entityLabel="Request"
+        endDate={endRequestDetails?.endDate}
+        onEndDateChange={(date) =>
+          setEndRequestDetails((prev) =>
+            prev ? { ...prev, endDate: date } : prev
+          )
+        }
+        onConfirm={() => {
+          if (!endRequestDetails?.requestId || !endRequestDetails.endDate)
+            return;
+          endRequestMutation.mutate(endRequestDetails);
+          setIsEndDialogOpen(false);
+          setEndRequestDetails(null);
+        }}
+        confirmDisabled={
+          !endRequestDetails?.endDate ||
+          !endRequestDetails?.requestId ||
+          endRequestMutation.isPending
+        }
+        endDescription="Select an end date. This will also end all associated ongoing packages."
+        undoDescription=""
+      />
     </>
   );
 }
@@ -281,32 +237,33 @@ export const associatedRequestRoutes: any[] = [
   trpc.analytics.getRequestsReport,
   trpc.analytics.getPackagesReport,
 
-  // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
-  trpc.requests.getById,
-  trpc.requests.getAllMetadata,
-
   // Packages
   trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
   trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
+  trpc.requests.getById,
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotArchived,
+  trpc.clients.getAllNotEnded,
   trpc.clients.getById,
 
   // MPs
   trpc.mps.getAll,
-  trpc.mps.getAllNotArchived,
+  trpc.mps.getAllNotEnded,
   trpc.mps.getById,
 
   // Volunteers
   trpc.volunteers.getAll,
-  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getAllNotEnded,
   trpc.volunteers.getById,
 
   // MAG
@@ -315,7 +272,7 @@ export const associatedRequestRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEnded,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

@@ -5,8 +5,8 @@ import { MpMetadata } from "shared";
 const mpService = new MpService();
 
 const sampleMp: Omit<MpMetadata, "id"> = {
-  archived: "N",
   dateOfBirth: "1990-01-01",
+  endDate: "open",
   dbsExpiry: "2025-12-31",
   publicLiabilityExpiry: "2025-12-31",
   trainingRecords: [],
@@ -32,6 +32,8 @@ const sampleMp: Omit<MpMetadata, "id"> = {
       },
     ],
     capacity: "Full time",
+    dbsNumber: "",
+    publicLiabilityNumber: "",
   },
   packages: [],
 };
@@ -51,8 +53,8 @@ export async function testMpService() {
     console.log("3. Updating MP...");
     const updatedMpData: MpMetadata = {
       id: retrievedMp.id,
-      archived: retrievedMp.archived,
       dateOfBirth: retrievedMp.dateOfBirth,
+      endDate: retrievedMp.endDate,
       dbsExpiry: retrievedMp.dbsExpiry,
       publicLiabilityExpiry: retrievedMp.publicLiabilityExpiry,
       trainingRecords: retrievedMp.trainingRecords,
@@ -87,7 +89,7 @@ export async function testMpService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testMpService();
 }

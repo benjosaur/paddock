@@ -6,11 +6,11 @@ const trainingRecordService = new TrainingRecordService();
 
 const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
   ownerId: "mp#test-owner-123",
-  archived: "N",
   expiryDate: "2025-12-31",
   details: {
     name: "Robert Branson",
     recordName: "First Aid Certification",
+    recordNumber: "",
     notes: "",
   },
 };
@@ -29,12 +29,12 @@ export async function testTrainingRecordService() {
     console.log("2. Updating training record...");
     const updatedRecordData: TrainingRecord = {
       id: createdRecordId,
-      archived: "N",
       ownerId: sampleTrainingRecord.ownerId,
       expiryDate: "2026-12-31",
       details: {
         name: "Robert Branson",
         recordName: "Updated First Aid Certification",
+        recordNumber: "",
         notes: "",
       },
     };
@@ -69,7 +69,7 @@ export async function testTrainingRecordService() {
   }
 }
 
-// Run test only if this file is executed directly
-if (require.main === module) {
+// Run test only if this file is executed directly (ESM/Bun)
+if (import.meta.main) {
   testTrainingRecordService();
 }

@@ -38,12 +38,12 @@ export default function DbsRoutes() {
   const mpsQuery = useQuery(
     showArchived
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotArchived.queryOptions()
+      : trpc.mps.getAllNotEnded.queryOptions()
   );
   const volunteersQuery = useQuery(
     showArchived
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotArchived.queryOptions()
+      : trpc.volunteers.getAllNotEnded.queryOptions()
   );
 
   const mps = mpsQuery.data || [];

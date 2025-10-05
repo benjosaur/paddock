@@ -8,15 +8,7 @@ import { trpc } from "../utils/trpc";
 import type { MpMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
-import { Input } from "../components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
+import EndDialog from "../components/EndDialog";
 
 const mpColumns: TableColumn<MpMetadata>[] = [
   {
@@ -55,36 +47,35 @@ export function MpsRoutes() {
   const navigate = useNavigate();
   const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showEnded, setShowEnded] = useState(false);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(
-    showArchived
+    showEnded
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotArchived.queryOptions()
+      : trpc.mps.getAllNotEnded.queryOptions()
   );
-  const mpsQueryKey = showArchived
+  const mpsQueryKey = showEnded
     ? trpc.mps.getAll.queryKey()
-    : trpc.mps.getAllNotArchived.queryKey();
-
-  const archiveMpMutation = useMutation(
-    trpc.mps.toggleArchive.mutationOptions({
-      onSuccess: () => {
-        // Invalidate all associated routes
-        associatedMpRoutes.forEach((route) => {
-          queryClient.invalidateQueries({ queryKey: route.queryKey() });
-        });
-      },
-    })
-  );
+    : trpc.mps.getAllNotEnded.queryKey();
 
   const deleteMpMutation = useMutation(
     trpc.mps.delete.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: mpsQueryKey });
+      },
+    })
+  );
+
+  const updateMpMutation = useMutation(
+    trpc.mps.update.mutationOptions({
+      onSuccess: () => {
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -101,10 +92,6 @@ export function MpsRoutes() {
 
   const handleAddNew = () => {
     navigate("/mps/create");
-  };
-
-  const handleArchiveToggle = (id: string) => {
-    archiveMpMutation.mutate({ id });
   };
 
   const handleEditNavigation = (id: string) => {
@@ -131,9 +118,31 @@ export function MpsRoutes() {
     setSelectedMpId(null);
   };
 
-  const handleEnd = (id: string) => {
-    setEndDetails({ personId: id, endDate: "" });
-    setIsEndDialogOpen(true);
+  const handleEnd = (mp: MpMetadata) => {
+    if (mp.endDate !== "open") {
+      setEndDetails({ personId: mp.id, endDate: "" });
+      setIsEndDialogOpen(true);
+    } else {
+      // undo end
+      setEndDetails({ personId: mp.id, endDate: "open" });
+      setIsEndDialogOpen(true);
+    }
+  };
+
+  const handleConfirmEnd = () => {
+    if (!endDetails?.personId || !endDetails.endDate) return;
+    if (endDetails.endDate === "open") {
+      const selected = mpsQuery.data?.find((m) => m.id === endDetails.personId);
+      if (!selected) return;
+      updateMpMutation.mutate({
+        ...selected,
+        endDate: "open",
+      } as unknown as any);
+    } else {
+      endMpMutation.mutate(endDetails);
+    }
+    setIsEndDialogOpen(false);
+    setEndDetails(null);
   };
 
   if (mpsQuery.isLoading) return <div>Loading...</div>;
@@ -146,27 +155,26 @@ export function MpsRoutes() {
         element={
           <>
             <DataTable
-              key={`mps-${showArchived}`}
+              key={`mps-${showEnded}`}
               title="MPs"
               searchPlaceholder="Search MPs..."
               data={mpsQuery.data || []}
               columns={mpColumns}
-              onArchive={handleArchiveToggle}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}
               onEnd={handleEnd}
-              onViewItem={handleViewMp as (item: unknown) => void}
+              onViewItem={handleViewMp}
               onCreate={handleAddNew}
               resource="mps"
               customActions={
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
+                  onClick={() => setShowEnded(!showEnded)}
                   className="shadow-sm"
                 >
-                  {showArchived ? "Hide Archived" : "Show Archived"}
+                  {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
             />
@@ -179,57 +187,28 @@ export function MpsRoutes() {
                 onDelete={handleDelete}
               />
             )}
-            <Dialog open={isEndDialogOpen} onOpenChange={setIsEndDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>End MP</DialogTitle>
-                  <DialogDescription>
-                    Select an end date. This will also archive the MP.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-4 py-4">
-                  <label className="text-sm text-gray-700">End Date</label>
-                  <Input
-                    type="date"
-                    value={endDetails?.endDate ?? ""}
-                    onChange={(e) =>
-                      setEndDetails((prev) =>
-                        prev ? { ...prev, endDate: e.target.value } : prev
-                      )
-                    }
-                    required
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEndDialogOpen(false);
-                      setEndDetails(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={
-                      !endDetails?.endDate ||
-                      !endDetails?.personId ||
-                      endMpMutation.isPending
-                    }
-                    onClick={() => {
-                      if (!endDetails?.personId || !endDetails.endDate) return;
-                      endMpMutation.mutate(endDetails);
-                      setIsEndDialogOpen(false);
-                      setEndDetails(null);
-                    }}
-                  >
-                    Confirm
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <EndDialog
+              isOpen={isEndDialogOpen}
+              onOpenChange={(open) => {
+                setIsEndDialogOpen(open);
+                if (!open) setEndDetails(null);
+              }}
+              entityLabel="MP"
+              endDate={endDetails?.endDate}
+              onEndDateChange={(date) =>
+                setEndDetails((prev) =>
+                  prev ? { ...prev, endDate: date } : prev
+                )
+              }
+              onConfirm={handleConfirmEnd}
+              confirmDisabled={
+                (endDetails?.endDate !== "open" && !endDetails?.endDate) ||
+                !endDetails?.personId ||
+                endMpMutation.isPending
+              }
+              endDescription="Select an end date. This will also archive the MP."
+              undoDescription="This will undo ending the MP. Associated packages will not be affected."
+            />
           </>
         }
       />
@@ -244,7 +223,7 @@ export default MpsRoutes;
 export const associatedMpRoutes: any[] = [
   // Mps
   trpc.mps.getAll,
-  trpc.mps.getAllNotArchived,
+  trpc.mps.getAllNotEnded,
   trpc.mps.getById,
 
   // MAG
@@ -253,20 +232,21 @@ export const associatedMpRoutes: any[] = [
 
   // Packages
   trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
   trpc.packages.getById,
 
   // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
-  trpc.requests.getAllMetadata,
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEnded,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

@@ -93,7 +93,7 @@ export const seededDataModel = {
       TableFacets: [],
       GlobalSecondaryIndexes: [
         {
-          IndexName: "GSI1",
+          IndexName: "GSI2",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityOwner",
@@ -109,7 +109,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI2",
+          IndexName: "GSI1",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "sK",
@@ -125,7 +125,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI3",
+          IndexName: "GSI2",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",
@@ -141,7 +141,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI4",
+          IndexName: "GSI3",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",
@@ -157,7 +157,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI5",
+          IndexName: "GSI4",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",
