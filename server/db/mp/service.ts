@@ -207,19 +207,37 @@ export class MpService {
     try {
       const validated = endPersonDetailsSchema.parse(input);
       const records = await this.mpRepository.getById(validated.personId, user);
-      const meta = this.transformDbMpToSharedMetaData(records)[0];
-      if (!meta) throw new Error("MP record not found");
-      const { id, trainingRecords, packages, ...rest } = meta as any;
+      const transformedMp = this.transformDbMpToSharedMetaData(records)[0];
+      if (!transformedMp) throw new Error("MP record not found");
+      const { id, trainingRecords, packages, ...rest } = transformedMp as any;
       const dbMp: DbMpEntity = addDbMiddleware(
         {
           ...rest,
           pK: id,
           sK: id,
           entityType: "mp",
+          endDate: validated.endDate,
         },
         user
       );
-      await this.mpRepository.update(dbMp, user);
+      const mpUpdate = this.mpRepository.update(dbMp, user);
+
+      const trUpdates = (trainingRecords ?? []).map((tr: any) =>
+        this.trainingRecordService.end(user, {
+          ownerId: tr.ownerId,
+          recordId: tr.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      const pkgUpdates = (packages ?? []).map((pkg: any) =>
+        this.packageService.endPackage(user, {
+          packageId: pkg.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      await Promise.all([mpUpdate, ...trUpdates, ...pkgUpdates]);
     } catch (error) {
       console.error("Service Layer Error ending MP:", error);
       throw error;

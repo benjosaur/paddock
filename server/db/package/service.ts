@@ -3,6 +3,7 @@ import {
   coverDetailsSchema,
   Package,
   packageSchema,
+  EndPackageDetails,
 } from "shared";
 import { PackageRepository } from "./repository";
 import { DbPackage } from "./schema";
@@ -229,6 +230,42 @@ export class PackageService {
       return numDeleted[0];
     } catch (error) {
       console.error("Service Layer Error deleting package:", error);
+      throw error;
+    }
+  }
+
+  async endPackage(user: User, endDetails: EndPackageDetails): Promise<void> {
+    try {
+      const packageRecords = await this.packageRepository.getById(
+        endDetails.packageId,
+        user
+      );
+
+      if (!packageRecords.length) return;
+
+      const packageSuffix = endDetails.endDate.slice(0, 4);
+
+      const updatedRecords = packageRecords.map((record) => {
+        const currentEnd = record.endDate as string;
+        const shouldUpdate =
+          currentEnd === "open" ||
+          new Date(endDetails.endDate) < new Date(currentEnd);
+
+        return addDbMiddleware(
+          {
+            ...record,
+            entityType: shouldUpdate
+              ? `package#${packageSuffix}`
+              : record.entityType,
+            endDate: shouldUpdate ? endDetails.endDate : currentEnd,
+          },
+          user
+        );
+      });
+
+      await this.packageRepository.update(updatedRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error ending package:", error);
       throw error;
     }
   }

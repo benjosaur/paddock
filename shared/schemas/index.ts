@@ -15,6 +15,7 @@ export const trainingRecordSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   expiryDate: z.union([z.string().date(), z.literal("")]).default(""),
+  endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
     recordName: z.string().default(""),

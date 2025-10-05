@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { packageSchema } from "shared/schemas/index";
 import { coverDetailsSchema } from "shared/schemas/convenience";
+import { endPackageDetailsSchema } from "shared";
 export const packagesRouter = router({
   getAll: createProtectedProcedure("packages", "read").query(
     async ({ ctx }) => {
@@ -74,5 +75,10 @@ export const packagesRouter = router({
     .input(packageSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.packages.delete(ctx.user, input.id);
+    }),
+  end: createProtectedProcedure("packages", "update")
+    .input(endPackageDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.packages.endPackage(ctx.user, input);
     }),
 });

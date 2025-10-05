@@ -282,10 +282,28 @@ export class VolunteerService {
           pK: id,
           sK: id,
           entityType: "volunteer",
+          endDate: validated.endDate,
         },
         user
       );
-      await this.volunteerRepository.update(dbVolunteer, user);
+      const vUpdate = this.volunteerRepository.update(dbVolunteer, user);
+
+      const trUpdates = (trainingRecords ?? []).map((tr: any) =>
+        this.trainingRecordService.end(user, {
+          ownerId: tr.ownerId,
+          recordId: tr.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      const pkgUpdates = (packages ?? []).map((pkg: any) =>
+        this.packageService.endPackage(user, {
+          packageId: pkg.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      await Promise.all([vUpdate, ...trUpdates, ...pkgUpdates]);
     } catch (error) {
       console.error("Service Layer Error ending volunteer:", error);
       throw error;

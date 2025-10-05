@@ -31,6 +31,17 @@ export const endPersonDetailsSchema = z.object({
   endDate: z.string().date(),
 });
 
+export const endPackageDetailsSchema = z.object({
+  packageId: z.string(),
+  endDate: z.string().date(),
+});
+
+export const endTrainingRecordDetailsSchema = z.object({
+  ownerId: z.string(),
+  recordId: z.string(),
+  endDate: z.string().date(),
+});
+
 export const analyticsDetailsSchema = z.object({
   startYear: z.number().min(2000).max(2100).default(new Date().getFullYear()),
   isInfo: z.boolean().default(false),
@@ -41,3 +52,7 @@ export type CoverDetails = z.infer<typeof coverDetailsSchema>;
 export type InfoDetails = z.infer<typeof infoDetailsSchema>;
 export type EndRequestDetails = z.infer<typeof endRequestDetailsSchema>;
 export type EndPersonDetails = z.infer<typeof endPersonDetailsSchema>;
+export type EndPackageDetails = z.infer<typeof endPackageDetailsSchema>;
+export type EndTrainingRecordDetails = z.infer<
+  typeof endTrainingRecordDetailsSchema
+>;

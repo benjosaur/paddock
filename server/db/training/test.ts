@@ -7,6 +7,7 @@ const trainingRecordService = new TrainingRecordService();
 const sampleTrainingRecord: Omit<TrainingRecord, "id"> = {
   ownerId: "mp#test-owner-123",
   expiryDate: "2025-12-31",
+  endDate: "open",
   details: {
     name: "Robert Branson",
     recordName: "First Aid Certification",
@@ -31,6 +32,7 @@ export async function testTrainingRecordService() {
       id: createdRecordId,
       ownerId: sampleTrainingRecord.ownerId,
       expiryDate: "2026-12-31",
+      endDate: "open",
       details: {
         name: "Robert Branson",
         recordName: "Updated First Aid Certification",
