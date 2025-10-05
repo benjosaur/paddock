@@ -404,9 +404,10 @@ export class ClientService {
         validated.personId,
         user
       );
-      const meta = this.transformDbClientToSharedMetaData(records)[0];
-      if (!meta) throw new Error("Client record not found");
-      const { id, requests, ...rest } = meta as any;
+      const transformedClient =
+        this.transformDbClientToSharedMetaData(records)[0];
+      if (!transformedClient) throw new Error("Client record not found");
+      const { id, requests, ...rest } = transformedClient;
       const dbClient: DbClientEntity = addDbMiddleware(
         {
           ...rest,
@@ -417,7 +418,17 @@ export class ClientService {
         },
         user
       );
-      await this.clientRepository.update(dbClient, user);
+      const clientUpdate = this.clientRepository.update(dbClient, user);
+
+      // end all reqs and pkgs
+
+      const reqUpdates = requests.map((req) =>
+        this.requestService.endRequestAndPackages(user, {
+          requestId: req.id,
+          endDate: validated.endDate,
+        })
+      );
+      await Promise.all([clientUpdate, ...reqUpdates]);
     } catch (error) {
       console.error("Service Layer Error ending client:", error);
       throw error;
