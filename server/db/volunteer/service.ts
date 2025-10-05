@@ -1,5 +1,4 @@
 import {
-  mpFullSchema,
   Package,
   VolunteerFull,
   volunteerFullSchema,

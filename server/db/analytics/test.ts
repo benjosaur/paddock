@@ -9,7 +9,8 @@ export async function testReportService() {
 
     console.log("1. Generating requests report...");
     const requestsReport = await reportService.generateRequestsReport(
-      sampleUser
+      sampleUser,
+      false
     );
     console.log("Generated requests report:", requestsReport);
 

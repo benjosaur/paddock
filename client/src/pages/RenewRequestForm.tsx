@@ -28,7 +28,6 @@ export function RenewRequestForm() {
     Omit<RequestMetadata, "id">
   >({
     clientId: "",
-    archived: "N",
     requestType: "paid",
     startDate: "",
     endDate: "open",
@@ -112,7 +111,6 @@ export function RenewRequestForm() {
 
       setNewRequestData({
         clientId: request.clientId,
-        archived: "N",
         requestType: request.requestType,
         startDate: currentDate,
         endDate: "open",

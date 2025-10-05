@@ -14,6 +14,8 @@ import {
 import { TrainingRecordForm } from "../pages/TrainingRecordForm";
 import { associatedVolunteerRoutes } from "./VolunteersRoutes";
 import { associatedMpRoutes } from "./MpsRoutes";
+import EndDialog from "../components/EndDialog";
+import type { EndTrainingRecordDetails } from "shared";
 
 export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
   {
@@ -50,6 +52,10 @@ export default function RecordsRoutes() {
   const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
   const queryClient = useQueryClient();
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndTrainingRecordDetails | null>(
+    null
+  );
 
   const recordsQuery = useQuery(
     showArchived
@@ -65,6 +71,19 @@ export default function RecordsRoutes() {
     trpc.trainingRecords.delete.mutationOptions({
       onSuccess: () => {
         // Invalidate training records queries and related routes
+        queryClient.invalidateQueries({ queryKey: recordsQueryKey });
+        [...associatedVolunteerRoutes, ...associatedMpRoutes].forEach(
+          (route) => {
+            queryClient.invalidateQueries({ queryKey: route.queryKey() });
+          }
+        );
+      },
+    })
+  );
+
+  const endRecordMutation = useMutation(
+    trpc.trainingRecords.end.mutationOptions({
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: recordsQueryKey });
         [...associatedVolunteerRoutes, ...associatedMpRoutes].forEach(
           (route) => {
@@ -93,6 +112,14 @@ export default function RecordsRoutes() {
 
   const handleDeleteRecord = (item: TrainingRecord) => {
     deleteRecordMutation.mutate({ id: item.id, ownerId: item.ownerId });
+  };
+
+  const handleEnd = (item: TrainingRecord) => {
+    // Only allow end from non-archived view; un-end is not supported for training records
+    if (item.endDate === "open") {
+      setEndDetails({ ownerId: item.ownerId, recordId: item.id, endDate: "" });
+      setIsEndDialogOpen(true);
+    }
   };
 
   if (recordsQuery.isLoading) return <div>Loading...</div>;
@@ -142,6 +169,7 @@ export default function RecordsRoutes() {
                   columns={mpRecordColumns}
                   onEditRecord={handleEditRecord}
                   onDeleteRecord={handleDeleteRecord}
+                  onEnd={!showArchived ? handleEnd : undefined}
                   resource="trainingRecords"
                 />
               </TabsContent>
@@ -155,10 +183,44 @@ export default function RecordsRoutes() {
                   columns={volunteerRecordColumns}
                   onEditRecord={handleEditRecord}
                   onDeleteRecord={handleDeleteRecord}
+                  onEnd={!showArchived ? handleEnd : undefined}
                   resource="trainingRecords"
                 />
               </TabsContent>
             </Tabs>
+            <EndDialog
+              isOpen={isEndDialogOpen}
+              onOpenChange={(open) => {
+                setIsEndDialogOpen(open);
+                if (!open) setEndDetails(null);
+              }}
+              entityLabel="Training Record"
+              endDate={endDetails?.endDate}
+              onEndDateChange={(date) =>
+                setEndDetails((prev) =>
+                  prev ? { ...prev, endDate: date } : prev
+                )
+              }
+              onConfirm={() => {
+                if (
+                  !endDetails?.ownerId ||
+                  !endDetails.recordId ||
+                  !endDetails.endDate
+                )
+                  return;
+                endRecordMutation.mutate(endDetails);
+                setIsEndDialogOpen(false);
+                setEndDetails(null);
+              }}
+              confirmDisabled={
+                !endDetails?.endDate ||
+                !endDetails?.ownerId ||
+                !endDetails?.recordId ||
+                endRecordMutation.isPending
+              }
+              endDescription="Select an end date. This will archive the training record."
+              undoDescription=""
+            />
           </div>
         }
       />

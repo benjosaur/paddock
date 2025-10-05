@@ -21,7 +21,6 @@ export function MagLogForm() {
 
   const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
-    archived: "N",
     clients: [],
     mps: [],
     volunteers: [],
@@ -37,7 +36,9 @@ export function MagLogForm() {
 
   const queryClient = useQueryClient();
 
-  const clientsQuery = useQuery(trpc.clients.getAllWithMagService.queryOptions());
+  const clientsQuery = useQuery(
+    trpc.clients.getAllWithMagService.queryOptions()
+  );
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 

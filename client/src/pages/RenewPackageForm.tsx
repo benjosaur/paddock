@@ -19,7 +19,6 @@ export function RenewPackageForm() {
   const [newPackageData, setNewPackageData] = useState<Omit<Package, "id">>({
     carerId: "",
     requestId: "",
-    archived: "N",
     startDate: "",
     endDate: "open",
     details: {
@@ -44,7 +43,9 @@ export function RenewPackageForm() {
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
+  const requestsQuery = useQuery(
+    trpc.requests.getAllMetadataWithoutInfo.queryOptions()
+  );
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),
@@ -99,7 +100,6 @@ export function RenewPackageForm() {
       setNewPackageData({
         carerId: packageQuery.data.carerId,
         requestId: packageQuery.data.requestId,
-        archived: "N",
         startDate: currentDate,
         endDate: "open",
         details: {

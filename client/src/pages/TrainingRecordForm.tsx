@@ -20,7 +20,7 @@ export function TrainingRecordForm() {
 
   const [formData, setFormData] = useState<Omit<TrainingRecord, "id">>({
     ownerId: "",
-    archived: "N",
+    endDate: "open",
     expiryDate: "",
     details: {
       name: "",
@@ -97,7 +97,7 @@ export function TrainingRecordForm() {
       const record = recordQuery.data;
       setFormData({
         ownerId: record.ownerId,
-        archived: record.archived,
+        endDate: record.endDate,
         expiryDate: record.expiryDate,
         details: record.details,
       });
@@ -264,6 +264,27 @@ export function TrainingRecordForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Additional Information
               </h3>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type={formData.endDate === "open" ? "text" : "date"}
+                  value={
+                    formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate || ""
+                  }
+                  onChange={handleInputChange}
+                  disabled
+                />
+              </div>
 
               <div>
                 <label

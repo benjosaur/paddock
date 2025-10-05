@@ -7,7 +7,6 @@ import {
 import { TrainingRecordRepository } from "./repository";
 import { DbTrainingRecord } from "./schema";
 import { addDbMiddleware } from "../service";
-import { z } from "zod";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
