@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { packageSchema } from "shared/schemas/index";
+import { packageSchema, solePackageSchema } from "shared/schemas/index";
 import { coverDetailsSchema } from "shared/schemas/convenience";
 import { endPackageDetailsSchema } from "shared";
 export const packagesRouter = router({
@@ -37,6 +37,11 @@ export const packagesRouter = router({
     .input(packageSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.packages.create(input, ctx.user);
+    }),
+  createSole: createProtectedProcedure("packages", "create")
+    .input(solePackageSchema.omit({ id: true }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.packages.createSole(input, ctx.user);
     }),
   update: createProtectedProcedure("packages", "update")
     .input(packageSchema)

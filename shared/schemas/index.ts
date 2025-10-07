@@ -7,9 +7,11 @@ import {
   requestStatus,
   requestTypes,
   serviceOptions,
+  soleServiceOptions,
   userRoles,
   volunteerRoles,
 } from "../const";
+import { no } from "zod/v4/locales";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),
@@ -69,6 +71,21 @@ export const packageSchema = z.object({
     services: z.array(z.enum(serviceOptions)).default([]),
   }),
 });
+
+export const solePackageSchema = packageSchema
+  .pick({
+    id: true,
+    carerId: true,
+    startDate: true,
+    endDate: true,
+  })
+  .extend({
+    details: packageSchema.shape.details
+      .omit({ address: true, services: true })
+      .extend({
+        services: z.array(z.enum(soleServiceOptions)),
+      }),
+  });
 
 export const requestMetadataSchema = z.object({
   id: z.string(),
@@ -317,6 +334,7 @@ export type VolunteerMetadata = z.infer<typeof volunteerMetadataSchema>;
 export type VolunteerFull = z.infer<typeof volunteerFullSchema>;
 export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
+export type SolePackage = z.infer<typeof solePackageSchema>;
 export type Package = z.infer<typeof packageSchema>;
 export type MagLog = z.infer<typeof magLogSchema>;
 export type RequestMetadata = z.infer<typeof requestMetadataSchema>;

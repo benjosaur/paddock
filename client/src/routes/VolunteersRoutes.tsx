@@ -106,6 +106,11 @@ export function VolunteersRoutes() {
     navigate(`/volunteers/edit/${encodedId}`);
   };
 
+  const handleAddSolePackage = (volunteerId: string) => {
+    const encodedVolunteerId = encodeURIComponent(volunteerId);
+    navigate(`/packages/sole/create?volunteerId=${encodedVolunteerId}`);
+  };
+
   const handleViewVolunteer = (id: string) => {
     setSelectedVolunteerId(id);
     setIsVolunteerModalOpen(true);
@@ -168,6 +173,7 @@ export function VolunteersRoutes() {
               searchPlaceholder="Search volunteers..."
               data={volunteersQuery.data || []}
               columns={volunteerColumns}
+              onAddPackage={handleAddSolePackage}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}

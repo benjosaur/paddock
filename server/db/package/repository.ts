@@ -1,4 +1,4 @@
-import { DbPackage, dbPackage } from "./schema";
+import { DbPackage, dbPackage, DbSolePackage } from "./schema";
 import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
@@ -113,7 +113,7 @@ export class PackageRepository {
   }
 
   async create(
-    newPackages: Omit<DbPackage, "sK">[],
+    newPackages: Omit<DbPackage | DbSolePackage, "sK">[],
     user: User
   ): Promise<string> {
     const uuid = uuidv4();
@@ -140,7 +140,10 @@ export class PackageRepository {
       throw error;
     }
   }
-  async update(updatedPackages: DbPackage[], user: User): Promise<void> {
+  async update(
+    updatedPackages: (DbPackage | DbSolePackage)[],
+    user: User
+  ): Promise<void> {
     const validatedLogs = dbPackage.array().parse(updatedPackages);
     try {
       await Promise.all(

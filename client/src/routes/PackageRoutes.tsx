@@ -10,6 +10,7 @@ import { trpc } from "../utils/trpc";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CoverPackageForm } from "@/pages/CoverPackageForm";
+import { SolePackageForm } from "@/pages/SolePackageForm";
 
 export const packageColumns: TableColumn<Package>[] = [
   {
@@ -179,6 +180,7 @@ export default function PackageRoutes() {
         <Route path="cover/:id" element={<CoverPackageForm />} />
         <Route path="edit/:id" element={<PackageForm />} />
         <Route path="renew/:id" element={<RenewPackageForm />} />
+        <Route path="sole/create" element={<SolePackageForm />} />
       </Routes>
       {selectedRequestId && (
         <RequestDetailModal

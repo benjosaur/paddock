@@ -4,9 +4,11 @@ import {
   Package,
   packageSchema,
   EndPackageDetails,
+  solePackageSchema,
+  SolePackage,
 } from "shared";
 import { PackageRepository } from "./repository";
-import { DbPackage } from "./schema";
+import { DbPackage, DbSolePackage } from "./schema";
 import { firstYear } from "shared/const";
 import { addDbMiddleware } from "../service";
 
@@ -125,12 +127,62 @@ export class PackageService {
     }
   }
 
+  async createSole(
+    newSolePackage: Omit<SolePackage, "id">,
+    user: User
+  ): Promise<string> {
+    try {
+      const validatedInput = solePackageSchema
+        .omit({ id: true })
+        .parse(newSolePackage);
+      const { carerId, ...rest } = validatedInput;
+      const packageSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
+      const packageToCreate: Omit<DbSolePackage, "sK"> = addDbMiddleware(
+        {
+          pK: carerId,
+          entityType: `package#${packageSuffix}`,
+          ...rest,
+        },
+        user
+      );
+      const createdPackageId = await this.packageRepository.create(
+        [packageToCreate],
+        user
+      );
+      return createdPackageId;
+    } catch (error) {
+      console.error("Service Layer Error creating packages:", error);
+      throw error;
+    }
+  }
+
   async update(updatedPackage: Package, user: User): Promise<void> {
     try {
       const validatedInput = packageSchema.parse(updatedPackage);
       const { id, carerId, ...rest } = validatedInput;
       const packageSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
       const dbPackage: DbPackage = addDbMiddleware(
+        {
+          pK: carerId,
+          sK: id,
+          entityType: `package#${packageSuffix}`,
+          ...rest,
+        },
+        user
+      );
+      await this.packageRepository.update([dbPackage], user);
+    } catch (error) {
+      console.error("Service Layer Error updating packages:", error);
+      throw error;
+    }
+  }
+
+  async updateSole(updatedPackage: SolePackage, user: User): Promise<void> {
+    try {
+      const validatedInput = solePackageSchema.parse(updatedPackage);
+      const { id, carerId, ...rest } = validatedInput;
+      const packageSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
+      const dbPackage: DbSolePackage = addDbMiddleware(
         {
           pK: carerId,
           sK: id,

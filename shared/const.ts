@@ -35,7 +35,13 @@ export const serviceOptions = [
   "Other",
 ] as const;
 export type ServiceOption = (typeof serviceOptions)[number];
-
+export const soleServiceOptions = [
+  "MAG",
+  "Hub and Grub",
+  "Trustee",
+  "Finance",
+  "Technical",
+] as const;
 export const trainingRecordTypes = [
   "First Aid",
   "Professional Boundaries",
