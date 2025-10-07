@@ -5,13 +5,13 @@ import { EdgeFunctionStack } from "../lib/edge";
 
 const app = new cdk.App();
 
-const edgeStack = new EdgeFunctionStack(app, "EdgeFunctionStack", {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: "us-east-1", // Lambda@Edge must be in us-east-1
-  },
-  crossRegionReferences: true,
-});
+// const edgeStack = new EdgeFunctionStack(app, "EdgeFunctionStack", {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: "us-east-1", // Lambda@Edge must be in us-east-1
+//   },
+//   crossRegionReferences: true,
+// });
 
 const mainStack = new InfraStack(app, "PaddockStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
@@ -24,11 +24,11 @@ const mainStack = new InfraStack(app, "PaddockStack", {
     region: process.env.CDK_DEFAULT_REGION,
   },
   crossRegionReferences: true,
-  edgeFunctionVersion: edgeStack.edgeFunctionVersion,
+  // edgeFunctionVersion: edgeStack.edgeFunctionVersion,
 });
 /* Uncomment the next line if you know exactly what Account and Region you
  * want to deploy the stack to. */
 // env: { account: '123456789012', region: 'us-east-1' },
 /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 
-mainStack.addDependency(edgeStack);
+// mainStack.addDependency(edgeStack);

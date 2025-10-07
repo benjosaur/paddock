@@ -116,6 +116,10 @@ export function RequestDetailModal({
                 request.endDate === "open" ? "Ongoing" : request.endDate
               )}
               {renderDetailItem("Status", request.details.status)}
+              {renderDetailItem(
+                "One Off Hours",
+                request.details.oneOffStartDateHours
+              )}
               {renderDetailItem("Weekly Hours", request.details.weeklyHours)}
 
               <div className="mt-4">

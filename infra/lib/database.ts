@@ -85,5 +85,18 @@ export class Database extends Construct {
       },
       projectionType: ProjectionType.ALL,
     });
+
+    this.table.addGlobalSecondaryIndex({
+      indexName: "GSI5",
+      partitionKey: {
+        name: "entityType",
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: "expiryDate",
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
   }
 }

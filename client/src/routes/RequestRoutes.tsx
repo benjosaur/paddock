@@ -38,6 +38,19 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
   },
   {
+    key: "oneOffStartDateHours",
+    header: "One Off Hours",
+    render: (item) => item.details.oneOffStartDateHours,
+  },
+  {
+    key: "oneOffServicedHours",
+    header: "One Off Serviced",
+    render: (item) =>
+      item.packages
+        .map((pkg) => pkg.details.oneOffStartDateHours)
+        .reduce((a, b) => a + b, 0),
+  },
+  {
     key: "weeklyHours",
     header: "Weekly Hours",
     render: (item) => item.details.weeklyHours,

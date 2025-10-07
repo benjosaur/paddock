@@ -11,7 +11,7 @@ import { Database } from "./database";
 import { ImageService } from "./images";
 
 interface MainStackProps extends cdk.StackProps {
-  edgeFunctionVersion: lambda.IVersion;
+  // edgeFunctionVersion: lambda.IVersion;
 }
 
 export class InfraStack extends cdk.Stack {
@@ -243,14 +243,14 @@ export class InfraStack extends cdk.Stack {
     });
 
     // Image Upload Service
-    const imageService = new ImageService(this, "ImageService", {
-      account: this.account,
-      region: this.region,
-      domains: [`https://${domainName}`, `https://${subdomainName}`],
-      s3CorsRule,
-      ALLOWED_GROUPS: ["Admin", "Coordinator"],
-      edgeFunctionVersion: props.edgeFunctionVersion,
-    });
+    // const imageService = new ImageService(this, "ImageService", {
+    //   account: this.account,
+    //   region: this.region,
+    //   domains: [`https://${domainName}`, `https://${subdomainName}`],
+    //   s3CorsRule,
+    //   ALLOWED_GROUPS: ["Admin", "Coordinator"],
+    //   edgeFunctionVersion: props.edgeFunctionVersion,
+    // });
 
     // FE deployment
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
@@ -290,14 +290,14 @@ export class InfraStack extends cdk.Stack {
       description: "Endpoint for Hosted Cognito UI",
     });
 
-    new cdk.CfnOutput(this, "ImageApiUrl", {
-      value: imageService.api.url,
-      description: "Image Upload API URL",
-    });
+    // new cdk.CfnOutput(this, "ImageApiUrl", {
+    //   value: imageService.api.url,
+    //   description: "Image Upload API URL",
+    // });
 
-    new cdk.CfnOutput(this, "ImageCdnUrl", {
-      value: imageService.distribution.distributionDomainName,
-      description: "Image CDN URL",
-    });
+    // new cdk.CfnOutput(this, "ImageCdnUrl", {
+    //   value: imageService.distribution.distributionDomainName,
+    //   description: "Image CDN URL",
+    // });
   }
 }
