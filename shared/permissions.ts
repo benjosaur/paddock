@@ -48,7 +48,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: false, update: false, delete: false },
     packages: { read: true, create: false, update: false, delete: false },
     mag: { read: true, create: false, update: false, delete: false },
-    requests: { read: true, create: false, update: true, delete: false },
+    requests: { read: true, create: false, update: false, delete: false },
     trainingRecords: {
       read: true,
       create: false,
