@@ -19,7 +19,7 @@ export const handler = awsLambdaRequestHandler({
   },
 });
 
-// ESBUILD_DEPLOY_STOP
+// ESBUILD_DEPLOY_STOP;
 
 import cors from "cors";
 import express from "express";

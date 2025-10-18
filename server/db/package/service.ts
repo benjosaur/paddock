@@ -10,7 +10,7 @@ import {
   ReqPackage,
 } from "shared";
 import { PackageRepository } from "./repository";
-import { DbPackage, DbReqPackage, DbSolePackage } from "./schema";
+import { DbPackage, DbSolePackage } from "./schema";
 import { firstYear } from "shared/const";
 import { addDbMiddleware } from "../service";
 import { z } from "zod";

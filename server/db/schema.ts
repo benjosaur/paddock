@@ -22,7 +22,7 @@ export type DbEntry = z.infer<typeof dbEntrySchema>;
 //    Source: v# v# Dupes: v# vlog#, v# tr#
 
 export const seededDataModel = {
-  ModelName: "WiveyCares",
+  ModelName: "WiveyCares2",
   ModelMetadata: {
     Author: "",
     DateCreated: "Jun 14, 2025, 02:29 PM",
@@ -33,7 +33,7 @@ export const seededDataModel = {
   },
   DataModel: [
     {
-      TableName: "WiveyCares",
+      TableName: "WiveyCares2",
       KeyAttributes: {
         PartitionKey: {
           AttributeName: "pK",

@@ -18,7 +18,7 @@ export class Database extends Construct {
   constructor(scope: Construct, id: string, props: DatabaseProps) {
     super(scope, id);
 
-    this.table = new Table(this, "WiveyCaresTable", {
+    this.table = new Table(this, "WiveyCaresTable2", {
       tableName: props.tableName,
       partitionKey: {
         name: "pK",

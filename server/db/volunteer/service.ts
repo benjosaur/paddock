@@ -14,7 +14,7 @@ import {
 import { TrainingRecordService } from "../training/service";
 import { TrainingRecordRepository } from "../training/repository";
 import { DbTrainingRecord } from "../training/schema";
-import { DbPackage, DbReqPackage, DbSolePackage } from "../package/schema";
+import { DbReqPackage, DbSolePackage } from "../package/schema";
 import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
@@ -275,7 +275,10 @@ export class VolunteerService {
         continue;
       } else if (item.sK.startsWith("mag")) {
         continue;
-      } else throw new Error(`Undefined Case: ${item}`);
+      } else {
+        console.dir(`Undefined Case: ${item}`, { depth: null });
+        throw new Error(`Undefined Case: ${item}`);
+      }
     }
 
     return Array.from(volunteersMap.values()) as VolunteerMetadata[];

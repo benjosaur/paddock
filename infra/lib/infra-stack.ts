@@ -211,12 +211,12 @@ export class InfraStack extends cdk.Stack {
     });
 
     //databases
-    const prodDatabase = new Database(this, "WiveyCaresTable", {
-      tableName: "WiveyCares",
+    const prodDatabase = new Database(this, "WiveyCaresTable2", {
+      tableName: "WiveyCares2",
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
-    const testDatabase = new Database(this, "TestTable", {
-      tableName: "Test",
+    const testDatabase = new Database(this, "TestTable2", {
+      tableName: "Test2",
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 

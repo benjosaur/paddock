@@ -10,7 +10,7 @@ import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { PackageService } from "../package/service";
 import { TrainingRecordService } from "../training/service";
-import { DbPackage, DbReqPackage } from "../package/schema";
+import { DbReqPackage } from "../package/schema";
 import { TrainingRecordRepository } from "../training/repository";
 import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";

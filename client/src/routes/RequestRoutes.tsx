@@ -81,6 +81,45 @@ export const requestColumns: TableColumn<RequestFull>[] = [
   },
 ];
 
+export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
+  [
+    {
+      key: "clientCustomId",
+      header: "Client Custom Id",
+      render: (item) => item.details.customId,
+    },
+    {
+      key: "clientName",
+      header: "Client Name",
+      render: (item) => item.details.name,
+    },
+    {
+      key: "requestType",
+      header: "Type",
+      render: (item) => item.requestType,
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      render: (item) => item.startDate,
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
+    },
+    {
+      key: "oneOffStartDateHours",
+      header: "One Off Hours",
+      render: (item) => item.details.oneOffStartDateHours,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (item) => item.details.status,
+    },
+  ];
+
 export default function RequestRoutes() {
   const navigate = useNavigate();
   const [showEnded, setShowEnded] = useState(false);
@@ -100,10 +139,12 @@ export default function RequestRoutes() {
       : trpc.requests.getAllWithoutInfoNotEndedYetWithPackages.queryOptions()
   );
 
-  const requests = requestsQuery.data || [];
-  const infoRequests = requests.filter((r) =>
-    r.details.services?.includes("Information")
+  const infoRequestsQuery = useQuery(
+    trpc.requests.getAllInfoMetadata.queryOptions()
   );
+
+  const requests = requestsQuery.data || [];
+  const infoRequests = infoRequestsQuery.data || [];
   const otherRequests = requests.filter(
     (r) => !r.details.services?.includes("Information")
   );
@@ -151,7 +192,7 @@ export default function RequestRoutes() {
     setIsModalOpen(true);
   };
 
-  const handleEnd = (item: RequestFull) => {
+  const handleEnd = (item: RequestFull | Omit<RequestFull, "packages">) => {
     const id = item.id;
     setEndRequestDetails({ requestId: id, endDate: "" });
     setIsEndDialogOpen(true);
@@ -223,7 +264,7 @@ export default function RequestRoutes() {
                   title="Requests"
                   searchPlaceholder="Search requests..."
                   data={infoRequests}
-                  columns={requestColumns}
+                  columns={infoRequestColumns}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddPackage={handleAddPackage}
