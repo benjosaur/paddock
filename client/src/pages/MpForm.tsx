@@ -38,6 +38,7 @@ export function MpForm() {
       attendsMag: false,
       publicLiabilityNumber: "",
       dbsNumber: "",
+      startDate: "",
       notes: [],
     },
     trainingRecords: [],
@@ -399,6 +400,22 @@ export function MpForm() {
                   type="date"
                   name="publicLiabilityExpiry"
                   value={formData.publicLiabilityExpiry || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Start Date
+                </label>
+                <Input
+                  id="startDate"
+                  name="details.startDate"
+                  type="date"
+                  value={formData.details.startDate || ""}
                   onChange={handleInputChange}
                 />
               </div>

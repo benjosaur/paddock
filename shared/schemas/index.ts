@@ -211,6 +211,7 @@ export const mpMetadataSchema = z.object({
     capacity: z.string().default(""),
     dbsNumber: z.string().default(""),
     publicLiabilityNumber: z.string().default(""),
+    startDate: z.union([z.string().date(), z.literal("")]).default(""),
   }),
   packages: z.array(packageSchema).default([]),
 });
@@ -228,6 +229,7 @@ export const volunteerMetadataSchema = mpMetadataSchema
       capacity: z.string().default(""),
       dbsNumber: z.string().default(""),
       publicLiabilityNumber: z.string().default(""),
+      startDate: z.union([z.string().date(), z.literal("")]).default(""),
       role: z.enum(volunteerRoles).default("Volunteer"),
     }),
   });

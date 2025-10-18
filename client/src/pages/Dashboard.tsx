@@ -603,27 +603,22 @@ export function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatedCounter
               targetValue={totalActiveClients}
-              label="Total Active Clients"
+              label="Clients with Active Requests"
             />
 
             <AnimatedCounter
               targetValue={totalActiveMps}
-              label="Total Active MPs"
+              label="MPs with Active Packages"
             />
 
             <AnimatedCounter
               targetValue={totalActiveVolunteers}
-              label="Total Active Volunteers"
+              label="Volunteers with Active Packages"
             />
 
             <AnimatedCounter
               targetValue={analyticsPackages.totalHours}
-              label="Total Active Care Hours"
-            />
-
-            <AnimatedCounter
-              targetValue={analyticsRequests.totalHours}
-              label="Total Active Request Hours"
+              label="Regular Weekly Care Hours"
             />
           </div>
         </TabsContent>
