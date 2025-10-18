@@ -1,12 +1,12 @@
-import { runAll } from "./db/test";
+// import { runAll } from "./db/test";
 
 const subcommand = process.argv[2];
 
 async function main() {
   switch (subcommand) {
-    case "test":
-      await runAll();
-      break;
+    // case "test":
+    //   await runAll();
+    //   break;
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
       process.exit(1);

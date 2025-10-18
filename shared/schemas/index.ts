@@ -40,7 +40,8 @@ const addressSchema = z.object({
   postCode: z
     .string()
     .min(1, "Post code is required")
-    .transform((val) => val.toUpperCase()),
+    .transform((val) => val.toUpperCase())
+    .default(""),
 });
 
 const addressSchemaWithDeprivation = addressSchema.extend({
