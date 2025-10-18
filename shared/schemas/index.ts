@@ -34,11 +34,10 @@ export const viewConfigSchema = z.object({
 
 const addressSchema = z.object({
   streetAddress: z.string().default(""),
-  locality: z.enum(localities).default("Wiveliscombe"),
+  locality: z.enum(localities).default("Unknown"),
   county: z.string().default("Somerset"),
   postCode: z
     .string()
-    .min(1, "Post code is required")
     .transform((val) => val.toUpperCase())
     .default(""),
 });
@@ -168,7 +167,9 @@ const basePersonDetails = z.object({
 
 export const clientMetadataSchema = z.object({
   id: z.string(),
-  dateOfBirth: z.string().date(),
+  dateOfBirth: z
+    .union([z.string().date(), z.literal("Unknown")])
+    .default("Unknown"),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: basePersonDetails.omit({ address: true }).extend({
     customId: z.string().default(""),
