@@ -11,7 +11,6 @@ import {
   userRoles,
   volunteerRoles,
 } from "../const";
-import { no } from "zod/v4/locales";
 
 export const trainingRecordSchema = z.object({
   id: z.string(),

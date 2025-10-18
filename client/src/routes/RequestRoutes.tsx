@@ -10,6 +10,12 @@ import type { RequestFull, TableColumn } from "../types";
 import type { EndRequestDetails } from "shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../components/ui/tabs";
 
 export const requestColumns: TableColumn<RequestFull>[] = [
   {
@@ -95,6 +101,12 @@ export default function RequestRoutes() {
   );
 
   const requests = requestsQuery.data || [];
+  const infoRequests = requests.filter((r) =>
+    r.details.services?.includes("Information")
+  );
+  const otherRequests = requests.filter(
+    (r) => !r.details.services?.includes("Information")
+  );
 
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
@@ -171,31 +183,68 @@ export default function RequestRoutes() {
         <Route
           index
           element={
-            <DataTable
-              key={`requests-${showEnded ? "ended" : "active"}`}
-              title="Requests"
-              searchPlaceholder="Search requests..."
-              data={requests}
-              columns={requestColumns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onAddPackage={handleAddPackage}
-              onRenew={handleRenew}
-              onEnd={handleEnd}
-              onCreate={handleAddNew}
-              onViewItem={handleView}
-              resource="requests"
-              customActions={
-                <Button
-                  variant={showEnded ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleViewToggle}
-                  className="shadow-sm"
-                >
-                  {getButtonText()}
-                </Button>
-              }
-            />
+            <Tabs defaultValue="care" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="care">Care</TabsTrigger>
+                <TabsTrigger value="info">Information</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="care" className="mt-0">
+                <DataTable
+                  key={`requests-care-${showEnded ? "ended" : "active"}`}
+                  title="Requests"
+                  searchPlaceholder="Search requests..."
+                  data={otherRequests}
+                  columns={requestColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onAddPackage={handleAddPackage}
+                  onRenew={handleRenew}
+                  onEnd={handleEnd}
+                  onCreate={handleAddNew}
+                  onViewItem={handleView}
+                  resource="requests"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+
+              <TabsContent value="info" className="mt-0">
+                <DataTable
+                  key={`requests-info-${showEnded ? "ended" : "active"}`}
+                  title="Requests"
+                  searchPlaceholder="Search requests..."
+                  data={infoRequests}
+                  columns={requestColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onAddPackage={handleAddPackage}
+                  onRenew={handleRenew}
+                  onEnd={handleEnd}
+                  onCreate={handleAddNew}
+                  onViewItem={handleView}
+                  resource="requests"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+            </Tabs>
           }
         />
         <Route path="create" element={<RequestForm />} />
