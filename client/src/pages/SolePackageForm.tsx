@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 import type { SolePackage } from "../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
@@ -14,11 +15,28 @@ import { associatedPackageRoutes } from "../routes/PackageRoutes";
 export function SolePackageForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const volunteerId = searchParams.get("volunteerId") || "";
+  const volunteerIdParam = searchParams.get("volunteerId") || "";
+  const packageId = searchParams.get("id") || "";
+  const isEditing = Boolean(packageId);
   const queryClient = useQueryClient();
 
+  const packageQuery = useQuery({
+    ...trpc.packages.getById.queryOptions({ id: packageId }),
+    enabled: isEditing,
+  });
+
+  // derive volunteerId: from package when editing, else from search param
+  const derivedVolunteerId = isEditing
+    ? (packageQuery.data as SolePackage | undefined)?.carerId || ""
+    : volunteerIdParam;
+
+  const volunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id: derivedVolunteerId }),
+    enabled: !!derivedVolunteerId,
+  });
+
   const [formData, setFormData] = useState<Omit<SolePackage, "id">>({
-    carerId: volunteerId,
+    carerId: volunteerIdParam,
     startDate: "",
     endDate: "open",
     details: {
@@ -30,8 +48,40 @@ export function SolePackageForm() {
     },
   });
 
+  useEffect(() => {
+    if (volunteerQuery.data?.details?.name) {
+      setFormData((prev) =>
+        prev.details.name
+          ? prev
+          : updateNestedValue(
+              "details.name",
+              volunteerQuery.data!.details.name,
+              prev
+            )
+      );
+    }
+  }, [volunteerQuery.data?.details?.name]);
+
+  useEffect(() => {
+    if (isEditing && packageQuery.data) {
+      const { id: _id, ...rest } = packageQuery.data as SolePackage;
+      setFormData(rest as Omit<SolePackage, "id">);
+    }
+  }, [isEditing, packageQuery.data]);
+
   const createSolePackage = useMutation(
     trpc.packages.createSole.mutationOptions({
+      onSuccess: () => {
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+        navigate("/packages");
+      },
+    })
+  );
+
+  const updatePackage = useMutation(
+    trpc.packages.update.mutationOptions({
       onSuccess: () => {
         associatedPackageRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
@@ -72,10 +122,22 @@ export function SolePackageForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.carerId) return;
-    createSolePackage.mutate(formData);
+    if (isEditing) {
+      updatePackage.mutate({
+        ...(formData as Omit<SolePackage, "id">),
+        id: packageId,
+      } as SolePackage);
+    } else {
+      createSolePackage.mutate(formData);
+    }
   };
 
-  if (!volunteerId)
+  if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
+  if (isEditing && packageQuery.error)
+    return <div>Error loading sole package</div>;
+
+  // keep create-mode validation when no volunteer id was provided
+  if (!isEditing && !derivedVolunteerId)
     return (
       <div className="p-6">
         <div className="text-red-600">Missing volunteerId in query string.</div>
@@ -91,7 +153,7 @@ export function SolePackageForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create Sole Package
+          {isEditing ? "Edit Sole Package" : "Create Sole Package"}
         </h1>
       </div>
 
@@ -114,6 +176,22 @@ export function SolePackageForm() {
                   id="carerId"
                   name="carerId"
                   value={formData.carerId}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="details.name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Carer Name
+                </label>
+                <Input
+                  id="details.name"
+                  name="details.name"
+                  value={formData.details.name}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -165,22 +243,6 @@ export function SolePackageForm() {
               <h3 className="text-lg font-semibold text-gray-700">
                 Package Details
               </h3>
-
-              <div>
-                <label
-                  htmlFor="details.name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Name *
-                </label>
-                <Input
-                  id="details.name"
-                  name="details.name"
-                  value={formData.details.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
 
               <div>
                 <label
@@ -273,8 +335,15 @@ export function SolePackageForm() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createSolePackage.isPending}>
-              Create
+            <Button
+              type="submit"
+              disabled={
+                isEditing
+                  ? updatePackage.isPending
+                  : createSolePackage.isPending
+              }
+            >
+              {isEditing ? "Update" : "Create"}
             </Button>
           </div>
         </form>

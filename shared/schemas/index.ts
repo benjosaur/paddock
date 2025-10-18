@@ -55,7 +55,7 @@ const addressSchemaWithDeprivation = addressSchema.extend({
     }),
 });
 
-export const packageSchema = z.object({
+export const reqPackageSchema = z.object({
   id: z.string(),
   carerId: z.string(),
   requestId: z.string(),
@@ -72,7 +72,7 @@ export const packageSchema = z.object({
   }),
 });
 
-export const solePackageSchema = packageSchema
+export const solePackageSchema = reqPackageSchema
   .pick({
     id: true,
     carerId: true,
@@ -80,12 +80,14 @@ export const solePackageSchema = packageSchema
     endDate: true,
   })
   .extend({
-    details: packageSchema.shape.details
+    details: reqPackageSchema.shape.details
       .omit({ address: true, services: true })
       .extend({
         services: z.array(z.enum(soleServiceOptions)),
       }),
   });
+
+export const packageSchema = z.union([reqPackageSchema, solePackageSchema]);
 
 export const requestMetadataSchema = z.object({
   id: z.string(),
@@ -232,6 +234,9 @@ export const volunteerMetadataSchema = mpMetadataSchema
 export const volunteerFullSchema = volunteerMetadataSchema
   .omit({ packages: true })
   .extend({
+    solePackages: z.array(solePackageSchema).default([]),
+  })
+  .extend({
     requests: z.array(requestFullSchema).default([]),
   });
 
@@ -335,7 +340,8 @@ export type VolunteerFull = z.infer<typeof volunteerFullSchema>;
 export type ClientMetadata = z.infer<typeof clientMetadataSchema>;
 export type ClientFull = z.infer<typeof clientFullSchema>;
 export type SolePackage = z.infer<typeof solePackageSchema>;
-export type Package = z.infer<typeof packageSchema>;
+export type ReqPackage = z.infer<typeof reqPackageSchema>;
+export type Package = SolePackage | ReqPackage;
 export type MagLog = z.infer<typeof magLogSchema>;
 export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
 export type RequestFull = z.infer<typeof requestFullSchema>;

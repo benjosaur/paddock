@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { packageSchema, solePackageSchema } from "shared/schemas/index";
+import {
+  packageSchema,
+  reqPackageSchema,
+  solePackageSchema,
+} from "shared/schemas/index";
 import { coverDetailsSchema } from "shared/schemas/convenience";
 import { endPackageDetailsSchema } from "shared";
 export const packagesRouter = router({
@@ -29,12 +33,17 @@ export const packagesRouter = router({
     }
   ),
   getById: createProtectedProcedure("packages", "read")
-    .input(packageSchema.pick({ id: true }))
+    .input(
+      z.union([
+        reqPackageSchema.pick({ id: true }),
+        solePackageSchema.pick({ id: true }),
+      ])
+    )
     .query(async ({ ctx, input }) => {
       return await ctx.services.packages.getById(input.id, ctx.user);
     }),
   create: createProtectedProcedure("packages", "create")
-    .input(packageSchema.omit({ id: true }))
+    .input(reqPackageSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.packages.create(input, ctx.user);
     }),
@@ -51,8 +60,11 @@ export const packagesRouter = router({
   renew: createProtectedProcedure("packages", "update")
     .input(
       z.object({
-        oldPackage: packageSchema,
-        newPackage: packageSchema.omit({ id: true }),
+        oldPackage: z.union([reqPackageSchema, solePackageSchema]),
+        newPackage: z.union([
+          reqPackageSchema.omit({ id: true }),
+          solePackageSchema.omit({ id: true }),
+        ]),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -77,7 +89,12 @@ export const packagesRouter = router({
       );
     }),
   delete: createProtectedProcedure("packages", "delete")
-    .input(packageSchema.pick({ id: true }))
+    .input(
+      z.union([
+        reqPackageSchema.pick({ id: true }),
+        solePackageSchema.pick({ id: true }),
+      ])
+    )
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.packages.delete(ctx.user, input.id);
     }),

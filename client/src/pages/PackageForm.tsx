@@ -5,7 +5,7 @@ import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Package, MpMetadata } from "../types";
+import type { Package, MpMetadata, ReqPackage } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
@@ -20,7 +20,7 @@ export function PackageForm() {
   // below will now always be provided
   const initialRequestId = location.state?.requestId || "";
 
-  const [formData, setFormData] = useState<Omit<Package, "id">>({
+  const [formData, setFormData] = useState<Omit<ReqPackage, "id">>({
     carerId: "",
     requestId: initialRequestId,
     startDate: "",
@@ -95,7 +95,7 @@ export function PackageForm() {
   // Load existing data when editing
   useEffect(() => {
     if (packageQuery.data) {
-      setFormData(packageQuery.data);
+      setFormData(packageQuery.data as ReqPackage);
     }
   }, [packageQuery.data]);
 

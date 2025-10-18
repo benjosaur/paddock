@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { packageSchema, solePackageSchema } from "shared";
+import { reqPackageSchema, solePackageSchema } from "shared";
 import { dbEntrySchema } from "../schema";
 
-export const dbPackage = dbEntrySchema.extend(
-  packageSchema.omit({
+export const dbReqPackage = dbEntrySchema.extend(
+  reqPackageSchema.omit({
     id: true,
     carerId: true,
   }).shape
@@ -16,5 +16,8 @@ export const dbSolePackage = dbEntrySchema.extend(
   }).shape
 );
 
-export type DbPackage = z.infer<typeof dbPackage>;
+export const dbPackage = z.union([dbReqPackage, dbSolePackage]);
+
+export type DbReqPackage = z.infer<typeof dbReqPackage>;
 export type DbSolePackage = z.infer<typeof dbSolePackage>;
+export type DbPackage = z.infer<typeof dbPackage>;

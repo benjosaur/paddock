@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { requestMetadataSchema } from "shared";
-import { dbPackage } from "../package/schema";
+import { dbReqPackage } from "../package/schema";
 import { dbEntrySchema } from "../schema";
 
 export const dbRequestEntity = dbEntrySchema
@@ -15,7 +15,7 @@ export const dbRequestEntity = dbEntrySchema
     // ),
   });
 
-export const dbRequest = z.union([dbRequestEntity, dbPackage]);
+export const dbRequest = z.union([dbRequestEntity, dbReqPackage]); // sole packages dont appear in req GSI query.
 
 export type DbRequestEntity = z.infer<typeof dbRequestEntity>;
 export type DbRequest = z.infer<typeof dbRequest>;

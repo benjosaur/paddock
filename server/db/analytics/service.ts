@@ -149,6 +149,8 @@ export class ReportService {
         services: [],
       };
       for (const pkg of packages) {
+        const locality =
+          "address" in pkg.details ? pkg.details.address.locality : "Unknown";
         const weeklyHours = pkg.details.weeklyHours;
         crossSection.totalHours = parseFloat(
           (crossSection.totalHours + weeklyHours).toFixed(2)
@@ -156,7 +158,7 @@ export class ReportService {
         this.addHoursToReportLocality(
           weeklyHours,
           crossSection.localities,
-          pkg.details.address.locality,
+          locality,
           pkg.details.services
         );
         this.addHoursToReportService(
@@ -235,9 +237,10 @@ export class ReportService {
         crossSection.totalHours = parseFloat(
           (crossSection.totalHours + weeklyHours).toFixed(2)
         );
-        const deprivationCategory = this.getDeprivationCategory(
-          pkg.details.address.deprivation
-        );
+        const deprivationCategory =
+          "address" in pkg.details
+            ? this.getDeprivationCategory(pkg.details.address.deprivation)
+            : "Unknown";
         this.addHoursToReportDeprivationCategory(
           weeklyHours,
           crossSection.deprivationCategories,
@@ -275,7 +278,7 @@ export class ReportService {
       const report = this.constructEmptyReport(startYear, currentYear);
       // iterate through requests => for each find start date, end date, weekly hours, locality, service
       for (const request of requests) {
-        this.addItemToReport(request, report);
+        this.addItemToReport(request, report, isInfo);
       }
       return report;
     } catch (error) {
@@ -286,7 +289,8 @@ export class ReportService {
 
   async generatePackagesReport(
     user: User,
-    startYear: number = firstYear
+    startYear: number = firstYear,
+    isInfo: boolean = false
   ): Promise<Report> {
     try {
       // construct empty report
@@ -299,7 +303,7 @@ export class ReportService {
       const report = this.constructEmptyReport(startYear, currentYear);
       // iterate through packages => for each find start date, end date, weekly hours, locality, service
       for (const pkg of packages) {
-        this.addItemToReport(pkg, report);
+        this.addItemToReport(pkg, report, isInfo);
       }
       return report;
     } catch (error) {
@@ -310,7 +314,8 @@ export class ReportService {
 
   async generateCoordinatorReport(
     user: User,
-    startYear: number = firstYear
+    startYear: number = firstYear,
+    isInfo: boolean = true
   ): Promise<Report> {
     try {
       // construct empty report
@@ -323,7 +328,7 @@ export class ReportService {
       const report = this.constructEmptyReport(startYear, currentYear);
       // iterate through packages => for each find start date, end date, weekly hours, locality, service
       for (const pkg of packages) {
-        this.addItemToReport(pkg, report);
+        this.addItemToReport(pkg, report, isInfo);
       }
       return report;
     } catch (error) {
@@ -353,7 +358,7 @@ export class ReportService {
       );
       // iterate through requests => for each find start date, end date, weekly hours, deprivation category, service
       for (const request of requests) {
-        this.addItemToDeprivationReport(request, report);
+        this.addItemToDeprivationReport(request, report, isInfo);
       }
       return report;
     } catch (error) {
@@ -367,7 +372,8 @@ export class ReportService {
 
   async generatePackagesDeprivationReport(
     user: User,
-    startYear: number = firstYear
+    startYear: number = firstYear,
+    isInfo: boolean = false
   ): Promise<DeprivationReport> {
     try {
       // construct empty report
@@ -383,7 +389,7 @@ export class ReportService {
       );
       // iterate through packages => for each find start date, end date, weekly hours, deprivation category, service
       for (const pkg of packages) {
-        this.addItemToDeprivationReport(pkg, report);
+        this.addItemToDeprivationReport(pkg, report, isInfo);
       }
       return report;
     } catch (error) {
@@ -447,7 +453,8 @@ export class ReportService {
   }
   private addItemToReport(
     item: RequestMetadata | Package,
-    report: Report
+    report: Report,
+    isInfo: boolean
   ): void {
     const startDate = item.startDate;
     const endDate =
@@ -461,7 +468,8 @@ export class ReportService {
     }
 
     if (
-      item.details.services.includes(infoOption) &&
+      !isInfo &&
+      item.details.services.some((service) => service === infoOption) &&
       item.details.services.length == 1
     ) {
       return;
@@ -528,7 +536,8 @@ export class ReportService {
     // month total, month service total, month locality total, month locality service total
 
     const serviceNames = item.details.services;
-    const localityName = item.details.address.locality;
+    const localityName =
+      "address" in item.details ? item.details.address.locality : "Unknown";
     const reportYear = report.years.find(
       (reportYear) => reportYear.year === year
     );
@@ -645,7 +654,8 @@ export class ReportService {
 
   private addItemToDeprivationReport(
     item: RequestMetadata | Package,
-    report: DeprivationReport
+    report: DeprivationReport,
+    isInfo: boolean
   ): void {
     const startDate = item.startDate;
     const endDate =
@@ -659,7 +669,8 @@ export class ReportService {
     }
 
     if (
-      item.details.services.includes(infoOption) &&
+      !isInfo &&
+      item.details.services.some((service) => service === infoOption) &&
       item.details.services.length == 1
     ) {
       return;
@@ -724,9 +735,10 @@ export class ReportService {
     month: number
   ) {
     const serviceNames = item.details.services;
-    const deprivationCategory = this.getDeprivationCategory(
-      item.details.address.deprivation
-    );
+    const deprivationCategory =
+      "address" in item.details
+        ? this.getDeprivationCategory(item.details.address.deprivation)
+        : "Unknown";
     const reportYear = report.years.find(
       (reportYear) => reportYear.year === year
     );

@@ -77,5 +77,6 @@ export const localities = [
   "Milverton",
   "Stawley",
   "Other",
+  "Unknown",
 ] as const;
 export const DEPRIVATION_THRESHOLD_DECILE = 3;

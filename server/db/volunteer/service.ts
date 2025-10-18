@@ -14,7 +14,7 @@ import {
 import { TrainingRecordService } from "../training/service";
 import { TrainingRecordRepository } from "../training/repository";
 import { DbTrainingRecord } from "../training/schema";
-import { DbPackage } from "../package/schema";
+import { DbPackage, DbReqPackage, DbSolePackage } from "../package/schema";
 import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
@@ -78,10 +78,26 @@ export class VolunteerService {
         user
       );
       const requestIds = volunteer
-        .filter((dbResult): dbResult is DbPackage =>
-          dbResult.sK.startsWith("pkg")
+        .filter(
+          (dbResult): dbResult is DbReqPackage =>
+            dbResult.sK.startsWith("pkg") && "requestId" in dbResult
         )
         .map((pkg) => pkg.requestId);
+
+      const solePackages = volunteer
+        .filter(
+          (dbResult): dbResult is DbSolePackage =>
+            dbResult.sK.startsWith("pkg") && !("requestId" in dbResult)
+        )
+        .map((pkg) => {
+          const { pK, sK, entityType, ...rest } = pkg;
+          return {
+            ...rest,
+            id: pK,
+            carerId: sK,
+          };
+        });
+
       const requests = await Promise.all(
         requestIds.map(
           async (requestId) =>
@@ -91,7 +107,7 @@ export class VolunteerService {
       const volunteerMetadata =
         this.transformDbVolunteerToSharedMetaData(volunteer);
       const fullVolunteer: VolunteerFull[] = [
-        { ...volunteerMetadata[0], requests },
+        { ...volunteerMetadata[0], requests, solePackages },
       ];
       const parsedResult = volunteerFullSchema.array().parse(fullVolunteer);
       return parsedResult[0];
@@ -248,9 +264,9 @@ export class VolunteerService {
           ...rest,
         });
         continue;
-      } else if (item.sK.startsWith("pkg")) {
+      } else if (item.sK.startsWith("pkg") && "requestId" in item) {
         if (!volunteer.packages) volunteer.packages = [];
-        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        const { pK, sK, entityType, ...rest } = item as DbReqPackage;
         volunteer.packages.push({
           id: sK,
           carerId: pK,

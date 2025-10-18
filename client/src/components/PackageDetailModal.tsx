@@ -108,18 +108,21 @@ export function PackageDetailModal({
                 pkg.details.oneOffStartDateHours
               )}
 
-              <div className="mt-4">
-                <h4 className="text-md font-semibold mb-2 text-gray-700">
-                  Service Address
-                </h4>
-                {renderDetailItem(
-                  "Street Address",
-                  pkg.details.address.streetAddress
-                )}
-                {renderDetailItem("Locality", pkg.details.address.locality)}
-                {renderDetailItem("County", pkg.details.address.county)}
-                {renderDetailItem("Post Code", pkg.details.address.postCode)}
-              </div>
+              {"address" in pkg.details && (
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold mb-2 text-gray-700">
+                    Service Address
+                  </h4>
+
+                  {renderDetailItem(
+                    "Street Address",
+                    pkg.details.address.streetAddress
+                  )}
+                  {renderDetailItem("Locality", pkg.details.address.locality)}
+                  {renderDetailItem("County", pkg.details.address.county)}
+                  {renderDetailItem("Post Code", pkg.details.address.postCode)}
+                </div>
+              )}
 
               {renderDetailItem("Services", pkg.details.services)}
               {renderDetailItem("Notes", pkg.details.notes)}

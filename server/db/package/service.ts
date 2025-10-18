@@ -6,11 +6,14 @@ import {
   EndPackageDetails,
   solePackageSchema,
   SolePackage,
+  reqPackageSchema,
+  ReqPackage,
 } from "shared";
 import { PackageRepository } from "./repository";
-import { DbPackage, DbSolePackage } from "./schema";
+import { DbPackage, DbReqPackage, DbSolePackage } from "./schema";
 import { firstYear } from "shared/const";
 import { addDbMiddleware } from "../service";
+import { z } from "zod";
 
 export class PackageService {
   packageRepository = new PackageRepository();
@@ -19,7 +22,7 @@ export class PackageService {
     try {
       const packages = await this.packageRepository.getAllNotEndedYet(user);
       const packagesWithoutInfo = packages.filter(
-        (pkg) => !pkg.details.services.includes("Information")
+        (pkg) => !pkg.details.services.some((s) => s === "Information")
       );
       const transformedResult = this.groupAndTransformPackageData(
         packagesWithoutInfo
@@ -56,7 +59,7 @@ export class PackageService {
     try {
       const packages = await this.packageRepository.getAll(user, startYear);
       const packagesWithInfo = packages.filter((pkg) =>
-        pkg.details.services.includes("Information")
+        pkg.details.services.some((s) => s === "Information")
       );
       const transformedResult = this.groupAndTransformPackageData(
         packagesWithInfo
@@ -75,8 +78,8 @@ export class PackageService {
   ): Promise<Package[]> {
     try {
       const packages = await this.packageRepository.getAll(user, startYear);
-      const packagesWithoutInfo = packages.filter((pkg) =>
-        pkg.details.services.includes("Information")
+      const packagesWithoutInfo = packages.filter(
+        (pkg) => !pkg.details.services.some((s) => s === "Information")
       );
       const transformedResult = this.groupAndTransformPackageData(
         packagesWithoutInfo
@@ -89,7 +92,10 @@ export class PackageService {
     }
   }
 
-  async getById(packageId: string, user: User): Promise<Package> {
+  async getById(
+    packageId: string,
+    user: User
+  ): Promise<ReqPackage | SolePackage> {
     try {
       const pkg = await this.packageRepository.getById(packageId, user);
       const transformedResult = this.groupAndTransformPackageData(
@@ -103,9 +109,17 @@ export class PackageService {
     }
   }
 
-  async create(newPackage: Omit<Package, "id">, user: User): Promise<string> {
+  async create(
+    newPackage: Omit<ReqPackage, "id">,
+    user: User
+  ): Promise<string> {
     try {
-      const validatedInput = packageSchema.omit({ id: true }).parse(newPackage);
+      const validatedInput = z
+        .union([
+          solePackageSchema.omit({ id: true }),
+          reqPackageSchema.omit({ id: true }),
+        ])
+        .parse(newPackage);
       const { carerId, ...rest } = validatedInput;
       const packageSuffix = validatedInput.endDate.slice(0, 4); // open or yyyy
       const packageToCreate: Omit<DbPackage, "sK"> = addDbMiddleware(
@@ -151,7 +165,7 @@ export class PackageService {
       );
       return createdPackageId;
     } catch (error) {
-      console.error("Service Layer Error creating packages:", error);
+      console.error("Service Layer Error creating sole packages:", error);
       throw error;
     }
   }
@@ -205,12 +219,22 @@ export class PackageService {
   ): Promise<string> {
     try {
       const validatedOldPackage = packageSchema.parse(oldPackage);
-      const validatedNewPackage = packageSchema
-        .omit({ id: true })
+      const validatedNewPackage = z
+        .union([
+          solePackageSchema.omit({ id: true }),
+          reqPackageSchema.omit({ id: true }),
+        ])
         .parse(newPackage);
 
       // Create new package
-      const newPackageId = await this.create(validatedNewPackage, user);
+
+      let newPackageId = "";
+
+      if ("requestId" in validatedNewPackage) {
+        newPackageId = await this.create(validatedNewPackage, user);
+      } else {
+        newPackageId = await this.createSole(validatedNewPackage, user);
+      }
 
       await this.update(validatedOldPackage, user);
       return newPackageId;
@@ -255,7 +279,15 @@ export class PackageService {
         endDate: validatedCoverDetails.endDate,
       };
 
-      const coverPackageId = await this.create(coverPackage, user);
+      let coverPackageId = "";
+      if ("requestId" in coverPackage) {
+        coverPackageId = await this.create(coverPackage as ReqPackage, user);
+      } else {
+        coverPackageId = await this.createSole(
+          coverPackage as SolePackage,
+          user
+        );
+      }
 
       let newPackageId = "";
 
@@ -266,7 +298,12 @@ export class PackageService {
           ...validatedOldPackage,
           startDate: dayAfterCoverEnd.toISOString().split("T")[0],
         };
-        newPackageId = await this.create(newPackage, user);
+
+        if ("requestId" in newPackage) {
+          newPackageId = await this.create(newPackage as ReqPackage, user);
+        } else {
+          newPackageId = await this.createSole(newPackage as SolePackage, user);
+        }
       }
 
       return [coverPackageId, newPackageId];
@@ -322,7 +359,9 @@ export class PackageService {
     }
   }
 
-  private groupAndTransformPackageData(dbPackages: DbPackage[]): Package[] {
+  private groupAndTransformPackageData(
+    dbPackages: DbPackage[]
+  ): (Package | SolePackage)[] {
     return dbPackages.map((pkg) => {
       const { pK, sK, entityType, ...rest } = pkg;
       return { ...rest, id: sK, carerId: pK };

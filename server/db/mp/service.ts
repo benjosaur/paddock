@@ -10,7 +10,7 @@ import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { PackageService } from "../package/service";
 import { TrainingRecordService } from "../training/service";
-import { DbPackage } from "../package/schema";
+import { DbPackage, DbReqPackage } from "../package/schema";
 import { TrainingRecordRepository } from "../training/repository";
 import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
@@ -62,10 +62,10 @@ export class MpService {
 
   async getById(mpId: string, user: User): Promise<MpFull> {
     try {
-      const mp = await this.mpRepository.getById(mpId, user);
-      const requestIds = mp
-        .filter((dbResult): dbResult is DbPackage =>
-          dbResult.sK.startsWith("pkg")
+      const mpDbResults = await this.mpRepository.getById(mpId, user);
+      const requestIds = mpDbResults
+        .filter(
+          (dbResult): dbResult is DbReqPackage => dbResult.sK.startsWith("pkg") // mps dont have sole packages
         )
         .map((pkg) => pkg.requestId);
       const requests = await Promise.all(
@@ -74,7 +74,7 @@ export class MpService {
             await this.requestService.getById(requestId, user)
         )
       );
-      const mpMetadata = this.transformDbMpToSharedMetaData(mp);
+      const mpMetadata = this.transformDbMpToSharedMetaData(mpDbResults);
       const fullMp: MpFull[] = [{ ...mpMetadata[0], requests }];
       const parsedResult = mpFullSchema.array().parse(fullMp);
       return parsedResult[0];
@@ -188,7 +188,7 @@ export class MpService {
         continue;
       } else if (item.sK.startsWith("pkg")) {
         if (!mp.packages) mp.packages = [];
-        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        const { pK, sK, entityType, ...rest } = item as DbReqPackage; // mps dont have sole packages
         mp.packages.push({
           id: sK,
           carerId: pK,

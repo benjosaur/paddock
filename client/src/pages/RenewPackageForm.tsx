@@ -5,7 +5,13 @@ import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Package, MpMetadata, RequestMetadata } from "../types";
+import type {
+  Package,
+  MpMetadata,
+  RequestMetadata,
+  ReqPackage,
+  SolePackage,
+} from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
@@ -16,9 +22,11 @@ export function RenewPackageForm() {
   const id = useParams<{ id: string }>().id || "";
 
   const [oldPackageData, setOldPackageData] = useState<Package | null>(null);
-  const [newPackageData, setNewPackageData] = useState<Omit<Package, "id">>({
+  const [newPackageData, setNewPackageData] = useState<
+    Omit<ReqPackage, "id"> | Omit<SolePackage, "id">
+  >({
     carerId: "",
-    requestId: "",
+    // requestId: "",
     startDate: "",
     endDate: "open",
     details: {
@@ -84,6 +92,8 @@ export function RenewPackageForm() {
 
   useEffect(() => {
     if (packageQuery.data) {
+      const { id, ...rest } = packageQuery.data;
+
       const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
       const today = new Date();
@@ -93,19 +103,30 @@ export function RenewPackageForm() {
       const previousDate = formatDate(today);
 
       setOldPackageData({
-        ...packageQuery.data,
+        ...packageQuery.data, //incl id
         endDate: previousDate,
       });
 
-      setNewPackageData({
-        carerId: packageQuery.data.carerId,
-        requestId: packageQuery.data.requestId,
-        startDate: currentDate,
-        endDate: "open",
-        details: {
-          ...packageQuery.data.details,
-        },
-      });
+      if ("requestId" in packageQuery.data) {
+        setNewPackageData({
+          ...rest,
+          requestId: packageQuery.data.requestId,
+          startDate: currentDate,
+          endDate: "open",
+          details: {
+            ...packageQuery.data.details,
+          },
+        });
+      } else {
+        setNewPackageData({
+          ...rest,
+          startDate: currentDate,
+          endDate: "open",
+          details: {
+            ...packageQuery.data.details,
+          },
+        });
+      }
     }
   }, [packageQuery.data]);
 
@@ -234,128 +255,134 @@ export function RenewPackageForm() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor={`requestId-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Request *
-              </label>
-              <Select
-                options={requestOptions}
-                value={
-                  requestOptions.find(
-                    (option) => option.value === formData.requestId
-                  ) || null
-                }
-                onChange={(selectedOption) =>
-                  handleSelectChange("requestId", selectedOption, isOld)
-                }
-                placeholder="Select a request..."
-                isSearchable
-                noOptionsMessage={() => "No requests found"}
-                isClearable
-                isDisabled={true}
-              />
-            </div>
+            {"requestId" in formData && (
+              <>
+                <div>
+                  <label
+                    htmlFor={`requestId-${isOld ? "old" : "new"}`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Request *
+                  </label>
+                </div>
 
-            <div>
-              <label
-                htmlFor={`carerId-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Carer/MP *
-              </label>
-              <Select
-                options={mpOptions}
-                value={
-                  mpOptions.find(
-                    (option) => option.value === formData.carerId
-                  ) || null
-                }
-                onChange={(selectedOption) =>
-                  handleSelectChange("carerId", selectedOption, isOld)
-                }
-                placeholder="Select a carer/MP..."
-                isSearchable
-                noOptionsMessage={() => "No carers/MPs found"}
-                isClearable
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor={`startDate-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Start Date *
-              </label>
-              <Input
-                id={`startDate-${isOld ? "old" : "new"}`}
-                name="startDate"
-                type="date"
-                value={formData.startDate || ""}
-                onChange={(e) => handleInputChange(e, isOld)}
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor={`endDate-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                End Date
-              </label>
-              <Input
-                id={`endDate-${isOld ? "old" : "new"}`}
-                name="endDate"
-                type="date"
-                value={formData.endDate === "open" ? "" : formData.endDate}
-                onChange={(e) => {
-                  const value = e.target.value || "open";
-                  if (isOld && oldPackageData) {
-                    setOldPackageData((prev) =>
-                      prev ? updateNestedValue("endDate", value, prev) : null
-                    );
-                  } else {
-                    setNewPackageData((prev) =>
-                      updateNestedValue("endDate", value, prev)
-                    );
+                <Select
+                  options={requestOptions}
+                  value={
+                    requestOptions.find(
+                      (option) => option.value === formData.requestId
+                    ) || null
                   }
-                }}
-              />
-              <small className="text-gray-500">
-                Leave empty for ongoing package
-              </small>
-            </div>
+                  onChange={(selectedOption) =>
+                    handleSelectChange("requestId", selectedOption, isOld)
+                  }
+                  placeholder="Select a request..."
+                  isSearchable
+                  noOptionsMessage={() => "No requests found"}
+                  isClearable
+                  isDisabled={true}
+                />
+              </>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-700">
-              Package Details
-            </h3>
+          <div>
+            <label
+              htmlFor={`carerId-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Carer/MP *
+            </label>
+            <Select
+              options={mpOptions}
+              value={
+                mpOptions.find((option) => option.value === formData.carerId) ||
+                null
+              }
+              onChange={(selectedOption) =>
+                handleSelectChange("carerId", selectedOption, isOld)
+              }
+              placeholder="Select a carer/MP..."
+              isSearchable
+              noOptionsMessage={() => "No carers/MPs found"}
+              isClearable
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor={`weeklyHours-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Weekly Hours *
-              </label>
-              <Input
-                id={`weeklyHours-${isOld ? "old" : "new"}`}
-                name="details.weeklyHours"
-                type="number"
-                step="0.5"
-                min="0"
-                value={formData.details.weeklyHours || ""}
-                onChange={(e) => handleInputChange(e, isOld)}
-                placeholder="e.g., 10"
-                required
-              />
-            </div>
+          <div>
+            <label
+              htmlFor={`startDate-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Start Date *
+            </label>
+            <Input
+              id={`startDate-${isOld ? "old" : "new"}`}
+              name="startDate"
+              type="date"
+              value={formData.startDate || ""}
+              onChange={(e) => handleInputChange(e, isOld)}
+              required
+            />
+          </div>
 
+          <div>
+            <label
+              htmlFor={`endDate-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              End Date
+            </label>
+            <Input
+              id={`endDate-${isOld ? "old" : "new"}`}
+              name="endDate"
+              type="date"
+              value={formData.endDate === "open" ? "" : formData.endDate}
+              onChange={(e) => {
+                const value = e.target.value || "open";
+                if (isOld && oldPackageData) {
+                  setOldPackageData((prev) =>
+                    prev ? updateNestedValue("endDate", value, prev) : null
+                  );
+                } else {
+                  setNewPackageData((prev) =>
+                    updateNestedValue("endDate", value, prev)
+                  );
+                }
+              }}
+            />
+            <small className="text-gray-500">
+              Leave empty for ongoing package
+            </small>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-700">
+            Package Details
+          </h3>
+
+          <div>
+            <label
+              htmlFor={`weeklyHours-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Weekly Hours *
+            </label>
+            <Input
+              id={`weeklyHours-${isOld ? "old" : "new"}`}
+              name="details.weeklyHours"
+              type="number"
+              step="0.5"
+              min="0"
+              value={formData.details.weeklyHours || ""}
+              onChange={(e) => handleInputChange(e, isOld)}
+              placeholder="e.g., 10"
+              required
+            />
+          </div>
+
+          {"address" in formData.details && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Service Address
@@ -406,48 +433,50 @@ export function RenewPackageForm() {
                 />
               </div>
             </div>
+          )}
 
-            <div>
-              <label
-                htmlFor={`services-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Services
-              </label>
-              <Select
-                options={serviceSelectOptions}
-                value={
-                  serviceSelectOptions.filter((option) =>
-                    formData.details.services?.includes(option.value)
-                  ) || null
-                }
-                onChange={(newValues) =>
-                  handleMultiSelectChange("details.services", newValues, isOld)
-                }
-                placeholder="Search and select services..."
-                isSearchable
-                isMulti
-                noOptionsMessage={() => "No services found"}
-              />
-            </div>
+          <div>
+            <label
+              htmlFor={`services-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Services
+            </label>
+            <Select
+              options={serviceSelectOptions}
+              value={
+                serviceSelectOptions.filter((option) =>
+                  formData.details.services?.some(
+                    (service) => service === option.value
+                  )
+                ) || null
+              }
+              onChange={(newValues) =>
+                handleMultiSelectChange("details.services", newValues, isOld)
+              }
+              placeholder="Search and select services..."
+              isSearchable
+              isMulti
+              noOptionsMessage={() => "No services found"}
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor={`notes-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Notes
-              </label>
-              <textarea
-                id={`notes-${isOld ? "old" : "new"}`}
-                name="details.notes"
-                value={formData.details.notes || ""}
-                onChange={(e) => handleInputChange(e, isOld)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Additional notes about the package..."
-              />
-            </div>
+          <div>
+            <label
+              htmlFor={`notes-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Notes
+            </label>
+            <textarea
+              id={`notes-${isOld ? "old" : "new"}`}
+              name="details.notes"
+              value={formData.details.notes || ""}
+              onChange={(e) => handleInputChange(e, isOld)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Additional notes about the package..."
+            />
           </div>
         </div>
       </div>

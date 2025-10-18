@@ -7,7 +7,7 @@ import {
 } from "shared";
 import { RequestRepository } from "./repository";
 import { DbRequest, DbRequestEntity } from "./schema";
-import { DbPackage } from "../package/schema";
+import { DbReqPackage } from "../package/schema";
 import { PackageRepository } from "../package/repository";
 import { PackageService } from "../package/service";
 import { firstYear } from "shared/const";
@@ -27,12 +27,14 @@ export class RequestService {
         (req) => !req.details.services.includes("Information")
       );
       const packagesFromDb = await this.packageRepository.getAll(user);
-      const packagesWithoutInfo = packagesFromDb.filter(
-        (pkg) => !pkg.details.services.includes("Information")
+      const packagesWithoutInfoAndWithoutSole = packagesFromDb.filter(
+        (pkg): pkg is DbReqPackage =>
+          !pkg.details.services.some((s) => s === "Information") &&
+          "requestId" in pkg
       );
       const transformedRequests = this.transformDbRequestToSharedFull([
         ...requestsWithoutInfo,
-        ...packagesWithoutInfo,
+        ...packagesWithoutInfoAndWithoutSole,
       ]);
       const parsedResult = requestFullSchema.array().parse(transformedRequests);
       return parsedResult;
@@ -58,12 +60,14 @@ export class RequestService {
       const packagesFromDb = await this.packageRepository.getAllNotEndedYet(
         user
       );
-      const packagesWithoutInfo = packagesFromDb.filter(
-        (pkg) => !pkg.details.services.includes("Information")
+      const packagesWithoutInfoAndWithoutSole = packagesFromDb.filter(
+        (pkg): pkg is DbReqPackage =>
+          !pkg.details.services.some((s) => s === "Information") &&
+          "requestId" in pkg
       );
       const transformedRequests = this.transformDbRequestToSharedFull([
         ...requestsWithoutInfo,
-        ...packagesWithoutInfo,
+        ...packagesWithoutInfoAndWithoutSole,
       ]);
       const parsedResult = requestFullSchema.array().parse(transformedRequests);
       return parsedResult;
@@ -174,6 +178,9 @@ export class RequestService {
   ): Promise<RequestFull> {
     try {
       const packageFromDb = await this.packageService.getById(packageId, user);
+      if (!("requestId" in packageFromDb)) {
+        throw new Error("Package does not belong to a request");
+      }
       const requestId = packageFromDb.requestId;
       const requestFull = await this.getById(requestId, user);
       const filteredRequest: RequestFull = {
@@ -357,7 +364,7 @@ export class RequestService {
         Object.assign(request, { ...rest, clientId: pK });
       } else if (item.sK.startsWith("pkg")) {
         if (!request.packages) request.packages = [];
-        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        const { pK, sK, entityType, ...rest } = item as DbReqPackage; // sole packages wont be fetched on this req id GSI request (Dont have req ids)
         request.packages.push({ ...rest, id: sK, carerId: pK });
       } else {
         throw new Error(`Undefined Case: ${item}`);

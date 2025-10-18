@@ -11,6 +11,12 @@ import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CoverPackageForm } from "@/pages/CoverPackageForm";
 import { SolePackageForm } from "@/pages/SolePackageForm";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 
 export const packageColumns: TableColumn<Package>[] = [
   {
@@ -42,7 +48,11 @@ export const packageColumns: TableColumn<Package>[] = [
   {
     key: "locality",
     header: "Location",
-    render: (item: Package) => item.details.address.locality,
+    render: (item: Package) => {
+      if ("requestId" in item) {
+        return item.details.address.locality;
+      }
+    },
   },
   {
     key: "services",
@@ -73,6 +83,14 @@ export default function PackageRoutes() {
 
   const packages = packagesQuery.data || [];
 
+  // Split packages by whether they are linked to a request
+  const requestPackages = packages.filter(
+    (p: any) => "requestId" in p && Boolean(p.requestId)
+  );
+  const independentPackages = packages.filter(
+    (p: any) => !("requestId" in p) || !p.requestId
+  );
+
   const deletePackageMutation = useMutation(
     trpc.packages.delete.mutationOptions({
       onSuccess: () => {
@@ -95,6 +113,11 @@ export default function PackageRoutes() {
   const handleEdit = (id: string) => {
     const encodedId = encodeURIComponent(id);
     navigate(`/packages/edit/${encodedId}`);
+  };
+
+  const handleEditSolePackage = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/packages/sole/edit?id=${encodedId}`);
   };
 
   const handleRenew = (id: string) => {
@@ -149,31 +172,67 @@ export default function PackageRoutes() {
         <Route
           index
           element={
-            <DataTable
-              key={`packages-${showEnded ? "ended" : "active"}`}
-              title="Packages"
-              searchPlaceholder="Search packages..."
-              data={packages}
-              columns={packageColumns}
-              onEdit={handleEdit}
-              onCover={handleCover}
-              onDelete={handleDelete}
-              onRenew={handleRenew}
-              onCreate={handleAddNew}
-              onViewItem={handleViewPackage}
-              onViewRequest={handleViewRequest}
-              resource="packages"
-              customActions={
-                <Button
-                  variant={showEnded ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleViewToggle}
-                  className="shadow-sm"
-                >
-                  {getButtonText()}
-                </Button>
-              }
-            />
+            <Tabs defaultValue="requests" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="requests">For Requests</TabsTrigger>
+                <TabsTrigger value="independent">Independent</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="requests" className="mt-6">
+                <DataTable
+                  key={`packages-requests-${showEnded ? "ended" : "active"}`}
+                  title="Packages"
+                  searchPlaceholder="Search packages..."
+                  data={requestPackages}
+                  columns={packageColumns}
+                  onEdit={handleEdit}
+                  onCover={handleCover}
+                  onDelete={handleDelete}
+                  onRenew={handleRenew}
+                  onCreate={handleAddNew}
+                  onViewItem={handleViewPackage}
+                  onViewRequest={handleViewRequest}
+                  resource="packages"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+
+              <TabsContent value="independent" className="mt-6">
+                <DataTable
+                  key={`packages-independent-${showEnded ? "ended" : "active"}`}
+                  title="Packages"
+                  searchPlaceholder="Search packages..."
+                  data={independentPackages}
+                  columns={packageColumns}
+                  onEdit={handleEditSolePackage}
+                  onCover={handleCover}
+                  onDelete={handleDelete}
+                  onRenew={handleRenew}
+                  onCreate={handleAddNew}
+                  onViewItem={handleViewPackage}
+                  resource="packages"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+            </Tabs>
           }
         />
         <Route path="create" element={<PackageForm />} />
@@ -181,6 +240,7 @@ export default function PackageRoutes() {
         <Route path="edit/:id" element={<PackageForm />} />
         <Route path="renew/:id" element={<RenewPackageForm />} />
         <Route path="sole/create" element={<SolePackageForm />} />
+        <Route path="sole/edit" element={<SolePackageForm />} />
       </Routes>
       {selectedRequestId && (
         <RequestDetailModal
