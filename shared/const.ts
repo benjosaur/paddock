@@ -6,7 +6,12 @@ export const userRoles = [
   "Finance",
   "Test",
 ] as const;
-export const volunteerRoles = ["Coordinator", "Volunteer", "Trustee"] as const;
+export const volunteerRoles = [
+  "Coordinator",
+  "Volunteer",
+  "Trustee",
+  "Finance",
+] as const;
 export const requestTypes = ["paid", "unpaid"] as const;
 export const requestStatus = ["normal", "urgent"] as const;
 export const attendanceAllowanceLevels = ["None", "Low", "High"] as const;

@@ -142,22 +142,28 @@ export class ClientService {
         .omit({ id: true })
         .parse(newClient);
 
-      // Fetch deprivation data for the client's postcode
-      const deprivationData = await this.deprivationService.getDeprivationData(
-        validatedInput.details.address.postCode
-      );
+      let clientWithDeprivation;
+      let deprivationData = { matched: false, income: false, health: false };
+      if (validatedInput.details.address.postCode) {
+        // Fetch deprivation data for the client's postcode
+        deprivationData = await this.deprivationService.getDeprivationData(
+          validatedInput.details.address.postCode
+        );
 
-      // Update the client with deprivation data
-      const clientWithDeprivation = {
-        ...validatedInput,
-        details: {
-          ...validatedInput.details,
-          address: {
-            ...validatedInput.details.address,
-            deprivation: deprivationData,
+        // Update the client with deprivation data
+        clientWithDeprivation = {
+          ...validatedInput,
+          details: {
+            ...validatedInput.details,
+            address: {
+              ...validatedInput.details.address,
+              deprivation: deprivationData,
+            },
           },
-        },
-      };
+        };
+      } else {
+        clientWithDeprivation = validatedInput;
+      }
 
       const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = addDbMiddleware(
         {

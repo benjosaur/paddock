@@ -51,6 +51,23 @@ export default function PublicLiabilityRoutes() {
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
 
+  const compareByPublicLiabilityExpiry = <
+    T extends { publicLiabilityExpiry?: string }
+  >(
+    a: T,
+    b: T
+  ) => {
+    const aExp = a.publicLiabilityExpiry || "";
+    const bExp = b.publicLiabilityExpiry || "";
+    if (aExp === bExp) return 0;
+    if (aExp === "") return -1;
+    if (bExp === "") return 1;
+    return aExp.localeCompare(bExp);
+  };
+
+  const sortedMps = [...mps].sort(compareByPublicLiabilityExpiry);
+  const sortedVolunteers = [...volunteers].sort(compareByPublicLiabilityExpiry);
+
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
   if (mpsQuery.error || volunteersQuery.error)
@@ -94,7 +111,7 @@ export default function PublicLiabilityRoutes() {
                   key={`mps-public-liability-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={mps}
+                  data={sortedMps}
                   columns={mpPublicLiabilityColumns}
                   resource="mps"
                 />
@@ -105,7 +122,7 @@ export default function PublicLiabilityRoutes() {
                   key={`volunteers-public-liability-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={volunteers}
+                  data={sortedVolunteers}
                   columns={volunteerPublicLiabilityColumns}
                   resource="volunteers"
                 />

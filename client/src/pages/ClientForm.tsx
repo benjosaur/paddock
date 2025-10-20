@@ -101,7 +101,7 @@ export function ClientForm() {
       onSuccess: (data) => {
         // Second toast: Deprivation information
         const { deprivationData, postcode } = data;
-        deprivationToastLogic(deprivationData, postcode);
+        if (postcode) deprivationToastLogic(deprivationData, postcode);
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
@@ -402,7 +402,7 @@ export function ClientForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code *
+                  Post Code
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -413,7 +413,6 @@ export function ClientForm() {
                     className="flex-1"
                     // below if we have a trigger flag for postcode
                     disabled={isEditing}
-                    required
                   />
                   {isEditing && !clientQuery.isLoading && (
                     <FieldEditModal

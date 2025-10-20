@@ -292,14 +292,13 @@ export function VolunteerForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code *
+                  Post Code
                 </label>
                 <Input
                   id="postCode"
                   name="details.address.postCode"
                   value={formData.details.address.postCode || ""}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 

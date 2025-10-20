@@ -178,6 +178,8 @@ export function MpDetailModal({
               {renderDetailItem("Address", mp.details.address)}
               {renderDetailItem("Phone", mp.details.phone)}
               {renderDetailItem("Email", mp.details.email)}
+              {renderDetailItem("Start Date", mp.details.startDate)}
+              {renderDetailItem("End Date", mp.endDate)}
               {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
               {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
               {renderDetailItem(

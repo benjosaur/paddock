@@ -618,7 +618,7 @@ export function Dashboard() {
 
             <AnimatedCounter
               targetValue={analyticsPackages.totalHours}
-              label="Regular Weekly Care Hours"
+              label="Current Weekly Care Hours"
             />
           </div>
         </TabsContent>

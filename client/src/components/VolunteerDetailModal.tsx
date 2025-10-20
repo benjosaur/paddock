@@ -174,6 +174,8 @@ export function VolunteerDetailModal({
               {renderDetailItem("Address", volunteer.details.address)}
               {renderDetailItem("Phone", volunteer.details.phone)}
               {renderDetailItem("Email", volunteer.details.email)}
+              {renderDetailItem("Start Date", volunteer.details.startDate)}
+              {renderDetailItem("End Date", volunteer.endDate)}
               {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
               {renderDetailItem("DBS Expiry", volunteer.dbsExpiry)}
               {renderDetailItem(

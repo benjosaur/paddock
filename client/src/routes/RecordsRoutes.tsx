@@ -104,6 +104,18 @@ export default function RecordsRoutes() {
     record.ownerId.startsWith("v")
   );
 
+  const compareByExpiry = <T extends { expiryDate?: string }>(a: T, b: T) => {
+    const aExp = a.expiryDate || "";
+    const bExp = b.expiryDate || "";
+    if (aExp === bExp) return 0;
+    if (aExp === "") return -1;
+    if (bExp === "") return 1;
+    return aExp.localeCompare(bExp);
+  };
+
+  const sortedMpRecords = [...mpRecords].sort(compareByExpiry);
+  const sortedVolunteerRecords = [...volunteerRecords].sort(compareByExpiry);
+
   const handleEditRecord = (item: TrainingRecord) => {
     const encodedId = encodeURIComponent(item.id);
     const encodedOwnerId = encodeURIComponent(item.ownerId);
@@ -165,7 +177,7 @@ export default function RecordsRoutes() {
                   key={`mps-records-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MP records..."
-                  data={mpRecords}
+                  data={sortedMpRecords}
                   columns={mpRecordColumns}
                   onEditRecord={handleEditRecord}
                   onDeleteRecord={handleDeleteRecord}
@@ -179,7 +191,7 @@ export default function RecordsRoutes() {
                   key={`volunteers-records-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteer records..."
-                  data={volunteerRecords}
+                  data={sortedVolunteerRecords}
                   columns={volunteerRecordColumns}
                   onEditRecord={handleEditRecord}
                   onDeleteRecord={handleDeleteRecord}

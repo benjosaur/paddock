@@ -21,7 +21,7 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
   {
     key: "dbsNumber",
     header: "DBS Number",
-    render: (item) => item.details.dbsNumber || "No DBS",
+    render: (item) => item.details.dbsNumber || "",
   },
   {
     key: "dbsExpiry",
@@ -48,6 +48,18 @@ export default function DbsRoutes() {
 
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
+
+  const compareByDbsExpiry = <T extends { dbsExpiry?: string }>(a: T, b: T) => {
+    const aExp = a.dbsExpiry || "";
+    const bExp = b.dbsExpiry || "";
+    if (aExp === bExp) return 0;
+    if (aExp === "") return -1;
+    if (bExp === "") return 1;
+    return aExp.localeCompare(bExp);
+  };
+
+  const sortedMps = [...mps].sort(compareByDbsExpiry);
+  const sortedVolunteers = [...volunteers].sort(compareByDbsExpiry);
 
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
@@ -92,7 +104,7 @@ export default function DbsRoutes() {
                   key={`mps-dbs-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={mps}
+                  data={sortedMps}
                   columns={mpDbsColumns}
                   resource="mps"
                 />
@@ -103,7 +115,7 @@ export default function DbsRoutes() {
                   key={`volunteers-dbs-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={volunteers}
+                  data={sortedVolunteers}
                   columns={volunteerDbsColumns}
                   resource="volunteers"
                 />
