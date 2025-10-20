@@ -71,7 +71,7 @@ export default function PublicLiabilityRoutes() {
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
   if (mpsQuery.error || volunteersQuery.error)
-    return <div>Error loading Public Liability records</div>;
+    return <div>Error loading Insurance records</div>;
 
   return (
     <Routes>
@@ -82,7 +82,7 @@ export default function PublicLiabilityRoutes() {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-3">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  Public Liability Records
+                  Insurance Records
                 </h1>
                 <span className="text-sm select-none text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
                   Total: {mps.length + volunteers.length}

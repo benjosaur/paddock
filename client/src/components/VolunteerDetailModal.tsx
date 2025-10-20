@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
@@ -146,10 +145,6 @@ export function VolunteerDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Volunteer Details: {volunteer.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View and manage detailed information for this volunteer including
-            General Info, Services, training records, and activity logs.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">

@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
@@ -134,10 +133,6 @@ export function ClientDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Client Details: {client.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View and manage detailed information for this client including
-            contact info, services & needs, activity logs, and requests.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
