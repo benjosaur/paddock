@@ -149,6 +149,18 @@ export default function RequestRoutes() {
     (r) => !r.details.services?.includes("Information")
   );
 
+  const sortedOtherRequests = otherRequests.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
+  const sortedInfoRequests = infoRequests.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
       onSuccess: () => {
@@ -235,7 +247,7 @@ export default function RequestRoutes() {
                   key={`requests-care-${showEnded ? "ended" : "active"}`}
                   title="Requests"
                   searchPlaceholder="Search requests..."
-                  data={otherRequests}
+                  data={sortedOtherRequests}
                   columns={requestColumns}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
@@ -263,7 +275,7 @@ export default function RequestRoutes() {
                   key={`requests-info-${showEnded ? "ended" : "active"}`}
                   title="Requests"
                   searchPlaceholder="Search requests..."
-                  data={infoRequests}
+                  data={sortedInfoRequests}
                   columns={infoRequestColumns}
                   onEdit={handleEdit}
                   onDelete={handleDelete}

@@ -66,7 +66,7 @@ export class ReportService {
 
       const clients = await this.clientService.getAllNotEnded(user);
       for (const client of clients) {
-        if (client.endDate) {
+        if (client.endDate !== "open") {
           // probably should be archived (client end dates present mean terminated)
           continue;
         }

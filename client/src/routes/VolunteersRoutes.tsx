@@ -161,6 +161,13 @@ export function VolunteersRoutes() {
   if (volunteersQuery.isLoading) return <div>Loading...</div>;
   if (volunteersQuery.error) return <div>Error loading Volunteers</div>;
 
+  // Ensure rows are shown in alphabetical order by Volunteer name
+  const sortedVolunteers = (volunteersQuery.data || []).slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
   return (
     <Routes>
       <Route
@@ -171,7 +178,7 @@ export function VolunteersRoutes() {
               key={`volunteers-${showEnded}`}
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
-              data={volunteersQuery.data || []}
+              data={sortedVolunteers}
               columns={volunteerColumns}
               onAddPackage={handleAddSolePackage}
               onEdit={handleEditNavigation}

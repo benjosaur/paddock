@@ -148,6 +148,13 @@ export function MpsRoutes() {
   if (mpsQuery.isLoading) return <div>Loading...</div>;
   if (mpsQuery.error) return <div>Error loading MPs</div>;
 
+  // Ensure rows are shown in alphabetical order by MP name
+  const sortedMps = (mpsQuery.data || []).slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
   return (
     <Routes>
       <Route
@@ -158,7 +165,7 @@ export function MpsRoutes() {
               key={`mps-${showEnded}`}
               title="MPs"
               searchPlaceholder="Search MPs..."
-              data={mpsQuery.data || []}
+              data={sortedMps}
               columns={mpColumns}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}

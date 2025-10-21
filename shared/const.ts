@@ -48,11 +48,11 @@ export const soleServiceOptions = [
   "Technical",
 ] as const;
 export const trainingRecordTypes = [
-  "First Aid",
+  "First Aid Skills",
   "Professional Boundaries",
-  "Manual Handling",
-  "GDPR",
-  "Safeguarding",
+  "Moving and Handling People",
+  "Handling Information GWPR and DPR",
+  "Basic Life Support",
   "Other",
 ] as const;
 export const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;

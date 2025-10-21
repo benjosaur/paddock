@@ -16,7 +16,7 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   {
     key: "customId",
     header: "Custom ID",
-    render: (item: ClientMetadata) => item.details.customId || "—",
+    render: (item: ClientMetadata) => item.details.customId || "",
   },
   {
     key: "name",
@@ -26,7 +26,7 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   {
     key: "dob",
     header: "Date of Birth",
-    render: (item: ClientMetadata) => item.dateOfBirth || "Unknown",
+    render: (item: ClientMetadata) => item.dateOfBirth || "",
   },
 
   {
@@ -178,6 +178,13 @@ export default function ClientsRoutes() {
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
 
+  // Ensure rows are shown in alphabetical order by client name
+  const sortedClients = (clientsQuery.data || []).slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
   return (
     <Routes>
       <Route
@@ -188,7 +195,7 @@ export default function ClientsRoutes() {
               key={`clients-${showEnded}`}
               title="Clients"
               searchPlaceholder="Search clients..."
-              data={clientsQuery.data || []}
+              data={sortedClients}
               columns={clientColumns}
               onEdit={handleEdit}
               onDelete={handleDelete}

@@ -33,6 +33,11 @@ export default function MagLogRoutes() {
 
   const mag = magQuery.data || [];
 
+  // Sort logs by date (newest first)
+  const sortedMag = mag
+    .slice()
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   const deleteMagLogMutation = useMutation(
     trpc.mag.delete.mutationOptions({
       onSuccess: () => {
@@ -68,7 +73,7 @@ export default function MagLogRoutes() {
             key="mag-logs"
             title="MAG "
             searchPlaceholder="Search MAG logs..."
-            data={mag}
+            data={sortedMag}
             columns={magLogColumns}
             onEdit={handleEdit}
             onDelete={handleDelete}

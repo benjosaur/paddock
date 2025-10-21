@@ -91,6 +91,19 @@ export default function PackageRoutes() {
     (p: any) => !("requestId" in p) || !p.requestId
   );
 
+  // Ensure rows are shown in alphabetical order by carer name
+  const sortedRequestPackages = requestPackages.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
+  const sortedIndependentPackages = independentPackages.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
   const deletePackageMutation = useMutation(
     trpc.packages.delete.mutationOptions({
       onSuccess: () => {
@@ -183,7 +196,7 @@ export default function PackageRoutes() {
                   key={`packages-requests-${showEnded ? "ended" : "active"}`}
                   title="Packages"
                   searchPlaceholder="Search packages..."
-                  data={requestPackages}
+                  data={sortedRequestPackages}
                   columns={packageColumns}
                   onEdit={handleEdit}
                   onCover={handleCover}
@@ -211,7 +224,7 @@ export default function PackageRoutes() {
                   key={`packages-independent-${showEnded ? "ended" : "active"}`}
                   title="Packages"
                   searchPlaceholder="Search packages..."
-                  data={independentPackages}
+                  data={sortedIndependentPackages}
                   columns={packageColumns}
                   onEdit={handleEditSolePackage}
                   onCover={handleCover}

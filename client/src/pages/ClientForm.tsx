@@ -196,12 +196,19 @@ export function ClientForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      dateOfBirth:
+        formData.dateOfBirth && formData.dateOfBirth.trim() !== ""
+          ? formData.dateOfBirth
+          : "Unknown",
+    };
     if (isEditing) {
-      updateClientMutation.mutate({ ...formData, id } as ClientFull & {
+      updateClientMutation.mutate({ ...payload, id } as ClientFull & {
         id: number;
       });
     } else {
-      createClientMutation.mutate(formData as Omit<ClientFull, "id">);
+      createClientMutation.mutate(payload as Omit<ClientFull, "id">);
     }
   };
 
@@ -274,7 +281,7 @@ export function ClientForm() {
                   htmlFor="customId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Custom ID *
+                  Custom ID
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -282,7 +289,6 @@ export function ClientForm() {
                     name="details.customId"
                     value={formData.details.customId || ""}
                     onChange={handleInputChange}
-                    required
                     disabled={isEditing}
                     className="flex-1"
                     placeholder="Custom identifier"
@@ -327,15 +333,18 @@ export function ClientForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth *
+                  Date of Birth
                 </label>
                 <Input
                   id="dob"
                   name="dateOfBirth"
                   type="date"
-                  value={formData.dateOfBirth || ""}
+                  value={
+                    formData.dateOfBirth === "Unknown"
+                      ? ""
+                      : formData.dateOfBirth || ""
+                  }
                   onChange={handleInputChange}
-                  required
                 />
               </div>{" "}
               <div>
