@@ -9,6 +9,7 @@ import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise } from "@/utils/helpers";
+import { formatYmdToDmy } from "@/utils/date";
 import EndDialog from "../components/EndDialog";
 import type { EndPersonDetails } from "shared";
 
@@ -26,7 +27,7 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   {
     key: "dob",
     header: "Date of Birth",
-    render: (item: ClientMetadata) => item.dateOfBirth || "",
+    render: (item: ClientMetadata) => formatYmdToDmy(item.dateOfBirth || ""),
   },
 
   {

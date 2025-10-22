@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
@@ -24,7 +25,8 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
     key: "dob",
     header: "Date of Birth",
-    render: (item: VolunteerMetadata) => item.dateOfBirth || "Unknown",
+    render: (item: VolunteerMetadata) =>
+      item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
   },
   {
     key: "postCode",
@@ -39,7 +41,8 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: VolunteerMetadata) => item.dbsExpiry || "No DBS",
+    render: (item: VolunteerMetadata) =>
+      item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
   },
   {
     key: "capacity",

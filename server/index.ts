@@ -20,7 +20,7 @@ export const handler = awsLambdaRequestHandler({
 });
 
 // ESBUILD_DEPLOY_STOP;
-/*
+
 import cors from "cors";
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";

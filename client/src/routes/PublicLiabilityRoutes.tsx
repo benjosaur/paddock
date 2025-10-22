@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -27,7 +28,10 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
   {
     key: "publicLiabilityExpiry",
     header: "Public Liability Expiry",
-    render: (item) => item.publicLiabilityExpiry || "No Public Liability",
+    render: (item) =>
+      item.publicLiabilityExpiry
+        ? formatYmdToDmy(item.publicLiabilityExpiry)
+        : "No Public Liability",
   },
 ];
 

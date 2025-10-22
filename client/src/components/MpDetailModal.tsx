@@ -17,6 +17,7 @@ import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { trainingRecordColumns } from "@/routes/RecordsRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -173,15 +174,33 @@ export function MpDetailModal({
               {renderDetailItem("Address", mp.details.address)}
               {renderDetailItem("Phone", mp.details.phone)}
               {renderDetailItem("Email", mp.details.email)}
-              {renderDetailItem("Start Date", mp.details.startDate)}
-              {renderDetailItem("End Date", mp.endDate)}
+              {renderDetailItem(
+                "Start Date",
+                mp.details.startDate ? formatYmdToDmy(mp.details.startDate) : ""
+              )}
+              {renderDetailItem(
+                "End Date",
+                mp.endDate === "open"
+                  ? "Ongoing"
+                  : mp.endDate
+                  ? formatYmdToDmy(mp.endDate)
+                  : ""
+              )}
               {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
-              {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
+              {renderDetailItem(
+                "DBS Expiry",
+                mp.dbsExpiry ? formatYmdToDmy(mp.dbsExpiry) : undefined
+              )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 mp.publicLiabilityExpiry
+                  ? formatYmdToDmy(mp.publicLiabilityExpiry)
+                  : undefined
               )}
-              {renderDetailItem("Date of Birth", mp.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : ""
+              )}
             </TabsContent>
 
             <TabsContent

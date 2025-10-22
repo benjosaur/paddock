@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
 import { requestColumns } from "@/routes/RequestRoutes";
 import { packageColumns } from "@/routes/PackageRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface ClientDetailModalProps {
   clientId: string;
@@ -152,7 +153,10 @@ export function ClientDetailModal({
                 General Info
               </h3>
               {renderDetailItem("ID", client.id)}
-              {renderDetailItem("Date of Birth", client.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                client.dateOfBirth ? formatYmdToDmy(client.dateOfBirth) : ""
+              )}
               {renderDetailItem(
                 "Street Address",
                 client.details.address.streetAddress
@@ -213,6 +217,8 @@ export function ClientDetailModal({
               {renderDetailItem(
                 "Client Agreement Date",
                 client.details.clientAgreementDate
+                  ? formatYmdToDmy(client.details.clientAgreementDate)
+                  : ""
               )}
               {renderDetailItem(
                 "Client Agreement Comments",
@@ -221,6 +227,8 @@ export function ClientDetailModal({
               {renderDetailItem(
                 "Risk Assessment Date",
                 client.details.riskAssessmentDate
+                  ? formatYmdToDmy(client.details.riskAssessmentDate)
+                  : ""
               )}
               {renderDetailItem(
                 "Risk Assessment Comments",
@@ -240,6 +248,10 @@ export function ClientDetailModal({
                   {renderDetailItem(
                     "Requested Date",
                     client.details.attendanceAllowance.requestedDate
+                      ? formatYmdToDmy(
+                          client.details.attendanceAllowance.requestedDate
+                        )
+                      : ""
                   )}
                   {renderDetailItem(
                     "Status",
@@ -248,6 +260,10 @@ export function ClientDetailModal({
                   {renderDetailItem(
                     "Confirmation Date",
                     client.details.attendanceAllowance.confirmationDate
+                      ? formatYmdToDmy(
+                          client.details.attendanceAllowance.confirmationDate
+                        )
+                      : ""
                   )}
                 </div>
               </div>

@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { MpForm } from "../pages/MpForm";
 import { MpDetailModal } from "../components/MpDetailModal";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
@@ -19,7 +20,8 @@ const mpColumns: TableColumn<MpMetadata>[] = [
   {
     key: "dob",
     header: "Date of Birth",
-    render: (item: MpMetadata) => item.dateOfBirth || "Unknown",
+    render: (item: MpMetadata) =>
+      item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
   },
   {
     key: "postCode",

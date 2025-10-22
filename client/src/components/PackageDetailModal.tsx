@@ -13,6 +13,7 @@ import { trpc } from "../utils/trpc";
 import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface PackageDetailModalProps {
   pkgId: string;
@@ -97,10 +98,12 @@ export function PackageDetailModal({
               </h3>
               {renderDetailItem("Package ID", pkg.id)}
               {renderDetailItem("Carer Name", pkg.details.name)}
-              {renderDetailItem("Start Date", pkg.startDate)}
+              {renderDetailItem("Start Date", formatYmdToDmy(pkg.startDate))}
               {renderDetailItem(
                 "End Date",
-                pkg.endDate === "open" ? "Ongoing" : pkg.endDate
+                pkg.endDate === "open"
+                  ? "Ongoing"
+                  : formatYmdToDmy(pkg.endDate as string)
               )}
               {renderDetailItem("Weekly Hours", pkg.details.weeklyHours)}
               {renderDetailItem(

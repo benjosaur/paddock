@@ -17,6 +17,7 @@ import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { trainingRecordColumns } from "@/routes/RecordsRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -169,15 +170,39 @@ export function VolunteerDetailModal({
               {renderDetailItem("Address", volunteer.details.address)}
               {renderDetailItem("Phone", volunteer.details.phone)}
               {renderDetailItem("Email", volunteer.details.email)}
-              {renderDetailItem("Start Date", volunteer.details.startDate)}
-              {renderDetailItem("End Date", volunteer.endDate)}
+              {renderDetailItem(
+                "Start Date",
+                volunteer.details.startDate
+                  ? formatYmdToDmy(volunteer.details.startDate)
+                  : ""
+              )}
+              {renderDetailItem(
+                "End Date",
+                volunteer.endDate === "open"
+                  ? "Ongoing"
+                  : volunteer.endDate
+                  ? formatYmdToDmy(volunteer.endDate)
+                  : ""
+              )}
               {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
-              {renderDetailItem("DBS Expiry", volunteer.dbsExpiry)}
+              {renderDetailItem(
+                "DBS Expiry",
+                volunteer.dbsExpiry
+                  ? formatYmdToDmy(volunteer.dbsExpiry)
+                  : undefined
+              )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 volunteer.publicLiabilityExpiry
+                  ? formatYmdToDmy(volunteer.publicLiabilityExpiry)
+                  : undefined
               )}
-              {renderDetailItem("Date of Birth", volunteer.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                volunteer.dateOfBirth
+                  ? formatYmdToDmy(volunteer.dateOfBirth)
+                  : ""
+              )}
             </TabsContent>
 
             <TabsContent

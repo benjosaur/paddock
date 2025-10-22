@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { TrainingRecord, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -36,7 +37,7 @@ export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
   {
     key: "date",
     header: "Expiry Date",
-    render: (item) => item.expiryDate,
+    render: (item) => formatYmdToDmy(item.expiryDate || ""),
   },
   {
     key: "notes",

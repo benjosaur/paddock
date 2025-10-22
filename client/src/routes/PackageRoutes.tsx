@@ -7,6 +7,7 @@ import { RenewPackageForm } from "../pages/RenewPackageForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { PackageDetailModal } from "../components/PackageDetailModal";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CoverPackageForm } from "@/pages/CoverPackageForm";
@@ -27,13 +28,15 @@ export const packageColumns: TableColumn<Package>[] = [
   {
     key: "startDate",
     header: "Start Date",
-    render: (item: Package) => item.startDate,
+    render: (item: Package) => formatYmdToDmy(item.startDate),
   },
   {
     key: "endDate",
     header: "End Date",
     render: (item: Package) =>
-      item.endDate === "open" ? "Ongoing" : item.endDate,
+      item.endDate === "open"
+        ? "Ongoing"
+        : formatYmdToDmy(item.endDate as string),
   },
   {
     key: "oneOff",

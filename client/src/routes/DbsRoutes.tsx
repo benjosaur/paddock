@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -26,7 +27,8 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item) => item.dbsExpiry || "No DBS",
+    render: (item) =>
+      item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
   },
 ];
 

@@ -16,6 +16,7 @@ import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 import { PackageDetailModal } from "./PackageDetailModal";
 
 interface RequestDetailModalProps {
@@ -110,10 +111,15 @@ export function RequestDetailModal({
               {renderDetailItem("Request ID", request.id)}
               {renderDetailItem("Request Type", request.requestType)}
               {renderDetailItem("Client Name", request.details.name)}
-              {renderDetailItem("Start Date", request.startDate)}
+              {renderDetailItem(
+                "Start Date",
+                formatYmdToDmy(request.startDate)
+              )}
               {renderDetailItem(
                 "End Date",
-                request.endDate === "open" ? "Ongoing" : request.endDate
+                request.endDate === "open"
+                  ? "Ongoing"
+                  : formatYmdToDmy(request.endDate as string)
               )}
               {renderDetailItem("Status", request.details.status)}
               {renderDetailItem(

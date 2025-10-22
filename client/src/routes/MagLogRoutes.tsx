@@ -2,11 +2,12 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MagLogForm } from "../pages/MagLogForm";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "date", header: "Date", render: (item) => item.date },
+  { key: "date", header: "Date", render: (item) => formatYmdToDmy(item.date) },
   {
     key: "total",
     header: "Total Attendees",

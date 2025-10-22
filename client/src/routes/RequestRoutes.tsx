@@ -6,6 +6,7 @@ import { RequestForm } from "../pages/RequestForm";
 import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { RequestFull, TableColumn } from "../types";
 import type { EndRequestDetails } from "shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,12 +37,15 @@ export const requestColumns: TableColumn<RequestFull>[] = [
   {
     key: "startDate",
     header: "Start Date",
-    render: (item) => item.startDate,
+    render: (item) => formatYmdToDmy(item.startDate),
   },
   {
     key: "endDate",
     header: "End Date",
-    render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
+    render: (item) =>
+      item.endDate === "open"
+        ? "Ongoing"
+        : formatYmdToDmy(item.endDate as string),
   },
   {
     key: "oneOffStartDateHours",
@@ -101,12 +105,15 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
     {
       key: "startDate",
       header: "Start Date",
-      render: (item) => item.startDate,
+      render: (item) => formatYmdToDmy(item.startDate),
     },
     {
       key: "endDate",
       header: "End Date",
-      render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
+      render: (item) =>
+        item.endDate === "open"
+          ? "Ongoing"
+          : formatYmdToDmy(item.endDate as string),
     },
     {
       key: "oneOffStartDateHours",
