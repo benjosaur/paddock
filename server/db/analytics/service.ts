@@ -60,10 +60,14 @@ export class ReportService {
         overallInReceipt: {
           total: 0,
           totalHigh: 0,
+          totalRequestedHigh: 0,
+          totalHighRequestedHigh: 0,
         },
         thisMonthConfirmed: {
           total: 0,
           totalHigh: 0,
+          totalRequestedHigh: 0,
+          totalHighRequestedHigh: 0,
         },
       };
 
@@ -88,6 +92,11 @@ export class ReportService {
         const isReceivingHigh =
           client.details.attendanceAllowance.status === "High";
 
+        const isRequestedHigh =
+          client.details.attendanceAllowance.requestedLevel === "High";
+
+        const isReceivingHighRequestedHigh = isReceivingHigh && isRequestedHigh;
+
         let confirmationYear, confirmationMonth;
         if (client.details.attendanceAllowance.confirmationDate) {
           const confirmationDate =
@@ -99,11 +108,19 @@ export class ReportService {
           confirmationYear === currentYear &&
           confirmationMonth === currentMonth
         ) {
-          report.thisMonthConfirmed.total++;
+          report.thisMonthConfirmed.total += isReceiving ? 1 : 0;
           report.thisMonthConfirmed.totalHigh += isReceivingHigh ? 1 : 0;
+          report.thisMonthConfirmed.totalRequestedHigh += isRequestedHigh
+            ? 1
+            : 0;
+          report.thisMonthConfirmed.totalHighRequestedHigh +=
+            isReceivingHighRequestedHigh ? 1 : 0;
         }
         report.overallInReceipt.total += isReceiving ? 1 : 0;
         report.overallInReceipt.totalHigh += isReceivingHigh ? 1 : 0;
+        report.overallInReceipt.totalRequestedHigh += isRequestedHigh ? 1 : 0;
+        report.overallInReceipt.totalHighRequestedHigh +=
+          isReceivingHighRequestedHigh ? 1 : 0;
       }
       return report;
     } catch (error) {

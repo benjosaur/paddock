@@ -736,6 +736,21 @@ export function Dashboard() {
                   )}
                   label="% High"
                 />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.overallInReceipt.totalRequestedHigh,
+                    attendanceAllowanceData.overallInReceipt.total
+                  )}
+                  label="% Requested High"
+                />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.overallInReceipt
+                      .totalHighRequestedHigh,
+                    attendanceAllowanceData.overallInReceipt.total
+                  )}
+                  label="% High & Requested High"
+                />
               </div>
             </div>
 
@@ -754,6 +769,22 @@ export function Dashboard() {
                     attendanceAllowanceData.thisMonthConfirmed.total
                   )}
                   label="% High"
+                />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.thisMonthConfirmed
+                      .totalRequestedHigh,
+                    attendanceAllowanceData.thisMonthConfirmed.total
+                  )}
+                  label="% Requested High"
+                />
+                <AnimatedCounter
+                  targetValue={calculatePercentage(
+                    attendanceAllowanceData.thisMonthConfirmed
+                      .totalHighRequestedHigh,
+                    attendanceAllowanceData.thisMonthConfirmed.total
+                  )}
+                  label="% High & Requested High"
                 />
               </div>
             </div>

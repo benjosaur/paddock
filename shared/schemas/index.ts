@@ -247,11 +247,15 @@ export const attendanceAllowanceReportSchema = z.object({
   // need to infer not in receipt of AA if termination date given.
   overallInReceipt: z.object({
     total: z.coerce.number().default(0),
-    totalHigh: z.coerce.number().min(0).max(100).default(0),
+    totalHigh: z.coerce.number().min(0).default(0),
+    totalHighRequestedHigh: z.coerce.number().min(0).default(0),
+    totalRequestedHigh: z.coerce.number().min(0).default(0),
   }),
   thisMonthConfirmed: z.object({
     total: z.coerce.number().default(0),
-    totalHigh: z.coerce.number().min(0).max(100).default(0),
+    totalHigh: z.coerce.number().min(0).default(0),
+    totalHighRequestedHigh: z.coerce.number().min(0).default(0),
+    totalRequestedHigh: z.coerce.number().min(0).default(0),
   }),
 });
 

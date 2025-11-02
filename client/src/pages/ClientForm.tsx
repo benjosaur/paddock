@@ -78,7 +78,7 @@ export function ClientForm() {
       attendanceAllowance: {
         requestedLevel: "None",
         requestedDate: "",
-        status: "None",
+        status: "None", // will appear null on FE
         confirmationDate: "",
       },
       attendsMag: false,
@@ -252,12 +252,12 @@ export function ClientForm() {
     })
   );
 
-  const attendanceAllowanceStatusOptions = attendanceAllowanceStatuses.map(
-    (option) => ({
+  const attendanceAllowanceStatusOptions = attendanceAllowanceStatuses
+    .filter((status) => status !== "None")
+    .map((option) => ({
       value: option,
       label: capitalise(option),
-    })
-  );
+    }));
 
   const serviceSelectOptions = serviceOptions
     .filter((service) => service !== "Information")
