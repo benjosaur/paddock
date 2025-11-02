@@ -10,6 +10,7 @@ import { associatedClientRoutes } from "../routes/ClientsRoutes";
 import { notesSource, serviceOptions } from "shared/const";
 import { updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
 
 type VolunteerOption = { label: string; value: string };
 
@@ -55,11 +56,16 @@ export function InfoForm() {
   const [selectedVolunteer, setSelectedVolunteer] =
     useState<VolunteerOption | null>(null);
   const [formData, setFormData] = useState<InfoDetails>({
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     minutesTaken: 0,
     source: "Phone",
     note: "",
     services: [],
+  });
+
+  useTodaysDate({
+    enabled: !formData.date,
+    setDate: (value) => setFormData((prev) => ({ ...prev, date: value })),
   });
 
   // Seed default volunteer once data loads

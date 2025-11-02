@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTodaysDate } from "../hooks/useTodaysDate";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
@@ -145,6 +146,10 @@ export function RequestForm() {
       }
     }
   }, [formData.clientId, clients, isEditing]);
+  useTodaysDate({
+    enabled: !isEditing && !formData.startDate,
+    setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
+  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { soleServiceOptions } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
 
 export function SolePackageForm() {
   const navigate = useNavigate();
@@ -46,6 +47,11 @@ export function SolePackageForm() {
       notes: "",
       services: [],
     },
+  });
+
+  useTodaysDate({
+    enabled: !isEditing && !formData.startDate,
+    setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
   });
 
   useEffect(() => {

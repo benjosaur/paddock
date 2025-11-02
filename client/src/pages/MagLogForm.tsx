@@ -13,6 +13,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { associatedMagLogRoutes } from "../routes/MagLogRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
 
 export function MagLogForm() {
   const navigate = useNavigate();
@@ -76,6 +77,11 @@ export function MagLogForm() {
       setFormData(dataWithoutId);
     }
   }, [magLogQuery.data]);
+
+  useTodaysDate({
+    enabled: !isEditing && !formData.date,
+    setDate: (value) => setFormData((prev) => ({ ...prev, date: value })),
+  });
 
   const clientOptions = (clientsQuery.data || []).map(
     (client: ClientMetadata) => ({

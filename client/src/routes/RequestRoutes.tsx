@@ -188,10 +188,6 @@ export default function RequestRoutes() {
     })
   );
 
-  const handleAddNew = () => {
-    navigate("/requests/create");
-  };
-
   const handleAddPackage = (requestId: string) => {
     navigate("/packages/create", { state: { requestId } });
   };
@@ -261,7 +257,6 @@ export default function RequestRoutes() {
                   onAddPackage={handleAddPackage}
                   onRenew={handleRenew}
                   onEnd={handleEnd}
-                  onCreate={handleAddNew}
                   onViewItem={handleView}
                   resource="requests"
                   customActions={
@@ -289,7 +284,6 @@ export default function RequestRoutes() {
                   onAddPackage={handleAddPackage}
                   onRenew={handleRenew}
                   onEnd={handleEnd}
-                  onCreate={handleAddNew}
                   onViewItem={handleView}
                   resource="requests"
                   customActions={

@@ -348,9 +348,11 @@ export function RenewRequestForm() {
                   }
                 }}
               />
-              <small className="text-gray-500">
-                Leave empty for ongoing request
-              </small>
+              {!isOld && (
+                <small className="text-gray-500">
+                  Leave empty for ongoing request
+                </small>
+              )}
             </div>
           </div>
 

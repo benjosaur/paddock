@@ -323,6 +323,7 @@ export function RenewPackageForm() {
               value={formData.startDate || ""}
               onChange={(e) => handleInputChange(e, isOld)}
               required
+              disabled={true}
             />
           </div>
 
@@ -351,9 +352,11 @@ export function RenewPackageForm() {
                 }
               }}
             />
-            <small className="text-gray-500">
-              Leave empty for ongoing package
-            </small>
+            {!isOld && (
+              <small className="text-gray-500">
+                Leave empty for ongoing package
+              </small>
+            )}
           </div>
         </div>
 
