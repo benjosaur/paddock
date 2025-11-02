@@ -378,6 +378,27 @@ export function RenewRequestForm() {
                 onChange={(e) => handleInputChange(e, isOld)}
                 placeholder="e.g., 10"
                 required
+                disabled={isOld}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor={`oneOffStartDateHours-${isOld ? "old" : "new"}`}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                One-off Hours (on Start Date)
+              </label>
+              <Input
+                id={`oneOffStartDateHours-${isOld ? "old" : "new"}`}
+                name="details.oneOffStartDateHours"
+                type="number"
+                min="0"
+                step="0.5"
+                value={formData.details.oneOffStartDateHours ?? 0}
+                onChange={(e) => handleInputChange(e, isOld)}
+                placeholder="0"
+                disabled={isOld}
               />
             </div>
 
@@ -402,6 +423,7 @@ export function RenewRequestForm() {
                 isSearchable
                 isMulti
                 noOptionsMessage={() => "No services found"}
+                isDisabled={isOld}
               />
             </div>
 
@@ -418,6 +440,7 @@ export function RenewRequestForm() {
                 value={formData.details.notes || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
                 placeholder="Additional notes about the request"
+                readOnly={isOld}
               />
             </div>
 
@@ -461,6 +484,7 @@ export function RenewRequestForm() {
                 name="details.address.streetAddress"
                 value={formData.details.address.streetAddress || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
+                disabled={isOld}
               />
             </div>
 
@@ -494,6 +518,7 @@ export function RenewRequestForm() {
                 }
                 placeholder="Select locality..."
                 required
+                isDisabled={isOld}
               />
             </div>
 
@@ -509,6 +534,7 @@ export function RenewRequestForm() {
                 name="details.address.county"
                 value={formData.details.address.county || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
+                disabled={isOld}
               />
             </div>
 
@@ -524,6 +550,7 @@ export function RenewRequestForm() {
                 name="details.address.postCode"
                 value={formData.details.address.postCode || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
+                disabled={isOld}
               />
             </div>
           </div>

@@ -292,7 +292,7 @@ export function RenewPackageForm() {
               htmlFor={`carerId-${isOld ? "old" : "new"}`}
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Carer/MP *
+              Carer *
             </label>
             <Select
               options={mpOptions}
@@ -307,6 +307,7 @@ export function RenewPackageForm() {
               isSearchable
               noOptionsMessage={() => "No carers/MPs found"}
               isClearable
+              isDisabled={isOld}
             />
           </div>
 
@@ -383,6 +384,27 @@ export function RenewPackageForm() {
               onChange={(e) => handleInputChange(e, isOld)}
               placeholder="e.g., 10"
               required
+              disabled={isOld}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor={`oneOffStartDateHours-${isOld ? "old" : "new"}`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              One-off Hours
+            </label>
+            <Input
+              id={`oneOffStartDateHours-${isOld ? "old" : "new"}`}
+              name="details.oneOffStartDateHours"
+              type="number"
+              min="0"
+              step="0.5"
+              value={formData.details.oneOffStartDateHours ?? 0}
+              onChange={(e) => handleInputChange(e, isOld)}
+              placeholder="0"
+              disabled={isOld}
             />
           </div>
 
@@ -397,6 +419,7 @@ export function RenewPackageForm() {
                   placeholder="Street Address"
                   value={formData.details.address.streetAddress || ""}
                   onChange={(e) => handleInputChange(e, isOld)}
+                  disabled={isOld}
                 />
                 <Select
                   id={`locality-${isOld ? "old" : "new"}`}
@@ -421,18 +444,21 @@ export function RenewPackageForm() {
                   }
                   placeholder="Select locality..."
                   required
+                  isDisabled={isOld}
                 />
                 <Input
                   name="details.address.county"
                   placeholder="County"
                   value={formData.details.address.county || "Somerset"}
                   onChange={(e) => handleInputChange(e, isOld)}
+                  disabled={isOld}
                 />
                 <Input
                   name="details.address.postCode"
                   placeholder="Post Code *"
                   value={formData.details.address.postCode || ""}
                   onChange={(e) => handleInputChange(e, isOld)}
+                  disabled={isOld}
                   required
                 />
               </div>
@@ -462,6 +488,7 @@ export function RenewPackageForm() {
               isSearchable
               isMulti
               noOptionsMessage={() => "No services found"}
+              isDisabled={isOld}
             />
           </div>
 
@@ -480,6 +507,7 @@ export function RenewPackageForm() {
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Additional notes about the package..."
+              readOnly={isOld}
             />
           </div>
         </div>
