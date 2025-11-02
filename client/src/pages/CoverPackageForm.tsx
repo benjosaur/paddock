@@ -71,8 +71,6 @@ export function CoverPackageForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -217,9 +215,9 @@ export function CoverPackageForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.oneOffStartDateHours ?? 0}
+                  value={formData.oneOffStartDateHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="0"
+                  placeholder=""
                 />
               </div>
             </div>

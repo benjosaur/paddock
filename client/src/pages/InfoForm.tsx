@@ -233,14 +233,14 @@ export function InfoForm() {
                   type="number"
                   min={0}
                   step={0.25}
-                  value={formData.minutesTaken ?? 0}
+                  value={formData.minutesTaken ?? ""}
                   onChange={(e) =>
                     setFormData((p) => ({
                       ...p,
-                      minutesTaken: Number(e.target.value),
+                      minutesTaken: Number(e.target.value || 0),
                     }))
                   }
-                  placeholder="0"
+                  placeholder=""
                   required
                 />
               </div>

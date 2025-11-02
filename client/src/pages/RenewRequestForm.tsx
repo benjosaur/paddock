@@ -144,8 +144,6 @@ export function RenewRequestForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
 
     if (isOld && oldRequestData) {
@@ -374,9 +372,9 @@ export function RenewRequestForm() {
                 min="0"
                 max="168"
                 step="0.5"
-                value={formData.details.weeklyHours ?? 0}
+                value={formData.details.weeklyHours ?? ""}
                 onChange={(e) => handleInputChange(e, isOld)}
-                placeholder="e.g., 10"
+                placeholder=""
                 required
                 disabled={isOld}
               />
@@ -395,9 +393,9 @@ export function RenewRequestForm() {
                 type="number"
                 min="0"
                 step="0.5"
-                value={formData.details.oneOffStartDateHours ?? 0}
+                value={formData.details.oneOffStartDateHours ?? ""}
                 onChange={(e) => handleInputChange(e, isOld)}
-                placeholder="0"
+                placeholder=""
                 disabled={isOld}
               />
             </div>

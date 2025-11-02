@@ -109,8 +109,6 @@ export function MagLogForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -195,9 +193,9 @@ export function MagLogForm() {
                     name="details.totalClients"
                     type="number"
                     min="0"
-                    value={formData.details.totalClients ?? 0}
+                    value={formData.details.totalClients ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 5"
+                    placeholder=""
                     required
                   />
                 </div>
@@ -214,9 +212,9 @@ export function MagLogForm() {
                     name="details.totalFamily"
                     type="number"
                     min="0"
-                    value={formData.details.totalFamily ?? 0}
+                    value={formData.details.totalFamily ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2"
+                    placeholder=""
                   />
                 </div>
 
@@ -232,9 +230,9 @@ export function MagLogForm() {
                     name="details.totalVolunteers"
                     type="number"
                     min="0"
-                    value={formData.details.totalVolunteers ?? 0}
+                    value={formData.details.totalVolunteers ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 3"
+                    placeholder=""
                   />
                 </div>
 
@@ -250,9 +248,9 @@ export function MagLogForm() {
                     name="details.totalMps"
                     type="number"
                     min="0"
-                    value={formData.details.totalMps ?? 0}
+                    value={formData.details.totalMps ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 1"
+                    placeholder=""
                   />
                 </div>
 
@@ -268,9 +266,9 @@ export function MagLogForm() {
                     name="details.otherAttendees"
                     type="number"
                     min="0"
-                    value={formData.details.otherAttendees ?? 0}
+                    value={formData.details.otherAttendees ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2"
+                    placeholder=""
                   />
                 </div>
               </div>

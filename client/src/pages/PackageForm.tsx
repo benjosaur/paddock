@@ -137,8 +137,6 @@ export function PackageForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -335,9 +333,9 @@ export function PackageForm() {
                   type="number"
                   step="0.5"
                   min="0"
-                  value={formData.details.weeklyHours ?? 0}
+                  value={formData.details.weeklyHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="0"
+                  placeholder=""
                   required
                 />
               </div>
@@ -355,9 +353,9 @@ export function PackageForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.details.oneOffStartDateHours ?? 0}
+                  value={formData.details.oneOffStartDateHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="0"
+                  placeholder=""
                 />
               </div>
 

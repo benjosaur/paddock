@@ -158,8 +158,6 @@ export function RequestForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -348,9 +346,9 @@ export function RequestForm() {
                   min="0"
                   max="168"
                   step="0.5"
-                  value={formData.details.weeklyHours ?? 0}
+                  value={formData.details.weeklyHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="0"
+                  placeholder=""
                   required
                 />
               </div>
@@ -368,9 +366,9 @@ export function RequestForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.details.oneOffStartDateHours ?? 0}
+                  value={formData.details.oneOffStartDateHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="0"
+                  placeholder=""
                 />
               </div>
 
