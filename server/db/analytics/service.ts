@@ -19,7 +19,13 @@
 	- For each request. Get weekly hours. Get Start Date. Get End Date. Derive total days covered in each month / 7 * weeklyHours and append to totalHours. Get village add to village entry. Get service(s), add to each service. Repeat
 */
 
-import { firstYear, months, ServiceOption, serviceOptions } from "shared/const";
+import {
+  attendanceAllowanceStatuses,
+  firstYear,
+  months,
+  ServiceOption,
+  serviceOptions,
+} from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
 import {
@@ -60,6 +66,11 @@ export class ReportService {
           totalHigh: 0,
         },
       };
+
+      const receivingStates: (typeof attendanceAllowanceStatuses)[number][] = [
+        "Low",
+        "High",
+      ];
       const currentDate = new Date().toISOString().slice(0, 10);
       const currentYear = parseInt(currentDate.slice(0, 4));
       const currentMonth = parseInt(currentDate.slice(5, 7));
@@ -70,6 +81,10 @@ export class ReportService {
           // probably should be archived (client end dates present mean terminated)
           continue;
         }
+        const isReceiving = receivingStates.includes(
+          client.details.attendanceAllowance.status
+        );
+
         const isReceivingHigh =
           client.details.attendanceAllowance.status === "High";
 
@@ -87,7 +102,7 @@ export class ReportService {
           report.thisMonthConfirmed.total++;
           report.thisMonthConfirmed.totalHigh += isReceivingHigh ? 1 : 0;
         }
-        report.overallInReceipt.total++;
+        report.overallInReceipt.total += isReceiving ? 1 : 0;
         report.overallInReceipt.totalHigh += isReceivingHigh ? 1 : 0;
       }
       return report;

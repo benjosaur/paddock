@@ -592,8 +592,8 @@ export function Dashboard() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="requests">Active Requests</TabsTrigger>
-          <TabsTrigger value="packages">Active Packages</TabsTrigger>
+          <TabsTrigger value="requests">Requests Breakdown</TabsTrigger>
+          <TabsTrigger value="packages">Packages Breakdown</TabsTrigger>
           <TabsTrigger value="attendance-allowance">
             Attendance Allowance
           </TabsTrigger>
@@ -617,8 +617,13 @@ export function Dashboard() {
             />
 
             <AnimatedCounter
+              targetValue={analyticsRequests.totalHours}
+              label="Current Requested Weekly Care Hours"
+            />
+
+            <AnimatedCounter
               targetValue={analyticsPackages.totalHours}
-              label="Current Weekly Care Hours"
+              label="Current Brokered Weekly Care Hours"
             />
           </div>
         </TabsContent>
