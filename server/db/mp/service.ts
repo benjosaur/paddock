@@ -209,7 +209,8 @@ export class MpService {
       const records = await this.mpRepository.getById(validated.personId, user);
       const transformedMp = this.transformDbMpToSharedMetaData(records)[0];
       if (!transformedMp) throw new Error("MP record not found");
-      const { id, trainingRecords, packages, ...rest } = transformedMp as any;
+      const validatedMp = mpMetadataSchema.parse(transformedMp);
+      const { id, trainingRecords, packages, ...rest } = validatedMp;
       const dbMp: DbMpEntity = addDbMiddleware(
         {
           ...rest,

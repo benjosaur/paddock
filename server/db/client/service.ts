@@ -413,7 +413,8 @@ export class ClientService {
       const transformedClient =
         this.transformDbClientToSharedMetaData(records)[0];
       if (!transformedClient) throw new Error("Client record not found");
-      const { id, requests, ...rest } = transformedClient;
+      const validatedClient = clientMetadataSchema.parse(transformedClient);
+      const { id, requests, ...rest } = validatedClient;
       const dbClient: DbClientEntity = addDbMiddleware(
         {
           ...rest,

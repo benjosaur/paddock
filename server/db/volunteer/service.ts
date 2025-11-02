@@ -291,9 +291,12 @@ export class VolunteerService {
         validated.personId,
         user
       );
-      const meta = this.transformDbVolunteerToSharedMetaData(records)[0];
-      if (!meta) throw new Error("Volunteer record not found");
-      const { id, trainingRecords, packages, ...rest } = meta as any;
+      const transformedVolunteer =
+        this.transformDbVolunteerToSharedMetaData(records)[0];
+      if (!transformedVolunteer) throw new Error("Volunteer record not found");
+      const validatedVolunteer =
+        volunteerMetadataSchema.parse(transformedVolunteer);
+      const { id, trainingRecords, packages, ...rest } = validatedVolunteer;
       const dbVolunteer: DbVolunteerEntity = addDbMiddleware(
         {
           ...rest,

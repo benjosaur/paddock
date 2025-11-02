@@ -101,6 +101,9 @@ export class RequestRepository {
 
   async getById(requestId: string, user: User): Promise<DbRequest[]> {
     // also returns associated packages
+    // req has pk as owner and sk as req id
+    // pkg has pk as owner and sk as pkg id
+    // but both have same requestId attr
     const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI1",
