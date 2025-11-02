@@ -195,7 +195,7 @@ export function MagLogForm() {
                     name="details.totalClients"
                     type="number"
                     min="0"
-                    value={formData.details.totalClients || ""}
+                    value={formData.details.totalClients ?? 0}
                     onChange={handleInputChange}
                     placeholder="e.g., 5"
                     required
@@ -214,7 +214,7 @@ export function MagLogForm() {
                     name="details.totalFamily"
                     type="number"
                     min="0"
-                    value={formData.details.totalFamily || ""}
+                    value={formData.details.totalFamily ?? 0}
                     onChange={handleInputChange}
                     placeholder="e.g., 2"
                   />
@@ -232,7 +232,7 @@ export function MagLogForm() {
                     name="details.totalVolunteers"
                     type="number"
                     min="0"
-                    value={formData.details.totalVolunteers || ""}
+                    value={formData.details.totalVolunteers ?? 0}
                     onChange={handleInputChange}
                     placeholder="e.g., 3"
                   />
@@ -250,7 +250,7 @@ export function MagLogForm() {
                     name="details.totalMps"
                     type="number"
                     min="0"
-                    value={formData.details.totalMps || ""}
+                    value={formData.details.totalMps ?? 0}
                     onChange={handleInputChange}
                     placeholder="e.g., 1"
                   />
@@ -268,7 +268,7 @@ export function MagLogForm() {
                     name="details.otherAttendees"
                     type="number"
                     min="0"
-                    value={formData.details.otherAttendees || ""}
+                    value={formData.details.otherAttendees ?? 0}
                     onChange={handleInputChange}
                     placeholder="e.g., 2"
                   />

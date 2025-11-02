@@ -217,7 +217,7 @@ export function CoverPackageForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.oneOffStartDateHours || ""}
+                  value={formData.oneOffStartDateHours ?? 0}
                   onChange={handleInputChange}
                   placeholder="0"
                 />

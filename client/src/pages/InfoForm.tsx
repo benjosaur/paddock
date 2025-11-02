@@ -233,7 +233,7 @@ export function InfoForm() {
                   type="number"
                   min={0}
                   step={0.25}
-                  value={formData.minutesTaken || ""}
+                  value={formData.minutesTaken ?? 0}
                   onChange={(e) =>
                     setFormData((p) => ({
                       ...p,

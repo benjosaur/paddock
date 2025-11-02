@@ -348,7 +348,7 @@ export function RequestForm() {
                   min="0"
                   max="168"
                   step="0.5"
-                  value={formData.details.weeklyHours || ""}
+                  value={formData.details.weeklyHours ?? 0}
                   onChange={handleInputChange}
                   placeholder="0"
                   required
@@ -368,7 +368,7 @@ export function RequestForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.details.oneOffStartDateHours || ""}
+                  value={formData.details.oneOffStartDateHours ?? 0}
                   onChange={handleInputChange}
                   placeholder="0"
                 />

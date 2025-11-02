@@ -15,6 +15,7 @@ import {
   localities,
 } from "shared/const";
 import { associatedRequestRoutes } from "../routes/RequestRoutes";
+import { cn } from "@/lib/utils";
 
 export function RenewRequestForm() {
   const navigate = useNavigate();
@@ -348,11 +349,9 @@ export function RenewRequestForm() {
                   }
                 }}
               />
-              {!isOld && (
-                <small className="text-gray-500">
-                  Leave empty for ongoing request
-                </small>
-              )}
+              <small className={cn("text-gray-500", isOld && "invisible")}>
+                Leave empty for ongoing request
+              </small>
             </div>
           </div>
 
@@ -375,7 +374,7 @@ export function RenewRequestForm() {
                 min="0"
                 max="168"
                 step="0.5"
-                value={formData.details.weeklyHours || ""}
+                value={formData.details.weeklyHours ?? 0}
                 onChange={(e) => handleInputChange(e, isOld)}
                 placeholder="e.g., 10"
                 required

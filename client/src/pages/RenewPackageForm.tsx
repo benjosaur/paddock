@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { cn } from "@/lib/utils";
 
 export function RenewPackageForm() {
   const navigate = useNavigate();
@@ -352,11 +353,11 @@ export function RenewPackageForm() {
                 }
               }}
             />
-            {!isOld && (
-              <small className="text-gray-500">
+            {
+              <small className={cn("text-gray-500", isOld && "invisible")}>
                 Leave empty for ongoing package
               </small>
-            )}
+            }
           </div>
         </div>
 
@@ -378,7 +379,7 @@ export function RenewPackageForm() {
               type="number"
               step="0.5"
               min="0"
-              value={formData.details.weeklyHours || ""}
+              value={formData.details.weeklyHours ?? 0}
               onChange={(e) => handleInputChange(e, isOld)}
               placeholder="e.g., 10"
               required

@@ -335,7 +335,7 @@ export function PackageForm() {
                   type="number"
                   step="0.5"
                   min="0"
-                  value={formData.details.weeklyHours || ""}
+                  value={formData.details.weeklyHours ?? 0}
                   onChange={handleInputChange}
                   placeholder="0"
                   required
@@ -355,7 +355,7 @@ export function PackageForm() {
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.details.oneOffStartDateHours || ""}
+                  value={formData.details.oneOffStartDateHours ?? 0}
                   onChange={handleInputChange}
                   placeholder="0"
                 />
