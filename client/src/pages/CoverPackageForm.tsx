@@ -11,6 +11,8 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { CoverDetails } from "shared/schemas/convenience";
+import { coverDetailsSchema } from "shared/schemas/convenience";
+import { validateOrToast } from "@/utils/validation";
 import { associatedPackageRoutes } from "@/routes/PackageRoutes";
 import { updateNestedValue } from "@/utils/helpers";
 
@@ -88,9 +90,15 @@ export function CoverPackageForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<CoverDetails>(
+      coverDetailsSchema,
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Cover package" }
+    );
+    if (!validated) return;
     createCoverMutation.mutate({
       oldPackage: request.packages[0],
-      coverDetails: formData,
+      coverDetails: validated,
     });
   };
 

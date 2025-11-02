@@ -5,6 +5,8 @@ import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
 import { trpc } from "../utils/trpc";
 import type { TrainingRecord } from "../types";
+import { trainingRecordSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { trainingRecordTypes } from "shared/const";
@@ -135,11 +137,19 @@ export function TrainingRecordForm() {
       ...formData,
       ownerId,
     };
-
+    const schema = trainingRecordSchema.omit({ id: true });
+    const validated = validateOrToast<TrainingRecord>(schema, recordData, {
+      toastPrefix: "Form Validation Error",
+      logPrefix: "Training record",
+    });
+    if (!validated) return;
     if (isEditing) {
-      updateMutation.mutate({ id, ...recordData });
+      updateMutation.mutate({
+        id,
+        ...(validated as Omit<TrainingRecord, "id">),
+      });
     } else {
-      createMutation.mutate(recordData);
+      createMutation.mutate(validated as Omit<TrainingRecord, "id">);
     }
   };
 

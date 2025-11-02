@@ -63,8 +63,8 @@ export const reqPackageSchema = z.object({
   details: z.object({
     // mp/v owner name
     name: z.string(),
-    weeklyHours: z.number().default(0),
-    oneOffStartDateHours: z.number().default(0),
+    weeklyHours: z.coerce.number().default(0),
+    oneOffStartDateHours: z.coerce.number().default(0),
     address: addressSchemaWithDeprivation,
     notes: z.string().default(""),
     services: z.array(z.enum(serviceOptions)).default([]),
@@ -98,8 +98,8 @@ export const requestMetadataSchema = z.object({
     customId: z.string().default(""),
     //client owner name
     name: z.string(),
-    weeklyHours: z.number().default(0),
-    oneOffStartDateHours: z.number().default(0),
+    weeklyHours: z.coerce.number().default(0),
+    oneOffStartDateHours: z.coerce.number().default(0),
     address: addressSchemaWithDeprivation,
     status: z.enum(requestStatus).default("normal"),
     services: z.array(z.enum(serviceOptions)).default([]),
@@ -136,11 +136,11 @@ export const magLogSchema = z.object({
     })
   ),
   details: z.object({
-    totalClients: z.number().default(0),
-    totalFamily: z.number().default(0),
-    totalVolunteers: z.number().default(0),
-    totalMps: z.number().default(0),
-    otherAttendees: z.number().default(0),
+    totalClients: z.coerce.number().default(0),
+    totalFamily: z.coerce.number().default(0),
+    totalVolunteers: z.coerce.number().default(0),
+    totalMps: z.coerce.number().default(0),
+    otherAttendees: z.coerce.number().default(0),
     notes: z.string().default(""),
   }),
 });
@@ -159,7 +159,7 @@ const basePersonDetails = z.object({
         date: z.string().date(),
         note: z.string(),
         source: z.enum(notesSource),
-        minutesTaken: z.number().min(0),
+        minutesTaken: z.coerce.number().min(0),
       })
     )
     .default([]),
@@ -175,7 +175,7 @@ export const clientMetadataSchema = z.object({
     customId: z.string().default(""),
     address: addressSchemaWithDeprivation,
     donationScheme: z.boolean().default(false),
-    donationAmount: z.number().default(0),
+    donationAmount: z.coerce.number().default(0),
     referredBy: z.string().default(""),
     clientAgreementDate: z
       .union([z.string().date(), z.literal("")])
@@ -246,17 +246,17 @@ export const volunteerFullSchema = volunteerMetadataSchema
 export const attendanceAllowanceReportSchema = z.object({
   // need to infer not in receipt of AA if termination date given.
   overallInReceipt: z.object({
-    total: z.number().default(0),
-    totalHigh: z.number().min(0).max(100).default(0),
+    total: z.coerce.number().default(0),
+    totalHigh: z.coerce.number().min(0).max(100).default(0),
   }),
   thisMonthConfirmed: z.object({
-    total: z.number().default(0),
-    totalHigh: z.number().min(0).max(100).default(0),
+    total: z.coerce.number().default(0),
+    totalHigh: z.coerce.number().min(0).max(100).default(0),
   }),
 });
 
 export const crossSectionSchema = z.object({
-  totalHours: z.number().default(0),
+  totalHours: z.coerce.number().default(0),
   localities: z
     .array(
       z.object({
@@ -264,10 +264,10 @@ export const crossSectionSchema = z.object({
         services: z.array(
           z.object({
             name: z.enum(serviceOptions),
-            totalHours: z.number().default(0),
+            totalHours: z.coerce.number().default(0),
           })
         ),
-        totalHours: z.number().default(0),
+        totalHours: z.coerce.number().default(0),
       })
     )
     .default([]),
@@ -275,14 +275,14 @@ export const crossSectionSchema = z.object({
     .array(
       z.object({
         name: z.enum(serviceOptions),
-        totalHours: z.number().default(0),
+        totalHours: z.coerce.number().default(0),
       })
     )
     .default([]),
 });
 
 export const deprivationCrossSectionSchema = z.object({
-  totalHours: z.number().default(0),
+  totalHours: z.coerce.number().default(0),
   deprivationCategories: z
     .array(
       z.object({
@@ -290,10 +290,10 @@ export const deprivationCrossSectionSchema = z.object({
         services: z.array(
           z.object({
             name: z.enum(serviceOptions),
-            totalHours: z.number().default(0),
+            totalHours: z.coerce.number().default(0),
           })
         ),
-        totalHours: z.number().default(0),
+        totalHours: z.coerce.number().default(0),
       })
     )
     .default([]),
@@ -301,29 +301,29 @@ export const deprivationCrossSectionSchema = z.object({
     .array(
       z.object({
         name: z.enum(serviceOptions),
-        totalHours: z.number().default(0),
+        totalHours: z.coerce.number().default(0),
       })
     )
     .default([]),
 });
 
 export const reportMonthSchema = crossSectionSchema.extend({
-  month: z.number(),
+  month: z.coerce.number(),
 });
 
 export const deprivationReportMonthSchema =
   deprivationCrossSectionSchema.extend({
-    month: z.number(),
+    month: z.coerce.number(),
   });
 
 export const reportYearSchema = crossSectionSchema.extend({
-  year: z.number(),
+  year: z.coerce.number(),
   months: z.array(reportMonthSchema),
 });
 
 export const deprivationReportYearSchema = deprivationCrossSectionSchema.extend(
   {
-    year: z.number(),
+    year: z.coerce.number(),
     months: z.array(deprivationReportMonthSchema),
   }
 );

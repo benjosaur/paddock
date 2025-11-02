@@ -7,6 +7,8 @@ import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import type { SolePackage } from "../types";
+import { solePackageSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { soleServiceOptions } from "shared/const";
@@ -126,13 +128,16 @@ export function SolePackageForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.carerId) return;
+    const validated = validateOrToast<SolePackage>(
+      solePackageSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Sole package form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updatePackage.mutate({
-        ...(formData as Omit<SolePackage, "id">),
-        id: packageId,
-      } as SolePackage);
+      updatePackage.mutate({ ...validated, id: packageId } as SolePackage);
     } else {
-      createSolePackage.mutate(formData);
+      createSolePackage.mutate(validated);
     }
   };
 

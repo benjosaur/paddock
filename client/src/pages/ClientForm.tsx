@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import { ClientFull } from "../types";
+import { ClientFull, clientFullSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
@@ -203,12 +204,19 @@ export function ClientForm() {
           ? formData.dateOfBirth
           : "Unknown",
     };
+    const validated = validateOrToast<ClientFull>(
+      clientFullSchema.omit({ id: true }),
+      payload,
+      { toastPrefix: "Form Validation Error", logPrefix: "Client form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateClientMutation.mutate({ ...payload, id } as ClientFull & {
-        id: number;
-      });
+      updateClientMutation.mutate({
+        ...(validated as Omit<ClientFull, "id">),
+        id,
+      } as ClientFull & { id: number });
     } else {
-      createClientMutation.mutate(payload as Omit<ClientFull, "id">);
+      createClientMutation.mutate(validated as Omit<ClientFull, "id">);
     }
   };
 

@@ -4,6 +4,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { VolunteerFull } from "../types";
+import { volunteerFullSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
@@ -141,10 +143,19 @@ export function VolunteerForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<VolunteerFull>(
+      volunteerFullSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Volunteer form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateVolunteerMutation.mutate({ ...formData, id });
+      updateVolunteerMutation.mutate({
+        ...(validated as Omit<VolunteerFull, "id">),
+        id,
+      });
     } else {
-      createVolunteerMutation.mutate(formData);
+      createVolunteerMutation.mutate(validated as Omit<VolunteerFull, "id">);
     }
   };
 

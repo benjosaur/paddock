@@ -6,6 +6,8 @@ import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
 import { trpc } from "../utils/trpc";
 import type { ClientFull, VolunteerMetadata, InfoDetails } from "../types";
+import { infoDetailsSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
 import { notesSource, serviceOptions } from "shared/const";
 import { updateNestedValue } from "@/utils/helpers";
@@ -104,12 +106,29 @@ export function InfoForm() {
     label: service,
   }));
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const field = e.target.name;
+    let value: string | number | boolean =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!client || !selectedVolunteer) return;
     const carer = volunteers.find((v) => v.id === selectedVolunteer.value);
     if (!carer) return;
-    createInfoMutation.mutate({ client, carer, infoDetails: formData });
+    const validated = validateOrToast<InfoDetails>(
+      infoDetailsSchema,
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Info form" }
+    );
+    if (!validated) return;
+    createInfoMutation.mutate({ client, carer, infoDetails: validated });
   };
 
   const handleCancel = () => navigate("/clients");
@@ -231,15 +250,11 @@ export function InfoForm() {
                 </label>
                 <Input
                   type="number"
+                  name="minutesTaken"
                   min={0}
-                  step={0.25}
+                  step={1}
                   value={formData.minutesTaken ?? ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      minutesTaken: Number(e.target.value || 0),
-                    }))
-                  }
+                  onChange={handleInputChange}
                   placeholder=""
                   required
                 />

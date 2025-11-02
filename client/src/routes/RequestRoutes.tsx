@@ -118,7 +118,7 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
     {
       key: "oneOffStartDateHours",
       header: "One Off Hours",
-      render: (item) => item.details.oneOffStartDateHours,
+      render: (item) => item.details.oneOffStartDateHours.toFixed(2),
     },
     {
       key: "status",
@@ -245,7 +245,7 @@ export default function RequestRoutes() {
                 <TabsTrigger value="info">Information</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="care" className="mt-0">
+              <TabsContent value="care" className="mt-6">
                 <DataTable
                   key={`requests-care-${showEnded ? "ended" : "active"}`}
                   title="Requests"
@@ -272,7 +272,7 @@ export default function RequestRoutes() {
                 />
               </TabsContent>
 
-              <TabsContent value="info" className="mt-0">
+              <TabsContent value="info" className="mt-6">
                 <DataTable
                   key={`requests-info-${showEnded ? "ended" : "active"}`}
                   title="Requests"

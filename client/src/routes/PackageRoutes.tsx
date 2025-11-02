@@ -117,10 +117,6 @@ export default function PackageRoutes() {
     })
   );
 
-  const handleAddNew = () => {
-    navigate("/packages/create");
-  };
-
   const handleCover = (id: string) => {
     const encodedId = encodeURIComponent(id);
     navigate(`/packages/cover/${encodedId}`);
@@ -205,7 +201,6 @@ export default function PackageRoutes() {
                   onCover={handleCover}
                   onDelete={handleDelete}
                   onRenew={handleRenew}
-                  onCreate={handleAddNew}
                   onViewItem={handleViewPackage}
                   onViewRequest={handleViewRequest}
                   resource="packages"
@@ -233,7 +228,7 @@ export default function PackageRoutes() {
                   onCover={handleCover}
                   onDelete={handleDelete}
                   onRenew={handleRenew}
-                  onCreate={handleAddNew}
+                  // onCreate={handleAddNew}
                   onViewItem={handleViewPackage}
                   resource="packages"
                   customActions={
@@ -296,6 +291,11 @@ export const associatedPackageRoutes: any[] = [
   trpc.requests.getAllMetadataWithoutInfo,
   trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
+
+  // Packages
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
+  trpc.packages.getById,
 
   // Clients
   trpc.clients.getAll,

@@ -6,6 +6,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
+import { requestMetadataSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import {
@@ -229,12 +231,23 @@ export function RenewRequestForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (oldRequestData) {
-      renewMutation.mutate({
-        oldRequest: oldRequestData,
-        newRequest: newRequestData,
-      });
-    }
+    if (!oldRequestData) return;
+    const oldValidated = validateOrToast<RequestMetadata>(
+      requestMetadataSchema,
+      oldRequestData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Old request" }
+    );
+    if (!oldValidated) return;
+    const newValidated = validateOrToast<RequestMetadata>(
+      requestMetadataSchema.omit({ id: true }),
+      newRequestData,
+      { toastPrefix: "Form Validation Error", logPrefix: "New request" }
+    );
+    if (!newValidated) return;
+    renewMutation.mutate({
+      oldRequest: oldValidated,
+      newRequest: newValidated,
+    });
   };
 
   if (requestQuery.isLoading || clientsQuery.isLoading)

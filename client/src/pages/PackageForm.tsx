@@ -5,11 +5,18 @@ import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Package, MpMetadata, ReqPackage } from "../types";
+import {
+  type Package,
+  type MpMetadata,
+  type ReqPackage,
+  reqPackageSchema,
+} from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
+import { validateOrToast } from "@/utils/validation";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -92,6 +99,11 @@ export function PackageForm() {
     })
   );
 
+  useTodaysDate({
+    enabled: !formData.startDate && !isEditing,
+    setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
+  });
+
   // Load existing data when editing
   useEffect(() => {
     if (packageQuery.data) {
@@ -164,11 +176,16 @@ export function PackageForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    const validatedFormData = validateOrToast<ReqPackage>(
+      reqPackageSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Package form" }
+    );
+    if (!validatedFormData) return;
     if (isEditing) {
-      updatePackageMutation.mutate({ ...formData, id } as Package);
+      updatePackageMutation.mutate({ ...validatedFormData, id } as Package);
     } else {
-      createPackageMutation.mutate(formData);
+      createPackageMutation.mutate(validatedFormData);
     }
   };
 

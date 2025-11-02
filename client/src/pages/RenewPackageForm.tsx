@@ -12,6 +12,8 @@ import type {
   ReqPackage,
   SolePackage,
 } from "../types";
+import { packageSchema, reqPackageSchema, solePackageSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
@@ -205,12 +207,36 @@ export function RenewPackageForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (oldPackageData) {
-      renewPackageMutation.mutate({
-        oldPackage: oldPackageData,
-        newPackage: newPackageData,
-      });
-    }
+    if (!oldPackageData) return;
+    const oldValidated = validateOrToast<Package>(
+      packageSchema,
+      oldPackageData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Old package" }
+    );
+    if (!oldValidated) return;
+    const newValidated =
+      "requestId" in newPackageData
+        ? (validateOrToast<ReqPackage>(
+            reqPackageSchema.omit({ id: true }),
+            newPackageData as Omit<ReqPackage, "id">,
+            {
+              toastPrefix: "Form Validation Error",
+              logPrefix: "New package",
+            }
+          ) as ReqPackage | null)
+        : (validateOrToast<SolePackage>(
+            solePackageSchema.omit({ id: true }),
+            newPackageData as Omit<SolePackage, "id">,
+            {
+              toastPrefix: "Form Validation Error",
+              logPrefix: "New package",
+            }
+          ) as SolePackage | null);
+    if (!newValidated) return;
+    renewPackageMutation.mutate({
+      oldPackage: oldValidated,
+      newPackage: newValidated,
+    });
   };
 
   const handleCancel = () => {

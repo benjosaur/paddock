@@ -10,6 +10,8 @@ import type {
   MpMetadata,
   VolunteerMetadata,
 } from "../types";
+import { magLogSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { associatedMagLogRoutes } from "../routes/MagLogRoutes";
@@ -115,10 +117,16 @@ export function MagLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<MagLog>(
+      magLogSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "MAG log form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateMagLogMutation.mutate({ ...formData, id } as MagLog);
+      updateMagLogMutation.mutate({ ...validated, id } as MagLog);
     } else {
-      createMagLogMutation.mutate(formData as Omit<MagLog, "id">);
+      createMagLogMutation.mutate(validated as Omit<MagLog, "id">);
     }
   };
 

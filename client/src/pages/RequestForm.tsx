@@ -7,6 +7,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
+import { requestMetadataSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import {
@@ -203,10 +205,16 @@ export function RequestForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<RequestMetadata>(
+      requestMetadataSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Request form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateMutation.mutate({ ...formData, id });
+      updateMutation.mutate({ ...validated, id });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(validated);
     }
   };
 

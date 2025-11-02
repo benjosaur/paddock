@@ -4,6 +4,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { MpFull } from "../types";
+import { mpFullSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
@@ -138,11 +140,16 @@ export function MpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<MpFull>(
+      mpFullSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "MP form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      console.log(formData);
-      updateMpMutation.mutate({ id, ...formData });
+      updateMpMutation.mutate({ id, ...(validated as Omit<MpFull, "id">) });
     } else {
-      createMpMutation.mutate(formData);
+      createMpMutation.mutate(validated as Omit<MpFull, "id">);
     }
   };
 
