@@ -22,6 +22,18 @@ export function InfoForm() {
   const encodedClientId = searchParams.get("clientId") || "";
   const clientId = decodeURIComponent(encodedClientId);
 
+  const [formData, setFormData] = useState<InfoDetails>({
+    date: "",
+    completedBy: {
+      id: "",
+      name: "",
+    },
+    minutesTaken: 0,
+    source: "Phone",
+    note: "",
+    services: [],
+  });
+
   const queryClient = useQueryClient();
 
   // Fetch client and volunteers
@@ -54,16 +66,12 @@ export function InfoForm() {
       : null;
   }, [volunteers]);
 
-  // Local state for form
-  const [selectedVolunteer, setSelectedVolunteer] =
-    useState<VolunteerOption | null>(null);
-  const [formData, setFormData] = useState<InfoDetails>({
-    date: "",
-    minutesTaken: 0,
-    source: "Phone",
-    note: "",
-    services: [],
-  });
+  const selectedVolunteer = useMemo(() => {
+    return formData.completedBy.id
+      ? volunteerOptions.find((v) => v.value === formData.completedBy.id) ||
+          null
+      : null;
+  }, [formData.completedBy.id, volunteerOptions]);
 
   useTodaysDate({
     enabled: !formData.date,
@@ -72,10 +80,16 @@ export function InfoForm() {
 
   // Seed default volunteer once data loads
   useEffect(() => {
-    if (!selectedVolunteer && coordinatorDefault) {
-      setSelectedVolunteer(coordinatorDefault);
+    if (!formData.completedBy.id && coordinatorDefault) {
+      setFormData((prev) => ({
+        ...prev,
+        completedBy: {
+          id: coordinatorDefault.value,
+          name: coordinatorDefault.label,
+        },
+      }));
     }
-  }, [coordinatorDefault, selectedVolunteer]);
+  }, [coordinatorDefault, formData.completedBy.id]);
 
   const createInfoMutation = useMutation(
     trpc.clients.createInfoEntry.mutationOptions({
@@ -119,16 +133,14 @@ export function InfoForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!client || !selectedVolunteer) return;
-    const carer = volunteers.find((v) => v.id === selectedVolunteer.value);
-    if (!carer) return;
+    if (!client || !formData.completedBy.id) return;
     const validated = validateOrToast<InfoDetails>(
       infoDetailsSchema,
       formData,
       { toastPrefix: "Form Validation Error", logPrefix: "Info form" }
     );
     if (!validated) return;
-    createInfoMutation.mutate({ client, carer, infoDetails: validated });
+    createInfoMutation.mutate({ client, infoDetails: validated });
   };
 
   const handleCancel = () => navigate("/clients");
@@ -173,8 +185,17 @@ export function InfoForm() {
                 <Select
                   options={volunteerOptions}
                   value={selectedVolunteer}
-                  onChange={(opt) =>
-                    setSelectedVolunteer((opt as VolunteerOption) ?? null)
+                  onChange={(selectedOption) =>
+                    setFormData(
+                      (p): InfoDetails => ({
+                        ...p,
+                        completedBy: {
+                          id: (selectedOption as VolunteerOption)?.value || "",
+                          name:
+                            (selectedOption as VolunteerOption)?.label || "",
+                        },
+                      })
+                    )
                   }
                   isSearchable
                   placeholder="Select a volunteer..."

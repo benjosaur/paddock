@@ -44,14 +44,12 @@ export const clientsRouter = router({
     .input(
       z.object({
         client: clientFullSchema,
-        carer: volunteerMetadataSchema,
         infoDetails: infoDetailsSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.createInfoEntry(
         input.client,
-        input.carer,
         input.infoDetails,
         ctx.user
       );

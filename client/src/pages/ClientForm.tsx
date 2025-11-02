@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import { ClientFull, clientFullSchema } from "../types";
+import { ClientFull, clientFullSchema, VolunteerMetadata } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
@@ -18,6 +18,8 @@ import {
 import { FieldEditModal } from "../components/FieldEditModal";
 import toast from "react-hot-toast";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
+
+type VolunteerOption = { label: string; value: string };
 
 const deprivationToastLogic = (
   deprivationData: { matched: boolean; income: boolean; health: boolean },
@@ -77,6 +79,11 @@ export function ClientForm() {
       services: [],
       attendanceAllowance: {
         requestedLevel: "None",
+        completedBy: {
+          id: "",
+          name: "",
+        },
+        hoursToCompleteRequest: 2,
         requestedDate: "",
         status: "None", // will appear null on FE
         confirmationDate: "",
@@ -96,6 +103,60 @@ export function ClientForm() {
     ...trpc.clients.getById.queryOptions({ id }),
     enabled: isEditing,
   });
+
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEnded.queryOptions()
+  );
+
+  const volunteers = (volunteersQuery.data || []) as VolunteerMetadata[];
+
+  // Build select options and find Coordinator default
+  const volunteerOptions: VolunteerOption[] = useMemo(
+    () =>
+      volunteers.map((v) => ({
+        value: v.id,
+        label: v.details.name,
+      })),
+    [volunteers]
+  );
+
+  const coordinatorDefault = useMemo(() => {
+    const coordinator = volunteers.find(
+      (v) => v.details.role === "Coordinator"
+    );
+    return coordinator
+      ? { value: coordinator.id, label: coordinator.details.name }
+      : null;
+  }, [volunteers]);
+
+  const selectedVolunteer = useMemo(() => {
+    const id = formData.details.attendanceAllowance.completedBy.id;
+    return id ? volunteerOptions.find((v) => v.value === id) || null : null;
+  }, [formData.details.attendanceAllowance.completedBy.id, volunteerOptions]);
+
+  useEffect(() => {
+    // update completedBy if not already set
+    if (
+      !formData.details.attendanceAllowance.completedBy.id &&
+      coordinatorDefault
+    ) {
+      setFormData((prev) => {
+        return {
+          ...prev,
+          details: {
+            ...prev.details,
+            attendanceAllowance: {
+              ...prev.details.attendanceAllowance,
+              completedBy: {
+                id: coordinatorDefault.value,
+                name: coordinatorDefault.label,
+              },
+            },
+          },
+        };
+      });
+    }
+  }, [coordinatorDefault, formData.details.attendanceAllowance.completedBy.id]);
 
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
@@ -614,6 +675,49 @@ export function ClientForm() {
                 <h4 className="text-md font-semibold text-gray-700 mb-3">
                   Attendance Allowance
                 </h4>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
+                  }
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Completed By
+                  </label>
+                  <Select
+                    options={volunteerOptions}
+                    value={selectedVolunteer}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        details: {
+                          ...prev.details,
+                          attendanceAllowance: {
+                            ...prev.details.attendanceAllowance,
+                            completedBy: {
+                              id:
+                                (selectedOption as VolunteerOption)?.value ||
+                                "",
+                              name:
+                                (selectedOption as VolunteerOption)?.label ||
+                                "",
+                            },
+                          },
+                        },
+                      }))
+                    }
+                    isSearchable
+                    placeholder="Select a volunteer..."
+                    noOptionsMessage={() => "No volunteers found"}
+                    isDisabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

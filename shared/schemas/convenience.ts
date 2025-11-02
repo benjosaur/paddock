@@ -17,6 +17,11 @@ export const infoDetailsSchema = clientMetadataSchema.shape.details.shape.notes
   .removeDefault()
   .element.omit({ note: true })
   .extend({
+    completedBy: z.object({
+      id: z.string().default(""),
+      name: z.string().default(""),
+    }),
+    date: z.string().date(),
     note: z.string().default(""),
     services: z.array(z.enum(serviceOptions)).default([]),
   });

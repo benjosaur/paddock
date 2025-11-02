@@ -29,7 +29,12 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     header: "Date of Birth",
     render: (item: ClientMetadata) => formatYmdToDmy(item.dateOfBirth || ""),
   },
-
+  {
+    key: "startDate",
+    header: "Agreement Date",
+    render: (item: ClientMetadata) =>
+      formatYmdToDmy(item.details.clientAgreementDate || ""),
+  },
   {
     key: "postCode",
     header: "Post Code",

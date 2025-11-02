@@ -22,6 +22,7 @@ import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { DeprivationService } from "../../services/deprivation";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
+import { VolunteerService } from "../volunteer/service";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -32,6 +33,7 @@ export class ClientService {
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
   deprivationService = new DeprivationService();
+  volunteerService = new VolunteerService();
 
   // Archived concept removed in favor of end dates. Use getAll and filter by endDate where needed.
 
@@ -191,13 +193,11 @@ export class ClientService {
 
   async createInfoEntry(
     client: ClientMetadata,
-    carer: VolunteerMetadata,
     infoDetails: InfoDetails,
     user: User
   ): Promise<string[]> {
     try {
       const validatedClient = clientMetadataSchema.parse(client);
-      const validatedCarer = volunteerMetadataSchema.parse(carer);
       const validatedInfoDetails = infoDetailsSchema.parse(infoDetails);
       const newRequestId = await this.requestService.create(
         {
@@ -211,7 +211,7 @@ export class ClientService {
             oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
             notes: "",
             status: "normal",
-            services: [...infoDetails.services, "Information"],
+            services: [...validatedInfoDetails.services, "Information"],
           },
         },
         user
@@ -219,16 +219,16 @@ export class ClientService {
 
       const newPackageId = await this.packageService.create(
         {
-          carerId: validatedCarer.id,
+          carerId: validatedInfoDetails.completedBy.id,
           requestId: newRequestId,
           startDate: validatedInfoDetails.date,
           endDate: validatedInfoDetails.date,
           details: {
             address: validatedClient.details.address,
-            name: validatedCarer.details.name,
+            name: validatedInfoDetails.completedBy.name,
             weeklyHours: 0,
             oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
-            services: ["Information"],
+            services: [...validatedInfoDetails.services, "Information"],
             notes: "",
           },
         },

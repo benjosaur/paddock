@@ -185,6 +185,13 @@ export const clientMetadataSchema = z.object({
     riskAssessmentComments: z.string().default(""),
     attendanceAllowance: z.object({
       requestedLevel: z.enum(attendanceAllowanceLevels).default("None"),
+      hoursToCompleteRequest: z.coerce.number().default(0),
+      completedBy: z
+        .object({
+          id: z.string().default(""),
+          name: z.string().default(""),
+        })
+        .default({ id: "", name: "" }),
       requestedDate: z.union([z.string().date(), z.literal("")]).default(""),
       status: z.enum(attendanceAllowanceStatuses).default("None"),
       confirmationDate: z.union([z.string().date(), z.literal("")]).default(""),
