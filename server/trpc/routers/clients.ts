@@ -28,6 +28,7 @@ export const clientsRouter = router({
     .query(async ({ ctx, input }) => {
       return await ctx.services.client.getById(input.id, ctx.user);
     }),
+
   end: createProtectedProcedure("clients", "update")
     .input(endPersonDetailsSchema)
     .mutation(async ({ ctx, input }) => {

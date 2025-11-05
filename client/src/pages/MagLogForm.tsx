@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { associatedMagLogRoutes } from "../routes/MagLogRoutes";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
+import { DEFAULT_MAG_DURATION_HOURS } from "shared/const";
 
 export function MagLogForm() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export function MagLogForm() {
 
   const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
+    totalHours: DEFAULT_MAG_DURATION_HOURS,
     clients: [],
     mps: [],
     volunteers: [],
@@ -177,6 +179,25 @@ export function MagLogForm() {
                   name="date"
                   type="date"
                   value={formData.date || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="max-w-md">
+                <label
+                  htmlFor="totalHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Duration (hours) *
+                </label>
+                <Input
+                  id="totalHours"
+                  name="totalHours"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={formData.totalHours ?? ""}
                   onChange={handleInputChange}
                   required
                 />

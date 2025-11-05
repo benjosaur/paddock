@@ -116,6 +116,7 @@ export const requestFullSchema = requestMetadataSchema.extend({
 export const magLogSchema = z.object({
   id: z.string(),
   date: z.string(),
+  totalHours: z.coerce.number().default(0),
   clients: z.array(
     z.object({
       id: z.string(),

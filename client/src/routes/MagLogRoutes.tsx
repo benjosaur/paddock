@@ -19,6 +19,15 @@ export const magLogColumns: TableColumn<MagLog>[] = [
       item.details.otherAttendees,
   },
   {
+    key: "volunteerHours",
+    header: "Volunteer Hours",
+    render: (item: MagLog) => {
+      const duration = item.totalHours ?? 0;
+      const count = item.volunteers?.length ?? 0;
+      return Math.round(duration * count * 100) / 100;
+    },
+  },
+  {
     key: "notes",
     header: "Notes",
     render: (item) => item.details.notes,

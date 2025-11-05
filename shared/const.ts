@@ -90,3 +90,4 @@ export const localities = [
   "Unknown",
 ] as const;
 export const DEPRIVATION_THRESHOLD_DECILE = 3;
+export const DEFAULT_MAG_DURATION_HOURS = 2;
