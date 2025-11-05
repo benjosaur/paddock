@@ -317,12 +317,19 @@ export class RequestService {
           currentEnd === "open" ||
           new Date(endRequestDetails.endDate) < new Date(currentEnd);
 
+        let newEntityType;
+        if (shouldUpdate && record.sK.startsWith("req")) {
+          newEntityType = `request#${requestSuffix}`;
+        } else if (shouldUpdate && record.sK.startsWith("pkg")) {
+          newEntityType = `package#${requestSuffix}`;
+        } else {
+          newEntityType = record.entityType;
+        }
+
         return addDbMiddleware(
           {
             ...record,
-            entityType: shouldUpdate
-              ? `request#${requestSuffix}`
-              : record.entityType,
+            entityType: newEntityType,
             endDate: shouldUpdate ? endRequestDetails.endDate : currentEnd,
           },
           user
