@@ -19,13 +19,18 @@ import {
   TabsContent,
 } from "../components/ui/tabs";
 import { Package } from "shared";
-import type { Report, DeprivationReport, RequestMetadata } from "shared";
+import type {
+  Report,
+  DeprivationReport,
+  RequestMetadata,
+  AttendanceAllowanceReport,
+} from "shared";
 import { firstYear } from "shared/const";
 
 export function Dashboard() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportType, setReportType] = useState<
-    "requests" | "packages" | "coordinator"
+    "requests" | "packages" | "coordinator" | "attendance"
   >("requests");
   const [breakdownType, setBreakdownType] = useState<
     "locality" | "deprivation"
@@ -33,7 +38,7 @@ export function Dashboard() {
   const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
   const [isInfo, setIsInfo] = useState<boolean>(false);
   const [generatedReport, setGeneratedReport] = useState<
-    Report | DeprivationReport | null
+    Report | DeprivationReport | AttendanceAllowanceReport | null
   >(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
@@ -92,6 +97,13 @@ export function Dashboard() {
 
   const coordinatorReportQuery = useQuery({
     ...trpc.analytics.getCoordinatorReport.queryOptions({ startYear }),
+    enabled: false,
+  });
+
+  const attendanceAllowanceReportQuery = useQuery({
+    ...trpc.analytics.generateAttendanceAllowanceReport.queryOptions({
+      startYear,
+    }),
     enabled: false,
   });
 
@@ -174,6 +186,7 @@ export function Dashboard() {
     { value: "requests", label: "Requests Report" },
     { value: "packages", label: "Packages Report" },
     { value: "coordinator", label: "Coordinator Report" },
+    { value: "attendance", label: "Attendance Allowance Report" },
   ];
 
   const breakdownTypeOptions = [
@@ -184,9 +197,12 @@ export function Dashboard() {
   const handleGenerateReport = async () => {
     setIsGeneratingReport(true);
     try {
-      let report: Report | DeprivationReport;
+      let report: Report | DeprivationReport | AttendanceAllowanceReport;
       if (reportType === "coordinator") {
         const result = await coordinatorReportQuery.refetch();
+        report = result.data!;
+      } else if (reportType === "attendance") {
+        const result = await attendanceAllowanceReportQuery.refetch();
         report = result.data!;
       } else if (breakdownType === "locality") {
         if (reportType === "requests") {
@@ -242,7 +258,7 @@ export function Dashboard() {
                 Generate Report
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Generate Analytics Report</DialogTitle>
               </DialogHeader>
@@ -271,9 +287,13 @@ export function Dashboard() {
                             const newType = selectedOption.value as
                               | "requests"
                               | "packages"
-                              | "coordinator";
+                              | "coordinator"
+                              | "attendance";
                             setReportType(newType);
-                            if (newType === "coordinator") {
+                            if (
+                              newType === "coordinator" ||
+                              newType === "attendance"
+                            ) {
                               setBreakdownType("locality");
                             }
                           }
@@ -295,7 +315,10 @@ export function Dashboard() {
                             (option) => option.value === breakdownType
                           ) || null
                         }
-                        isDisabled={reportType === "coordinator"}
+                        isDisabled={
+                          reportType === "coordinator" ||
+                          reportType === "attendance"
+                        }
                         onChange={(
                           selectedOption: SingleValue<{
                             value: string;
@@ -374,7 +397,9 @@ export function Dashboard() {
                           ? "Requests"
                           : reportType === "packages"
                           ? "Packages"
-                          : "Coordinator"}{" "}
+                          : reportType === "coordinator"
+                          ? "Coordinator"
+                          : "Attendance Allowance"}{" "}
                         Analytics Report
                         {startYear &&
                           ` (${startYear} - ${new Date().getFullYear()})`}
@@ -382,6 +407,8 @@ export function Dashboard() {
                       <p className="text-sm text-gray-600 mt-1">
                         {reportType === "coordinator"
                           ? "Comprehensive breakdown by year, month, locality, and service type"
+                          : reportType === "attendance"
+                          ? "Yearly and monthly confirmation metrics with level breakdown"
                           : `Comprehensive breakdown by year, month, ${getBreakdownDisplayName().toLowerCase()}, and service type`}
                       </p>
                     </div>
@@ -398,129 +425,171 @@ export function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    {generatedReport.years.map((year: any) => (
-                      <div
-                        key={year.year}
-                        className="bg-white rounded-lg border p-6"
-                      >
-                        <h4 className="text-xl font-semibold mb-4 text-blue-600">
-                          {year.year} Annual Summary - Total Hours:{" "}
-                          {year.totalHours.toFixed(2)}h
-                        </h4>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                          <div>
-                            <h5 className="text-lg font-medium mb-3 text-gray-700">
-                              Annual {getBreakdownDisplayName()} Breakdown
-                            </h5>
-                            <div className="space-y-2">
-                              {getBreakdownItems(year).map((item: any) => (
-                                <div
-                                  key={item.name}
-                                  className="bg-gray-50 p-3 rounded"
-                                >
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="font-medium">
-                                      {item.name}
-                                    </span>
-                                    <span className="text-blue-600 font-semibold">
-                                      {item.totalHours.toFixed(2)}h
+                  {reportType === "attendance" ? (
+                    <div className="space-y-6">
+                      {(generatedReport as AttendanceAllowanceReport).years.map(
+                        (year) => (
+                          <div
+                            key={year.year}
+                            className="bg-white rounded-lg border p-6"
+                          >
+                            <h4 className="text-xl font-semibold mb-4 text-blue-600">
+                              {year.year} Summary
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                              <div className="bg-gray-50 p-4 rounded">
+                                <h5 className="text-lg font-medium mb-3 text-gray-700">
+                                  Confirmations
+                                </h5>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>Total Confirmed</span>
+                                    <span className="font-semibold">
+                                      {year.total}
                                     </span>
                                   </div>
-                                  <div className="text-xs text-gray-600 mb-2">
-                                    Service distribution for {item.name}:
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>High Level</span>
+                                    <span className="font-semibold">
+                                      {year.totalHigh}
+                                    </span>
                                   </div>
-                                  <div className="grid grid-cols-1 gap-1 text-sm">
-                                    {item.services.map((service: any) => (
-                                      <div
-                                        key={service.name}
-                                        className="flex justify-between bg-white px-2 py-1 rounded"
-                                      >
-                                        <span>{service.name}</span>
-                                        <span className="font-medium">
-                                          {service.totalHours.toFixed(2)}h
-                                        </span>
-                                      </div>
-                                    ))}
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>Requested High</span>
+                                    <span className="font-semibold">
+                                      {year.totalRequestedHigh}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>High & Requested High</span>
+                                    <span className="font-semibold">
+                                      {year.totalHighRequestedHigh}
+                                    </span>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <h5 className="text-lg font-medium mb-3 text-gray-700">
-                              Annual Service Summary
-                            </h5>
-                            <div className="space-y-2">
-                              {year.services.map((service: any) => (
-                                <div
-                                  key={service.name}
-                                  className="bg-gray-50 p-3 rounded flex justify-between items-center"
-                                >
-                                  <div>
-                                    <span className="font-medium block">
-                                      {service.name}
-                                    </span>
-                                    <span className="text-xs text-gray-600">
-                                      Total across all localities
-                                    </span>
-                                  </div>
+                              </div>
+                              <div className="bg-gray-50 p-4 rounded">
+                                <h5 className="text-lg font-medium mb-3 text-gray-700">
+                                  Time Spent
+                                </h5>
+                                <div className="flex justify-between bg-white px-2 py-3 rounded text-sm">
+                                  <span>Total Hours</span>
                                   <span className="text-blue-600 font-semibold">
-                                    {service.totalHours.toFixed(2)}h
+                                    {year.totalHours.toFixed(2)}h
                                   </span>
                                 </div>
-                              ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <h5 className="text-lg font-medium mb-4 text-gray-700">
+                                Monthly Breakdown
+                              </h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {year.months.map((month) => {
+                                  const monthNames = [
+                                    "January",
+                                    "February",
+                                    "March",
+                                    "April",
+                                    "May",
+                                    "June",
+                                    "July",
+                                    "August",
+                                    "September",
+                                    "October",
+                                    "November",
+                                    "December",
+                                  ];
+                                  return (
+                                    <div
+                                      key={`${year.year}-${month.month}`}
+                                      className="bg-blue-50 border border-blue-200 p-4 rounded-lg"
+                                    >
+                                      <div className="mb-3">
+                                        <h6 className="font-semibold text-blue-800 text-base">
+                                          {monthNames[month.month - 1]}{" "}
+                                          {year.year}
+                                        </h6>
+                                        <p className="text-sm text-blue-600">
+                                          Total Hours:{" "}
+                                          {month.totalHours.toFixed(2)}h
+                                        </p>
+                                      </div>
+                                      <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>Total Confirmed</span>
+                                          <span className="font-medium">
+                                            {month.total}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>High Level</span>
+                                          <span className="font-medium">
+                                            {month.totalHigh}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>Requested High</span>
+                                          <span className="font-medium">
+                                            {month.totalRequestedHigh}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>High & Requested High</span>
+                                          <span className="font-medium">
+                                            {month.totalHighRequestedHigh}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {generatedReport.years.map((year: any) => (
+                        <div
+                          key={year.year}
+                          className="bg-white rounded-lg border p-6"
+                        >
+                          <h4 className="text-xl font-semibold mb-4 text-blue-600">
+                            {year.year} Annual Summary - Total Hours:{" "}
+                            {year.totalHours.toFixed(2)}h
+                          </h4>
 
-                        <div>
-                          <h5 className="text-lg font-medium mb-4 text-gray-700">
-                            Detailed Monthly Analysis
-                          </h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {year.months.map((month: any) => {
-                              const monthNames = [
-                                "January",
-                                "February",
-                                "March",
-                                "April",
-                                "May",
-                                "June",
-                                "July",
-                                "August",
-                                "September",
-                                "October",
-                                "November",
-                                "December",
-                              ];
-                              return (
-                                <div
-                                  key={month.month}
-                                  className="bg-blue-50 border border-blue-200 p-4 rounded-lg"
-                                >
-                                  <div className="mb-3">
-                                    <h6 className="font-semibold text-blue-800 text-base">
-                                      {monthNames[month.month - 1]} {year.year}
-                                    </h6>
-                                    <p className="text-sm text-blue-600">
-                                      Total Hours: {month.totalHours.toFixed(2)}
-                                      h
-                                    </p>
-                                  </div>
-
-                                  {/* Monthly Service Breakdown */}
-                                  <div className="mb-4">
-                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
-                                      Service Distribution:
-                                    </h6>
-                                    <div className="space-y-1">
-                                      {month.services.map((service: any) => (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div>
+                              <h5 className="text-lg font-medium mb-3 text-gray-700">
+                                Annual {getBreakdownDisplayName()} Breakdown
+                              </h5>
+                              <div className="space-y-2">
+                                {getBreakdownItems(year).map((item: any) => (
+                                  <div
+                                    key={item.name}
+                                    className="bg-gray-50 p-3 rounded"
+                                  >
+                                    <div className="flex justify-between items-center mb-2">
+                                      <span className="font-medium">
+                                        {item.name}
+                                      </span>
+                                      <span className="text-blue-600 font-semibold">
+                                        {item.totalHours.toFixed(2)}h
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mb-2">
+                                      Service distribution for {item.name}:
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-1 text-sm">
+                                      {item.services.map((service: any) => (
                                         <div
                                           key={service.name}
-                                          className="flex justify-between bg-white px-2 py-1 rounded text-sm"
+                                          className="flex justify-between bg-white px-2 py-1 rounded"
                                         >
                                           <span>{service.name}</span>
                                           <span className="font-medium">
@@ -530,58 +599,147 @@ export function Dashboard() {
                                       ))}
                                     </div>
                                   </div>
+                                ))}
+                              </div>
+                            </div>
 
-                                  {/* Monthly Breakdown with Services */}
-                                  <div>
-                                    <h6 className="text-sm font-medium text-gray-700 block mb-2">
-                                      {getBreakdownDisplayName()} Breakdown:
-                                    </h6>
-                                    <div className="space-y-2">
-                                      {getBreakdownItems(month).map(
-                                        (item: any) => (
+                            <div>
+                              <h5 className="text-lg font-medium mb-3 text-gray-700">
+                                Annual Service Summary
+                              </h5>
+                              <div className="space-y-2">
+                                {year.services.map((service: any) => (
+                                  <div
+                                    key={service.name}
+                                    className="bg-gray-50 p-3 rounded flex justify-between items-center"
+                                  >
+                                    <div>
+                                      <span className="font-medium block">
+                                        {service.name}
+                                      </span>
+                                      <span className="text-xs text-gray-600">
+                                        Total across all localities
+                                      </span>
+                                    </div>
+                                    <span className="text-blue-600 font-semibold">
+                                      {service.totalHours.toFixed(2)}h
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h5 className="text-lg font-medium mb-4 text-gray-700">
+                              Detailed Monthly Analysis
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {year.months.map((month: any) => {
+                                const monthNames = [
+                                  "January",
+                                  "February",
+                                  "March",
+                                  "April",
+                                  "May",
+                                  "June",
+                                  "July",
+                                  "August",
+                                  "September",
+                                  "October",
+                                  "November",
+                                  "December",
+                                ];
+                                return (
+                                  <div
+                                    key={month.month}
+                                    className="bg-blue-50 border border-blue-200 p-4 rounded-lg"
+                                  >
+                                    <div className="mb-3">
+                                      <h6 className="font-semibold text-blue-800 text-base">
+                                        {monthNames[month.month - 1]}{" "}
+                                        {year.year}
+                                      </h6>
+                                      <p className="text-sm text-blue-600">
+                                        Total Hours:{" "}
+                                        {month.totalHours.toFixed(2)}h
+                                      </p>
+                                    </div>
+
+                                    {/* Monthly Service Breakdown */}
+                                    <div className="mb-4">
+                                      <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                        Service Distribution:
+                                      </h6>
+                                      <div className="space-y-1">
+                                        {month.services.map((service: any) => (
                                           <div
-                                            key={item.name}
-                                            className="bg-white p-2 rounded border"
+                                            key={service.name}
+                                            className="flex justify-between bg-white px-2 py-1 rounded text-sm"
                                           >
-                                            <div className="flex justify-between items-center mb-1">
-                                              <span className="font-medium text-sm">
-                                                {item.name}
-                                              </span>
-                                              <span className="text-blue-600 font-semibold text-sm">
-                                                {item.totalHours.toFixed(2)}h
-                                              </span>
-                                            </div>
-                                            <div className="space-y-1">
-                                              {item.services.map(
-                                                (service: any) => (
-                                                  <div
-                                                    key={service.name}
-                                                    className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
-                                                  >
-                                                    <span>{service.name}</span>
-                                                    <span>
-                                                      {service.totalHours.toFixed(
-                                                        2
-                                                      )}
-                                                      h
-                                                    </span>
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
+                                            <span>{service.name}</span>
+                                            <span className="font-medium">
+                                              {service.totalHours.toFixed(2)}h
+                                            </span>
                                           </div>
-                                        )
-                                      )}
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Monthly Breakdown with Services */}
+                                    <div>
+                                      <h6 className="text-sm font-medium text-gray-700 block mb-2">
+                                        {getBreakdownDisplayName()} Breakdown:
+                                      </h6>
+                                      <div className="space-y-2">
+                                        {getBreakdownItems(month).map(
+                                          (item: any) => (
+                                            <div
+                                              key={item.name}
+                                              className="bg-white p-2 rounded border"
+                                            >
+                                              <div className="flex justify-between items-center mb-1">
+                                                <span className="font-medium text-sm">
+                                                  {item.name}
+                                                </span>
+                                                <span className="text-blue-600 font-semibold text-sm">
+                                                  {item.totalHours.toFixed(2)}h
+                                                </span>
+                                              </div>
+                                              <div className="space-y-1">
+                                                {item.services.map(
+                                                  (service: any) => (
+                                                    <div
+                                                      key={service.name}
+                                                      className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                                                    >
+                                                      <span>
+                                                        {service.name}
+                                                      </span>
+                                                      <span>
+                                                        {service.totalHours.toFixed(
+                                                          2
+                                                        )}
+                                                        h
+                                                      </span>
+                                                    </div>
+                                                  )
+                                                )}
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </DialogContent>

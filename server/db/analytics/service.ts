@@ -34,6 +34,7 @@ import {
   ReportYear,
   DeprivationReportYear,
   AttendanceAllowanceCrossSection,
+  AttendanceAllowanceReport,
 } from "shared";
 import { ClientService } from "../client/service";
 import { VolunteerService } from "../volunteer/service";
@@ -62,6 +63,24 @@ export class ReportService {
     try {
       return await this.attendance.generateAttendanceAllowanceCrossSection(
         user
+      );
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating attendance allowance report:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  async generateAttendanceAllowanceReport(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<AttendanceAllowanceReport> {
+    try {
+      return await this.attendance.generateAttendanceAllowanceReport(
+        user,
+        startYear
       );
     } catch (error) {
       console.error(

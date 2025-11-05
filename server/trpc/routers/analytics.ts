@@ -21,6 +21,19 @@ export const analyticsRouter = router({
       );
     }),
 
+  generateAttendanceAllowanceReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(reportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateAttendanceAllowanceReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
   getActiveRequestsCrossSection: createProtectedProcedure("analytics", "read")
     .output(crossSectionSchema)
     .query(async ({ ctx }) => {
