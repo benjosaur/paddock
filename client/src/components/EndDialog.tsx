@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useTodaysDate } from "../hooks/useTodaysDate";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,12 @@ export function EndDialog({
   undoDescription,
 }: Props) {
   const isUndo = endDate === "open";
+
+  // Prefill endDate with today's date when opening (not undo) and value is empty
+  useTodaysDate({
+    enabled: isOpen && !isUndo && (!endDate || endDate === ""),
+    setDate: onEndDateChange,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

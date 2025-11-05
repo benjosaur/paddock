@@ -325,7 +325,7 @@ export function Dashboard() {
                             htmlFor="isInfo"
                             className="text-sm font-medium text-gray-700"
                           >
-                            Information
+                            Information Service Only
                           </label>
                         </div>
                       )}
