@@ -58,8 +58,14 @@ export class VolunteerService {
   async getAllNotEnded(user: User): Promise<VolunteerMetadata[]> {
     try {
       const dbVolunteers = await this.volunteerRepository.getAllNotEnded(user);
-      const transformedResult =
-        this.transformDbVolunteerToSharedMetaData(dbVolunteers);
+      const dbTrainingRecords =
+        await this.trainingRecordRepository.getAllNotEnded(user);
+      const dbPackages = await this.packageRepository.getAllNotEndedYet(user);
+      const transformedResult = this.transformDbVolunteerToSharedMetaData([
+        ...dbVolunteers,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
       const parsedResult = volunteerMetadataSchema
         .array()
         .parse(transformedResult);

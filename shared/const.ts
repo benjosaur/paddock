@@ -35,6 +35,7 @@ export const serviceOptions = [
   "Med Prompt",
   "Transport",
   "Information",
+  "Hub & Grub",
   "MAG",
   "Other",
 ] as const;
@@ -82,6 +83,7 @@ export const localities = [
   "Waterrow",
   "Clatworthy",
   "Huish Champflower",
+  "Halse",
   "Milverton",
   "Stawley",
   "Other",
