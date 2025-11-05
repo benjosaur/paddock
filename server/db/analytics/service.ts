@@ -91,6 +91,21 @@ export class ReportService {
     }
   }
 
+  async generateCoordinatorAttendanceReport(
+    user: User,
+    startYear: number = firstYear
+  ): Promise<AttendanceAllowanceReport> {
+    try {
+      return await this.attendance.generateCoordinatorReport(user, startYear);
+    } catch (error) {
+      console.error(
+        "Service Layer Error generating coordinator attendance report:",
+        error
+      );
+      throw error;
+    }
+  }
+
   async generateActiveRequestsCrossSection(user: User): Promise<CrossSection> {
     try {
       return await this.normal.generateActiveRequestsCrossSection(user);
@@ -173,7 +188,7 @@ export class ReportService {
     }
   }
 
-  async generateCoordinatorReport(
+  async generateCoordinatorPackagesReport(
     user: User,
     startYear: number = firstYear,
     isInfo: boolean = true

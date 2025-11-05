@@ -125,18 +125,28 @@ export class VolunteerService {
     }
   }
 
+  async getCoordinatorIds(user: User): Promise<string[]> {
+    try {
+      const volunteers = await this.getAll(user);
+      const coordinatorIds = volunteers
+        .filter((volunteer) => volunteer.details.role === "Coordinator")
+        .map((volunteer) => volunteer.id);
+      return coordinatorIds;
+    } catch (error) {
+      console.error("Service Layer Error getting coordinator IDs:", error);
+      throw error;
+    }
+  }
+
   async getAllPackagesByCoordinator(
     user: User,
     startYear: number = firstYear
   ): Promise<Package[]> {
     try {
-      const mps = await this.getAll(user);
-      const coordinatorId = mps.find(
-        (mp) => mp.details.role === "Coordinator"
-      )?.id;
+      const coordinatorIds = await this.getCoordinatorIds(user);
       const packages = await this.packageService.getAll(user, startYear);
-      const coordinatorPackages = packages.filter(
-        (pkg) => pkg.carerId === coordinatorId
+      const coordinatorPackages = packages.filter((pkg) =>
+        coordinatorIds.includes(pkg.carerId)
       );
       return coordinatorPackages;
     } catch (error) {

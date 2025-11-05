@@ -4,6 +4,7 @@ import {
   reportSchema,
   deprivationReportSchema,
   attendanceAllowanceCrossSectionSchema,
+  attendanceAllowanceReportSchema,
   analyticsDetailsSchema,
 } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
@@ -26,9 +27,22 @@ export const analyticsRouter = router({
     "read"
   )
     .input(z.object({ startYear: z.number().optional() }))
-    .output(reportSchema)
+    .output(attendanceAllowanceReportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generateAttendanceAllowanceReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  generateCoordinatorAttendanceReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(attendanceAllowanceReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateCoordinatorAttendanceReport(
         ctx.user,
         input.startYear
       );
@@ -71,11 +85,14 @@ export const analyticsRouter = router({
       );
     }),
 
-  getCoordinatorReport: createProtectedProcedure("analytics", "read")
+  generateCoordinatorPackagesReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
     .input(z.object({ startYear: z.number().optional() }))
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
-      return await ctx.services.analytics.generateCoordinatorReport(
+      return await ctx.services.analytics.generateCoordinatorPackagesReport(
         ctx.user,
         input.startYear
       );

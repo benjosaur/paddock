@@ -26,11 +26,16 @@ import type {
   AttendanceAllowanceReport,
 } from "shared";
 import { firstYear } from "shared/const";
+import { cn } from "@/lib/utils";
 
 export function Dashboard() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportType, setReportType] = useState<
-    "requests" | "packages" | "coordinator" | "attendance"
+    | "requests"
+    | "packages"
+    | "attendance"
+    | "coordinator-packages"
+    | "coordinator-attendance"
   >("requests");
   const [breakdownType, setBreakdownType] = useState<
     "locality" | "deprivation"
@@ -95,8 +100,17 @@ export function Dashboard() {
     enabled: false, // Don't auto-fetch, only when user requests it
   });
 
-  const coordinatorReportQuery = useQuery({
-    ...trpc.analytics.getCoordinatorReport.queryOptions({ startYear }),
+  const coordinatorPackagesReportQuery = useQuery({
+    ...trpc.analytics.generateCoordinatorPackagesReport.queryOptions({
+      startYear,
+    }),
+    enabled: false,
+  });
+
+  const coordinatorAttendanceReportQuery = useQuery({
+    ...trpc.analytics.generateCoordinatorAttendanceReport.queryOptions({
+      startYear,
+    }),
     enabled: false,
   });
 
@@ -185,8 +199,12 @@ export function Dashboard() {
   const reportTypeOptions = [
     { value: "requests", label: "Requests Report" },
     { value: "packages", label: "Packages Report" },
-    { value: "coordinator", label: "Coordinator Report" },
     { value: "attendance", label: "Attendance Allowance Report" },
+    { value: "coordinator-packages", label: "Coordinator Packages Report" },
+    {
+      value: "coordinator-attendance",
+      label: "Coordinator Attendance Allowance Report",
+    },
   ];
 
   const breakdownTypeOptions = [
@@ -198,8 +216,11 @@ export function Dashboard() {
     setIsGeneratingReport(true);
     try {
       let report: Report | DeprivationReport | AttendanceAllowanceReport;
-      if (reportType === "coordinator") {
-        const result = await coordinatorReportQuery.refetch();
+      if (reportType === "coordinator-packages") {
+        const result = await coordinatorPackagesReportQuery.refetch();
+        report = result.data!;
+      } else if (reportType === "coordinator-attendance") {
+        const result = await coordinatorAttendanceReportQuery.refetch();
         report = result.data!;
       } else if (reportType === "attendance") {
         const result = await attendanceAllowanceReportQuery.refetch();
@@ -258,7 +279,12 @@ export function Dashboard() {
                 Generate Report
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogContent
+              className={cn(
+                "max-w-4xl max-h-[90vh]",
+                generatedReport && "overflow-y-auto"
+              )}
+            >
               <DialogHeader>
                 <DialogTitle>Generate Analytics Report</DialogTitle>
               </DialogHeader>
@@ -287,12 +313,14 @@ export function Dashboard() {
                             const newType = selectedOption.value as
                               | "requests"
                               | "packages"
-                              | "coordinator"
-                              | "attendance";
+                              | "attendance"
+                              | "coordinator-packages"
+                              | "coordinator-attendance";
                             setReportType(newType);
                             if (
-                              newType === "coordinator" ||
-                              newType === "attendance"
+                              newType === "attendance" ||
+                              newType === "coordinator-packages" ||
+                              newType === "coordinator-attendance"
                             ) {
                               setBreakdownType("locality");
                             }
@@ -316,8 +344,9 @@ export function Dashboard() {
                           ) || null
                         }
                         isDisabled={
-                          reportType === "coordinator" ||
-                          reportType === "attendance"
+                          reportType === "attendance" ||
+                          reportType === "coordinator-packages" ||
+                          reportType === "coordinator-attendance"
                         }
                         onChange={(
                           selectedOption: SingleValue<{
@@ -397,17 +426,20 @@ export function Dashboard() {
                           ? "Requests"
                           : reportType === "packages"
                           ? "Packages"
-                          : reportType === "coordinator"
-                          ? "Coordinator"
-                          : "Attendance Allowance"}{" "}
+                          : reportType === "attendance"
+                          ? "Attendance Allowance"
+                          : reportType === "coordinator-packages"
+                          ? "Coordinator Packages"
+                          : "Coordinator Attendance Allowance"}{" "}
                         Analytics Report
                         {startYear &&
                           ` (${startYear} - ${new Date().getFullYear()})`}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1">
-                        {reportType === "coordinator"
+                        {reportType === "coordinator-packages"
                           ? "Comprehensive breakdown by year, month, locality, and service type"
-                          : reportType === "attendance"
+                          : reportType === "coordinator-attendance" ||
+                            reportType === "attendance"
                           ? "Yearly and monthly confirmation metrics with level breakdown"
                           : `Comprehensive breakdown by year, month, ${getBreakdownDisplayName().toLowerCase()}, and service type`}
                       </p>
@@ -425,7 +457,8 @@ export function Dashboard() {
                     </div>
                   </div>
 
-                  {reportType === "attendance" ? (
+                  {reportType === "attendance" ||
+                  reportType === "coordinator-attendance" ? (
                     <div className="space-y-6">
                       {(generatedReport as AttendanceAllowanceReport).years.map(
                         (year) => (
