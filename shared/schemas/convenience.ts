@@ -1,8 +1,8 @@
 // schemas for convenience functionality, wrapping core functionality
 
 import { z } from "zod";
-import { clientMetadataSchema } from ".";
-import { serviceOptions } from "../const";
+import { clientMetadataSchema, trainingRecordSchema } from ".";
+import { coreTrainingRecordTypes, serviceOptions } from "../const";
 
 export const coverDetailsSchema = z.object({
   carerId: z.string(),
@@ -52,6 +52,29 @@ export const analyticsDetailsSchema = z.object({
   isInfo: z.boolean().default(false),
 });
 
+export const coreTrainingRecordCompletionSchema = z.object({
+  carer: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
+  coreCompletionRate: z.coerce.number().min(0).max(100).default(0),
+  earliestCompletionDate: z
+    .union([z.string().date(), z.literal("")])
+    .default(""),
+  coreRecords: z.array(
+    // all this does is narrow recordName field type -- everything else identical
+    trainingRecordSchema.omit({ details: true }).extend({
+      details: z.object({
+        ...trainingRecordSchema.shape.details
+          .omit({ recordName: true })
+          .extend({
+            recordName: z.enum(coreTrainingRecordTypes),
+          }).shape,
+      }),
+    })
+  ),
+});
+
 export type AnalyticsDetails = z.infer<typeof analyticsDetailsSchema>;
 export type CoverDetails = z.infer<typeof coverDetailsSchema>;
 export type InfoDetails = z.infer<typeof infoDetailsSchema>;
@@ -60,4 +83,7 @@ export type EndPersonDetails = z.infer<typeof endPersonDetailsSchema>;
 export type EndPackageDetails = z.infer<typeof endPackageDetailsSchema>;
 export type EndTrainingRecordDetails = z.infer<
   typeof endTrainingRecordDetailsSchema
+>;
+export type CoreTrainingRecordCompletion = z.infer<
+  typeof coreTrainingRecordCompletionSchema
 >;

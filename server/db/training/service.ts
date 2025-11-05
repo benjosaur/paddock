@@ -10,6 +10,7 @@ import { addDbMiddleware } from "../service";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
+
   async getAll(user: User): Promise<TrainingRecord[]> {
     try {
       const trainingRecordsFromDb = await this.trainingRecordRepository.getAll(

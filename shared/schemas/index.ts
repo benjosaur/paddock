@@ -8,6 +8,7 @@ import {
   requestTypes,
   serviceOptions,
   soleServiceOptions,
+  trainingRecordTypes,
   userRoles,
   volunteerRoles,
 } from "../const";
@@ -15,11 +16,12 @@ import {
 export const trainingRecordSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
+  completionDate: z.union([z.string().date(), z.literal("")]).default(""),
   expiryDate: z.union([z.string().date(), z.literal("")]).default(""),
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
-    recordName: z.string().default(""),
+    recordName: z.enum(trainingRecordTypes),
     recordNumber: z.string().default(""),
     notes: z.string().default(""),
   }),
@@ -250,7 +252,7 @@ export const volunteerFullSchema = volunteerMetadataSchema
     requests: z.array(requestFullSchema).default([]),
   });
 
-export const attendanceAllowanceReportSchema = z.object({
+export const attendanceAllowanceCrossSectionSchema = z.object({
   // need to infer not in receipt of AA if termination date given.
   overallInReceipt: z.object({
     total: z.coerce.number().default(0),
@@ -264,6 +266,21 @@ export const attendanceAllowanceReportSchema = z.object({
     totalHighRequestedHigh: z.coerce.number().min(0).default(0),
     totalRequestedHigh: z.coerce.number().min(0).default(0),
   }),
+});
+
+export const attendanceAllowanceReportSchema = z.object({
+  years: z.array(
+    attendanceAllowanceCrossSectionSchema.shape.thisMonthConfirmed.extend({
+      totalHours: z.coerce.number().default(0),
+      year: z.coerce.number(),
+      months: z.array(
+        attendanceAllowanceCrossSectionSchema.shape.thisMonthConfirmed.extend({
+          totalHours: z.coerce.number().default(0),
+          month: z.coerce.number(),
+        })
+      ),
+    })
+  ),
 });
 
 export const crossSectionSchema = z.object({
@@ -362,6 +379,9 @@ export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
+export type AttendanceAllowanceCrossSection = z.infer<
+  typeof attendanceAllowanceCrossSectionSchema
+>;
 export type AttendanceAllowanceReport = z.infer<
   typeof attendanceAllowanceReportSchema
 >;

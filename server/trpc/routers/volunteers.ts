@@ -25,6 +25,18 @@ export const volunteersRouter = router({
       return await ctx.services.volunteer.getById(input.id, ctx.user);
     }),
 
+  getCoreTrainingRecordCompletions: createProtectedProcedure(
+    "volunteers",
+    "read"
+  )
+    .input(z.object({ withEnded: z.boolean().default(false) }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.volunteer.getCoreTrainingRecordCompletions(
+        input.withEnded,
+        ctx.user
+      );
+    }),
+
   create: createProtectedProcedure("volunteers", "create")
     .input(volunteerMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {

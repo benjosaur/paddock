@@ -3,20 +3,20 @@ import {
   deprivationCrossSectionSchema,
   reportSchema,
   deprivationReportSchema,
-  attendanceAllowanceReportSchema,
+  attendanceAllowanceCrossSectionSchema,
   analyticsDetailsSchema,
 } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { z } from "zod";
 
 export const analyticsRouter = router({
-  generateAttendanceAllowanceReport: createProtectedProcedure(
+  generateAttendanceAllowanceCrossSection: createProtectedProcedure(
     "analytics",
     "read"
   )
-    .output(attendanceAllowanceReportSchema)
+    .output(attendanceAllowanceCrossSectionSchema)
     .query(async ({ ctx }) => {
-      return await ctx.services.analytics.generateAttendanceAllowanceReport(
+      return await ctx.services.analytics.generateAttendanceAllowanceCrossSection(
         ctx.user
       );
     }),

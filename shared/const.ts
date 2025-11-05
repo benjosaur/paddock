@@ -46,13 +46,16 @@ export const soleServiceOptions = [
   "Finance",
   "Technical",
 ] as const;
-export const trainingRecordTypes = [
+export const coreTrainingRecordTypes = [
   "First Aid Skills",
   "Professional Boundaries",
   "Moving and Handling People",
   "Handling Information GWPR and DPR",
-  "Basic Life Support",
   "Adult Safeguarding",
+] as const;
+export const trainingRecordTypes = [
+  ...coreTrainingRecordTypes,
+  "Basic Life Support",
   "Other",
 ] as const;
 export const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;

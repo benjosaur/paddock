@@ -64,7 +64,7 @@ export function Dashboard() {
   );
 
   const attendanceAllowanceQuery = useQuery(
-    trpc.analytics.generateAttendanceAllowanceReport.queryOptions()
+    trpc.analytics.generateAttendanceAllowanceCrossSection.queryOptions()
   );
 
   const requestsReportQuery = useQuery({

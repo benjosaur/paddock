@@ -9,6 +9,7 @@ import { trainingRecordSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
 import { trainingRecordTypes } from "shared/const";
 import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
 import { associatedMpRoutes } from "../routes/MpsRoutes";
@@ -23,10 +24,11 @@ export function TrainingRecordForm() {
   const [formData, setFormData] = useState<Omit<TrainingRecord, "id">>({
     ownerId: "",
     endDate: "open",
+    completionDate: "",
     expiryDate: "",
     details: {
       name: "",
-      recordName: "",
+      recordName: "First Aid Skills",
       recordNumber: "",
       notes: "",
     },
@@ -100,11 +102,19 @@ export function TrainingRecordForm() {
       setFormData({
         ownerId: record.ownerId,
         endDate: record.endDate,
+        completionDate: record.completionDate,
         expiryDate: record.expiryDate,
         details: record.details,
       });
     }
   }, [isEditing, recordQuery.data]);
+
+  // Default completionDate to today's date for new records (only if empty)
+  useTodaysDate({
+    enabled: !isEditing && !formData.completionDate,
+    setDate: (value) =>
+      setFormData((prev) => ({ ...prev, completionDate: value })),
+  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -248,6 +258,22 @@ export function TrainingRecordForm() {
                   id="recordNumber"
                   name="details.recordNumber"
                   value={formData.details.recordNumber || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="completionDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Completion Date
+                </label>
+                <Input
+                  id="completionDate"
+                  name="completionDate"
+                  type="date"
+                  value={formData.completionDate}
                   onChange={handleInputChange}
                 />
               </div>

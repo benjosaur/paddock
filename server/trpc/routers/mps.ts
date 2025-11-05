@@ -20,6 +20,15 @@ export const mpsRouter = router({
       return await ctx.services.mp.getById(input.id, ctx.user);
     }),
 
+  getCoreTrainingRecordCompletions: createProtectedProcedure("mps", "read")
+    .input(z.object({ withEnded: z.boolean().default(false) }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.mp.getCoreTrainingRecordCompletions(
+        input.withEnded,
+        ctx.user
+      );
+    }),
+
   create: createProtectedProcedure("mps", "create")
     .input(mpMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {

@@ -5,6 +5,8 @@ import {
   mpMetadataSchema,
   EndPersonDetails,
   endPersonDetailsSchema,
+  CoreTrainingRecordCompletion,
+  coreTrainingRecordCompletionSchema,
 } from "shared";
 import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
@@ -17,6 +19,7 @@ import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
+import { coreTrainingRecordTypes } from "shared/const";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -80,6 +83,58 @@ export class MpService {
       return parsedResult[0];
     } catch (error) {
       console.error("Service Layer Error getting MP by ID:", error);
+      throw error;
+    }
+  }
+
+  async getCoreTrainingRecordCompletions(
+    withEnded: boolean,
+    user: User
+  ): Promise<CoreTrainingRecordCompletion[]> {
+    try {
+      const mps = withEnded
+        ? await this.getAll(user)
+        : await this.getAllNotEnded(user);
+
+      const coreCompletions = mps.map((mp): CoreTrainingRecordCompletion => {
+        const coreTrainingRecords = mp.trainingRecords.filter((tr) => {
+          return coreTrainingRecordTypes.some(
+            (type) => type === tr.details.recordName
+          );
+        });
+        const earliestCompletedRecord =
+          coreTrainingRecords.length > 0
+            ? coreTrainingRecords.reduce((earliest, current) => {
+                return new Date(current.completionDate) <
+                  new Date(earliest.completionDate)
+                  ? current
+                  : earliest;
+              }, coreTrainingRecords[0])
+            : null;
+
+        return {
+          carer: { id: mp.id, name: mp.details.name },
+          coreCompletionRate: Number(
+            (
+              100 *
+              (coreTrainingRecords.length / coreTrainingRecordTypes.length)
+            ).toFixed(2)
+          ),
+          earliestCompletionDate: earliestCompletedRecord?.completionDate ?? "",
+          coreRecords:
+            coreTrainingRecords as CoreTrainingRecordCompletion["coreRecords"],
+        };
+      });
+
+      const parsedResult = coreTrainingRecordCompletionSchema
+        .array()
+        .parse(coreCompletions);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting core training record completions:",
+        error
+      );
       throw error;
     }
   }

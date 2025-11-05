@@ -41,11 +41,6 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     render: (item: ClientMetadata) => item.details.address.postCode,
   },
   {
-    key: "services",
-    header: "Services",
-    render: (item: ClientMetadata) => item.details.services.join(", "),
-  },
-  {
     key: "attendanceAllowance",
     header: "AA Status",
     render: (item: ClientMetadata) =>

@@ -1,4 +1,6 @@
 import {
+  CoreTrainingRecordCompletion,
+  coreTrainingRecordCompletionSchema,
   Package,
   VolunteerFull,
   volunteerFullSchema,
@@ -21,7 +23,7 @@ import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
-import { firstYear } from "shared/const";
+import { coreTrainingRecordTypes, firstYear } from "shared/const";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -134,6 +136,62 @@ export class VolunteerService {
     } catch (error) {
       console.error(
         "Service Layer Error getting all packages for coordinator:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  async getCoreTrainingRecordCompletions(
+    withEnded: boolean,
+    user: User
+  ): Promise<CoreTrainingRecordCompletion[]> {
+    try {
+      const volunteers = withEnded
+        ? await this.getAll(user)
+        : await this.getAllNotEnded(user);
+
+      const coreCompletions = volunteers.map(
+        (volunteer): CoreTrainingRecordCompletion => {
+          const coreTrainingRecords = volunteer.trainingRecords.filter((tr) =>
+            coreTrainingRecordTypes.some(
+              (type) => type === tr.details.recordName
+            )
+          );
+
+          const earliestCompletedRecord =
+            coreTrainingRecords.length > 0
+              ? coreTrainingRecords.reduce((earliest, current) => {
+                  return new Date(current.completionDate) <
+                    new Date(earliest.completionDate)
+                    ? current
+                    : earliest;
+                }, coreTrainingRecords[0])
+              : null;
+
+          return {
+            carer: { id: volunteer.id, name: volunteer.details.name },
+            coreCompletionRate: Number(
+              (
+                100 *
+                (coreTrainingRecords.length / coreTrainingRecordTypes.length)
+              ).toFixed(2)
+            ),
+            earliestCompletionDate:
+              earliestCompletedRecord?.completionDate ?? "",
+            coreRecords:
+              coreTrainingRecords as CoreTrainingRecordCompletion["coreRecords"],
+          };
+        }
+      );
+
+      const parsedResult = coreTrainingRecordCompletionSchema
+        .array()
+        .parse(coreCompletions);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting core training record completions:",
         error
       );
       throw error;
