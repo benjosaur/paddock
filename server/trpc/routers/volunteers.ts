@@ -50,10 +50,12 @@ export const volunteersRouter = router({
     }),
 
   updateName: createProtectedProcedure("volunteers", "update")
-    .input(z.object({ volunteerId: z.string(), newName: z.string() }))
+    .input(
+      z.object({ volunteer: volunteerMetadataSchema, newName: z.string() })
+    )
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.updateName(
-        input.volunteerId,
+        input.volunteer,
         input.newName,
         ctx.user
       );

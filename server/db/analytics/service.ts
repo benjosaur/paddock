@@ -23,16 +23,10 @@ import { firstYear } from "shared/const";
 import { PackageService } from "../package/service";
 import { RequestService } from "../requests/service";
 import {
-  Package,
-  RequestMetadata,
   CrossSection,
   DeprivationCrossSection,
   Report,
   DeprivationReport,
-  reportMonthSchema,
-  deprivationReportMonthSchema,
-  ReportYear,
-  DeprivationReportYear,
   AttendanceAllowanceCrossSection,
   AttendanceAllowanceReport,
 } from "shared";

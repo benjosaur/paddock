@@ -256,20 +256,27 @@ export function ClientForm() {
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const prepareClientPayload = (
+    data: Omit<ClientFull, "id">
+  ): Omit<ClientFull, "id"> | null => {
     const payload = {
-      ...formData,
+      ...data,
       dateOfBirth:
-        formData.dateOfBirth && formData.dateOfBirth.trim() !== ""
-          ? formData.dateOfBirth
+        data.dateOfBirth && data.dateOfBirth.trim() !== ""
+          ? data.dateOfBirth
           : "Unknown",
     };
-    const validated = validateOrToast<ClientFull>(
+    const validated = validateOrToast<Omit<ClientFull, "id">>(
       clientFullSchema.omit({ id: true }),
       payload,
       { toastPrefix: "Form Validation Error", logPrefix: "Client form" }
     );
+    return validated;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validated = prepareClientPayload(formData);
     if (!validated) return;
     if (isEditing) {
       updateClientMutation.mutate({
@@ -287,20 +294,22 @@ export function ClientForm() {
 
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
+    const validated = prepareClientPayload(formData);
+    if (!validated) return;
 
     if (field == "details.name") {
       updateNameMutation.mutate({
-        clientId: id,
+        client: { id, ...validated },
         newName: newValue,
       });
     } else if (field == "details.customId") {
       updateCustomIdMutation.mutate({
-        clientId: id,
+        client: { id, ...validated },
         newCustomId: newValue,
       });
     } else if (field == "details.address.postCode") {
       updatePostCodeMutation.mutate({
-        clientId: id,
+        client: { id, ...validated },
         newPostcode: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);

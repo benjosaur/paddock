@@ -2,24 +2,13 @@ import { ClientService } from "../../client/service";
 import { PackageService } from "../../package/service";
 import { RequestService } from "../../requests/service";
 import { VolunteerService } from "../../volunteer/service";
+import { firstYear, months, ServiceOption, serviceOptions } from "shared/const";
 import {
-  attendanceAllowanceStatuses,
-  firstYear,
-  months,
-  ServiceOption,
-  serviceOptions,
-} from "shared/const";
-import {
-  AttendanceAllowanceCrossSection,
   CrossSection,
-  DeprivationCrossSection,
-  DeprivationReport,
-  DeprivationReportYear,
   Package,
   Report,
   ReportYear,
   RequestMetadata,
-  deprivationReportMonthSchema,
   reportMonthSchema,
 } from "shared";
 

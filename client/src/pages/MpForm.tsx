@@ -127,12 +127,25 @@ export function MpForm() {
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
+  const prepareMpPayload = (
+    data: Omit<MpFull, "id">
+  ): Omit<MpFull, "id"> | null => {
+    const validated = validateOrToast<Omit<MpFull, "id">>(
+      mpFullSchema.omit({ id: true }),
+      data,
+      { toastPrefix: "Form Validation Error", logPrefix: "MP form" }
+    );
+    return validated;
+  };
+
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
+    const validated = prepareMpPayload(formData);
+    if (!validated) return;
 
     if (field == "details.name") {
       updateNameMutation.mutate({
-        mpId: id,
+        mp: { id, ...validated },
         newName: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
@@ -140,11 +153,7 @@ export function MpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validated = validateOrToast<MpFull>(
-      mpFullSchema.omit({ id: true }),
-      formData,
-      { toastPrefix: "Form Validation Error", logPrefix: "MP form" }
-    );
+    const validated = prepareMpPayload(formData);
     if (!validated) return;
     if (isEditing) {
       updateMpMutation.mutate({ id, ...(validated as Omit<MpFull, "id">) });

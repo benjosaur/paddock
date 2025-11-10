@@ -1,9 +1,6 @@
 import { infoDetailsSchema, endPersonDetailsSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import {
-  clientFullSchema,
-  volunteerMetadataSchema,
-} from "shared/schemas/index";
+import { clientFullSchema, clientMetadataSchema } from "shared/schemas/index";
 import { z } from "zod";
 
 export const clientsRouter = router({
@@ -36,7 +33,7 @@ export const clientsRouter = router({
     }),
 
   create: createProtectedProcedure("clients", "create")
-    .input(clientFullSchema.omit({ id: true }))
+    .input(clientMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.create(input, ctx.user);
     }),
@@ -44,7 +41,7 @@ export const clientsRouter = router({
   createInfoEntry: createProtectedProcedure("clients", "create")
     .input(
       z.object({
-        client: clientFullSchema,
+        client: clientMetadataSchema,
         infoDetails: infoDetailsSchema,
       })
     )
@@ -57,40 +54,40 @@ export const clientsRouter = router({
     }),
 
   update: createProtectedProcedure("clients", "update")
-    .input(clientFullSchema)
+    .input(clientMetadataSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.update(input, ctx.user);
     }),
 
   delete: createProtectedProcedure("clients", "delete")
-    .input(clientFullSchema.pick({ id: true }))
+    .input(clientMetadataSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.delete(ctx.user, input.id);
     }),
 
   updateName: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newName: z.string() }))
+    .input(z.object({ client: clientMetadataSchema, newName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.updateName(
-        input.clientId,
+        input.client,
         input.newName,
         ctx.user
       );
     }),
   updateCustomId: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newCustomId: z.string() }))
+    .input(z.object({ client: clientMetadataSchema, newCustomId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.updateCustomId(
-        input.clientId,
+        input.client,
         input.newCustomId,
         ctx.user
       );
     }),
   updatePostCode: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newPostcode: z.string() }))
+    .input(z.object({ client: clientMetadataSchema, newPostcode: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.updatePostCode(
-        input.clientId,
+        input.client,
         input.newPostcode,
         ctx.user
       );

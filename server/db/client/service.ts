@@ -5,8 +5,6 @@ import {
   clientMetadataSchema,
   InfoDetails,
   infoDetailsSchema,
-  VolunteerMetadata,
-  volunteerMetadataSchema,
 } from "shared";
 import { ClientRepository } from "./repository";
 import { DbClientEntity } from "./schema";
@@ -128,7 +126,7 @@ export class ClientService {
   }
 
   async create(
-    newClient: Omit<ClientFull, "id">,
+    newClient: Omit<ClientMetadata, "id">,
     user: User
   ): Promise<{
     clientId: string;
@@ -140,7 +138,7 @@ export class ClientService {
     postcode: string;
   }> {
     try {
-      const validatedInput = clientFullSchema
+      const validatedInput = clientMetadataSchema
         .omit({ id: true })
         .parse(newClient);
 
@@ -259,7 +257,7 @@ export class ClientService {
     }
   }
 
-  async update(updatedClient: ClientFull, user: User): Promise<void> {
+  async update(updatedClient: ClientMetadata, user: User): Promise<void> {
     //note for name or postcode (only metachanges)
     try {
       const validatedInput = clientMetadataSchema.parse(updatedClient);
@@ -282,7 +280,7 @@ export class ClientService {
   }
 
   async updatePostCode(
-    updatedClientId: string,
+    updatedClient: ClientMetadata,
     newPostcode: string,
     user: User
   ): Promise<{
@@ -294,10 +292,10 @@ export class ClientService {
     postcode: string;
   }> {
     // does not update associated records
+    // instead of getting client by id just passs in the entire state of current form and update.
     try {
-      const matchedClient = await this.getById(updatedClientId, user);
-
-      const { id, ...rest } = matchedClient;
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
 
       // Fetch deprivation data for the client's postcode
       const deprivationData = await this.deprivationService.getDeprivationData(
@@ -306,11 +304,11 @@ export class ClientService {
 
       // Update the client with deprivation data
       const clientWithDeprivation = {
-        ...rest,
+        ...updatedClientMetadata,
         details: {
-          ...rest.details,
+          ...updatedClientMetadata.details,
           address: {
-            ...rest.details.address,
+            ...updatedClientMetadata.details.address,
             postCode: newPostcode,
             deprivation: deprivationData,
           },
@@ -335,29 +333,48 @@ export class ClientService {
   }
 
   async updateCustomId(
-    clientId: string,
+    updatedClient: ClientMetadata,
     newCustomId: string,
     user: User
   ): Promise<void> {
     // update reqs
+    // now need to update any client metadata changes too
     try {
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
+
+      const updatedClientEntity: DbClientEntity = addDbMiddleware(
+        {
+          ...updatedClientMetadata,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          details: { ...updatedClientMetadata.details, customId: newCustomId },
+        },
+        user
+      );
+
       const initialClientRecords = await this.clientRepository.getById(
-        clientId,
+        id,
         user
       );
 
       //filter out mags (these dont contain customId)
       const updatedClientRecords = initialClientRecords
         .filter((record) => !record.sK.startsWith("mag"))
-        .map((record) =>
-          addDbMiddleware(
-            {
-              ...record,
-              details: { ...record.details, customId: newCustomId },
-            },
-            user
-          )
-        );
+        .map((record) => {
+          if (record.sK.startsWith("c#")) {
+            return updatedClientEntity;
+          } else {
+            return addDbMiddleware(
+              {
+                ...record,
+                details: { ...record.details, customId: newCustomId },
+              },
+              user
+            );
+          }
+        });
       await genericUpdate(updatedClientRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Custom ID:", error);
@@ -366,25 +383,43 @@ export class ClientService {
   }
 
   async updateName(
-    clientId: string,
+    updatedClient: ClientMetadata,
     newName: string,
     user: User
   ): Promise<void> {
     // update mags and reqs
     try {
-      const initialClientRecords = await this.clientRepository.getById(
-        clientId,
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
+
+      const updatedClientEntity: DbClientEntity = addDbMiddleware(
+        {
+          ...updatedClientMetadata,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          details: { ...updatedClientMetadata.details, name: newName },
+        },
         user
       );
-      const updatedClientRecords = initialClientRecords.map((record) =>
-        addDbMiddleware(
+
+      const initialClientRecords = await this.clientRepository.getById(
+        id,
+        user
+      );
+      const updatedClientRecords = initialClientRecords.map((record) => {
+        if (record.sK.startsWith("c#")) {
+          return updatedClientEntity;
+        }
+
+        return addDbMiddleware(
           {
             ...record,
             details: { ...record.details, name: newName },
           },
           user
-        )
-      );
+        );
+      });
       await genericUpdate(updatedClientRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);

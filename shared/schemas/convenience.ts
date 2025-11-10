@@ -57,7 +57,7 @@ export const coreTrainingRecordCompletionSchema = z.object({
     id: z.string(),
     name: z.string(),
   }),
-  coreCompletionRate: z.coerce.number().min(0).max(100).default(0),
+  coreCompletionRate: z.coerce.number().min(0).default(0),
   earliestCompletionDate: z
     .union([z.string().date(), z.literal("")])
     .default(""),

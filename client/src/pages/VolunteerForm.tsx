@@ -130,12 +130,24 @@ export function VolunteerForm() {
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
+  const prepareVolunteerPayload = (
+    data: Omit<VolunteerFull, "id">
+  ): Omit<VolunteerFull, "id"> | null => {
+    const validated = validateOrToast<Omit<VolunteerFull, "id">>(
+      volunteerFullSchema.omit({ id: true }),
+      data,
+      { toastPrefix: "Form Validation Error", logPrefix: "Volunteer form" }
+    );
+    return validated;
+  };
+
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
-
+    const validated = prepareVolunteerPayload(formData);
+    if (!validated) return;
     if (field == "details.name") {
       updateNameMutation.mutate({
-        volunteerId: id,
+        volunteer: { id, ...validated },
         newName: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
@@ -143,11 +155,7 @@ export function VolunteerForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validated = validateOrToast<VolunteerFull>(
-      volunteerFullSchema.omit({ id: true }),
-      formData,
-      { toastPrefix: "Form Validation Error", logPrefix: "Volunteer form" }
-    );
+    const validated = prepareVolunteerPayload(formData);
     if (!validated) return;
     if (isEditing) {
       updateVolunteerMutation.mutate({

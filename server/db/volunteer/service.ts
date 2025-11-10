@@ -266,19 +266,40 @@ export class VolunteerService {
   }
 
   async updateName(
-    volunteerId: string,
+    volunteerMetadata: VolunteerMetadata,
     newName: string,
     user: User
   ): Promise<void> {
     try {
-      const initialVolunteerRecords = await this.volunteerRepository.getById(
-        volunteerId,
+      const { id, packages, trainingRecords, ...updatedVolunteerMetadata } =
+        volunteerMetadataSchema.parse(volunteerMetadata);
+      const updatedVolunteerEntity: DbVolunteerEntity = addDbMiddleware(
+        {
+          ...updatedVolunteerMetadata,
+          pK: id,
+          sK: id,
+          entityType: "volunteer",
+          details: { ...updatedVolunteerMetadata.details, name: newName },
+        },
         user
       );
-      const updatedVolunteerRecords = initialVolunteerRecords.map((record) => ({
-        ...record,
-        details: { ...record.details, name: newName },
-      }));
+      const initialVolunteerRecords = await this.volunteerRepository.getById(
+        id,
+        user
+      );
+      const updatedVolunteerRecords = initialVolunteerRecords.map((record) => {
+        if (record.sK.startsWith("v#")) {
+          return updatedVolunteerEntity;
+        } else {
+          return addDbMiddleware(
+            {
+              ...record,
+              details: { ...record.details, name: newName },
+            },
+            user
+          );
+        }
+      });
       await genericUpdate(updatedVolunteerRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Volunteer Name:", error);

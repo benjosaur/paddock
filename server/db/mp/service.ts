@@ -189,13 +189,38 @@ export class MpService {
     }
   }
 
-  async updateName(mpId: string, newName: string, user: User): Promise<void> {
+  async updateName(
+    mpMetadata: MpMetadata,
+    newName: string,
+    user: User
+  ): Promise<void> {
     try {
-      const initialMpRecords = await this.mpRepository.getById(mpId, user);
-      const updatedMpRecords = initialMpRecords.map((record) => ({
-        ...record,
-        details: { ...record.details, name: newName },
-      }));
+      const { id, packages, trainingRecords, ...updatedMpMetadata } =
+        mpMetadataSchema.parse(mpMetadata);
+      const updatedMpEntity: DbMpEntity = addDbMiddleware(
+        {
+          ...updatedMpMetadata,
+          pK: id,
+          sK: id,
+          entityType: "mp",
+          details: { ...updatedMpMetadata.details, name: newName },
+        },
+        user
+      );
+      const initialMpRecords = await this.mpRepository.getById(id, user);
+      const updatedMpRecords = initialMpRecords.map((record) => {
+        if (record.sK.startsWith("mp#")) {
+          return updatedMpEntity;
+        } else {
+          return addDbMiddleware(
+            {
+              ...record,
+              details: { ...record.details, name: newName },
+            },
+            user
+          );
+        }
+      });
       await genericUpdate(updatedMpRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Mp Name:", error);

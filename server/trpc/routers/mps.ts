@@ -42,10 +42,10 @@ export const mpsRouter = router({
     }),
 
   updateName: createProtectedProcedure("mps", "update")
-    .input(z.object({ mpId: z.string(), newName: z.string() }))
+    .input(z.object({ mp: mpMetadataSchema, newName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.updateName(
-        input.mpId,
+        input.mp,
         input.newName,
         ctx.user
       );
