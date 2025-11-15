@@ -116,8 +116,8 @@ export class PackageService {
     try {
       const validatedInput = z
         .union([
-          solePackageSchema.omit({ id: true }),
           reqPackageSchema.omit({ id: true }),
+          solePackageSchema.omit({ id: true }),
         ])
         .parse(newPackage);
       const { carerId, ...rest } = validatedInput;

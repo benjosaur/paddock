@@ -171,6 +171,12 @@ export function MpForm() {
     label: service,
   }));
 
+  const [openField, setOpenField] = useState<string | null>(null);
+  const openModalFor = (field: string) => {
+    if (!isEditing || mpQuery.isLoading) return;
+    setOpenField(field);
+  };
+
   if (isEditing && mpQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && mpQuery.error) return <div>Error loading MP</div>;
 
@@ -198,20 +204,28 @@ export function MpForm() {
                   Name *
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="name"
-                    name="details.name"
-                    value={formData.details.name || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isEditing}
-                    className="flex-1"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="name"
+                      name="details.name"
+                      value={formData.details.name || ""}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      onClick={() => openModalFor("details.name")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !mpQuery.isLoading && (
                     <FieldEditModal
                       field="details.name"
                       currentValue={formData.details.name}
                       onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.name"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.name" : null)
+                      }
                     />
                   )}
                 </div>

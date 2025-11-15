@@ -97,6 +97,8 @@ export function ClientForm() {
     magLogs: [],
   });
 
+  const [openField, setOpenField] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
 
   const clientQuery = useQuery({
@@ -315,6 +317,11 @@ export function ClientForm() {
     } else throw new Error(`${field} not a recognised field`);
   };
 
+  const openFieldModalFor = (field: string) => {
+    if (!isEditing || clientQuery.isLoading) return;
+    setOpenField(field);
+  };
+
   const attendanceAllowanceLevelOptions = attendanceAllowanceLevels.map(
     (option) => ({
       value: option,
@@ -362,20 +369,28 @@ export function ClientForm() {
                   Custom ID
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="customId"
-                    name="details.customId"
-                    value={formData.details.customId || ""}
-                    onChange={handleInputChange}
-                    disabled={isEditing}
-                    className="flex-1"
-                    placeholder="Custom identifier"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="customId"
+                      name="details.customId"
+                      value={formData.details.customId || ""}
+                      onChange={handleInputChange}
+                      disabled={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      placeholder="Custom identifier"
+                      onClick={() => openFieldModalFor("details.customId")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !clientQuery.isLoading && (
                     <FieldEditModal
                       field="details.customId"
                       currentValue={formData.details.customId}
                       onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.customId"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.customId" : null)
+                      }
                     />
                   )}
                 </div>
@@ -388,20 +403,28 @@ export function ClientForm() {
                   Name *
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="name"
-                    name="details.name"
-                    value={formData.details.name || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isEditing}
-                    className="flex-1"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="name"
+                      name="details.name"
+                      value={formData.details.name || ""}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      onClick={() => openFieldModalFor("details.name")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !clientQuery.isLoading && (
                     <FieldEditModal
                       field="details.name"
                       currentValue={formData.details.name}
                       onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.name"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.name" : null)
+                      }
                     />
                   )}
                 </div>
@@ -492,21 +515,30 @@ export function ClientForm() {
                   Post Code
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="postCode"
-                    name="details.address.postCode"
-                    value={formData.details.address.postCode || ""}
-                    onChange={handleInputChange}
-                    className="flex-1"
-                    // below if we have a trigger flag for postcode
-                    disabled={isEditing}
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="postCode"
+                      name="details.address.postCode"
+                      value={formData.details.address.postCode || ""}
+                      onChange={handleInputChange}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      disabled={isEditing}
+                      onClick={() =>
+                        openFieldModalFor("details.address.postCode")
+                      }
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !clientQuery.isLoading && (
                     <FieldEditModal
                       field="details.address.postCode"
                       currentValue={formData.details.address.postCode}
                       onSubmit={handleFieldChangeSubmit}
                       customDescription="This will not update postcodes attached to this client's existing requests."
+                      externalOpen={openField === "details.address.postCode"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.address.postCode" : null)
+                      }
                     />
                   )}
                 </div>

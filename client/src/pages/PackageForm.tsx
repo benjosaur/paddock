@@ -8,6 +8,7 @@ import { trpc } from "../utils/trpc";
 import {
   type Package,
   type MpMetadata,
+  type VolunteerMetadata,
   type ReqPackage,
   reqPackageSchema,
 } from "../types";
@@ -56,6 +57,7 @@ export function PackageForm() {
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),
@@ -135,6 +137,15 @@ export function PackageForm() {
       label: mp.details.name,
     }));
 
+  const volunteerOptions = (volunteersQuery.data || [])
+    .filter((v: VolunteerMetadata) => v.id && v.details?.name)
+    .map((v: VolunteerMetadata) => ({
+      value: v.id,
+      label: v.details.name,
+    }));
+
+  const carerOptions = [...mpOptions, ...volunteerOptions];
+
   const serviceSelectOptions = serviceOptions.map((service) => ({
     value: service,
     label: service,
@@ -195,8 +206,10 @@ export function PackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error) return <div>Error loading package</div>;
-  if (mpsQuery.isLoading || requestQuery.isLoading)
+  if (mpsQuery.isLoading || volunteersQuery.isLoading || requestQuery.isLoading)
     return <div>Loading...</div>;
+  if (mpsQuery.error || volunteersQuery.error)
+    return <div>Error loading carers</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -253,12 +266,12 @@ export function PackageForm() {
                   htmlFor="carerId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Carer/MP *
+                  Carer *
                 </label>
                 <Select
-                  options={mpOptions}
+                  options={carerOptions}
                   value={
-                    mpOptions.find(
+                    carerOptions.find(
                       (option) => option.value === formData.carerId
                     ) || null
                   }
@@ -274,8 +287,9 @@ export function PackageForm() {
                   }}
                   placeholder="Select a carer/MP..."
                   isSearchable
-                  noOptionsMessage={() => "No carers/MPs found"}
+                  noOptionsMessage={() => "No carers found"}
                   isClearable
+                  required
                 />
               </div>
 
