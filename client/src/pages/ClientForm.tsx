@@ -77,6 +77,7 @@ export function ClientForm() {
       riskAssessmentDate: "",
       riskAssessmentComments: "",
       services: [],
+      endReason: "None",
       attendanceAllowance: {
         requestedLevel: "None",
         completedBy: {
@@ -375,7 +376,7 @@ export function ClientForm() {
                       name="details.customId"
                       value={formData.details.customId || ""}
                       onChange={handleInputChange}
-                      disabled={isEditing}
+                      readOnly={isEditing}
                       className="w-full cursor-pointer disabled:opacity-100"
                       placeholder="Custom identifier"
                       onClick={() => openFieldModalFor("details.customId")}
@@ -410,7 +411,7 @@ export function ClientForm() {
                       value={formData.details.name || ""}
                       onChange={handleInputChange}
                       required
-                      disabled={isEditing}
+                      readOnly={isEditing}
                       className="w-full cursor-pointer disabled:opacity-100"
                       onClick={() => openFieldModalFor("details.name")}
                       aria-readonly={isEditing}
@@ -522,7 +523,7 @@ export function ClientForm() {
                       value={formData.details.address.postCode || ""}
                       onChange={handleInputChange}
                       className="w-full cursor-pointer disabled:opacity-100"
-                      disabled={isEditing}
+                      readOnly={isEditing}
                       onClick={() =>
                         openFieldModalFor("details.address.postCode")
                       }
@@ -707,9 +708,6 @@ export function ClientForm() {
                   isMulti
                   noOptionsMessage={() => "No services found"}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Search by service name to add requested services
-                </p>
               </div>
               {/* Attendance Allowance Section */}
               <div className="space-y-4 border border-gray-200 rounded-lg p-4">

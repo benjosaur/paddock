@@ -457,6 +457,7 @@ export class ClientService {
           sK: id,
           entityType: "client",
           endDate: validated.endDate,
+          details: { ...rest.details, endReason: validated.endReason },
         },
         user
       );

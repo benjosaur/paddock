@@ -135,10 +135,10 @@ export function VolunteersRoutes() {
 
   const handleEnd = (vol: VolunteerMetadata) => {
     if (vol.endDate !== "open") {
-      setEndDetails({ personId: vol.id, endDate: "" });
+      setEndDetails({ personId: vol.id, endDate: "", endReason: "None" });
       setIsEndDialogOpen(true);
     } else {
-      setEndDetails({ personId: vol.id, endDate: "open" });
+      setEndDetails({ personId: vol.id, endDate: "open", endReason: "None" });
       setIsEndDialogOpen(true);
     }
   };

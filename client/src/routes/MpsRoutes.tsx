@@ -122,11 +122,11 @@ export function MpsRoutes() {
 
   const handleEnd = (mp: MpMetadata) => {
     if (mp.endDate !== "open") {
-      setEndDetails({ personId: mp.id, endDate: "" });
+      setEndDetails({ personId: mp.id, endDate: "", endReason: "None" });
       setIsEndDialogOpen(true);
     } else {
       // undo end
-      setEndDetails({ personId: mp.id, endDate: "open" });
+      setEndDetails({ personId: mp.id, endDate: "open", endReason: "None" });
       setIsEndDialogOpen(true);
     }
   };

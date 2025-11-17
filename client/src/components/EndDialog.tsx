@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useTodaysDate } from "../hooks/useTodaysDate";
@@ -20,6 +21,7 @@ type Props = {
   confirmDisabled?: boolean;
   endDescription: string;
   undoDescription: string;
+  extraContent?: ReactNode;
 };
 
 export function EndDialog({
@@ -32,6 +34,7 @@ export function EndDialog({
   confirmDisabled,
   endDescription,
   undoDescription,
+  extraContent,
 }: Props) {
   const isUndo = endDate === "open";
 
@@ -61,6 +64,7 @@ export function EndDialog({
               onChange={(e) => onEndDateChange(e.target.value)}
               required
             />
+            {extraContent}
           </div>
         )}
         <DialogFooter>

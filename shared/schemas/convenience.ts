@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { clientMetadataSchema, trainingRecordSchema } from ".";
-import { coreTrainingRecordTypes, serviceOptions } from "../const";
+import { coreTrainingRecordTypes, endReasons, serviceOptions } from "../const";
 
 export const coverDetailsSchema = z.object({
   carerId: z.string(),
@@ -34,6 +34,7 @@ export const endRequestDetailsSchema = z.object({
 export const endPersonDetailsSchema = z.object({
   personId: z.string(),
   endDate: z.string().date(),
+  endReason: z.enum(endReasons),
 });
 
 export const endPackageDetailsSchema = z.object({

@@ -117,7 +117,6 @@ export class RequestRepository {
       if (!result.Items || result.Items.length === 0) {
         throw new Error(`Request with ID ${requestId} not found`);
       }
-      console.log(result.Items);
       return dbRequest.array().parse(result.Items);
     } catch (error) {
       console.error("Repository Layer Error getting request by id:", error);

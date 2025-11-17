@@ -158,6 +158,15 @@ export function ClientDetailModal({
                 client.dateOfBirth ? formatYmdToDmy(client.dateOfBirth) : ""
               )}
               {renderDetailItem(
+                "End Date",
+                client.endDate !== "open" ? formatYmdToDmy(client.endDate) : ""
+              )}
+              {client.endDate !== "open" &&
+                renderDetailItem(
+                  "End Reason",
+                  client.details.endReason || undefined
+                )}
+              {renderDetailItem(
                 "Street Address",
                 client.details.address.streetAddress
               )}

@@ -12,6 +12,8 @@ import { capitalise } from "@/utils/helpers";
 import { formatYmdToDmy } from "@/utils/date";
 import EndDialog from "../components/EndDialog";
 import type { EndPersonDetails } from "shared";
+import { endReasons } from "shared/const";
+import { Select } from "../components/ui/select";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
   {
@@ -148,11 +150,19 @@ export default function ClientsRoutes() {
   const handleEnd = (client: ClientMetadata) => {
     if (client.endDate === "open") {
       // if now open then need to prepare for ending
-      setEndDetails({ personId: client.id, endDate: "" });
+      setEndDetails({
+        personId: client.id,
+        endDate: "",
+        endReason: "Deceased",
+      });
       setIsEndDialogOpen(true);
     } else {
       // if now not open then endDetails set BACK TO "open" TO prepare for end UNDO
-      setEndDetails({ personId: client.id, endDate: "open" });
+      setEndDetails({
+        personId: client.id,
+        endDate: "open",
+        endReason: "None",
+      });
       setIsEndDialogOpen(true);
     }
   };
@@ -230,7 +240,9 @@ export default function ClientsRoutes() {
               isOpen={isEndDialogOpen}
               onOpenChange={(open) => {
                 setIsEndDialogOpen(open);
-                if (!open) setEndDetails(null);
+                if (!open) {
+                  setEndDetails(null);
+                }
               }}
               entityLabel="Client"
               endDate={endDetails?.endDate}
@@ -247,6 +259,33 @@ export default function ClientsRoutes() {
               }
               endDescription="Select an end date. This will also archive the client."
               undoDescription="This will undo ending the client. Associated requests will not be affected."
+              extraContent={
+                endDetails?.endDate !== "open" ? (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-700">End Reason</label>
+                    <Select
+                      options={endReasons
+                        .filter((r) => r !== "None")
+                        .map((r) => ({ label: r, value: r }))}
+                      value={
+                        endDetails?.endReason
+                          ? {
+                              label: endDetails.endReason,
+                              value: endDetails.endReason,
+                            }
+                          : null
+                      }
+                      onChange={(opt) =>
+                        setEndDetails((prev) =>
+                          prev ? { ...prev, endReason: opt!.value } : prev
+                        )
+                      }
+                      placeholder="Select a reason..."
+                      required
+                    />
+                  </div>
+                ) : null
+              }
             />
           </>
         }

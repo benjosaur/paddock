@@ -211,7 +211,7 @@ export function MpForm() {
                       value={formData.details.name || ""}
                       onChange={handleInputChange}
                       required
-                      disabled={isEditing}
+                      readOnly={isEditing}
                       className="w-full cursor-pointer disabled:opacity-100"
                       onClick={() => openModalFor("details.name")}
                       aria-readonly={isEditing}

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
+  endReasons,
   localities,
   notesSource,
   requestStatus,
@@ -199,6 +200,7 @@ export const clientMetadataSchema = z.object({
       status: z.enum(attendanceAllowanceStatuses).default("None"),
       confirmationDate: z.union([z.string().date(), z.literal("")]).default(""),
     }),
+    endReason: z.enum(endReasons).default("None"), // should be required if endDate not open
   }),
   requests: z.array(requestMetadataSchema).default([]),
 });
