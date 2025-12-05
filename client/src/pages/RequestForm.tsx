@@ -62,8 +62,25 @@ export function RequestForm() {
     enabled: isEditing,
   });
 
+  // Fetch selected client data to get their end date
+  const clientQuery = useQuery({
+    ...trpc.clients.getById.queryOptions({ id: formData.clientId }),
+    enabled: Boolean(formData.clientId),
+  });
+
   const clients = clientsQuery.data || [];
   const request = requestQuery.data;
+  const clientEndDate = clientQuery.data?.endDate;
+
+  const isEndDateRequired = Boolean(clientEndDate && clientEndDate !== "open");
+  const maxEndDate = clientEndDate && clientEndDate !== "open" ? clientEndDate : undefined;
+
+  const formatDateDmy = (date?: string | null) => {
+    if (!date) return "";
+    if (date === "open") return "open";
+    const [y, m, d] = date.split("-");
+    return y && m && d ? `${d} ${m} ${y}` : date;
+  };
 
   const createMutation = useMutation(
     trpc.requests.create.mutationOptions({
@@ -219,8 +236,8 @@ export function RequestForm() {
     }
   };
 
-  if (isEditing && clientsQuery.isLoading) return <div>Loading...</div>;
-  if (isEditing && clientsQuery.error) return <div>Error loading client</div>;
+  if (clientsQuery.isLoading || clientQuery.isLoading) return <div>Loading...</div>;
+  if (clientsQuery.error) return <div>Error loading clients</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -305,7 +322,7 @@ export function RequestForm() {
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  End Date
+                  End Date {!isEditing && isEndDateRequired && "*"}
                 </label>
                 <Input
                   id="endDate"
@@ -320,6 +337,8 @@ export function RequestForm() {
                       ? ""
                       : formData.endDate
                   }
+                  max={!isEditing ? maxEndDate : undefined}
+                  required={!isEditing && isEndDateRequired}
                   onChange={(e) => {
                     const value = e.target.value || "open";
                     setFormData((prev) =>
@@ -328,11 +347,24 @@ export function RequestForm() {
                   }}
                   disabled={isEditing}
                 />
-                <small className="text-gray-500">
-                  {isEditing
-                    ? "End via the table button. This is to also end all ongoing packages."
-                    : "Leave empty for ongoing request"}
-                </small>
+                {isEditing ? (
+                  <small className="text-gray-500 block">
+                    End via the table button. This is to also end all ongoing packages.
+                  </small>
+                ) : (
+                  <>
+                    {!isEndDateRequired && (
+                      <small className="text-gray-500 block">
+                        Leave empty for ongoing request
+                      </small>
+                    )}
+                    {maxEndDate && (
+                      <small className="text-gray-500 block">
+                        Must end by {formatDateDmy(maxEndDate)} (Client end date)
+                      </small>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 

@@ -74,6 +74,40 @@ export function PackageForm() {
 
   const requestEndDate = requestQuery.data?.endDate;
 
+  // Fetch carer data to get their end date
+  const mpQuery = useQuery({
+    ...trpc.mps.getById.queryOptions({ id: formData.carerId }),
+    enabled: Boolean(formData.carerId) && (mpsQuery.data || []).some(mp => mp.id === formData.carerId),
+  });
+
+  const volunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id: formData.carerId }),
+    enabled: Boolean(formData.carerId) && (volunteersQuery.data || []).some(v => v.id === formData.carerId),
+  });
+
+  const carerEndDate = mpQuery.data?.endDate || volunteerQuery.data?.endDate;
+
+  // Calculate the earliest end date between request and carer
+  const getEarliestEndDate = () => {
+    const dates: string[] = [];
+
+    if (requestEndDate && requestEndDate !== "open") {
+      dates.push(requestEndDate);
+    }
+
+    if (carerEndDate && carerEndDate !== "open") {
+      dates.push(carerEndDate);
+    }
+
+    if (dates.length === 0) return undefined;
+
+    // Return the earliest date
+    return dates.sort()[0];
+  };
+
+  const earliestEndDate = getEarliestEndDate();
+  const isEndDateRequired = Boolean(earliestEndDate);
+
   const formatDateDmy = (date?: string | null) => {
     if (!date) return "";
     if (date === "open") return "open";
@@ -222,7 +256,7 @@ export function PackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error) return <div>Error loading package</div>;
-  if (mpsQuery.isLoading || volunteersQuery.isLoading || requestQuery.isLoading)
+  if (mpsQuery.isLoading || volunteersQuery.isLoading || requestQuery.isLoading || mpQuery.isLoading || volunteerQuery.isLoading)
     return <div>Loading...</div>;
   if (mpsQuery.error || volunteersQuery.error)
     return <div>Error loading carers</div>;
@@ -331,18 +365,15 @@ export function PackageForm() {
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  End Date
+                  End Date {isEndDateRequired && "*"}
                 </label>
                 <Input
                   id="endDate"
                   name="endDate"
                   type="date"
                   value={formData.endDate === "open" ? "" : formData.endDate}
-                  max={
-                    requestEndDate && requestEndDate !== "open"
-                      ? requestEndDate
-                      : undefined
-                  }
+                  max={earliestEndDate}
+                  required={isEndDateRequired}
                   onChange={(e) => {
                     const value = e.target.value || "open";
                     setFormData((prev) =>
@@ -350,13 +381,21 @@ export function PackageForm() {
                     );
                   }}
                 />
-                <small className="text-gray-500">
-                  Leave empty for ongoing package
-                </small>
-                {requestEndDate && requestEndDate !== "open" && (
+                {!isEndDateRequired && (
                   <small className="text-gray-500 block">
-                    Package must end before request end date:{" "}
-                    {formatDateDmy(requestEndDate)}
+                    Leave empty for ongoing package
+                  </small>
+                )}
+                {earliestEndDate && (
+                  <small className="text-gray-500 block">
+                    Must end by {formatDateDmy(earliestEndDate)}
+                    {requestEndDate && requestEndDate !== "open" && carerEndDate && carerEndDate !== "open" ? (
+                      <> (Request: {formatDateDmy(requestEndDate)}, Carer: {formatDateDmy(carerEndDate)})</>
+                    ) : requestEndDate && requestEndDate !== "open" ? (
+                      <> (Request end date)</>
+                    ) : (
+                      <> (Carer end date)</>
+                    )}
                   </small>
                 )}
               </div>
