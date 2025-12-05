@@ -56,7 +56,7 @@ export function PackageForm() {
 
   const queryClient = useQueryClient();
 
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
   const volunteersQuery = useQuery(
     trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
@@ -146,7 +146,21 @@ export function PackageForm() {
       label: v.details.name,
     }));
 
-  const carerOptions = [...mpOptions, ...volunteerOptions];
+  const currentOption = {
+    value: formData.carerId,
+    label: formData.details.name,
+  };
+
+  let carerOptions;
+
+  carerOptions = [...mpOptions, ...volunteerOptions];
+
+  if (
+    formData.carerId &&
+    !carerOptions.some((option) => option.value == formData.carerId)
+  ) {
+    carerOptions = [...carerOptions, currentOption];
+  }
 
   const serviceSelectOptions = serviceOptions.map((service) => ({
     value: service,

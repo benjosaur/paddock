@@ -148,6 +148,7 @@ export function RequestForm() {
       }
     }
   }, [formData.clientId, clients, isEditing]);
+
   useTodaysDate({
     enabled: !isEditing && !formData.startDate,
     setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
