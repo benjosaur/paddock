@@ -8,9 +8,9 @@ export const mpsRouter = router({
     return await ctx.services.mp.getAll(ctx.user);
   }),
 
-  getAllNotEnded: createProtectedProcedure("mps", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("mps", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.mp.getAllNotEnded(ctx.user);
+      return await ctx.services.mp.getAllNotEndedYet(ctx.user);
     }
   ),
 

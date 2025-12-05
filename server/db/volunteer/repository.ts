@@ -34,8 +34,10 @@ export class VolunteerRepository {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<DbVolunteerMetadata[]> {
-    // cant end volunteer in future (unlike pkg/reqs) so just check if endDate is "open"
+  async getAllNotEndedYet(user: User): Promise<DbVolunteerMetadata[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
     const openVolunteerCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
@@ -46,14 +48,32 @@ export class VolunteerRepository {
       },
     });
 
+    const endsAfterTodayVolunteerCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
+      ExpressionAttributeValues: {
+        ":pk": `volunteer#${currentYear}`,
+        ":sK": currentDate,
+      },
+    });
+
     try {
-      const dbVolunteers = await client.send(openVolunteerCommand);
+      const [openVolunteerResult, endsAfterTodayVolunteerResult] = await Promise.all([
+        client.send(openVolunteerCommand),
+        client.send(endsAfterTodayVolunteerCommand),
+      ]);
+
+      const allItems = [
+        ...(openVolunteerResult.Items || []),
+        ...(endsAfterTodayVolunteerResult.Items || []),
+      ];
       const parsedResult = dbVolunteerMetadata
         .array()
-        .parse(dbVolunteers.Items);
+        .parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting client requests:", error);
+      console.error("Error getting volunteers not ended yet:", error);
       throw error;
     }
   }

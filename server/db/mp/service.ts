@@ -51,11 +51,11 @@ export class MpService {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<MpMetadata[]> {
+  async getAllNotEndedYet(user: User): Promise<MpMetadata[]> {
     try {
-      const dbMps = await this.mpRepository.getAllNotEnded(user);
+      const dbMps = await this.mpRepository.getAllNotEndedYet(user);
       const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllNotEnded(user);
+        await this.trainingRecordRepository.getAllNotEndedYet(user);
       const dbPackages = await this.packageRepository.getAllNotEndedYet(user);
       const transformedResult = this.transformDbMpToSharedMetaData([
         ...dbMps,
@@ -102,7 +102,7 @@ export class MpService {
     try {
       const mps = withEnded
         ? await this.getAll(user)
-        : await this.getAllNotEnded(user);
+        : await this.getAllNotEndedYet(user);
 
       const coreCompletions = mps.map((mp): CoreTrainingRecordCompletion => {
         const coreTrainingRecords = mp.trainingRecords.filter((tr) => {

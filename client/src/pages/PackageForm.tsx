@@ -57,7 +57,9 @@ export function PackageForm() {
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
+  );
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),

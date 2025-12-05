@@ -53,9 +53,9 @@ export class ClientService {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<ClientMetadata[]> {
+  async getAllNotEndedYet(user: User): Promise<ClientMetadata[]> {
     try {
-      const dbClients = await this.clientRepository.getAllNotEnded(user);
+      const dbClients = await this.clientRepository.getAllNotEndedYet(user);
       const transformedResult =
         this.transformDbClientToSharedMetaData(dbClients);
       const parsedResult = clientMetadataSchema
@@ -64,7 +64,7 @@ export class ClientService {
       return parsedResult;
     } catch (error) {
       console.error(
-        "Service Layer Error getting all not ended clients:",
+        "Service Layer Error getting all not ended yet clients:",
         error
       );
       throw error;

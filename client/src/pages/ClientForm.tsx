@@ -108,7 +108,7 @@ export function ClientForm() {
   });
 
   const volunteersQuery = useQuery(
-    trpc.volunteers.getAllNotEnded.queryOptions()
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const volunteers = (volunteersQuery.data || []) as VolunteerMetadata[];

@@ -28,7 +28,7 @@ export class RequestRepository {
     const endsAfterTodayRequestCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
-      KeyConditionExpression: `entityType = :pk AND endDate >= :sK`,
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
       ExpressionAttributeValues: {
         ":pk": `request#${currentYear}`,
         ":sK": currentDate,

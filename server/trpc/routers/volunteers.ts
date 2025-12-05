@@ -13,9 +13,9 @@ export const volunteersRouter = router({
     }
   ),
 
-  getAllNotEnded: createProtectedProcedure("volunteers", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("volunteers", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.volunteer.getAllNotEnded(ctx.user);
+      return await ctx.services.volunteer.getAllNotEndedYet(ctx.user);
     }
   ),
 

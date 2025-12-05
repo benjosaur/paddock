@@ -58,11 +58,11 @@ export function MpsRoutes() {
   const mpsQuery = useQuery(
     showEnded
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotEnded.queryOptions()
+      : trpc.mps.getAllNotEndedYet.queryOptions()
   );
   const mpsQueryKey = showEnded
     ? trpc.mps.getAll.queryKey()
-    : trpc.mps.getAllNotEnded.queryKey();
+    : trpc.mps.getAllNotEndedYet.queryKey();
 
   const deleteMpMutation = useMutation(
     trpc.mps.delete.mutationOptions({
@@ -121,7 +121,7 @@ export function MpsRoutes() {
   };
 
   const handleEnd = (mp: MpMetadata) => {
-    if (mp.endDate !== "open") {
+    if (mp.endDate === "open") {
       setEndDetails({ personId: mp.id, endDate: "", endReason: "None" });
       setIsEndDialogOpen(true);
     } else {
@@ -232,7 +232,7 @@ export default MpsRoutes;
 export const associatedMpRoutes: any[] = [
   // Mps
   trpc.mps.getAll,
-  trpc.mps.getAllNotEnded,
+  trpc.mps.getAllNotEndedYet,
   trpc.mps.getById,
 
   // MAG
@@ -255,7 +255,7 @@ export const associatedMpRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotEnded,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

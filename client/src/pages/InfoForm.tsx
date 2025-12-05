@@ -41,7 +41,7 @@ export function InfoForm() {
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const volunteersQuery = useQuery(
-    trpc.volunteers.getAllNotEnded.queryOptions()
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const client = clientQuery.data as ClientFull | undefined;

@@ -32,7 +32,9 @@ export class MpRepository {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<DbMpMetadata[]> {
+  async getAllNotEndedYet(user: User): Promise<DbMpMetadata[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
     // MPs cannot end in the future; treat open endDate as active
     const openMpCommand = new QueryCommand({
       TableName: getTableName(user),
@@ -44,9 +46,27 @@ export class MpRepository {
       },
     });
 
+    const endsAfterTodayMpCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
+      ExpressionAttributeValues: {
+        ":pk": `mp#${currentYear}`,
+        ":sK": currentDate,
+      },
+    });
+
     try {
-      const dbMps = await client.send(openMpCommand);
-      const parsedResult = dbMpMetadata.array().parse(dbMps.Items);
+      const [openMpResult, endsAfterTodayMpResult] = await Promise.all([
+        client.send(openMpCommand),
+        client.send(endsAfterTodayMpCommand),
+      ]);
+
+      const allItems = [
+        ...(openMpResult.Items || []),
+        ...(endsAfterTodayMpResult.Items || []),
+      ];
+      const parsedResult = dbMpMetadata.array().parse(allItems);
       return parsedResult;
     } catch (error) {
       console.error("Error getting MPs not ended:", error);

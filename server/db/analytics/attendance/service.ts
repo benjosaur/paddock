@@ -37,7 +37,7 @@ export class AttendanceReportService {
     const currentYear = parseInt(currentDate.slice(0, 4));
     const currentMonth = parseInt(currentDate.slice(5, 7));
 
-    const clients = await this.clientService.getAllNotEnded(user);
+    const clients = await this.clientService.getAllNotEndedYet(user);
     for (const client of clients) {
       if (client.endDate !== "open") continue;
 

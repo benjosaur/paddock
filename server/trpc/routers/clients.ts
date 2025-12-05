@@ -8,9 +8,9 @@ export const clientsRouter = router({
     return await ctx.services.client.getAll(ctx.user);
   }),
 
-  getAllNotEnded: createProtectedProcedure("clients", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("clients", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.client.getAllNotEnded(ctx.user);
+      return await ctx.services.client.getAllNotEndedYet(ctx.user);
     }
   ),
 

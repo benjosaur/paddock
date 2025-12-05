@@ -26,8 +26,11 @@ export class TrainingRecordRepository {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<DbTrainingRecord[]> {
+  async getAllNotEndedYet(user: User): Promise<DbTrainingRecord[]> {
     // Here we make a distinction between ended and expired, else views cluttered with expired records of ended carers.
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
     const openTrainingRecordCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
@@ -37,14 +40,33 @@ export class TrainingRecordRepository {
         ":sK": "open",
       },
     });
+
+    const endsAfterTodayTrainingRecordCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
+      ExpressionAttributeValues: {
+        ":pk": `trainingRecord#${currentYear}`,
+        ":sK": currentDate,
+      },
+    });
+
     try {
-      const dbTrainingRecords = await client.send(openTrainingRecordCommand);
+      const [openTrainingRecordResult, endsAfterTodayTrainingRecordResult] = await Promise.all([
+        client.send(openTrainingRecordCommand),
+        client.send(endsAfterTodayTrainingRecordCommand),
+      ]);
+
+      const allItems = [
+        ...(openTrainingRecordResult.Items || []),
+        ...(endsAfterTodayTrainingRecordResult.Items || []),
+      ];
       const parsedResult = dbTrainingRecord
         .array()
-        .parse(dbTrainingRecords.Items);
+        .parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting training records not ended:", error);
+      console.error("Error getting training records not ended yet:", error);
       throw error;
     }
   }

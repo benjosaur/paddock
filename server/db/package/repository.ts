@@ -21,7 +21,7 @@ export class PackageRepository {
     const endsAfterTodayPackageCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
-      KeyConditionExpression: `entityType = :pk AND endDate >= :sK`,
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
       ExpressionAttributeValues: {
         ":pk": `package#${currentYear}`,
         ":sK": currentDate,

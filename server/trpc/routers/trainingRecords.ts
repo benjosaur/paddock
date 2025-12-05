@@ -9,9 +9,9 @@ export const trainingRecordsRouter = router({
     }
   ),
 
-  getAllNotEnded: createProtectedProcedure("trainingRecords", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("trainingRecords", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.training.getAllNotEnded(ctx.user);
+      return await ctx.services.training.getAllNotEndedYet(ctx.user);
     }
   ),
 

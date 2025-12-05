@@ -55,11 +55,11 @@ export class VolunteerService {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<VolunteerMetadata[]> {
+  async getAllNotEndedYet(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const dbVolunteers = await this.volunteerRepository.getAllNotEnded(user);
+      const dbVolunteers = await this.volunteerRepository.getAllNotEndedYet(user);
       const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllNotEnded(user);
+        await this.trainingRecordRepository.getAllNotEndedYet(user);
       const dbPackages = await this.packageRepository.getAllNotEndedYet(user);
       const transformedResult = this.transformDbVolunteerToSharedMetaData([
         ...dbVolunteers,
@@ -72,7 +72,7 @@ export class VolunteerService {
       return parsedResult;
     } catch (error) {
       console.error(
-        "Service Layer Error getting all not ended volunteers:",
+        "Service Layer Error getting all not ended yet volunteers:",
         error
       );
       throw error;
@@ -165,7 +165,7 @@ export class VolunteerService {
     try {
       const volunteers = withEnded
         ? await this.getAll(user)
-        : await this.getAllNotEnded(user);
+        : await this.getAllNotEndedYet(user);
 
       const coreCompletions = volunteers.map(
         (volunteer): CoreTrainingRecordCompletion => {

@@ -369,17 +369,17 @@ export const associatedRequestRoutes: any[] = [
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotEnded,
+  trpc.clients.getAllNotEndedYet,
   trpc.clients.getById,
 
   // MPs
   trpc.mps.getAll,
-  trpc.mps.getAllNotEnded,
+  trpc.mps.getAllNotEndedYet,
   trpc.mps.getById,
 
   // Volunteers
   trpc.volunteers.getAll,
-  trpc.volunteers.getAllNotEnded,
+  trpc.volunteers.getAllNotEndedYet,
   trpc.volunteers.getById,
 
   // MAG
@@ -388,7 +388,7 @@ export const associatedRequestRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotEnded,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

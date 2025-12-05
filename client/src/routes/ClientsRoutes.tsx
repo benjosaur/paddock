@@ -80,7 +80,7 @@ export default function ClientsRoutes() {
   const clientsQuery = useQuery(
     showEnded
       ? trpc.clients.getAll.queryOptions()
-      : trpc.clients.getAllNotEnded.queryOptions()
+      : trpc.clients.getAllNotEndedYet.queryOptions()
   );
 
   const updateClientMutation = useMutation(
@@ -302,7 +302,7 @@ export const associatedClientRoutes: any[] = [
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotEnded,
+  trpc.clients.getAllNotEndedYet,
   trpc.clients.getById,
 
   // MAG
@@ -325,7 +325,7 @@ export const associatedClientRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotEnded,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

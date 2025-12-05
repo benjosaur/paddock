@@ -30,8 +30,10 @@ export class ClientRepository {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<DbClientEntity[]> {
-    // Clients cannot end in the future; treat open endDate as active
+  async getAllNotEndedYet(user: User): Promise<DbClientEntity[]> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentYear = parseInt(currentDate.slice(0, 4));
+
     const openClientCommand = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
@@ -42,12 +44,30 @@ export class ClientRepository {
       },
     });
 
+    const endsAfterTodayClientCommand = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
+      ExpressionAttributeValues: {
+        ":pk": `client#${currentYear}`,
+        ":sK": currentDate,
+      },
+    });
+
     try {
-      const dbClients = await client.send(openClientCommand);
-      const parsedResult = dbClientEntity.array().parse(dbClients.Items);
+      const [openClientResult, endsAfterTodayClientResult] = await Promise.all([
+        client.send(openClientCommand),
+        client.send(endsAfterTodayClientCommand),
+      ]);
+
+      const allItems = [
+        ...(openClientResult.Items || []),
+        ...(endsAfterTodayClientResult.Items || []),
+      ];
+      const parsedResult = dbClientEntity.array().parse(allItems);
       return parsedResult;
     } catch (error) {
-      console.error("Error getting clients not ended:", error);
+      console.error("Error getting clients not ended yet:", error);
       throw error;
     }
   }

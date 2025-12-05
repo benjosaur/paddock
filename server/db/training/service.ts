@@ -29,10 +29,10 @@ export class TrainingRecordService {
     }
   }
 
-  async getAllNotEnded(user: User): Promise<TrainingRecord[]> {
+  async getAllNotEndedYet(user: User): Promise<TrainingRecord[]> {
     try {
       const trainingRecordsFromDb =
-        await this.trainingRecordRepository.getAllNotEnded(user);
+        await this.trainingRecordRepository.getAllNotEndedYet(user);
       const transformedRecords = this.transformDbTrainingRecordToShared(
         trainingRecordsFromDb
       ) as TrainingRecord[];
@@ -42,7 +42,7 @@ export class TrainingRecordService {
       return parsedResult;
     } catch (error) {
       console.error(
-        "Service Layer Error getting not-ended training records:",
+        "Service Layer Error getting not ended yet training records:",
         error
       );
       throw error;

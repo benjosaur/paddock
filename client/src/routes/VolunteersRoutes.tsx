@@ -66,11 +66,11 @@ export function VolunteersRoutes() {
   const volunteersQuery = useQuery(
     showEnded
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotEnded.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
   const volunteersQueryKey = showEnded
     ? trpc.volunteers.getAll.queryKey()
-    : trpc.volunteers.getAllNotEnded.queryKey();
+    : trpc.volunteers.getAllNotEndedYet.queryKey();
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -134,7 +134,7 @@ export function VolunteersRoutes() {
   };
 
   const handleEnd = (vol: VolunteerMetadata) => {
-    if (vol.endDate !== "open") {
+    if (vol.endDate === "open") {
       setEndDetails({ personId: vol.id, endDate: "", endReason: "None" });
       setIsEndDialogOpen(true);
     } else {
@@ -247,7 +247,7 @@ export default VolunteersRoutes;
 export const associatedVolunteerRoutes: any[] = [
   // Volunteers
   trpc.volunteers.getAll,
-  trpc.volunteers.getAllNotEnded,
+  trpc.volunteers.getAllNotEndedYet,
   trpc.volunteers.getById,
 
   // MAG
@@ -270,7 +270,7 @@ export const associatedVolunteerRoutes: any[] = [
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotEnded,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

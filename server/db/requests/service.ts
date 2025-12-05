@@ -69,6 +69,7 @@ export class RequestService {
         ...requestsWithoutInfo,
         ...packagesWithoutInfoAndWithoutSole,
       ]);
+      console.log(transformedRequests[50]);
       const parsedResult = requestFullSchema.array().parse(transformedRequests);
       return parsedResult;
     } catch (error) {

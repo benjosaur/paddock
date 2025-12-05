@@ -44,12 +44,12 @@ export default function PublicLiabilityRoutes() {
   const mpsQuery = useQuery(
     showArchived
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotEnded.queryOptions()
+      : trpc.mps.getAllNotEndedYet.queryOptions()
   );
   const volunteersQuery = useQuery(
     showArchived
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotEnded.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const mps = mpsQuery.data || [];
