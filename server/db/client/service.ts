@@ -3,6 +3,8 @@ import {
   clientFullSchema,
   ClientMetadata,
   clientMetadataSchema,
+  InfoDetails,
+  infoDetailsSchema,
 } from "shared";
 import { ClientRepository } from "./repository";
 import { DbClientEntity } from "./schema";
@@ -16,6 +18,9 @@ import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
+import { DeprivationService } from "../../services/deprivation";
+import { EndPersonDetails, endPersonDetailsSchema } from "shared";
+import { VolunteerService } from "../volunteer/service";
 
 export class ClientService {
   clientRepository = new ClientRepository();
@@ -25,25 +30,10 @@ export class ClientService {
   packageRepository = new PackageRepository();
   magLogRepository = new MagLogRepository();
   requestRepository = new RequestRepository();
+  deprivationService = new DeprivationService();
+  volunteerService = new VolunteerService();
 
-  async getAllNotArchived(user: User): Promise<ClientMetadata[]> {
-    try {
-      const dbClients = await this.clientRepository.getAllNotArchived(user);
-      const dbRequests = await this.requestRepository.getAllNotArchived(user);
-      const transformedResult = this.transformDbClientToSharedMetaData([
-        ...dbClients,
-        ...dbRequests,
-      ]);
-      console.log(transformedResult);
-      const parsedResult = clientMetadataSchema
-        .array()
-        .parse(transformedResult);
-      return parsedResult;
-    } catch (error) {
-      console.error("Service Layer Error getting all clients:", error);
-      throw error;
-    }
-  }
+  // Archived concept removed in favor of end dates. Use getAll and filter by endDate where needed.
 
   async getAll(user: User): Promise<ClientMetadata[]> {
     try {
@@ -59,6 +49,44 @@ export class ClientService {
       return parsedResult;
     } catch (error) {
       console.error("Service Layer Error getting all clients:", error);
+      throw error;
+    }
+  }
+
+  async getAllNotEndedYet(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllNotEndedYet(user);
+      const transformedResult =
+        this.transformDbClientToSharedMetaData(dbClients);
+      const parsedResult = clientMetadataSchema
+        .array()
+        .parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting all not ended yet clients:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  async getAllWithMagService(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllWithMagService(user);
+      const dbRequests = await this.requestRepository.getAll(user);
+      const transformedResult = this.transformDbClientToSharedMetaData([
+        ...dbClients,
+        ...dbRequests,
+      ]);
+      // transformed results will include partial non-mag clients (with only id and requests) as requests fetches all, so parsing will fail.
+      const parsedResult = transformedResult
+        .map((client) => clientMetadataSchema.safeParse(client))
+        .filter((result) => result.success)
+        .map((result) => result.data);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting MAG clients:", error);
       throw error;
     }
   }
@@ -97,15 +125,49 @@ export class ClientService {
     }
   }
 
-  async create(newClient: Omit<ClientFull, "id">, user: User): Promise<string> {
+  async create(
+    newClient: Omit<ClientMetadata, "id">,
+    user: User
+  ): Promise<{
+    clientId: string;
+    deprivationData: {
+      matched: boolean;
+      income: boolean;
+      health: boolean;
+    };
+    postcode: string;
+  }> {
     try {
-      const validatedInput = clientFullSchema
+      const validatedInput = clientMetadataSchema
         .omit({ id: true })
         .parse(newClient);
 
+      let clientWithDeprivation;
+      let deprivationData = { matched: false, income: false, health: false };
+      if (validatedInput.details.address.postCode) {
+        // Fetch deprivation data for the client's postcode
+        deprivationData = await this.deprivationService.getDeprivationData(
+          validatedInput.details.address.postCode
+        );
+
+        // Update the client with deprivation data
+        clientWithDeprivation = {
+          ...validatedInput,
+          details: {
+            ...validatedInput.details,
+            address: {
+              ...validatedInput.details.address,
+              deprivation: deprivationData,
+            },
+          },
+        };
+      } else {
+        clientWithDeprivation = validatedInput;
+      }
+
       const clientToCreate: Omit<DbClientEntity, "pK" | "sK"> = addDbMiddleware(
         {
-          ...validatedInput,
+          ...clientWithDeprivation,
           entityType: "client",
         },
         user
@@ -115,18 +177,92 @@ export class ClientService {
         clientToCreate,
         user
       );
-      return createdClientId;
+
+      return {
+        clientId: createdClientId,
+        deprivationData,
+        postcode: validatedInput.details.address.postCode,
+      };
     } catch (error) {
       console.error("Service Layer Error creating client:", error);
       throw error;
     }
   }
 
-  async update(updatedClient: ClientFull, user: User): Promise<void> {
+  async createInfoEntry(
+    client: ClientMetadata,
+    infoDetails: InfoDetails,
+    user: User
+  ): Promise<string[]> {
+    try {
+      const validatedClient = clientMetadataSchema.parse(client);
+      const validatedInfoDetails = infoDetailsSchema.parse(infoDetails);
+      const newRequestId = await this.requestService.create(
+        {
+          clientId: client.id,
+          startDate: validatedInfoDetails.date,
+          endDate: validatedInfoDetails.date,
+          requestType: "unpaid",
+          details: {
+            ...validatedClient.details,
+            weeklyHours: 0,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
+            notes: "",
+            status: "normal",
+            services: [...validatedInfoDetails.services, "Information"],
+          },
+        },
+        user
+      );
+
+      const newPackageId = await this.packageService.create(
+        {
+          carerId: validatedInfoDetails.completedBy.id,
+          requestId: newRequestId,
+          startDate: validatedInfoDetails.date,
+          endDate: validatedInfoDetails.date,
+          details: {
+            address: validatedClient.details.address,
+            name: validatedInfoDetails.completedBy.name,
+            weeklyHours: 0,
+            oneOffStartDateHours: validatedInfoDetails.minutesTaken / 60,
+            services: [...validatedInfoDetails.services, "Information"],
+            notes: "",
+          },
+        },
+        user
+      );
+
+      if (validatedInfoDetails.note) {
+        const dbClientWithUpdatedNotes: DbClientEntity = addDbMiddleware(
+          {
+            ...validatedClient,
+            pK: validatedClient.id,
+            sK: validatedClient.id,
+            entityType: "client",
+            details: {
+              ...validatedClient.details,
+              notes: [...validatedClient.details.notes, validatedInfoDetails],
+            },
+          },
+          user
+        );
+        await this.clientRepository.update(dbClientWithUpdatedNotes, user);
+      }
+
+      return [newRequestId, newPackageId];
+    } catch (error) {
+      console.error("Service Layer Error creating info entry:", error);
+      throw error;
+    }
+  }
+
+  async update(updatedClient: ClientMetadata, user: User): Promise<void> {
     //note for name or postcode (only metachanges)
     try {
       const validatedInput = clientMetadataSchema.parse(updatedClient);
       const { id, ...rest } = validatedInput;
+
       const dbClient: DbClientEntity = addDbMiddleware(
         {
           pK: id,
@@ -143,26 +279,147 @@ export class ClientService {
     }
   }
 
+  async updatePostCode(
+    updatedClient: ClientMetadata,
+    newPostcode: string,
+    user: User
+  ): Promise<{
+    deprivationData: {
+      matched: boolean;
+      income: boolean;
+      health: boolean;
+    };
+    postcode: string;
+  }> {
+    // does not update associated records
+    // instead of getting client by id just passs in the entire state of current form and update.
+    try {
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
+
+      // Fetch deprivation data for the client's postcode
+      const deprivationData = await this.deprivationService.getDeprivationData(
+        newPostcode
+      );
+
+      // Update the client with deprivation data
+      const clientWithDeprivation = {
+        ...updatedClientMetadata,
+        details: {
+          ...updatedClientMetadata.details,
+          address: {
+            ...updatedClientMetadata.details.address,
+            postCode: newPostcode,
+            deprivation: deprivationData,
+          },
+        },
+      };
+
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          pK: id,
+          sK: id,
+          entityType: "client",
+          ...clientWithDeprivation,
+        },
+        user
+      );
+      await this.clientRepository.update(dbClient, user);
+      return { deprivationData, postcode: newPostcode };
+    } catch (error) {
+      console.error("Service Layer Error updating client:", error);
+      throw error;
+    }
+  }
+
+  async updateCustomId(
+    updatedClient: ClientMetadata,
+    newCustomId: string,
+    user: User
+  ): Promise<void> {
+    // update reqs
+    // now need to update any client metadata changes too
+    try {
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
+
+      const updatedClientEntity: DbClientEntity = addDbMiddleware(
+        {
+          ...updatedClientMetadata,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          details: { ...updatedClientMetadata.details, customId: newCustomId },
+        },
+        user
+      );
+
+      const initialClientRecords = await this.clientRepository.getById(
+        id,
+        user
+      );
+
+      //filter out mags (these dont contain customId)
+      const updatedClientRecords = initialClientRecords
+        .filter((record) => !record.sK.startsWith("mag"))
+        .map((record) => {
+          if (record.sK.startsWith("c#")) {
+            return updatedClientEntity;
+          } else {
+            return addDbMiddleware(
+              {
+                ...record,
+                details: { ...record.details, customId: newCustomId },
+              },
+              user
+            );
+          }
+        });
+      await genericUpdate(updatedClientRecords, user);
+    } catch (error) {
+      console.error("Service Layer Error updating Client Custom ID:", error);
+      throw error;
+    }
+  }
+
   async updateName(
-    clientId: string,
+    updatedClient: ClientMetadata,
     newName: string,
     user: User
   ): Promise<void> {
     // update mags and reqs
     try {
-      const initialClientRecords = await this.clientRepository.getById(
-        clientId,
+      const { id, requests, ...updatedClientMetadata } =
+        clientMetadataSchema.parse(updatedClient);
+
+      const updatedClientEntity: DbClientEntity = addDbMiddleware(
+        {
+          ...updatedClientMetadata,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          details: { ...updatedClientMetadata.details, name: newName },
+        },
         user
       );
-      const updatedClientRecords = initialClientRecords.map((record) =>
-        addDbMiddleware(
+
+      const initialClientRecords = await this.clientRepository.getById(
+        id,
+        user
+      );
+      const updatedClientRecords = initialClientRecords.map((record) => {
+        if (record.sK.startsWith("c#")) {
+          return updatedClientEntity;
+        }
+
+        return addDbMiddleware(
           {
             ...record,
             details: { ...record.details, name: newName },
           },
           user
-        )
-      );
+        );
+      });
       await genericUpdate(updatedClientRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
@@ -180,31 +437,43 @@ export class ClientService {
     }
   }
 
-  async toggleArchive(clientId: string, user: User): Promise<void> {
-    // set client and its associated requests and mag logs to archived (mag attendee search also searches archived, so not affected)
-    // HOWEVER, also need to archive packages owned by MPs/Volunteers. else error on read non archived requests.
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    // TODO also end reqs and pkgs
     try {
-      const clientRecords = await this.clientRepository.getById(clientId, user);
-      console.log(clientRecords);
-      const updatedClientEntities = clientRecords
-        .filter((dbResult) => dbResult.sK.startsWith("c"))
-        .map((record) => ({
-          ...record,
-          archived: record.archived === "Y" ? "N" : "Y",
-        }));
-      console.log(updatedClientEntities);
-      const requestIds = clientRecords
-        .filter((dbResult) => dbResult.sK.startsWith("req"))
-        .map((req) => req.sK);
-
-      const clientEntityUpdate = genericUpdate(updatedClientEntities, user);
-      const requestUpdates = requestIds.map((requestId) =>
-        this.requestService.toggleArchive(requestId, user)
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.clientRepository.getById(
+        validated.personId,
+        user
       );
+      const transformedClient =
+        this.transformDbClientToSharedMetaData(records)[0];
+      if (!transformedClient) throw new Error("Client record not found");
+      const validatedClient = clientMetadataSchema.parse(transformedClient);
+      const { id, requests, ...rest } = validatedClient;
+      const dbClient: DbClientEntity = addDbMiddleware(
+        {
+          ...rest,
+          pK: id,
+          sK: id,
+          entityType: "client",
+          endDate: validated.endDate,
+          details: { ...rest.details, endReason: validated.endReason },
+        },
+        user
+      );
+      const clientUpdate = this.clientRepository.update(dbClient, user);
 
-      await Promise.all([clientEntityUpdate, ...requestUpdates]);
+      // end all reqs and pkgs
+
+      const reqUpdates = requests.map((req) =>
+        this.requestService.endRequestAndPackages(user, {
+          requestId: req.id,
+          endDate: validated.endDate,
+        })
+      );
+      await Promise.all([clientUpdate, ...reqUpdates]);
     } catch (error) {
-      console.error("Service Layer Error toggling client archive:", error);
+      console.error("Service Layer Error ending client:", error);
       throw error;
     }
   }

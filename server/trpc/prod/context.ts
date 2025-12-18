@@ -45,7 +45,6 @@ export const getUser = async (reqOrEvent: any): Promise<User | null> => {
       sub: payload.sub,
       role: payload["cognito:groups"]?.[0] || "",
     };
-    console.log(user);
     return user;
   } catch (error) {
     console.error("JWT verification failed:", error);

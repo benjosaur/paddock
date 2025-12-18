@@ -1,15 +1,51 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import { ClientFull } from "../types";
+import { ClientFull, clientFullSchema, VolunteerMetadata } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
-import { attendanceAllowanceStatus, serviceOptions, localities } from "shared/const";
+import {
+  attendanceAllowanceLevels,
+  attendanceAllowanceStatuses,
+  serviceOptions,
+  localities,
+} from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
+import toast from "react-hot-toast";
+import { associatedClientRoutes } from "../routes/ClientsRoutes";
+
+type VolunteerOption = { label: string; value: string };
+
+const deprivationToastLogic = (
+  deprivationData: { matched: boolean; income: boolean; health: boolean },
+  postcode: string
+) => {
+  if (!deprivationData.matched) {
+    toast.error(
+      `Postcode ${postcode} not live in database. Please double check entry.`
+    );
+  } else if (deprivationData.income && deprivationData.health) {
+    toast(
+      `🚩 Postcode ${postcode} indicates both income and health deprivation.`,
+      { duration: 6000 }
+    );
+  } else if (deprivationData.income) {
+    toast(`🚩 Postcode ${postcode} indicates income deprivation.`, {
+      duration: 6000,
+    });
+  } else if (deprivationData.health) {
+    toast(`🚩 Postcode ${postcode} indicates health deprivation.`, {
+      duration: 6000,
+    });
+  } else {
+    toast(`Postcode ${postcode} shows no deprivation indicators.`);
+  }
+};
 
 export function ClientForm() {
   const navigate = useNavigate();
@@ -17,15 +53,20 @@ export function ClientForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
-    archived: "N",
+    endDate: "open",
     dateOfBirth: "",
     details: {
+      customId: "",
       name: "",
       address: {
         streetAddress: "",
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       phone: "",
       email: "",
@@ -36,7 +77,18 @@ export function ClientForm() {
       riskAssessmentDate: "",
       riskAssessmentComments: "",
       services: [],
-      attendanceAllowance: "pending",
+      endReason: "None",
+      attendanceAllowance: {
+        requestedLevel: "None",
+        completedBy: {
+          id: "",
+          name: "",
+        },
+        hoursToCompleteRequest: 2,
+        requestedDate: "",
+        status: "None", // will appear null on FE
+        confirmationDate: "",
+      },
       attendsMag: false,
       donationScheme: false,
       donationAmount: 0,
@@ -46,6 +98,8 @@ export function ClientForm() {
     magLogs: [],
   });
 
+  const [openField, setOpenField] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
 
   const clientQuery = useQuery({
@@ -53,13 +107,69 @@ export function ClientForm() {
     enabled: isEditing,
   });
 
-  const thisClientQueryKey = trpc.clients.getById.queryKey();
-  const allClientsQueryKey = trpc.clients.getAll.queryKey();
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
+  );
+
+  const volunteers = (volunteersQuery.data || []) as VolunteerMetadata[];
+
+  // Build select options and find Coordinator default
+  const volunteerOptions: VolunteerOption[] = useMemo(
+    () =>
+      volunteers.map((v) => ({
+        value: v.id,
+        label: v.details.name,
+      })),
+    [volunteers]
+  );
+
+  const coordinatorDefault = useMemo(() => {
+    const coordinator = volunteers.find(
+      (v) => v.details.role === "Coordinator"
+    );
+    return coordinator
+      ? { value: coordinator.id, label: coordinator.details.name }
+      : null;
+  }, [volunteers]);
+
+  const selectedVolunteer = useMemo(() => {
+    const id = formData.details.attendanceAllowance.completedBy.id;
+    return id ? volunteerOptions.find((v) => v.value === id) || null : null;
+  }, [formData.details.attendanceAllowance.completedBy.id, volunteerOptions]);
+
+  useEffect(() => {
+    // update completedBy if not already set
+    if (
+      !formData.details.attendanceAllowance.completedBy.id &&
+      coordinatorDefault
+    ) {
+      setFormData((prev) => {
+        return {
+          ...prev,
+          details: {
+            ...prev.details,
+            attendanceAllowance: {
+              ...prev.details.attendanceAllowance,
+              completedBy: {
+                id: coordinatorDefault.value,
+                name: coordinatorDefault.label,
+              },
+            },
+          },
+        };
+      });
+    }
+  }, [coordinatorDefault, formData.details.attendanceAllowance.completedBy.id]);
 
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
+      onSuccess: (data) => {
+        // Second toast: Deprivation information
+        const { deprivationData, postcode } = data;
+        if (postcode) deprivationToastLogic(deprivationData, postcode);
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/clients");
       },
     })
@@ -68,7 +178,9 @@ export function ClientForm() {
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: allClientsQueryKey });
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/clients");
       },
     })
@@ -77,14 +189,30 @@ export function ClientForm() {
   const updateNameMutation = useMutation(
     trpc.clients.updateName.mutationOptions({
       onSuccess: () => {
-        const queryKeys = [
-          thisClientQueryKey,
-          trpc.mag.getAll.queryKey(),
-          trpc.requests.getAllMetadata.queryKey(),
-        ];
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
-        queryKeys.forEach((queryKey) => {
-          queryClient.invalidateQueries({ queryKey });
+  const updateCustomIdMutation = useMutation(
+    trpc.clients.updateCustomId.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
+  const updatePostCodeMutation = useMutation(
+    trpc.clients.updatePostCode.mutationOptions({
+      onSuccess: (data) => {
+        const { deprivationData, postcode } = data;
+        deprivationToastLogic(deprivationData, postcode);
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
     })
@@ -96,10 +224,16 @@ export function ClientForm() {
     }
   }, [clientQuery.data]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const field = e.target.name;
-    let value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    let value: string | number | boolean =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
+        : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
@@ -125,14 +259,35 @@ export function ClientForm() {
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
+  const prepareClientPayload = (
+    data: Omit<ClientFull, "id">
+  ): Omit<ClientFull, "id"> | null => {
+    const payload = {
+      ...data,
+      dateOfBirth:
+        data.dateOfBirth && data.dateOfBirth.trim() !== ""
+          ? data.dateOfBirth
+          : "Unknown",
+    };
+    const validated = validateOrToast<Omit<ClientFull, "id">>(
+      clientFullSchema.omit({ id: true }),
+      payload,
+      { toastPrefix: "Form Validation Error", logPrefix: "Client form" }
+    );
+    return validated;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = prepareClientPayload(formData);
+    if (!validated) return;
     if (isEditing) {
-      updateClientMutation.mutate({ ...formData, id } as ClientFull & {
-        id: number;
-      });
+      updateClientMutation.mutate({
+        ...(validated as Omit<ClientFull, "id">),
+        id,
+      } as ClientFull & { id: number });
     } else {
-      createClientMutation.mutate(formData as Omit<ClientFull, "id">);
+      createClientMutation.mutate(validated as Omit<ClientFull, "id">);
     }
   };
 
@@ -142,26 +297,52 @@ export function ClientForm() {
 
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
+    const validated = prepareClientPayload(formData);
+    if (!validated) return;
 
     if (field == "details.name") {
       updateNameMutation.mutate({
-        clientId: id,
+        client: { id, ...validated },
         newName: newValue,
+      });
+    } else if (field == "details.customId") {
+      updateCustomIdMutation.mutate({
+        client: { id, ...validated },
+        newCustomId: newValue,
+      });
+    } else if (field == "details.address.postCode") {
+      updatePostCodeMutation.mutate({
+        client: { id, ...validated },
+        newPostcode: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
   };
 
-  const attendanceAllowanceOptions = attendanceAllowanceStatus.map(
+  const openFieldModalFor = (field: string) => {
+    if (!isEditing || clientQuery.isLoading) return;
+    setOpenField(field);
+  };
+
+  const attendanceAllowanceLevelOptions = attendanceAllowanceLevels.map(
     (option) => ({
       value: option,
       label: capitalise(option),
     })
   );
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
-    value: service,
-    label: service,
-  }));
+  const attendanceAllowanceStatusOptions = attendanceAllowanceStatuses
+    .filter((status) => status !== "None")
+    .map((option) => ({
+      value: option,
+      label: capitalise(option),
+    }));
+
+  const serviceSelectOptions = serviceOptions
+    .filter((service) => service !== "Information")
+    .map((service) => ({
+      value: service,
+      label: service,
+    }));
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -179,8 +360,42 @@ export function ClientForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Contact Information
+                General Information
               </h3>
+              <div>
+                <label
+                  htmlFor="customId"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Custom ID
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Input
+                      id="customId"
+                      name="details.customId"
+                      value={formData.details.customId || ""}
+                      onChange={handleInputChange}
+                      readOnly={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      placeholder="Custom identifier"
+                      onClick={() => openFieldModalFor("details.customId")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.customId"
+                      currentValue={formData.details.customId}
+                      onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.customId"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.customId" : null)
+                      }
+                    />
+                  )}
+                </div>
+              </div>
               <div>
                 <label
                   htmlFor="name"
@@ -189,38 +404,49 @@ export function ClientForm() {
                   Name *
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="name"
-                    name="details.name"
-                    value={formData.details.name || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isEditing}
-                    className="flex-1"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="name"
+                      name="details.name"
+                      value={formData.details.name || ""}
+                      onChange={handleInputChange}
+                      required
+                      readOnly={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      onClick={() => openFieldModalFor("details.name")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !clientQuery.isLoading && (
                     <FieldEditModal
                       field="details.name"
                       currentValue={formData.details.name}
                       onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.name"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.name" : null)
+                      }
                     />
                   )}
                 </div>
-              </div>{" "}
+              </div>
               <div>
                 <label
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth *
+                  Date of Birth
                 </label>
                 <Input
                   id="dob"
                   name="dateOfBirth"
                   type="date"
-                  value={formData.dateOfBirth || ""}
+                  value={
+                    formData.dateOfBirth === "Unknown"
+                      ? ""
+                      : formData.dateOfBirth || ""
+                  }
                   onChange={handleInputChange}
-                  required
                 />
               </div>{" "}
               <div>
@@ -287,17 +513,35 @@ export function ClientForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code *
+                  Post Code
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="postCode"
-                    name="details.address.postCode"
-                    value={formData.details.address.postCode || ""}
-                    onChange={handleInputChange}
-                    className="flex-1"
-                    required
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="postCode"
+                      name="details.address.postCode"
+                      value={formData.details.address.postCode || ""}
+                      onChange={handleInputChange}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      readOnly={isEditing}
+                      onClick={() =>
+                        openFieldModalFor("details.address.postCode")
+                      }
+                      aria-readonly={isEditing}
+                    />
+                  </div>
+                  {isEditing && !clientQuery.isLoading && (
+                    <FieldEditModal
+                      field="details.address.postCode"
+                      currentValue={formData.details.address.postCode}
+                      onSubmit={handleFieldChangeSubmit}
+                      customDescription="This will not update postcodes attached to this client's existing requests."
+                      externalOpen={openField === "details.address.postCode"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.address.postCode" : null)
+                      }
+                    />
+                  )}
                 </div>
               </div>{" "}
               <div>
@@ -424,6 +668,26 @@ export function ClientForm() {
               </div>
               <div>
                 <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type={formData.endDate === "open" ? "text" : "date"}
+                  value={
+                    formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate || ""
+                  }
+                  onChange={handleInputChange}
+                  disabled
+                />
+              </div>
+              <div>
+                <label
                   htmlFor="services"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -444,31 +708,175 @@ export function ClientForm() {
                   isMulti
                   noOptionsMessage={() => "No services found"}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Search by service name to add requested services
-                </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Attendance Allowance?
-                </label>
-                <Select
-                  options={attendanceAllowanceOptions}
-                  value={
-                    attendanceAllowanceOptions.find(
-                      (option) =>
-                        option.value === formData.details.attendanceAllowance
-                    ) || null
+              {/* Attendance Allowance Section */}
+              <div className="space-y-4 border border-gray-200 rounded-lg p-4">
+                <h4 className="text-md font-semibold text-gray-700 mb-3">
+                  Attendance Allowance
+                </h4>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
                   }
-                  onChange={(selectedOption) =>
-                    handleSelectChange(
-                      "details.attendanceAllowance",
-                      selectedOption
-                    )
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Completed By
+                  </label>
+                  <Select
+                    options={volunteerOptions}
+                    value={selectedVolunteer}
+                    onChange={(selectedOption) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        details: {
+                          ...prev.details,
+                          attendanceAllowance: {
+                            ...prev.details.attendanceAllowance,
+                            completedBy: {
+                              id:
+                                (selectedOption as VolunteerOption)?.value ||
+                                "",
+                              name:
+                                (selectedOption as VolunteerOption)?.label ||
+                                "",
+                            },
+                          },
+                        },
+                      }))
+                    }
+                    isSearchable
+                    placeholder="Select a volunteer..."
+                    noOptionsMessage={() => "No volunteers found"}
+                    isDisabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Requested Level
+                  </label>
+                  <Select
+                    options={attendanceAllowanceLevelOptions}
+                    value={
+                      attendanceAllowanceLevelOptions.find(
+                        (option) =>
+                          option.value ===
+                          formData.details.attendanceAllowance.requestedLevel
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      handleSelectChange(
+                        "details.attendanceAllowance.requestedLevel",
+                        selectedOption
+                      )
+                    }
+                    placeholder="Select level..."
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
                   }
-                  placeholder="Select request type..."
-                  required
-                />
+                >
+                  <label
+                    htmlFor="attendanceAllowanceRequestedDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Requested Date
+                  </label>
+                  <Input
+                    id="attendanceAllowanceRequestedDate"
+                    name="details.attendanceAllowance.requestedDate"
+                    type="date"
+                    value={
+                      formData.details.attendanceAllowance.requestedDate || ""
+                    }
+                    onChange={handleInputChange}
+                    disabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                    "None"
+                      ? "opacity-50 pointer-events-none"
+                      : ""
+                  }
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Select
+                    options={attendanceAllowanceStatusOptions}
+                    value={
+                      attendanceAllowanceStatusOptions.find(
+                        (option) =>
+                          option.value ===
+                          formData.details.attendanceAllowance.status
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      handleSelectChange(
+                        "details.attendanceAllowance.status",
+                        selectedOption
+                      )
+                    }
+                    placeholder="Select status..."
+                    isDisabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                  />
+                </div>
+
+                <div
+                  className={
+                    formData.details.attendanceAllowance.requestedLevel ===
+                      "None" ||
+                    (formData.details.attendanceAllowance.status !== "Low" &&
+                      formData.details.attendanceAllowance.status !== "High")
+                      ? "opacity-50 pointer-events-none"
+                      : ""
+                  }
+                >
+                  <label
+                    htmlFor="attendanceAllowanceConfirmationDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Confirmation Date
+                  </label>
+                  <Input
+                    id="attendanceAllowanceConfirmationDate"
+                    name="details.attendanceAllowance.confirmationDate"
+                    type="date"
+                    value={
+                      formData.details.attendanceAllowance.confirmationDate ||
+                      ""
+                    }
+                    onChange={handleInputChange}
+                    disabled={
+                      formData.details.attendanceAllowance.requestedLevel ===
+                        "None" ||
+                      (formData.details.attendanceAllowance.status !== "Low" &&
+                        formData.details.attendanceAllowance.status !== "High")
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>

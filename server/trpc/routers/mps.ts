@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { mpFullSchema, mpMetadataSchema } from "shared/schemas/index";
+import { endPersonDetailsSchema } from "shared";
 
 export const mpsRouter = router({
   getAll: createProtectedProcedure("mps", "read").query(async ({ ctx }) => {
     return await ctx.services.mp.getAll(ctx.user);
   }),
 
-  getAllNotArchived: createProtectedProcedure("mps", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("mps", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.mp.getAllNotArchived(ctx.user);
+      return await ctx.services.mp.getAllNotEndedYet(ctx.user);
     }
   ),
 
@@ -17,6 +18,15 @@ export const mpsRouter = router({
     .input(mpFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       return await ctx.services.mp.getById(input.id, ctx.user);
+    }),
+
+  getCoreTrainingRecordCompletions: createProtectedProcedure("mps", "read")
+    .input(z.object({ withEnded: z.boolean().default(false) }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.mp.getCoreTrainingRecordCompletions(
+        input.withEnded,
+        ctx.user
+      );
     }),
 
   create: createProtectedProcedure("mps", "create")
@@ -32,10 +42,10 @@ export const mpsRouter = router({
     }),
 
   updateName: createProtectedProcedure("mps", "update")
-    .input(z.object({ mpId: z.string(), newName: z.string() }))
+    .input(z.object({ mp: mpMetadataSchema, newName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.updateName(
-        input.mpId,
+        input.mp,
         input.newName,
         ctx.user
       );
@@ -46,10 +56,9 @@ export const mpsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.mp.delete(ctx.user, input.id);
     }),
-
-  toggleArchive: createProtectedProcedure("mps", "update")
-    .input(z.object({ id: z.string() }))
+  end: createProtectedProcedure("mps", "update")
+    .input(endPersonDetailsSchema)
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.mp.toggleArchive(input.id, ctx.user);
+      return await ctx.services.mp.end(ctx.user, input);
     }),
 });

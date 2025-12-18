@@ -4,12 +4,15 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { MpFull } from "../types";
+import { mpFullSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/FieldEditModal";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import { serviceOptions, localities } from "shared/const";
+import { associatedMpRoutes } from "../routes/MpsRoutes";
 
 export function MpForm() {
   const navigate = useNavigate();
@@ -17,7 +20,7 @@ export function MpForm() {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<MpFull, "id">>({
-    archived: "N",
+    endDate: "open",
     dateOfBirth: "",
     dbsExpiry: "",
     publicLiabilityExpiry: "",
@@ -33,9 +36,11 @@ export function MpForm() {
       email: "",
       nextOfKin: "",
       services: [],
-      specialisms: [],
       capacity: "",
       attendsMag: false,
+      publicLiabilityNumber: "",
+      dbsNumber: "",
+      startDate: "",
       notes: [],
     },
     trainingRecords: [],
@@ -48,13 +53,13 @@ export function MpForm() {
     ...trpc.mps.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const thisMpQueryKey = trpc.mps.getById.queryKey();
-  const mpQueryKey = trpc.mps.getAll.queryKey();
 
   const createMpMutation = useMutation(
     trpc.mps.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mps");
       },
     })
@@ -63,7 +68,9 @@ export function MpForm() {
   const updateMpMutation = useMutation(
     trpc.mps.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: mpQueryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mps");
       },
     })
@@ -72,13 +79,8 @@ export function MpForm() {
   const updateNameMutation = useMutation(
     trpc.mps.updateName.mutationOptions({
       onSuccess: () => {
-        const queryKeys = [
-          thisMpQueryKey,
-          trpc.trainingRecords.getAll.queryKey(),
-        ];
-
-        queryKeys.forEach((queryKey) => {
-          queryClient.invalidateQueries({ queryKey });
+        associatedMpRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
     })
@@ -90,16 +92,16 @@ export function MpForm() {
     }
   }, [mpQuery.data]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const field = e.target.name;
-    let value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setFormData((prev) => updateNestedValue(field, value, prev));
-  };
-
-  const handleCSVInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const field = e.target.name as "details.services" | "details.specialisms";
-    let value = e.target.value.split(",");
+    let value: string | number | boolean =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target instanceof HTMLInputElement && e.target.type === "number"
+        ? Number(e.target.value)
+        : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
 
@@ -125,12 +127,25 @@ export function MpForm() {
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
+  const prepareMpPayload = (
+    data: Omit<MpFull, "id">
+  ): Omit<MpFull, "id"> | null => {
+    const validated = validateOrToast<Omit<MpFull, "id">>(
+      mpFullSchema.omit({ id: true }),
+      data,
+      { toastPrefix: "Form Validation Error", logPrefix: "MP form" }
+    );
+    return validated;
+  };
+
   const handleFieldChangeSubmit = (field: string, newValue: string) => {
     if (!isEditing) return;
+    const validated = prepareMpPayload(formData);
+    if (!validated) return;
 
     if (field == "details.name") {
       updateNameMutation.mutate({
-        mpId: id,
+        mp: { id, ...validated },
         newName: newValue,
       });
     } else throw new Error(`${field} not a recognised field`);
@@ -138,11 +153,12 @@ export function MpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = prepareMpPayload(formData);
+    if (!validated) return;
     if (isEditing) {
-      console.log(formData);
-      updateMpMutation.mutate({ id, ...formData });
+      updateMpMutation.mutate({ id, ...(validated as Omit<MpFull, "id">) });
     } else {
-      createMpMutation.mutate(formData);
+      createMpMutation.mutate(validated as Omit<MpFull, "id">);
     }
   };
 
@@ -154,6 +170,12 @@ export function MpForm() {
     value: service,
     label: service,
   }));
+
+  const [openField, setOpenField] = useState<string | null>(null);
+  const openModalFor = (field: string) => {
+    if (!isEditing || mpQuery.isLoading) return;
+    setOpenField(field);
+  };
 
   if (isEditing && mpQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && mpQuery.error) return <div>Error loading MP</div>;
@@ -171,7 +193,7 @@ export function MpForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Contact Information
+                General Information
               </h3>
 
               <div>
@@ -182,20 +204,28 @@ export function MpForm() {
                   Name *
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    id="name"
-                    name="details.name"
-                    value={formData.details.name || ""}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isEditing}
-                    className="flex-1"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      id="name"
+                      name="details.name"
+                      value={formData.details.name || ""}
+                      onChange={handleInputChange}
+                      required
+                      readOnly={isEditing}
+                      className="w-full cursor-pointer disabled:opacity-100"
+                      onClick={() => openModalFor("details.name")}
+                      aria-readonly={isEditing}
+                    />
+                  </div>
                   {isEditing && !mpQuery.isLoading && (
                     <FieldEditModal
                       field="details.name"
                       currentValue={formData.details.name}
                       onSubmit={handleFieldChangeSubmit}
+                      externalOpen={openField === "details.name"}
+                      onExternalOpenChange={(o) =>
+                        setOpenField(o ? "details.name" : null)
+                      }
                     />
                   )}
                 </div>
@@ -206,7 +236,7 @@ export function MpForm() {
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Date of Birth *
+                  Date of Birth
                 </label>
                 <Input
                   id="dob"
@@ -214,7 +244,6 @@ export function MpForm() {
                   type="date"
                   value={formData.dateOfBirth || ""}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -285,14 +314,13 @@ export function MpForm() {
                   htmlFor="postCode"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Post Code *
+                  Post Code
                 </label>
                 <Input
                   id="postCode"
                   name="details.address.postCode"
                   value={formData.details.address.postCode || ""}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -345,6 +373,21 @@ export function MpForm() {
 
               <div>
                 <label
+                  htmlFor="dbsNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  DBS Number
+                </label>
+                <Input
+                  id="dbsNumber"
+                  name="details.dbsNumber"
+                  value={formData.details.dbsNumber || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="dbsExpiry"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -355,6 +398,21 @@ export function MpForm() {
                   type="date"
                   name="dbsExpiry"
                   value={formData.dbsExpiry || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="publicLiabilityNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Public Liability Number
+                </label>
+                <Input
+                  id="publicLiabilityNumber"
+                  name="details.publicLiabilityNumber"
+                  value={formData.details.publicLiabilityNumber || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -372,6 +430,43 @@ export function MpForm() {
                   name="publicLiabilityExpiry"
                   value={formData.publicLiabilityExpiry || ""}
                   onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Start Date
+                </label>
+                <Input
+                  id="startDate"
+                  name="details.startDate"
+                  type="date"
+                  value={formData.details.startDate || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date
+                </label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type={formData.endDate === "open" ? "text" : "date"}
+                  value={
+                    formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate || ""
+                  }
+                  onChange={handleInputChange}
+                  disabled
                 />
               </div>
             </div>
@@ -409,22 +504,6 @@ export function MpForm() {
 
               <div>
                 <label
-                  htmlFor="specialisms"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Specialisms (comma-separated)
-                </label>
-                <Input
-                  id="specialisms"
-                  name="details.specialisms"
-                  value={formData.details.specialisms.join(",")}
-                  onChange={handleCSVInputChange}
-                  placeholder="e.g., Dementia Care, Mobility Support"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="capacity"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -437,33 +516,6 @@ export function MpForm() {
                   onChange={handleInputChange}
                   placeholder="e.g., Full Time, Part Time"
                 />
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-md font-medium text-gray-700">
-                  Training Records
-                </h4>
-                {/* TODO */}
-                <Button type="button" onClick={() => {}} size="sm">
-                  Edit Records
-                </Button>
-
-                {formData.trainingRecords &&
-                  formData.trainingRecords.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.trainingRecords.map((record, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                        >
-                          <span className="text-sm">
-                            {record.details.recordName} - Expires:{" "}
-                            {record.expiryDate}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
               </div>
             </div>
           </div>

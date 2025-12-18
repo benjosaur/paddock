@@ -8,9 +8,14 @@ import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import { Database } from "./database";
+import { ImageService } from "./images";
+
+interface MainStackProps extends cdk.StackProps {
+  // edgeFunctionVersion: lambda.IVersion;
+}
 
 export class InfraStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: MainStackProps) {
     super(scope, id, props);
 
     const domainName = "paddock.health";
@@ -66,19 +71,19 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // cooling off
-    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-    //   customDomain: {
-    //     domainName: authDomainName,
-    //     certificate: certificate,
-    //   },
-    // });
-
+    //    cooling off
     const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-      cognitoDomain: {
-        domainPrefix: "auth-paddock-health",
+      customDomain: {
+        domainName: authDomainName,
+        certificate: certificate,
       },
     });
+
+    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
+    //   cognitoDomain: {
+    //     domainPrefix: "auth-paddock-health",
+    //   },
+    // });
 
     // Cognito User Pool Client
     const userPoolClient = new cognito.UserPoolClient(
@@ -165,15 +170,15 @@ export class InfraStack extends cdk.Stack {
             ],
           },
         ],
-        // Add custom domain configuration
-        // viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
-        //   certificate,
-        //   {
-        //     aliases: [domainName, subdomainName],
-        //     securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-        //     sslMethod: cloudfront.SSLMethod.SNI,
-        //   }
-        // ),
+        //        Add custom domain configuration
+        viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
+          certificate,
+          {
+            aliases: [domainName, subdomainName],
+            securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+            sslMethod: cloudfront.SSLMethod.SNI,
+          }
+        ),
         errorConfigurations: [
           {
             errorCode: 404,
@@ -206,12 +211,12 @@ export class InfraStack extends cdk.Stack {
     });
 
     //databases
-    const prodDatabase = new Database(this, "WiveyCaresTable", {
-      tableName: "WiveyCares",
+    const prodDatabase = new Database(this, "WiveyCaresTable2", {
+      tableName: "WiveyCares2",
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
-    const testDatabase = new Database(this, "TestTable", {
-      tableName: "Test",
+    const testDatabase = new Database(this, "TestTable2", {
+      tableName: "Test2",
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -222,7 +227,7 @@ export class InfraStack extends cdk.Stack {
       restApiName: "TRPC API",
       description: "API for TRPC backend",
       defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowOrigins: [`https://${domainName}`, `https://${subdomainName}`],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ["Content-Type", "Authorization"],
       },
@@ -237,16 +242,28 @@ export class InfraStack extends cdk.Stack {
       anyMethod: true,
     });
 
-    //FE deployment
+    // Image Upload Service
+    // const imageService = new ImageService(this, "ImageService", {
+    //   account: this.account,
+    //   region: this.region,
+    //   domains: [`https://${domainName}`, `https://${subdomainName}`],
+    //   s3CorsRule,
+    //   ALLOWED_GROUPS: ["Admin", "Coordinator"],
+    //   edgeFunctionVersion: props.edgeFunctionVersion,
+    // });
+
+    // FE deployment
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
       sources: [
         s3deploy.Source.asset("../client/dist"),
-        s3deploy.Source.data(
-          "config.json",
-          JSON.stringify({
-            apiUrl: api.url,
-          })
-        ),
+        // below is doesnt work
+        // s3deploy.Source.data(
+        //   "config.json",
+        //   JSON.stringify({
+        //     apiUrl: api.url,
+        //     imageApiUrl: imageService.api.url,
+        //   })
+        // ),
       ],
       destinationBucket: s3Bucket,
       distribution,
@@ -272,5 +289,15 @@ export class InfraStack extends cdk.Stack {
       value: cognitoDomain.cloudFrontEndpoint,
       description: "Endpoint for Hosted Cognito UI",
     });
+
+    // new cdk.CfnOutput(this, "ImageApiUrl", {
+    //   value: imageService.api.url,
+    //   description: "Image Upload API URL",
+    // });
+
+    // new cdk.CfnOutput(this, "ImageCdnUrl", {
+    //   value: imageService.distribution.distributionDomainName,
+    //   description: "Image CDN URL",
+    // });
   }
 }

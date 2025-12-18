@@ -4,6 +4,7 @@ import {
   volunteerFullSchema,
   volunteerMetadataSchema,
 } from "shared/schemas/index";
+import { endPersonDetailsSchema } from "shared";
 
 export const volunteersRouter = router({
   getAll: createProtectedProcedure("volunteers", "read").query(
@@ -12,9 +13,9 @@ export const volunteersRouter = router({
     }
   ),
 
-  getAllNotArchived: createProtectedProcedure("volunteers", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("volunteers", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.volunteer.getAllNotArchived(ctx.user);
+      return await ctx.services.volunteer.getAllNotEndedYet(ctx.user);
     }
   ),
 
@@ -22,6 +23,18 @@ export const volunteersRouter = router({
     .input(volunteerFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {
       return await ctx.services.volunteer.getById(input.id, ctx.user);
+    }),
+
+  getCoreTrainingRecordCompletions: createProtectedProcedure(
+    "volunteers",
+    "read"
+  )
+    .input(z.object({ withEnded: z.boolean().default(false) }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.volunteer.getCoreTrainingRecordCompletions(
+        input.withEnded,
+        ctx.user
+      );
     }),
 
   create: createProtectedProcedure("volunteers", "create")
@@ -37,14 +50,23 @@ export const volunteersRouter = router({
     }),
 
   updateName: createProtectedProcedure("volunteers", "update")
-    .input(z.object({ volunteerId: z.string(), newName: z.string() }))
+    .input(
+      z.object({ volunteer: volunteerMetadataSchema, newName: z.string() })
+    )
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.volunteer.updateName(
-        input.volunteerId,
+        input.volunteer,
         input.newName,
         ctx.user
       );
     }),
+
+  getAllPackagesByCoordinator: createProtectedProcedure(
+    "volunteers",
+    "read"
+  ).query(async ({ ctx }) => {
+    return await ctx.services.volunteer.getAllPackagesByCoordinator(ctx.user);
+  }),
 
   delete: createProtectedProcedure("volunteers", "delete")
     .input(volunteerFullSchema.pick({ id: true }))
@@ -52,9 +74,9 @@ export const volunteersRouter = router({
       return await ctx.services.volunteer.delete(ctx.user, input.id);
     }),
 
-  toggleArchive: createProtectedProcedure("volunteers", "update")
-    .input(z.object({ id: z.string() }))
+  end: createProtectedProcedure("volunteers", "update")
+    .input(endPersonDetailsSchema)
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.volunteer.toggleArchive(input.id, ctx.user);
+      return await ctx.services.volunteer.end(ctx.user, input);
     }),
 });

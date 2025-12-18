@@ -5,16 +5,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { VolunteerFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
+import { PermissionGate } from "./PermissionGate";
+import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { packageColumns } from "@/routes/PackageRoutes";
+import { trainingRecordColumns } from "@/routes/RecordsRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -36,7 +39,8 @@ export function VolunteerDetailModal({
     trpc.volunteers.getById.queryOptions({ id: volunteerId })
   );
   const volunteer = volunteerQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<Note[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when volunteer data changes
   useEffect(() => {
@@ -48,77 +52,49 @@ export function VolunteerDetailModal({
   const updateVolunteerMutation = useMutation(
     trpc.volunteers.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.volunteers.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.volunteers.getAll.queryKey(),
         });
       },
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (volunteer) {
       updateVolunteerMutation.mutate({
         ...volunteer,
         details: {
           ...volunteer.details,
-          notes: currentNotes,
+          notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.volunteers.getAll.queryKey(),
       });
     }
   };
 
-  const packageModalColumns: TableColumn<
-    VolunteerFull["requests"][number]["packages"][number]
-  >[] = [
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item) => item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item) => item.endDate,
-    },
-    {
-      key: "name",
-      header: "Package Name",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "services",
-      header: "Service(s)",
-      render: (item) => item.details.services.join(", "),
-    },
-    {
-      key: "weeklyHours",
-      header: "Weekly Hours",
-      render: (item) => item.details.weeklyHours.toString(),
-    },
-    {
-      key: "notes",
-      header: "Notes",
-      render: (item) => item.details.notes,
-    },
-  ];
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
 
-  const trainingRecordModalColumns: TableColumn<
-    VolunteerFull["trainingRecords"][number]
-  >[] = [
-    {
-      key: "name",
-      header: "Title",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "expiryDate",
-      header: "Expiry",
-      render: (item) => item.expiryDate || "N/A",
-    },
-  ];
+  const handleDeleteConfirm = () => {
+    if (onDelete && volunteer) {
+      onDelete(volunteer.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
 
   const renderDetailItem = (
     label: string,
@@ -170,16 +146,12 @@ export function VolunteerDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Volunteer Details: {volunteer.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View and manage detailed information for this volunteer including
-            contact info, offerings, training records, and activity logs.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-4">
-              <TabsTrigger value="contact">Contact Info</TabsTrigger>
-              <TabsTrigger value="offerings">Offerings</TabsTrigger>
+              <TabsTrigger value="contact">General Info</TabsTrigger>
+              <TabsTrigger value="Services">Services</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -190,31 +162,57 @@ export function VolunteerDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Contact Information
+                General Information
               </h3>
               {renderDetailItem("ID", volunteer.id)}
               {renderDetailItem("Name", volunteer.details.name)}
+              {renderDetailItem("Role", volunteer.details.role)}
               {renderDetailItem("Address", volunteer.details.address)}
               {renderDetailItem("Phone", volunteer.details.phone)}
               {renderDetailItem("Email", volunteer.details.email)}
+              {renderDetailItem(
+                "Start Date",
+                volunteer.details.startDate
+                  ? formatYmdToDmy(volunteer.details.startDate)
+                  : ""
+              )}
+              {renderDetailItem(
+                "End Date",
+                volunteer.endDate === "open"
+                  ? "Ongoing"
+                  : volunteer.endDate
+                  ? formatYmdToDmy(volunteer.endDate)
+                  : ""
+              )}
               {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
-              {renderDetailItem("DBS Expiry", volunteer.dbsExpiry)}
+              {renderDetailItem(
+                "DBS Expiry",
+                volunteer.dbsExpiry
+                  ? formatYmdToDmy(volunteer.dbsExpiry)
+                  : undefined
+              )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 volunteer.publicLiabilityExpiry
+                  ? formatYmdToDmy(volunteer.publicLiabilityExpiry)
+                  : undefined
               )}
-              {renderDetailItem("Date of Birth", volunteer.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                volunteer.dateOfBirth
+                  ? formatYmdToDmy(volunteer.dateOfBirth)
+                  : ""
+              )}
             </TabsContent>
 
             <TabsContent
-              value="offerings"
+              value="Services"
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Offerings
+                Services
               </h3>
               {renderDetailItem("Services", volunteer.details.services)}
-              {renderDetailItem("Specialisms", volunteer.details.specialisms)}
               {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 
@@ -228,7 +226,7 @@ export function VolunteerDetailModal({
               {volunteer.trainingRecords.length > 0 ? (
                 <DataTable
                   data={volunteer.trainingRecords}
-                  columns={trainingRecordModalColumns}
+                  columns={trainingRecordColumns}
                   title=""
                   searchPlaceholder="Search training records..."
                   resource="volunteers"
@@ -250,7 +248,7 @@ export function VolunteerDetailModal({
               {volunteer.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
                   data={volunteer.requests.flatMap((req) => req.packages)}
-                  columns={packageModalColumns}
+                  columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
                   resource="packages"
@@ -266,18 +264,10 @@ export function VolunteerDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateVolunteerMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateVolunteerMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
               <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateVolunteerMutation.isPending}
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
@@ -285,28 +275,36 @@ export function VolunteerDetailModal({
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
-          {volunteer && (
-            <>
+          <div className="flex gap-2">
+            <PermissionGate resource="volunteers" action="update">
               {onEdit && (
                 <Button onClick={() => onEdit(volunteer.id)} variant="default">
                   Edit
                 </Button>
               )}
+            </PermissionGate>
+            <PermissionGate resource="volunteers" action="delete">
               {onDelete && (
-                <Button
-                  onClick={() => onDelete(volunteer.id)}
-                  variant="destructive"
-                >
+                <Button onClick={handleDeleteClick} variant="destructive">
                   Delete
                 </Button>
               )}
-            </>
-          )}
+            </PermissionGate>
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={volunteer?.details.name}
+        itemType="volunteer"
+      />
     </Dialog>
   );
 }

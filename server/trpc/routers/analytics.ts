@@ -1,8 +1,53 @@
-import { crossSectionSchema, reportSchema } from "shared";
+import {
+  crossSectionSchema,
+  deprivationCrossSectionSchema,
+  reportSchema,
+  deprivationReportSchema,
+  attendanceAllowanceCrossSectionSchema,
+  attendanceAllowanceReportSchema,
+  analyticsDetailsSchema,
+} from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { z } from "zod";
 
 export const analyticsRouter = router({
+  generateAttendanceAllowanceCrossSection: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .output(attendanceAllowanceCrossSectionSchema)
+    .query(async ({ ctx }) => {
+      return await ctx.services.analytics.generateAttendanceAllowanceCrossSection(
+        ctx.user
+      );
+    }),
+
+  generateAttendanceAllowanceReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(attendanceAllowanceReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateAttendanceAllowanceReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  generateCoordinatorAttendanceReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(attendanceAllowanceReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateCoordinatorAttendanceReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
   getActiveRequestsCrossSection: createProtectedProcedure("analytics", "read")
     .output(crossSectionSchema)
     .query(async ({ ctx }) => {
@@ -20,11 +65,12 @@ export const analyticsRouter = router({
     }),
 
   getRequestsReport: createProtectedProcedure("analytics", "read")
-    .input(z.object({ startYear: z.number().optional() }))
+    .input(analyticsDetailsSchema)
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generateRequestsReport(
         ctx.user,
+        input.isInfo,
         input.startYear
       );
     }),
@@ -34,6 +80,62 @@ export const analyticsRouter = router({
     .output(reportSchema)
     .query(async ({ ctx, input }) => {
       return await ctx.services.analytics.generatePackagesReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  generateCoordinatorPackagesReport: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(reportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateCoordinatorPackagesReport(
+        ctx.user,
+        input.startYear
+      );
+    }),
+
+  getActiveRequestsDeprivationCrossSection: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .output(deprivationCrossSectionSchema)
+    .query(async ({ ctx }) => {
+      return await ctx.services.analytics.generateActiveRequestsDeprivationCrossSection(
+        ctx.user
+      );
+    }),
+
+  getActivePackagesDeprivationCrossSection: createProtectedProcedure(
+    "analytics",
+    "read"
+  )
+    .output(deprivationCrossSectionSchema)
+    .query(async ({ ctx }) => {
+      return await ctx.services.analytics.generateActivePackagesDeprivationCrossSection(
+        ctx.user
+      );
+    }),
+
+  getRequestsDeprivationReport: createProtectedProcedure("analytics", "read")
+    .input(analyticsDetailsSchema)
+    .output(deprivationReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generateRequestsDeprivationReport(
+        ctx.user,
+        input.isInfo,
+        input.startYear
+      );
+    }),
+
+  getPackagesDeprivationReport: createProtectedProcedure("analytics", "read")
+    .input(z.object({ startYear: z.number().optional() }))
+    .output(deprivationReportSchema)
+    .query(async ({ ctx, input }) => {
+      return await ctx.services.analytics.generatePackagesDeprivationReport(
         ctx.user,
         input.startYear
       );

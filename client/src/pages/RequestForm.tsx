@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTodaysDate } from "../hooks/useTodaysDate";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
@@ -6,33 +7,47 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import type { RequestMetadata, ClientMetadata } from "../types";
+import { requestMetadataSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import { requestStatus, requestTypes, serviceOptions, localities } from "shared/const";
+import {
+  requestStatus,
+  requestTypes,
+  serviceOptions,
+  localities,
+} from "shared/const";
+import { associatedRequestRoutes } from "../routes/RequestRoutes";
 
 export function RequestForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || "";
+  const clientId = searchParams.get("clientId") || "";
 
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState<Omit<RequestMetadata, "id">>({
     clientId: "",
-    archived: "N",
     requestType: "paid",
     startDate: "",
     endDate: "open",
     details: {
+      customId: "",
       name: "",
       weeklyHours: 0,
+      oneOffStartDateHours: 0,
       address: {
         streetAddress: "",
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
-      status: "pending",
+      status: "normal",
       services: [],
       notes: "",
     },
@@ -46,15 +61,33 @@ export function RequestForm() {
     ...trpc.requests.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const requestQueryKey = trpc.requests.getAllMetadata.queryKey();
+
+  // Fetch selected client data to get their end date
+  const clientQuery = useQuery({
+    ...trpc.clients.getById.queryOptions({ id: formData.clientId }),
+    enabled: Boolean(formData.clientId),
+  });
 
   const clients = clientsQuery.data || [];
   const request = requestQuery.data;
+  const clientEndDate = clientQuery.data?.endDate;
+
+  const isEndDateRequired = Boolean(clientEndDate && clientEndDate !== "open");
+  const maxEndDate = clientEndDate && clientEndDate !== "open" ? clientEndDate : undefined;
+
+  const formatDateDmy = (date?: string | null) => {
+    if (!date) return "";
+    if (date === "open") return "open";
+    const [y, m, d] = date.split("-");
+    return y && m && d ? `${d} ${m} ${y}` : date;
+  };
 
   const createMutation = useMutation(
     trpc.requests.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/requests");
       },
     })
@@ -63,7 +96,9 @@ export function RequestForm() {
   const updateMutation = useMutation(
     trpc.requests.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/requests");
       },
     })
@@ -95,6 +130,24 @@ export function RequestForm() {
     }
   }, [isEditing, request]);
 
+  // Set initial client from query parameter (only for new requests)
+  useEffect(() => {
+    if (!isEditing && clientId && clients.length > 0 && !formData.clientId) {
+      const selectedClient = clients.find((client) => client.id === clientId);
+      if (selectedClient) {
+        setFormData((prev) => ({
+          ...prev,
+          clientId: selectedClient.id,
+          details: {
+            ...prev.details,
+            name: selectedClient.details.name,
+            services: selectedClient.details.services || [],
+          },
+        }));
+      }
+    }
+  }, [clientId, clients, isEditing, formData.clientId]);
+
   // Auto-populate services when client is selected (only for new requests)
   useEffect(() => {
     if (!isEditing && formData.clientId) {
@@ -113,6 +166,11 @@ export function RequestForm() {
     }
   }, [formData.clientId, clients, isEditing]);
 
+  useTodaysDate({
+    enabled: !isEditing && !formData.startDate,
+    setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
+  });
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -120,8 +178,6 @@ export function RequestForm() {
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
-        : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
         : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
   };
@@ -167,15 +223,21 @@ export function RequestForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<RequestMetadata>(
+      requestMetadataSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Request form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateMutation.mutate({ ...formData, id });
+      updateMutation.mutate({ ...validated, id });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(validated);
     }
   };
 
-  if (isEditing && clientsQuery.isLoading) return <div>Loading...</div>;
-  if (isEditing && clientsQuery.error) return <div>Error loading client</div>;
+  if (clientsQuery.isLoading || clientQuery.isLoading) return <div>Loading...</div>;
+  if (clientsQuery.error) return <div>Error loading clients</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -198,7 +260,7 @@ export function RequestForm() {
                   htmlFor="client"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client *
+                  Client
                 </label>
                 <Select
                   options={clientOptions}
@@ -254,6 +316,56 @@ export function RequestForm() {
                   required
                 />
               </div>
+
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  End Date {!isEditing && isEndDateRequired && "*"}
+                </label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type={
+                    isEditing && formData.endDate === "open" ? "text" : "date"
+                  }
+                  value={
+                    isEditing && formData.endDate === "open"
+                      ? "Active"
+                      : formData.endDate === "open"
+                      ? ""
+                      : formData.endDate
+                  }
+                  max={!isEditing ? maxEndDate : undefined}
+                  required={!isEditing && isEndDateRequired}
+                  onChange={(e) => {
+                    const value = e.target.value || "open";
+                    setFormData((prev) =>
+                      updateNestedValue("endDate", value, prev)
+                    );
+                  }}
+                  disabled={isEditing}
+                />
+                {isEditing ? (
+                  <small className="text-gray-500 block">
+                    End via the table button. This is to also end all ongoing packages.
+                  </small>
+                ) : (
+                  <>
+                    {!isEndDateRequired && (
+                      <small className="text-gray-500 block">
+                        Leave empty for ongoing request
+                      </small>
+                    )}
+                    {maxEndDate && (
+                      <small className="text-gray-500 block">
+                        Must end by {formatDateDmy(maxEndDate)} (Client end date)
+                      </small>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -275,10 +387,29 @@ export function RequestForm() {
                   min="0"
                   max="168"
                   step="0.5"
-                  value={formData.details.weeklyHours || 0}
+                  value={formData.details.weeklyHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 10"
+                  placeholder=""
                   required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="oneOffStartDateHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  One-off Hours (on Start Date)
+                </label>
+                <Input
+                  id="oneOffStartDateHours"
+                  name="details.oneOffStartDateHours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.details.oneOffStartDateHours ?? ""}
+                  onChange={handleInputChange}
+                  placeholder=""
                 />
               </div>
 
@@ -391,7 +522,10 @@ export function RequestForm() {
                     value: locality,
                   }))}
                   onChange={(selectedOption) =>
-                    handleSelectChange("details.address.locality", selectedOption)
+                    handleSelectChange(
+                      "details.address.locality",
+                      selectedOption
+                    )
                   }
                   placeholder="Select locality..."
                   required

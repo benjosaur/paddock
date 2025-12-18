@@ -1,5 +1,6 @@
+import { infoDetailsSchema, endPersonDetailsSchema } from "shared";
 import { router, createProtectedProcedure } from "../prod/trpc";
-import { clientFullSchema } from "shared/schemas/index";
+import { clientFullSchema, clientMetadataSchema } from "shared/schemas/index";
 import { z } from "zod";
 
 export const clientsRouter = router({
@@ -7,9 +8,15 @@ export const clientsRouter = router({
     return await ctx.services.client.getAll(ctx.user);
   }),
 
-  getAllNotArchived: createProtectedProcedure("clients", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("clients", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.client.getAllNotArchived(ctx.user);
+      return await ctx.services.client.getAllNotEndedYet(ctx.user);
+    }
+  ),
+
+  getAllWithMagService: createProtectedProcedure("clients", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.client.getAllWithMagService(ctx.user);
     }
   ),
 
@@ -19,37 +26,70 @@ export const clientsRouter = router({
       return await ctx.services.client.getById(input.id, ctx.user);
     }),
 
+  end: createProtectedProcedure("clients", "update")
+    .input(endPersonDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.end(ctx.user, input);
+    }),
+
   create: createProtectedProcedure("clients", "create")
-    .input(clientFullSchema.omit({ id: true }))
+    .input(clientMetadataSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.create(input, ctx.user);
     }),
 
+  createInfoEntry: createProtectedProcedure("clients", "create")
+    .input(
+      z.object({
+        client: clientMetadataSchema,
+        infoDetails: infoDetailsSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.createInfoEntry(
+        input.client,
+        input.infoDetails,
+        ctx.user
+      );
+    }),
+
   update: createProtectedProcedure("clients", "update")
-    .input(clientFullSchema)
+    .input(clientMetadataSchema)
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.update(input, ctx.user);
     }),
 
   delete: createProtectedProcedure("clients", "delete")
-    .input(clientFullSchema.pick({ id: true }))
+    .input(clientMetadataSchema.pick({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.delete(ctx.user, input.id);
     }),
 
   updateName: createProtectedProcedure("clients", "update")
-    .input(z.object({ clientId: z.string(), newName: z.string() }))
+    .input(z.object({ client: clientMetadataSchema, newName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.client.updateName(
-        input.clientId,
+        input.client,
         input.newName,
         ctx.user
       );
     }),
-
-  toggleArchive: createProtectedProcedure("clients", "update")
-    .input(z.object({ id: z.string() }))
+  updateCustomId: createProtectedProcedure("clients", "update")
+    .input(z.object({ client: clientMetadataSchema, newCustomId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.client.toggleArchive(input.id, ctx.user);
+      return await ctx.services.client.updateCustomId(
+        input.client,
+        input.newCustomId,
+        ctx.user
+      );
+    }),
+  updatePostCode: createProtectedProcedure("clients", "update")
+    .input(z.object({ client: clientMetadataSchema, newPostcode: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.client.updatePostCode(
+        input.client,
+        input.newPostcode,
+        ctx.user
+      );
     }),
 });

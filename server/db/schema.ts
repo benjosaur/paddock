@@ -22,7 +22,7 @@ export type DbEntry = z.infer<typeof dbEntrySchema>;
 //    Source: v# v# Dupes: v# vlog#, v# tr#
 
 export const seededDataModel = {
-  ModelName: "WiveyCares",
+  ModelName: "WiveyCares2",
   ModelMetadata: {
     Author: "",
     DateCreated: "Jun 14, 2025, 02:29 PM",
@@ -33,7 +33,7 @@ export const seededDataModel = {
   },
   DataModel: [
     {
-      TableName: "WiveyCares",
+      TableName: "WiveyCares2",
       KeyAttributes: {
         PartitionKey: {
           AttributeName: "pK",
@@ -93,7 +93,7 @@ export const seededDataModel = {
       TableFacets: [],
       GlobalSecondaryIndexes: [
         {
-          IndexName: "GSI1",
+          IndexName: "GSI2",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityOwner",
@@ -109,7 +109,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI2",
+          IndexName: "GSI1",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "sK",
@@ -125,7 +125,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI3",
+          IndexName: "GSI2",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",
@@ -141,7 +141,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI4",
+          IndexName: "GSI3",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",
@@ -157,7 +157,7 @@ export const seededDataModel = {
           },
         },
         {
-          IndexName: "GSI5",
+          IndexName: "GSI4",
           KeyAttributes: {
             PartitionKey: {
               AttributeName: "entityType",

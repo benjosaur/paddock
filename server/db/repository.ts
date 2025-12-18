@@ -26,9 +26,9 @@ const createRawClient = (): DynamoDBClient => {
 export const getTableName = (user: User): string => {
   const allowedGroups = ["Admin", "Coordinator", "Trustee", "Finance"];
   if (allowedGroups.find((group) => user.role == group)) {
-    return "WiveyCares";
+    return "WiveyCares2";
   }
-  return "Test";
+  return "Test2";
 };
 
 export const client = DynamoDBDocumentClient.from(createRawClient());

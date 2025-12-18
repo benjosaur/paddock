@@ -10,8 +10,13 @@ import type {
   MpMetadata,
   VolunteerMetadata,
 } from "../types";
+import { magLogSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
+import { associatedMagLogRoutes } from "../routes/MagLogRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
+import { DEFAULT_MAG_DURATION_HOURS } from "shared/const";
 
 export function MagLogForm() {
   const navigate = useNavigate();
@@ -20,7 +25,7 @@ export function MagLogForm() {
 
   const [formData, setFormData] = useState<Omit<MagLog, "id">>({
     date: "",
-    archived: "N",
+    totalHours: DEFAULT_MAG_DURATION_HOURS,
     clients: [],
     mps: [],
     volunteers: [],
@@ -36,7 +41,9 @@ export function MagLogForm() {
 
   const queryClient = useQueryClient();
 
-  const clientsQuery = useQuery(trpc.clients.getAll.queryOptions());
+  const clientsQuery = useQuery(
+    trpc.clients.getAllWithMagService.queryOptions()
+  );
   const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
   const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
 
@@ -45,12 +52,12 @@ export function MagLogForm() {
     enabled: isEditing && !!id,
   });
 
-  const magLogQueryKey = trpc.mag.getAll.queryKey();
-
   const createMagLogMutation = useMutation(
     trpc.mag.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mag");
       },
     })
@@ -59,7 +66,9 @@ export function MagLogForm() {
   const updateMagLogMutation = useMutation(
     trpc.mag.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magLogQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/mag");
       },
     })
@@ -72,6 +81,11 @@ export function MagLogForm() {
       setFormData(dataWithoutId);
     }
   }, [magLogQuery.data]);
+
+  useTodaysDate({
+    enabled: !isEditing && !formData.date,
+    setDate: (value) => setFormData((prev) => ({ ...prev, date: value })),
+  });
 
   const clientOptions = (clientsQuery.data || []).map(
     (client: ClientMetadata) => ({
@@ -96,7 +110,7 @@ export function MagLogForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
         : e.target.value;
@@ -105,10 +119,16 @@ export function MagLogForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validated = validateOrToast<MagLog>(
+      magLogSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "MAG log form" }
+    );
+    if (!validated) return;
     if (isEditing) {
-      updateMagLogMutation.mutate({ ...formData, id } as MagLog);
+      updateMagLogMutation.mutate({ ...validated, id } as MagLog);
     } else {
-      createMagLogMutation.mutate(formData as Omit<MagLog, "id">);
+      createMagLogMutation.mutate(validated as Omit<MagLog, "id">);
     }
   };
 
@@ -163,6 +183,25 @@ export function MagLogForm() {
                   required
                 />
               </div>
+
+              <div className="max-w-md">
+                <label
+                  htmlFor="totalHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Duration (hours) *
+                </label>
+                <Input
+                  id="totalHours"
+                  name="totalHours"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={formData.totalHours ?? ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -183,9 +222,9 @@ export function MagLogForm() {
                     name="details.totalClients"
                     type="number"
                     min="0"
-                    value={formData.details.totalClients || ""}
+                    value={formData.details.totalClients ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 5"
+                    placeholder=""
                     required
                   />
                 </div>
@@ -202,9 +241,9 @@ export function MagLogForm() {
                     name="details.totalFamily"
                     type="number"
                     min="0"
-                    value={formData.details.totalFamily || ""}
+                    value={formData.details.totalFamily ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2"
+                    placeholder=""
                   />
                 </div>
 
@@ -220,9 +259,9 @@ export function MagLogForm() {
                     name="details.totalVolunteers"
                     type="number"
                     min="0"
-                    value={formData.details.totalVolunteers || ""}
+                    value={formData.details.totalVolunteers ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 3"
+                    placeholder=""
                   />
                 </div>
 
@@ -238,9 +277,9 @@ export function MagLogForm() {
                     name="details.totalMps"
                     type="number"
                     min="0"
-                    value={formData.details.totalMps || ""}
+                    value={formData.details.totalMps ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 1"
+                    placeholder=""
                   />
                 </div>
 
@@ -256,9 +295,9 @@ export function MagLogForm() {
                     name="details.otherAttendees"
                     type="number"
                     min="0"
-                    value={formData.details.otherAttendees || ""}
+                    value={formData.details.otherAttendees ?? ""}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2"
+                    placeholder=""
                   />
                 </div>
               </div>
@@ -308,7 +347,7 @@ export function MagLogForm() {
                   htmlFor="mps"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Magistrates (MPs)
+                  MPs
                 </label>
                 <Select
                   options={mpOptions}
@@ -332,9 +371,7 @@ export function MagLogForm() {
                   isMulti
                   noOptionsMessage={() => "No MPs found"}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Search by MP name to add magistrates
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Search by MP name</p>
               </div>
 
               <div>

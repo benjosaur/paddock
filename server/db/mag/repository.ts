@@ -8,7 +8,7 @@ export class MagLogRepository {
   async getAll(user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI4",
+      IndexName: "GSI3",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": "magLogEntity",
@@ -27,7 +27,7 @@ export class MagLogRepository {
   async getById(magLogId: string, user: User): Promise<DbMagLog[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI5",
+      IndexName: "GSI4",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": magLogId,
@@ -59,7 +59,7 @@ export class MagLogRepository {
       .parse(input);
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI4",
+      IndexName: "GSI3",
       KeyConditionExpression:
         "entityType = :pk AND #date BETWEEN :startDate AND :endDate",
       ExpressionAttributeNames: {
@@ -109,12 +109,11 @@ export class MagLogRepository {
   }
 
   async createMagReference(
+    magId: string,
     newMpLogs: Omit<DbMagLog, "sK">[],
     user: User
   ): Promise<string> {
-    const uuid = uuidv4();
-    const key = `mag#${uuid}`;
-    const newItems = newMpLogs.map((mpLog) => ({ sK: key, ...mpLog }));
+    const newItems = newMpLogs.map((mpLog) => ({ ...mpLog, sK: magId }));
     const validatedItems = dbMagLog.array().parse(newItems);
     try {
       await Promise.all(
@@ -127,15 +126,17 @@ export class MagLogRepository {
           )
         )
       );
-      return key;
+      return magId;
     } catch (error) {
       console.error("Repository Layer Error creating mpLogs:", error);
       throw error;
     }
   }
 
-  async update(updatedMpLogs: DbMagLog[], user: User): Promise<void> {
-    const validatedLogs = dbMagLog.array().parse(updatedMpLogs);
+  async update(updatedagLogs: DbMagLog[], user: User): Promise<void> {
+    const validatedLogs = dbMagLog.array().parse(updatedagLogs);
+    console.log("REPOSITORY LAYER UPDATING MP LOGS", validatedLogs);
+    console.log(validatedLogs.map((log) => dropNullFields(log)));
     try {
       await Promise.all(
         validatedLogs.map((log) =>

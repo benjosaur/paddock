@@ -18,16 +18,16 @@ export function getVisibleMenuItems(userRole: UserRole) {
       resource: "dashboard",
     },
     {
+      key: "requests",
+      label: "Requests",
+      path: "/requests",
+      resource: "requests",
+    },
+    {
       key: "packages",
       label: "Packages",
       path: "/packages",
       resource: "packages",
-    },
-    {
-      key: "mag",
-      label: "MAG",
-      path: "/mag",
-      resource: "mag",
     },
     { key: "clients", label: "Clients", path: "/clients", resource: "clients" },
     { key: "mps", label: "MPs", path: "/mps", resource: "mps" },
@@ -36,12 +36,6 @@ export function getVisibleMenuItems(userRole: UserRole) {
       label: "Volunteers",
       path: "/volunteers",
       resource: "volunteers",
-    },
-    {
-      key: "records",
-      label: "Records",
-      path: "/records",
-      resource: "trainingRecords",
     },
     {
       key: "dbs",
@@ -56,10 +50,16 @@ export function getVisibleMenuItems(userRole: UserRole) {
       resource: "volunteers", // Public Liability requires both volunteers and mps permissions
     },
     {
-      key: "requests",
-      label: "Requests",
-      path: "/requests",
-      resource: "requests",
+      key: "records",
+      label: "Records",
+      path: "/records",
+      resource: "trainingRecords",
+    },
+    {
+      key: "mag",
+      label: "MAG",
+      path: "/mag",
+      resource: "mag",
     },
   ];
 

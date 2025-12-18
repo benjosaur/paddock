@@ -5,16 +5,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { MpFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
+import { PermissionGate } from "./PermissionGate";
+import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { packageColumns } from "@/routes/PackageRoutes";
+import { trainingRecordColumns } from "@/routes/RecordsRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -34,7 +37,15 @@ export function MpDetailModal({
   const queryClient = useQueryClient();
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<
+    {
+      date: string;
+      note: string;
+      source: "Phone" | "Email" | "In Person";
+      minutesTaken: number;
+    }[]
+  >([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when mp data changes
   useEffect(() => {
@@ -46,77 +57,49 @@ export function MpDetailModal({
   const updateMpMutation = useMutation(
     trpc.mps.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.mps.getById.queryKey({ id: mpId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.mps.getById.queryKey({ id: mpId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.mps.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.mps.getAll.queryKey(),
         });
       },
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (mp) {
       updateMpMutation.mutate({
         ...mp,
         details: {
           ...mp.details,
-          notes: currentNotes,
+          notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.mps.getById.queryKey({ id: mpId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.mps.getAll.queryKey(),
       });
     }
   };
 
-  const packageModalColumns: TableColumn<
-    MpFull["requests"][number]["packages"][number]
-  >[] = [
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item) => item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item) => item.endDate,
-    },
-    {
-      key: "name",
-      header: "Package Name",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "services",
-      header: "Service(s)",
-      render: (item) => item.details.services.join(", "),
-    },
-    {
-      key: "weeklyHours",
-      header: "Weekly Hours",
-      render: (item) => item.details.weeklyHours.toString(),
-    },
-    {
-      key: "notes",
-      header: "Notes",
-      render: (item) => item.details.notes,
-    },
-  ];
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
 
-  const trainingRecordModalColumns: TableColumn<
-    MpFull["trainingRecords"][number]
-  >[] = [
-    {
-      key: "name",
-      header: "Title",
-      render: (item) => item.details.name,
-    },
-    {
-      key: "expiryDate",
-      header: "Expiry",
-      render: (item) => item.expiryDate || "N/A",
-    },
-  ];
+  const handleDeleteConfirm = () => {
+    if (onDelete && mp) {
+      onDelete(mp.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
 
   const renderDetailItem = (
     label: string,
@@ -168,16 +151,12 @@ export function MpDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             MP Details: {mp.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View and manage detailed information for this MP including contact
-            info, offerings, training records, and activity logs.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-4">
-              <TabsTrigger value="contact">Contact Info</TabsTrigger>
-              <TabsTrigger value="offerings">Offerings</TabsTrigger>
+              <TabsTrigger value="contact">General Info</TabsTrigger>
+              <TabsTrigger value="Services">Services</TabsTrigger>
               <TabsTrigger value="training">Training Record</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -188,31 +167,50 @@ export function MpDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Contact Information
+                General Information
               </h3>
               {renderDetailItem("ID", mp.id)}
               {renderDetailItem("Name", mp.details.name)}
               {renderDetailItem("Address", mp.details.address)}
               {renderDetailItem("Phone", mp.details.phone)}
               {renderDetailItem("Email", mp.details.email)}
+              {renderDetailItem(
+                "Start Date",
+                mp.details.startDate ? formatYmdToDmy(mp.details.startDate) : ""
+              )}
+              {renderDetailItem(
+                "End Date",
+                mp.endDate === "open"
+                  ? "Ongoing"
+                  : mp.endDate
+                  ? formatYmdToDmy(mp.endDate)
+                  : ""
+              )}
               {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
-              {renderDetailItem("DBS Expiry", mp.dbsExpiry)}
+              {renderDetailItem(
+                "DBS Expiry",
+                mp.dbsExpiry ? formatYmdToDmy(mp.dbsExpiry) : undefined
+              )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 mp.publicLiabilityExpiry
+                  ? formatYmdToDmy(mp.publicLiabilityExpiry)
+                  : undefined
               )}
-              {renderDetailItem("Date of Birth", mp.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : ""
+              )}
             </TabsContent>
 
             <TabsContent
-              value="offerings"
+              value="Services"
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Offerings
+                Services
               </h3>
               {renderDetailItem("Services", mp.details.services)}
-              {renderDetailItem("Specialisms", mp.details.specialisms)}
               {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 
@@ -226,7 +224,7 @@ export function MpDetailModal({
               {mp.trainingRecords.length > 0 ? (
                 <DataTable
                   data={mp.trainingRecords}
-                  columns={trainingRecordModalColumns}
+                  columns={trainingRecordColumns}
                   title=""
                   searchPlaceholder="Search training records..."
                   resource="mps"
@@ -248,7 +246,7 @@ export function MpDetailModal({
               {mp.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
                   data={mp.requests.flatMap((req) => req.packages)}
-                  columns={packageModalColumns}
+                  columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
                   resource="packages"
@@ -264,18 +262,10 @@ export function MpDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateMpMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateMpMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
               <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateMpMutation.isPending}
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
@@ -283,25 +273,36 @@ export function MpDetailModal({
           </Tabs>
         </div>
         <DialogFooter className="mt-4">
-          {mp && (
-            <>
+          <div className="flex gap-2">
+            <PermissionGate resource="mps" action="update">
               {onEdit && (
                 <Button onClick={() => onEdit(mp.id)} variant="default">
                   Edit
                 </Button>
               )}
+            </PermissionGate>
+            <PermissionGate resource="mps" action="delete">
               {onDelete && (
-                <Button onClick={() => onDelete(mp.id)} variant="destructive">
+                <Button onClick={handleDeleteClick} variant="destructive">
                   Delete
                 </Button>
               )}
-            </>
-          )}
+            </PermissionGate>
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={mp?.details.name}
+        itemType="MP"
+      />
     </Dialog>
   );
 }

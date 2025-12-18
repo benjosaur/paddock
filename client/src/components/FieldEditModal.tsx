@@ -17,14 +17,22 @@ interface FieldEditModalProps {
   field: string;
   currentValue: string;
   onSubmit: (field: string, fieldValue: string) => void;
+  customDescription?: string;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 export function FieldEditModal({
   field,
   currentValue,
   onSubmit,
+  customDescription,
+  externalOpen,
+  onExternalOpenChange,
 }: FieldEditModalProps) {
-  const [open, setOpen] = useState(false);
+  const controlled = externalOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlled ? externalOpen! : internalOpen;
   const [value, setValue] = useState(currentValue);
 
   let friendlyFieldName;
@@ -35,10 +43,12 @@ export function FieldEditModal({
   }
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (newOpen) {
-      setValue(currentValue);
+    if (controlled) {
+      onExternalOpenChange?.(newOpen);
+    } else {
+      setInternalOpen(newOpen);
     }
+    if (newOpen) setValue(currentValue);
   };
 
   return (
@@ -52,7 +62,7 @@ export function FieldEditModal({
         <DialogHeader>
           <DialogTitle>Edit {friendlyFieldName}</DialogTitle>
           <DialogDescription hidden>
-            Update the value of {friendlyFieldName}
+            Update the value of {friendlyFieldName}. {customDescription}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">
@@ -69,7 +79,7 @@ export function FieldEditModal({
             type="button"
             variant="outline"
             onClick={() => {
-              setOpen(false);
+              handleOpenChange(false);
             }}
           >
             Cancel
@@ -77,7 +87,7 @@ export function FieldEditModal({
           <Button
             type="button"
             onClick={() => {
-              setOpen(false);
+              handleOpenChange(false);
               onSubmit(field, value);
             }}
           >

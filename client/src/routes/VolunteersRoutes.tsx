@@ -5,28 +5,28 @@ import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket } from "../utils/helpers";
+import type { EndPersonDetails } from "shared";
+import EndDialog from "../components/EndDialog";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "id",
-    header: "ID",
-    render: (item: VolunteerMetadata) => item.id,
-  },
   {
     key: "name",
     header: "Name",
     render: (item: VolunteerMetadata) => item.details.name,
   },
   {
+    key: "role",
+    header: "Role",
+    render: (item: VolunteerMetadata) => item.details.role,
+  },
+  {
     key: "dob",
-    header: "Age",
+    header: "Date of Birth",
     render: (item: VolunteerMetadata) =>
-      item.dateOfBirth
-        ? calculateAgeBracket(item.dateOfBirth) + " years"
-        : "Unknown",
+      item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
   },
   {
     key: "postCode",
@@ -41,7 +41,8 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
-    render: (item: VolunteerMetadata) => item.dbsExpiry,
+    render: (item: VolunteerMetadata) =>
+      item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
   },
   {
     key: "capacity",
@@ -56,28 +57,20 @@ export function VolunteersRoutes() {
     null
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showEnded, setShowEnded] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
   const volunteersQuery = useQuery(
-    showArchived
+    showEnded
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotArchived.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
-  const volunteersQueryKey = showArchived
+  const volunteersQueryKey = showEnded
     ? trpc.volunteers.getAll.queryKey()
-    : trpc.volunteers.getAllNotArchived.queryKey();
-
-  const archiveVolunteerMutation = useMutation(
-    trpc.volunteers.toggleArchive.mutationOptions({
-      onSuccess: () => {
-        associatedVolunteerRoutes.forEach((route) => {
-          queryClient.invalidateQueries({ queryKey: route.queryKey() });
-        });
-      },
-    })
-  );
+    : trpc.volunteers.getAllNotEndedYet.queryKey();
 
   const deleteVolunteerMutation = useMutation(
     trpc.volunteers.delete.mutationOptions({
@@ -87,12 +80,28 @@ export function VolunteersRoutes() {
     })
   );
 
+  const updateVolunteerMutation = useMutation(
+    trpc.volunteers.update.mutationOptions({
+      onSuccess: () => {
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
+  const endVolunteerMutation = useMutation(
+    trpc.volunteers.end.mutationOptions({
+      onSuccess: () => {
+        associatedVolunteerRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
+
   const handleAddNew = () => {
     navigate("/volunteers/create");
-  };
-
-  const handleArchiveToggle = (id: string) => {
-    archiveVolunteerMutation.mutate({ id });
   };
 
   const handleEditNavigation = (id: string) => {
@@ -100,8 +109,13 @@ export function VolunteersRoutes() {
     navigate(`/volunteers/edit/${encodedId}`);
   };
 
-  const handleViewVolunteer = (volunteer: VolunteerMetadata) => {
-    setSelectedVolunteerId(volunteer.id);
+  const handleAddSolePackage = (volunteerId: string) => {
+    const encodedVolunteerId = encodeURIComponent(volunteerId);
+    navigate(`/packages/sole/create?volunteerId=${encodedVolunteerId}`);
+  };
+
+  const handleViewVolunteer = (id: string) => {
+    setSelectedVolunteerId(id);
     setIsVolunteerModalOpen(true);
   };
 
@@ -114,8 +128,48 @@ export function VolunteersRoutes() {
     deleteVolunteerMutation.mutate({ id });
   };
 
+  const handleAddRecord = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/records/create?ownerId=${encodedId}&ownerType=volunteer`);
+  };
+
+  const handleEnd = (vol: VolunteerMetadata) => {
+    if (vol.endDate === "open") {
+      setEndDetails({ personId: vol.id, endDate: "", endReason: "None" });
+      setIsEndDialogOpen(true);
+    } else {
+      setEndDetails({ personId: vol.id, endDate: "open", endReason: "None" });
+      setIsEndDialogOpen(true);
+    }
+  };
+
+  const handleConfirmEnd = () => {
+    if (!endDetails?.personId || !endDetails.endDate) return;
+    if (endDetails.endDate === "open") {
+      const selected = volunteersQuery.data?.find(
+        (v) => v.id === endDetails.personId
+      );
+      if (!selected) return;
+      updateVolunteerMutation.mutate({
+        ...selected,
+        endDate: "open",
+      } as unknown as any);
+    } else {
+      endVolunteerMutation.mutate(endDetails);
+    }
+    setIsEndDialogOpen(false);
+    setEndDetails(null);
+  };
+
   if (volunteersQuery.isLoading) return <div>Loading...</div>;
   if (volunteersQuery.error) return <div>Error loading Volunteers</div>;
+
+  // Ensure rows are shown in alphabetical order by Volunteer name
+  const sortedVolunteers = (volunteersQuery.data || []).slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
 
   return (
     <Routes>
@@ -124,25 +178,27 @@ export function VolunteersRoutes() {
         element={
           <>
             <DataTable
-              key={`volunteers-${showArchived}`}
+              key={`volunteers-${showEnded}`}
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
-              data={volunteersQuery.data || []}
+              data={sortedVolunteers}
               columns={volunteerColumns}
-              onArchive={handleArchiveToggle}
+              onAddPackage={handleAddSolePackage}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
-              onViewItem={handleViewVolunteer as (item: unknown) => void}
-              onAddNew={handleAddNew}
+              onAddRecord={handleAddRecord}
+              onEnd={handleEnd}
+              onViewItem={handleViewVolunteer}
+              onCreate={handleAddNew}
               resource="volunteers"
               customActions={
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
+                  onClick={() => setShowEnded(!showEnded)}
                   className="shadow-sm"
                 >
-                  {showArchived ? "Hide Archived" : "Show Archived"}
+                  {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
             />
@@ -155,6 +211,28 @@ export function VolunteersRoutes() {
                 onDelete={handleDelete}
               />
             )}
+            <EndDialog
+              isOpen={isEndDialogOpen}
+              onOpenChange={(open) => {
+                setIsEndDialogOpen(open);
+                if (!open) setEndDetails(null);
+              }}
+              entityLabel="Volunteer"
+              endDate={endDetails?.endDate}
+              onEndDateChange={(date) =>
+                setEndDetails((prev) =>
+                  prev ? { ...prev, endDate: date } : prev
+                )
+              }
+              onConfirm={handleConfirmEnd}
+              confirmDisabled={
+                (endDetails?.endDate !== "open" && !endDetails?.endDate) ||
+                !endDetails?.personId ||
+                endVolunteerMutation.isPending
+              }
+              endDescription="Select an end date. This will also archive the volunteer."
+              undoDescription="This will undo ending the volunteer. Associated packages will not be affected."
+            />
           </>
         }
       />
@@ -166,10 +244,10 @@ export function VolunteersRoutes() {
 
 export default VolunteersRoutes;
 
-const associatedVolunteerRoutes = [
+export const associatedVolunteerRoutes: any[] = [
   // Volunteers
   trpc.volunteers.getAll,
-  trpc.volunteers.getAllNotArchived,
+  trpc.volunteers.getAllNotEndedYet,
   trpc.volunteers.getById,
 
   // MAG
@@ -178,20 +256,21 @@ const associatedVolunteerRoutes = [
 
   // Packages
   trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
   trpc.packages.getById,
 
   // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
-  trpc.requests.getAllMetadata,
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];

@@ -3,9 +3,9 @@ import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { calculateTimeToDate } from "@/utils/helpers";
 import {
   Tabs,
   TabsContent,
@@ -20,53 +20,48 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
     render: (item) => item.details.name,
   },
   {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
+    key: "dbsNumber",
+    header: "DBS Number",
+    render: (item) => item.details.dbsNumber || "",
   },
   {
     key: "dbsExpiry",
-    header: "DBS Expires",
+    header: "DBS Expiry",
     render: (item) =>
-      item.dbsExpiry ? calculateTimeToDate(item.dbsExpiry) : "No DBS",
+      item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
   },
 ];
 
-const volunteerDbsColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "name",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
-  },
-  {
-    key: "dbsExpiry",
-    header: "DBS Expires",
-    render: (item) =>
-      item.dbsExpiry ? calculateTimeToDate(item.dbsExpiry) : "No DBS",
-  },
-];
+const volunteerDbsColumns: TableColumn<VolunteerMetadata>[] = mpDbsColumns;
 
 export default function DbsRoutes() {
   const [showArchived, setShowArchived] = useState(false);
 
   const mpsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotArchived.queryOptions()
+      : trpc.mps.getAllNotEndedYet.queryOptions()
   );
   const volunteersQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotArchived.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
+
+  const compareByDbsExpiry = <T extends { dbsExpiry?: string }>(a: T, b: T) => {
+    const aExp = a.dbsExpiry || "";
+    const bExp = b.dbsExpiry || "";
+    if (aExp === bExp) return 0;
+    if (aExp === "") return -1;
+    if (bExp === "") return 1;
+    return aExp.localeCompare(bExp);
+  };
+
+  const sortedMps = [...mps].sort(compareByDbsExpiry);
+  const sortedVolunteers = [...volunteers].sort(compareByDbsExpiry);
 
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
@@ -99,7 +94,7 @@ export default function DbsRoutes() {
                 </Button>
               </div>
             </div>
-            
+
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>
@@ -111,7 +106,7 @@ export default function DbsRoutes() {
                   key={`mps-dbs-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={mps}
+                  data={sortedMps}
                   columns={mpDbsColumns}
                   resource="mps"
                 />
@@ -122,7 +117,7 @@ export default function DbsRoutes() {
                   key={`volunteers-dbs-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={volunteers}
+                  data={sortedVolunteers}
                   columns={volunteerDbsColumns}
                   resource="volunteers"
                 />

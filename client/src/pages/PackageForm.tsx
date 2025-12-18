@@ -5,10 +5,19 @@ import { Select } from "../components/ui/select";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
-import type { Package, MpMetadata, RequestMetadata } from "../types";
+import {
+  type Package,
+  type MpMetadata,
+  type VolunteerMetadata,
+  type ReqPackage,
+  reqPackageSchema,
+} from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
+import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
+import { validateOrToast } from "@/utils/validation";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -16,43 +25,102 @@ export function PackageForm() {
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
 
+  // below will now always be provided
   const initialRequestId = location.state?.requestId || "";
 
-  const [formData, setFormData] = useState<Omit<Package, "id">>({
+  const [formData, setFormData] = useState<Omit<ReqPackage, "id">>({
     carerId: "",
     requestId: initialRequestId,
-    archived: "N",
     startDate: "",
     endDate: "open",
     details: {
       name: "",
       weeklyHours: 0,
+      oneOffStartDateHours: 0,
       address: {
         streetAddress: "",
         locality: "Wiveliscombe",
         county: "Somerset",
         postCode: "",
+        deprivation: {
+          income: false,
+          health: false,
+        },
       },
       notes: "",
       services: [],
     },
   });
 
+  // no local error state; rely on max attribute for validation
+
   const queryClient = useQueryClient();
 
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const requestsQuery = useQuery(trpc.requests.getAllMetadata.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
+  );
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),
     enabled: isEditing,
   });
-  const packageQueryKey = trpc.packages.getAll.queryKey();
+
+  // below only fetches after above query returns (or given by state if adding from requests screen)
+  const requestQuery = useQuery({
+    ...trpc.requests.getById.queryOptions({ id: formData.requestId }),
+    enabled: Boolean(formData.requestId),
+  });
+
+  const requestEndDate = requestQuery.data?.endDate;
+
+  // Fetch carer data to get their end date
+  const mpQuery = useQuery({
+    ...trpc.mps.getById.queryOptions({ id: formData.carerId }),
+    enabled: Boolean(formData.carerId) && (mpsQuery.data || []).some(mp => mp.id === formData.carerId),
+  });
+
+  const volunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id: formData.carerId }),
+    enabled: Boolean(formData.carerId) && (volunteersQuery.data || []).some(v => v.id === formData.carerId),
+  });
+
+  const carerEndDate = mpQuery.data?.endDate || volunteerQuery.data?.endDate;
+
+  // Calculate the earliest end date between request and carer
+  const getEarliestEndDate = () => {
+    const dates: string[] = [];
+
+    if (requestEndDate && requestEndDate !== "open") {
+      dates.push(requestEndDate);
+    }
+
+    if (carerEndDate && carerEndDate !== "open") {
+      dates.push(carerEndDate);
+    }
+
+    if (dates.length === 0) return undefined;
+
+    // Return the earliest date
+    return dates.sort()[0];
+  };
+
+  const earliestEndDate = getEarliestEndDate();
+  const isEndDateRequired = Boolean(earliestEndDate);
+
+  const formatDateDmy = (date?: string | null) => {
+    if (!date) return "";
+    if (date === "open") return "open";
+    const [y, m, d] = date.split("-");
+    return y && m && d ? `${d} ${m} ${y}` : date;
+  };
 
   const createPackageMutation = useMutation(
     trpc.packages.create.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/packages");
       },
     })
@@ -61,38 +129,42 @@ export function PackageForm() {
   const updatePackageMutation = useMutation(
     trpc.packages.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: packageQueryKey });
+        associatedPackageRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/packages");
       },
     })
   );
 
+  useTodaysDate({
+    enabled: !formData.startDate && !isEditing,
+    setDate: (value) => setFormData((prev) => ({ ...prev, startDate: value })),
+  });
+
   // Load existing data when editing
   useEffect(() => {
     if (packageQuery.data) {
-      setFormData(packageQuery.data);
+      setFormData(packageQuery.data as ReqPackage);
     }
   }, [packageQuery.data]);
 
-  // Auto-populate package details when request is selected (only for new packages)
   useEffect(() => {
-    if (!isEditing && formData.requestId && requestsQuery.data) {
-      const selectedRequest = requestsQuery.data.find(
-        (request: RequestMetadata) => request.id === formData.requestId
-      );
+    if (!isEditing && formData.requestId && requestQuery.data) {
+      const selectedRequest = requestQuery.data;
       if (selectedRequest) {
         setFormData((prev) => ({
           ...prev,
           details: {
             ...prev.details,
-            name: `${selectedRequest.details.name}`,
             address: selectedRequest.details.address,
             services: selectedRequest.details.services || [],
           },
+          request: selectedRequest,
         }));
       }
     }
-  }, [formData.requestId, requestsQuery.data, isEditing]);
+  }, [formData.requestId, requestQuery.data, isEditing]);
 
   const mpOptions = (mpsQuery.data || [])
     .filter((mp: MpMetadata) => mp.id && mp.details?.name)
@@ -101,12 +173,28 @@ export function PackageForm() {
       label: mp.details.name,
     }));
 
-  const requestOptions = (requestsQuery.data || [])
-    .filter((request: RequestMetadata) => request.id && request.details?.name)
-    .map((request: RequestMetadata) => ({
-      value: request.id,
-      label: `${request.details.name} - ${request.requestType}`,
+  const volunteerOptions = (volunteersQuery.data || [])
+    .filter((v: VolunteerMetadata) => v.id && v.details?.name)
+    .map((v: VolunteerMetadata) => ({
+      value: v.id,
+      label: v.details.name,
     }));
+
+  const currentOption = {
+    value: formData.carerId,
+    label: formData.details.name,
+  };
+
+  let carerOptions;
+
+  carerOptions = [...mpOptions, ...volunteerOptions];
+
+  if (
+    formData.carerId &&
+    !carerOptions.some((option) => option.value == formData.carerId)
+  ) {
+    carerOptions = [...carerOptions, currentOption];
+  }
 
   const serviceSelectOptions = serviceOptions.map((service) => ({
     value: service,
@@ -119,7 +207,7 @@ export function PackageForm() {
     >
   ) => {
     const field = e.target.name;
-    let value =
+    let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
         : e.target.value;
@@ -145,12 +233,20 @@ export function PackageForm() {
     setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
+  // removed custom end date validation; the input's max enforces this
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validatedFormData = validateOrToast<ReqPackage>(
+      reqPackageSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Package form" }
+    );
+    if (!validatedFormData) return;
     if (isEditing) {
-      updatePackageMutation.mutate({ ...formData, id } as Package);
+      updatePackageMutation.mutate({ ...validatedFormData, id } as Package);
     } else {
-      createPackageMutation.mutate(formData);
+      createPackageMutation.mutate(validatedFormData);
     }
   };
 
@@ -160,8 +256,10 @@ export function PackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error) return <div>Error loading package</div>;
-  if (mpsQuery.isLoading || requestsQuery.isLoading)
+  if (mpsQuery.isLoading || volunteersQuery.isLoading || requestQuery.isLoading || mpQuery.isLoading || volunteerQuery.isLoading)
     return <div>Loading...</div>;
+  if (mpsQuery.error || volunteersQuery.error)
+    return <div>Error loading carers</div>;
 
   return (
     <div className="space-y-6 animate-in">
@@ -181,16 +279,17 @@ export function PackageForm() {
 
               <div>
                 <label
-                  htmlFor="name"
+                  htmlFor="requestId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Client Name
+                  Request
                 </label>
                 <Input
-                  id="name"
-                  name="details.name"
-                  value={formData.details.name || ""}
-                  placeholder="Auto-generated from selected request"
+                  id="requestId"
+                  name="requestId"
+                  value={`${
+                    requestQuery.data?.details.customId || ""
+                  } - ${formatDateDmy(requestQuery.data?.startDate)}`}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -198,25 +297,17 @@ export function PackageForm() {
 
               <div>
                 <label
-                  htmlFor="requestId"
+                  htmlFor="clientName"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Request *
+                  Client Name
                 </label>
-                <Select
-                  options={requestOptions}
-                  value={
-                    requestOptions.find(
-                      (option) => option.value === formData.requestId
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    handleSelectChange("requestId", selectedOption)
-                  }
-                  placeholder="Select a request..."
-                  isSearchable
-                  noOptionsMessage={() => "No requests found"}
-                  isClearable
+                <Input
+                  id="clientName"
+                  name="details.name"
+                  value={requestQuery.data?.details.name || ""}
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
 
@@ -225,22 +316,30 @@ export function PackageForm() {
                   htmlFor="carerId"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Carer/MP *
+                  Carer *
                 </label>
                 <Select
-                  options={mpOptions}
+                  options={carerOptions}
                   value={
-                    mpOptions.find(
+                    carerOptions.find(
                       (option) => option.value === formData.carerId
                     ) || null
                   }
-                  onChange={(selectedOption) =>
-                    handleSelectChange("carerId", selectedOption)
-                  }
+                  onChange={(selectedOption) => {
+                    handleSelectChange("carerId", selectedOption);
+                    setFormData((prev) =>
+                      updateNestedValue(
+                        "details.name",
+                        selectedOption?.label ?? "",
+                        prev
+                      )
+                    );
+                  }}
                   placeholder="Select a carer/MP..."
                   isSearchable
-                  noOptionsMessage={() => "No carers/MPs found"}
+                  noOptionsMessage={() => "No carers found"}
                   isClearable
+                  required
                 />
               </div>
 
@@ -266,13 +365,15 @@ export function PackageForm() {
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  End Date
+                  End Date {isEndDateRequired && "*"}
                 </label>
                 <Input
                   id="endDate"
                   name="endDate"
                   type="date"
                   value={formData.endDate === "open" ? "" : formData.endDate}
+                  max={earliestEndDate}
+                  required={isEndDateRequired}
                   onChange={(e) => {
                     const value = e.target.value || "open";
                     setFormData((prev) =>
@@ -280,9 +381,23 @@ export function PackageForm() {
                     );
                   }}
                 />
-                <small className="text-gray-500">
-                  Leave empty for ongoing package
-                </small>
+                {!isEndDateRequired && (
+                  <small className="text-gray-500 block">
+                    Leave empty for ongoing package
+                  </small>
+                )}
+                {earliestEndDate && (
+                  <small className="text-gray-500 block">
+                    Must end by {formatDateDmy(earliestEndDate)}
+                    {requestEndDate && requestEndDate !== "open" && carerEndDate && carerEndDate !== "open" ? (
+                      <> (Request: {formatDateDmy(requestEndDate)}, Carer: {formatDateDmy(carerEndDate)})</>
+                    ) : requestEndDate && requestEndDate !== "open" ? (
+                      <> (Request end date)</>
+                    ) : (
+                      <> (Carer end date)</>
+                    )}
+                  </small>
+                )}
               </div>
             </div>
 
@@ -304,10 +419,29 @@ export function PackageForm() {
                   type="number"
                   step="0.5"
                   min="0"
-                  value={formData.details.weeklyHours || ""}
+                  value={formData.details.weeklyHours ?? ""}
                   onChange={handleInputChange}
-                  placeholder="e.g., 10"
+                  placeholder=""
                   required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="oneOffStartDateHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  One-off Hours
+                </label>
+                <Input
+                  id="oneOffStartDateHours"
+                  name="details.oneOffStartDateHours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.details.oneOffStartDateHours ?? ""}
+                  onChange={handleInputChange}
+                  placeholder=""
                 />
               </div>
 
@@ -337,7 +471,10 @@ export function PackageForm() {
                       value: locality,
                     }))}
                     onChange={(selectedOption) =>
-                      handleSelectChange("details.address.locality", selectedOption)
+                      handleSelectChange(
+                        "details.address.locality",
+                        selectedOption
+                      )
                     }
                     placeholder="Select locality..."
                     required
@@ -350,10 +487,9 @@ export function PackageForm() {
                   />
                   <Input
                     name="details.address.postCode"
-                    placeholder="Post Code *"
+                    placeholder="Post Code"
                     value={formData.details.address.postCode || ""}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
               </div>

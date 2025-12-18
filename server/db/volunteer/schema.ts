@@ -7,12 +7,11 @@ import { dbEntrySchema } from "../schema";
 
 export const dbVolunteerEntity = dbEntrySchema
   .extend(
-    volunteerMetadataSchema
-      .omit({
-        id: true,
-        trainingRecords: true,
-      })
-      .shape
+    volunteerMetadataSchema.omit({
+      id: true,
+      trainingRecords: true,
+      packages: true,
+    }).shape
   )
   .extend({
     entityType: z.literal("volunteer"),

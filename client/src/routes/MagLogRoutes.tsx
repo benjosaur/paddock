@@ -2,12 +2,12 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { MagLogForm } from "../pages/MagLogForm";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "id", header: "ID", render: (item) => item.id },
-  { key: "date", header: "Date", render: (item) => item.date },
+export const magLogColumns: TableColumn<MagLog>[] = [
+  { key: "date", header: "Date", render: (item) => formatYmdToDmy(item.date) },
   {
     key: "total",
     header: "Total Attendees",
@@ -19,12 +19,14 @@ const magLogColumns: TableColumn<MagLog>[] = [
       item.details.otherAttendees,
   },
   {
-    key: "attendees",
-    header: "Registered Attendees",
-    render: (item) =>
-      item.clients.map((client) => client.details.name).join(", "),
+    key: "volunteerHours",
+    header: "Volunteer Hours",
+    render: (item: MagLog) => {
+      const duration = item.totalHours ?? 0;
+      const count = item.volunteers?.length ?? 0;
+      return Math.round(duration * count * 100) / 100;
+    },
   },
-
   {
     key: "notes",
     header: "Notes",
@@ -39,14 +41,19 @@ export default function MagLogRoutes() {
 
   const magQuery = useQuery(trpc.mag.getAll.queryOptions());
 
-  const magQueryKey = trpc.mag.getAll.queryKey();
-
   const mag = magQuery.data || [];
+
+  // Sort logs by date (newest first)
+  const sortedMag = mag
+    .slice()
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const deleteMagLogMutation = useMutation(
     trpc.mag.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: magQueryKey });
+        associatedMagLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
@@ -76,11 +83,11 @@ export default function MagLogRoutes() {
             key="mag-logs"
             title="MAG "
             searchPlaceholder="Search MAG logs..."
-            data={mag}
+            data={sortedMag}
             columns={magLogColumns}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onAddNew={handleAddNew}
+            onCreate={handleAddNew}
             resource="mag"
           />
         }
@@ -90,3 +97,9 @@ export default function MagLogRoutes() {
     </Routes>
   );
 }
+
+export const associatedMagLogRoutes: any[] = [
+  // MAG logs
+  trpc.mag.getAll,
+  trpc.mag.getById,
+];

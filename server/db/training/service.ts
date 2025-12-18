@@ -1,10 +1,16 @@
-import { TrainingRecord, trainingRecordSchema } from "shared";
+import {
+  TrainingRecord,
+  trainingRecordSchema,
+  EndTrainingRecordDetails,
+  endTrainingRecordDetailsSchema,
+} from "shared";
 import { TrainingRecordRepository } from "./repository";
 import { DbTrainingRecord } from "./schema";
 import { addDbMiddleware } from "../service";
 
 export class TrainingRecordService {
   trainingRecordRepository = new TrainingRecordRepository();
+
   async getAll(user: User): Promise<TrainingRecord[]> {
     try {
       const trainingRecordsFromDb = await this.trainingRecordRepository.getAll(
@@ -23,10 +29,10 @@ export class TrainingRecordService {
     }
   }
 
-  async getAllNotArchived(user: User): Promise<TrainingRecord[]> {
+  async getAllNotEndedYet(user: User): Promise<TrainingRecord[]> {
     try {
       const trainingRecordsFromDb =
-        await this.trainingRecordRepository.getAllNotArchived(user);
+        await this.trainingRecordRepository.getAllNotEndedYet(user);
       const transformedRecords = this.transformDbTrainingRecordToShared(
         trainingRecordsFromDb
       ) as TrainingRecord[];
@@ -36,7 +42,7 @@ export class TrainingRecordService {
       return parsedResult;
     } catch (error) {
       console.error(
-        "Service Layer Error getting all non-archived training records:",
+        "Service Layer Error getting not ended yet training records:",
         error
       );
       throw error;
@@ -162,6 +168,34 @@ export class TrainingRecordService {
       return deletedCount;
     } catch (error) {
       console.error("Service Layer Error deleting training record:", error);
+      throw error;
+    }
+  }
+
+  async end(user: User, input: EndTrainingRecordDetails): Promise<void> {
+    try {
+      const validated = endTrainingRecordDetailsSchema.parse(input);
+
+      const record = await this.trainingRecordRepository.getById(
+        user,
+        validated.ownerId,
+        validated.recordId
+      );
+      if (!record) throw new Error("Training record not found");
+
+      const currentEnd = (record.endDate ?? "") as string;
+      const isOpen = currentEnd === "open" || currentEnd === "";
+      const shouldUpdate =
+        isOpen || new Date(validated.endDate) < new Date(currentEnd);
+      if (!shouldUpdate) return;
+
+      const updatedRecord: DbTrainingRecord = addDbMiddleware(
+        { ...record, endDate: validated.endDate },
+        user
+      );
+      await this.trainingRecordRepository.update(updatedRecord, user);
+    } catch (error) {
+      console.error("Service Layer Error ending training record:", error);
       throw error;
     }
   }

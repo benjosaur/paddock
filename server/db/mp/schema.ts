@@ -7,12 +7,11 @@ import { dbEntrySchema } from "../schema";
 
 export const dbMpEntity = dbEntrySchema
   .extend(
-    mpMetadataSchema
-      .omit({
-        id: true,
-        trainingRecords: true,
-      })
-      .shape
+    mpMetadataSchema.omit({
+      id: true,
+      trainingRecords: true,
+      packages: true,
+    }).shape
   )
   .extend({
     entityType: z.literal("mp"),

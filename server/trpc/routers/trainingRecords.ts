@@ -1,5 +1,6 @@
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { trainingRecordSchema } from "shared/schemas/index";
+import { endTrainingRecordDetailsSchema } from "shared";
 
 export const trainingRecordsRouter = router({
   getAll: createProtectedProcedure("trainingRecords", "read").query(
@@ -8,9 +9,9 @@ export const trainingRecordsRouter = router({
     }
   ),
 
-  getAllNotArchived: createProtectedProcedure("trainingRecords", "read").query(
+  getAllNotEndedYet: createProtectedProcedure("trainingRecords", "read").query(
     async ({ ctx }) => {
-      return await ctx.services.training.getAllNotArchived(ctx.user);
+      return await ctx.services.training.getAllNotEndedYet(ctx.user);
     }
   ),
 
@@ -53,5 +54,10 @@ export const trainingRecordsRouter = router({
         input.ownerId,
         input.id
       );
+    }),
+  end: createProtectedProcedure("trainingRecords", "update")
+    .input(endTrainingRecordDetailsSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.training.end(ctx.user, input);
     }),
 });

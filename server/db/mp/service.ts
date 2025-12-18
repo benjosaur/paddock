@@ -1,15 +1,25 @@
-import { MpFull, mpFullSchema, MpMetadata, mpMetadataSchema } from "shared";
+import {
+  MpFull,
+  mpFullSchema,
+  MpMetadata,
+  mpMetadataSchema,
+  EndPersonDetails,
+  endPersonDetailsSchema,
+  CoreTrainingRecordCompletion,
+  coreTrainingRecordCompletionSchema,
+} from "shared";
 import { MpRepository } from "./repository";
 import { DbMpFull, DbMpMetadata, DbMpEntity } from "./schema";
 import { PackageService } from "../package/service";
 import { TrainingRecordService } from "../training/service";
-import { DbPackage } from "../package/schema";
+import { DbReqPackage } from "../package/schema";
 import { TrainingRecordRepository } from "../training/repository";
 import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
+import { coreTrainingRecordTypes } from "shared/const";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -19,24 +29,7 @@ export class MpService {
   trainingRecordService = new TrainingRecordService();
   trainingRecordRepository = new TrainingRecordRepository();
 
-  async getAllNotArchived(user: User): Promise<MpMetadata[]> {
-    try {
-      const dbMps = await this.mpRepository.getAllNotArchived(user);
-      const dbTrainingRecords =
-        await this.trainingRecordRepository.getAllNotArchived(user);
-      const dbPackages = await this.packageRepository.getAllNotArchived(user);
-      const transformedResult = this.transformDbMpToSharedMetaData([
-        ...dbMps,
-        ...dbTrainingRecords,
-        ...dbPackages,
-      ]);
-      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
-      return parsedResult;
-    } catch (error) {
-      console.error("Service Layer Error getting all mps:", error);
-      throw error;
-    }
-  }
+  // archived concept removed; use getAll and filter by endDate where needed
 
   async getAll(user: User): Promise<MpMetadata[]> {
     try {
@@ -58,12 +51,32 @@ export class MpService {
     }
   }
 
+  async getAllNotEndedYet(user: User): Promise<MpMetadata[]> {
+    try {
+      const dbMps = await this.mpRepository.getAllNotEndedYet(user);
+      const dbTrainingRecords =
+        await this.trainingRecordRepository.getAllNotEndedYet(user);
+      const dbPackages = await this.packageRepository.getAllNotEndedYet(user);
+      const transformedResult = this.transformDbMpToSharedMetaData([
+        ...dbMps,
+        ...dbTrainingRecords,
+        ...dbPackages,
+      ]);
+
+      const parsedResult = mpMetadataSchema.array().parse(transformedResult);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting all not ended mps:", error);
+      throw error;
+    }
+  }
+
   async getById(mpId: string, user: User): Promise<MpFull> {
     try {
-      const mp = await this.mpRepository.getById(mpId, user);
-      const requestIds = mp
-        .filter((dbResult): dbResult is DbPackage =>
-          dbResult.sK.startsWith("pkg")
+      const mpDbResults = await this.mpRepository.getById(mpId, user);
+      const requestIds = mpDbResults
+        .filter(
+          (dbResult): dbResult is DbReqPackage => dbResult.sK.startsWith("pkg") // mps dont have sole packages
         )
         .map((pkg) => pkg.requestId);
       const requests = await Promise.all(
@@ -72,12 +85,64 @@ export class MpService {
             await this.requestService.getById(requestId, user)
         )
       );
-      const mpMetadata = this.transformDbMpToSharedMetaData(mp);
+      const mpMetadata = this.transformDbMpToSharedMetaData(mpDbResults);
       const fullMp: MpFull[] = [{ ...mpMetadata[0], requests }];
       const parsedResult = mpFullSchema.array().parse(fullMp);
       return parsedResult[0];
     } catch (error) {
       console.error("Service Layer Error getting MP by ID:", error);
+      throw error;
+    }
+  }
+
+  async getCoreTrainingRecordCompletions(
+    withEnded: boolean,
+    user: User
+  ): Promise<CoreTrainingRecordCompletion[]> {
+    try {
+      const mps = withEnded
+        ? await this.getAll(user)
+        : await this.getAllNotEndedYet(user);
+
+      const coreCompletions = mps.map((mp): CoreTrainingRecordCompletion => {
+        const coreTrainingRecords = mp.trainingRecords.filter((tr) => {
+          return coreTrainingRecordTypes.some(
+            (type) => type === tr.details.recordName
+          );
+        });
+        const earliestCompletedRecord =
+          coreTrainingRecords.length > 0
+            ? coreTrainingRecords.reduce((earliest, current) => {
+                return new Date(current.completionDate) <
+                  new Date(earliest.completionDate)
+                  ? current
+                  : earliest;
+              }, coreTrainingRecords[0])
+            : null;
+
+        return {
+          carer: { id: mp.id, name: mp.details.name },
+          coreCompletionRate: Number(
+            (
+              100 *
+              (coreTrainingRecords.length / coreTrainingRecordTypes.length)
+            ).toFixed(2)
+          ),
+          earliestCompletionDate: earliestCompletedRecord?.completionDate ?? "",
+          coreRecords:
+            coreTrainingRecords as CoreTrainingRecordCompletion["coreRecords"],
+        };
+      });
+
+      const parsedResult = coreTrainingRecordCompletionSchema
+        .array()
+        .parse(coreCompletions);
+      return parsedResult;
+    } catch (error) {
+      console.error(
+        "Service Layer Error getting core training record completions:",
+        error
+      );
       throw error;
     }
   }
@@ -124,13 +189,38 @@ export class MpService {
     }
   }
 
-  async updateName(mpId: string, newName: string, user: User): Promise<void> {
+  async updateName(
+    mpMetadata: MpMetadata,
+    newName: string,
+    user: User
+  ): Promise<void> {
     try {
-      const initialMpRecords = await this.mpRepository.getById(mpId, user);
-      const updatedMpRecords = initialMpRecords.map((record) => ({
-        ...record,
-        details: { ...record.details, name: newName },
-      }));
+      const { id, packages, trainingRecords, ...updatedMpMetadata } =
+        mpMetadataSchema.parse(mpMetadata);
+      const updatedMpEntity: DbMpEntity = addDbMiddleware(
+        {
+          ...updatedMpMetadata,
+          pK: id,
+          sK: id,
+          entityType: "mp",
+          details: { ...updatedMpMetadata.details, name: newName },
+        },
+        user
+      );
+      const initialMpRecords = await this.mpRepository.getById(id, user);
+      const updatedMpRecords = initialMpRecords.map((record) => {
+        if (record.sK.startsWith("mp#")) {
+          return updatedMpEntity;
+        } else {
+          return addDbMiddleware(
+            {
+              ...record,
+              details: { ...record.details, name: newName },
+            },
+            user
+          );
+        }
+      });
       await genericUpdate(updatedMpRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Mp Name:", error);
@@ -148,21 +238,7 @@ export class MpService {
     }
   }
 
-  async toggleArchive(mpId: string, user: User): Promise<void> {
-    try {
-      const mpRecords = await this.mpRepository.getById(mpId, user);
-
-      const updatedMpRecords = mpRecords.map((record) => ({
-        ...record,
-        archived: record.archived === "Y" ? "N" : "Y",
-      }));
-
-      await genericUpdate(updatedMpRecords, user);
-    } catch (error) {
-      console.error("Service Layer Error toggling MP archive:", error);
-      throw error;
-    }
-  }
+  // toggleArchive removed – use end()
 
   private transformDbMpToSharedMetaData(
     items: DbMpMetadata[] | DbMpFull[]
@@ -200,7 +276,7 @@ export class MpService {
         continue;
       } else if (item.sK.startsWith("pkg")) {
         if (!mp.packages) mp.packages = [];
-        const { pK, sK, entityType, ...rest } = item as DbPackage;
+        const { pK, sK, entityType, ...rest } = item as DbReqPackage; // mps dont have sole packages
         mp.packages.push({
           id: sK,
           carerId: pK,
@@ -213,5 +289,47 @@ export class MpService {
     }
 
     return Array.from(mpsMap.values()) as MpMetadata[];
+  }
+
+  async end(user: User, input: EndPersonDetails): Promise<void> {
+    try {
+      const validated = endPersonDetailsSchema.parse(input);
+      const records = await this.mpRepository.getById(validated.personId, user);
+      const transformedMp = this.transformDbMpToSharedMetaData(records)[0];
+      if (!transformedMp) throw new Error("MP record not found");
+      const validatedMp = mpMetadataSchema.parse(transformedMp);
+      const { id, trainingRecords, packages, ...rest } = validatedMp;
+      const dbMp: DbMpEntity = addDbMiddleware(
+        {
+          ...rest,
+          pK: id,
+          sK: id,
+          entityType: "mp",
+          endDate: validated.endDate,
+        },
+        user
+      );
+      const mpUpdate = this.mpRepository.update(dbMp, user);
+
+      const trUpdates = (trainingRecords ?? []).map((tr: any) =>
+        this.trainingRecordService.end(user, {
+          ownerId: tr.ownerId,
+          recordId: tr.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      const pkgUpdates = (packages ?? []).map((pkg: any) =>
+        this.packageService.endPackage(user, {
+          packageId: pkg.id,
+          endDate: validated.endDate,
+        })
+      );
+
+      await Promise.all([mpUpdate, ...trUpdates, ...pkgUpdates]);
+    } catch (error) {
+      console.error("Service Layer Error ending MP:", error);
+      throw error;
+    }
   }
 }

@@ -1,18 +1,28 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
+import EndDialog from "../components/EndDialog";
 import { RequestForm } from "../pages/RequestForm";
+import { RenewRequestForm } from "../pages/RenewRequestForm";
 import { RequestDetailModal } from "../components/RequestDetailModal";
 import { trpc } from "../utils/trpc";
-import type { RequestFull, RequestMetadata, TableColumn } from "../types";
+import { formatYmdToDmy } from "@/utils/date";
+import type { RequestFull, TableColumn } from "../types";
+import type { EndRequestDetails } from "shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../components/ui/tabs";
 
-const requestColumns: TableColumn<RequestFull>[] = [
+export const requestColumns: TableColumn<RequestFull>[] = [
   {
-    key: "id",
-    header: "Request ID",
-    render: (item) => item.id,
+    key: "clientCustomId",
+    header: "Client Custom Id",
+    render: (item) => item.details.customId,
   },
   {
     key: "clientName",
@@ -27,12 +37,28 @@ const requestColumns: TableColumn<RequestFull>[] = [
   {
     key: "startDate",
     header: "Start Date",
-    render: (item) => item.startDate,
+    render: (item) => formatYmdToDmy(item.startDate),
   },
   {
     key: "endDate",
     header: "End Date",
-    render: (item) => (item.endDate === "open" ? "Ongoing" : item.endDate),
+    render: (item) =>
+      item.endDate === "open"
+        ? "Ongoing"
+        : formatYmdToDmy(item.endDate as string),
+  },
+  {
+    key: "oneOffStartDateHours",
+    header: "One Off Hours",
+    render: (item) => item.details.oneOffStartDateHours,
+  },
+  {
+    key: "oneOffServicedHours",
+    header: "One Off Serviced",
+    render: (item) =>
+      item.packages
+        .map((pkg) => pkg.details.oneOffStartDateHours)
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "weeklyHours",
@@ -59,48 +85,110 @@ const requestColumns: TableColumn<RequestFull>[] = [
   },
 ];
 
+export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
+  [
+    {
+      key: "clientCustomId",
+      header: "Client Custom Id",
+      render: (item) => item.details.customId,
+    },
+    {
+      key: "clientName",
+      header: "Client Name",
+      render: (item) => item.details.name,
+    },
+    {
+      key: "requestType",
+      header: "Type",
+      render: (item) => item.requestType,
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      render: (item) => formatYmdToDmy(item.startDate),
+    },
+    {
+      key: "endDate",
+      header: "End Date",
+      render: (item) =>
+        item.endDate === "open"
+          ? "Ongoing"
+          : formatYmdToDmy(item.endDate as string),
+    },
+    {
+      key: "oneOffStartDateHours",
+      header: "One Off Hours",
+      render: (item) => item.details.oneOffStartDateHours.toFixed(2),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (item) => item.details.status,
+    },
+  ];
+
 export default function RequestRoutes() {
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<
-    "active" | "completed" | "archived"
-  >("active");
+  const [showEnded, setShowEnded] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endRequestDetails, setEndRequestDetails] =
+    useState<EndRequestDetails | null>(null);
 
   const queryClient = useQueryClient();
 
   const requestsQuery = useQuery(
-    viewState === "active"
-      ? trpc.requests.getAllNotEndedYet.queryOptions()
-      : viewState === "completed"
-      ? trpc.requests.getAllNotArchived.queryOptions()
-      : trpc.requests.getAll.queryOptions()
+    showEnded
+      ? trpc.requests.getAllWithoutInfoWithPackages.queryOptions()
+      : trpc.requests.getAllWithoutInfoNotEndedYetWithPackages.queryOptions()
   );
 
-  const requestsQueryKey =
-    viewState === "active"
-      ? trpc.requests.getAllNotEndedYet.queryKey()
-      : viewState === "completed"
-      ? trpc.requests.getAllNotArchived.queryKey()
-      : trpc.requests.getAll.queryKey();
+  const infoRequestsQuery = useQuery(
+    trpc.requests.getAllInfoMetadata.queryOptions()
+  );
 
   const requests = requestsQuery.data || [];
+  const infoRequests = infoRequestsQuery.data || [];
+  const otherRequests = requests.filter(
+    (r) => !r.details.services?.includes("Information")
+  );
+
+  const sortedOtherRequests = otherRequests.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
+
+  const sortedInfoRequests = infoRequests.slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
 
   const deleteRequestMutation = useMutation(
     trpc.requests.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: requestsQueryKey });
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
 
-  const handleAddNew = () => {
-    navigate("/requests/create");
-  };
+  const endRequestMutation = useMutation(
+    trpc.requests.endRequestAndPackages.mutationOptions({
+      onSuccess: () => {
+        associatedRequestRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+      },
+    })
+  );
 
-  const handleAdd = (requestId: string) => {
+  const handleAddPackage = (requestId: string) => {
     navigate("/packages/create", { state: { requestId } });
   };
 
@@ -109,9 +197,20 @@ export default function RequestRoutes() {
     navigate(`/requests/edit?id=${encodedId}`);
   };
 
-  const handleView = (request: RequestMetadata) => {
-    setSelectedRequestId(request.id);
+  const handleRenew = (id: string) => {
+    const encodedId = encodeURIComponent(id);
+    navigate(`/requests/renew?id=${encodedId}`);
+  };
+
+  const handleView = (id: string) => {
+    setSelectedRequestId(id);
     setIsModalOpen(true);
+  };
+
+  const handleEnd = (item: RequestFull | Omit<RequestFull, "packages">) => {
+    const id = item.id;
+    setEndRequestDetails({ requestId: id, endDate: "" });
+    setIsEndDialogOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -124,19 +223,11 @@ export default function RequestRoutes() {
   };
 
   const handleViewToggle = () => {
-    if (viewState === "active") {
-      setViewState("completed");
-    } else if (viewState === "completed") {
-      setViewState("archived");
-    } else {
-      setViewState("active");
-    }
+    setShowEnded((prev) => !prev);
   };
 
   const getButtonText = () => {
-    if (viewState === "active") return "Show Completed";
-    if (viewState === "completed") return "Show Archived";
-    return "Hide Archived";
+    return showEnded ? "Hide Ended" : "Show Ended";
   };
 
   if (requestsQuery.isLoading) return <div>Loading...</div>;
@@ -148,33 +239,71 @@ export default function RequestRoutes() {
         <Route
           index
           element={
-            <DataTable
-              key={`requests-${viewState}`}
-              title="Requests"
-              searchPlaceholder="Search requests..."
-              data={requests}
-              columns={requestColumns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onAdd={handleAdd}
-              onAddNew={handleAddNew}
-              onViewItem={handleView}
-              resource="requests"
-              customActions={
-                <Button
-                  variant={viewState !== "active" ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleViewToggle}
-                  className="shadow-sm"
-                >
-                  {getButtonText()}
-                </Button>
-              }
-            />
+            <Tabs defaultValue="care" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="care">Care</TabsTrigger>
+                <TabsTrigger value="info">Information</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="care" className="mt-6">
+                <DataTable
+                  key={`requests-care-${showEnded ? "ended" : "active"}`}
+                  title="Requests"
+                  searchPlaceholder="Search requests..."
+                  data={sortedOtherRequests}
+                  columns={requestColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onAddPackage={handleAddPackage}
+                  onRenew={handleRenew}
+                  onEnd={handleEnd}
+                  onViewItem={handleView}
+                  resource="requests"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+
+              <TabsContent value="info" className="mt-6">
+                <DataTable
+                  key={`requests-info-${showEnded ? "ended" : "active"}`}
+                  title="Requests"
+                  searchPlaceholder="Search requests..."
+                  data={sortedInfoRequests}
+                  columns={infoRequestColumns}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onAddPackage={handleAddPackage}
+                  onRenew={handleRenew}
+                  onEnd={handleEnd}
+                  onViewItem={handleView}
+                  resource="requests"
+                  customActions={
+                    <Button
+                      variant={showEnded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleViewToggle}
+                      className="shadow-sm"
+                    >
+                      {getButtonText()}
+                    </Button>
+                  }
+                />
+              </TabsContent>
+            </Tabs>
           }
         />
         <Route path="create" element={<RequestForm />} />
         <Route path="edit" element={<RequestForm />} />
+        <Route path="renew" element={<RenewRequestForm />} />
       </Routes>
       {selectedRequestId && (
         <RequestDetailModal
@@ -185,6 +314,81 @@ export default function RequestRoutes() {
           onDelete={handleDelete}
         />
       )}
+      <EndDialog
+        isOpen={isEndDialogOpen}
+        onOpenChange={(open) => {
+          setIsEndDialogOpen(open);
+          if (!open) setEndRequestDetails(null);
+        }}
+        entityLabel="Request"
+        endDate={endRequestDetails?.endDate}
+        onEndDateChange={(date) =>
+          setEndRequestDetails((prev) =>
+            prev ? { ...prev, endDate: date } : prev
+          )
+        }
+        onConfirm={() => {
+          if (!endRequestDetails?.requestId || !endRequestDetails.endDate)
+            return;
+          endRequestMutation.mutate(endRequestDetails);
+          setIsEndDialogOpen(false);
+          setEndRequestDetails(null);
+        }}
+        confirmDisabled={
+          !endRequestDetails?.endDate ||
+          !endRequestDetails?.requestId ||
+          endRequestMutation.isPending
+        }
+        endDescription="Select an end date. This will also end all associated ongoing packages."
+        undoDescription=""
+      />
     </>
   );
 }
+
+export const associatedRequestRoutes: any[] = [
+  // Analytics
+  trpc.analytics.getActivePackagesCrossSection,
+  trpc.analytics.getActiveRequestsCrossSection,
+  trpc.analytics.getRequestsReport,
+  trpc.analytics.getPackagesReport,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
+  trpc.requests.getById,
+
+  // Clients
+  trpc.clients.getAll,
+  trpc.clients.getAllNotEndedYet,
+  trpc.clients.getById,
+
+  // MPs
+  trpc.mps.getAll,
+  trpc.mps.getAllNotEndedYet,
+  trpc.mps.getById,
+
+  // Volunteers
+  trpc.volunteers.getAll,
+  trpc.volunteers.getAllNotEndedYet,
+  trpc.volunteers.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotEndedYet,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];

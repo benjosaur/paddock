@@ -3,9 +3,9 @@ import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
+import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, VolunteerMetadata, TableColumn } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { calculateTimeToDate } from "@/utils/helpers";
 import {
   Tabs,
   TabsContent,
@@ -20,62 +20,62 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
     render: (item) => item.details.name,
   },
   {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
+    key: "publicLiabilityNumber",
+    header: "Public Liability Number",
+    render: (item) =>
+      item.details.publicLiabilityNumber || "No Public Liability",
   },
   {
     key: "publicLiabilityExpiry",
-    header: "Public Liability Expires",
+    header: "Public Liability Expiry",
     render: (item) =>
       item.publicLiabilityExpiry
-        ? calculateTimeToDate(item.publicLiabilityExpiry)
+        ? formatYmdToDmy(item.publicLiabilityExpiry)
         : "No Public Liability",
   },
 ];
 
-const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] = [
-  {
-    key: "name",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "carerId",
-    header: "Carer ID",
-    render: (item) => item.id,
-  },
-  {
-    key: "publicLiabilityExpiry",
-    header: "Public Liability Expires",
-    render: (item) =>
-      item.publicLiabilityExpiry
-        ? calculateTimeToDate(item.publicLiabilityExpiry)
-        : "No Public Liability",
-  },
-];
+const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] =
+  mpPublicLiabilityColumns;
 
 export default function PublicLiabilityRoutes() {
   const [showArchived, setShowArchived] = useState(false);
 
   const mpsQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotArchived.queryOptions()
+      : trpc.mps.getAllNotEndedYet.queryOptions()
   );
   const volunteersQuery = useQuery(
-    showArchived 
+    showArchived
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotArchived.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
 
+  const compareByPublicLiabilityExpiry = <
+    T extends { publicLiabilityExpiry?: string }
+  >(
+    a: T,
+    b: T
+  ) => {
+    const aExp = a.publicLiabilityExpiry || "";
+    const bExp = b.publicLiabilityExpiry || "";
+    if (aExp === bExp) return 0;
+    if (aExp === "") return -1;
+    if (bExp === "") return 1;
+    return aExp.localeCompare(bExp);
+  };
+
+  const sortedMps = [...mps].sort(compareByPublicLiabilityExpiry);
+  const sortedVolunteers = [...volunteers].sort(compareByPublicLiabilityExpiry);
+
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
   if (mpsQuery.error || volunteersQuery.error)
-    return <div>Error loading Public Liability records</div>;
+    return <div>Error loading Insurance records</div>;
 
   return (
     <Routes>
@@ -86,7 +86,7 @@ export default function PublicLiabilityRoutes() {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-3">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  Public Liability Records
+                  Insurance Records
                 </h1>
                 <span className="text-sm select-none text-gray-500 bg-gray-100/60 px-3 py-1 rounded-full border border-gray-200/50">
                   Total: {mps.length + volunteers.length}
@@ -103,7 +103,7 @@ export default function PublicLiabilityRoutes() {
                 </Button>
               </div>
             </div>
-            
+
             <Tabs defaultValue="mps" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="mps">MPs</TabsTrigger>
@@ -115,7 +115,7 @@ export default function PublicLiabilityRoutes() {
                   key={`mps-public-liability-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={mps}
+                  data={sortedMps}
                   columns={mpPublicLiabilityColumns}
                   resource="mps"
                 />
@@ -126,7 +126,7 @@ export default function PublicLiabilityRoutes() {
                   key={`volunteers-public-liability-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={volunteers}
+                  data={sortedVolunteers}
                   columns={volunteerPublicLiabilityColumns}
                   resource="volunteers"
                 />

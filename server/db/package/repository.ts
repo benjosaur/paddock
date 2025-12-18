@@ -1,62 +1,17 @@
-import { DbPackage, dbPackage } from "./schema";
+import { DbPackage, dbPackage, DbSolePackage } from "./schema";
 import { client, getTableName, dropNullFields } from "../repository";
 import { DeleteCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { firstYear } from "shared/const";
 
 export class PackageRepository {
-  async getAllNotArchived(user: User): Promise<DbPackage[]> {
-    const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-
-    const commands: QueryCommand[] = [];
-
-    for (let year = firstYear; year <= currentYear; year++) {
-      const packageEndedInYear = new QueryCommand({
-        TableName: getTableName(user),
-        IndexName: "GSI1",
-        KeyConditionExpression: `entityType = :pk AND archived = :sk`,
-        ExpressionAttributeValues: {
-          ":pk": `package#${year}`,
-          ":sk": "N",
-        },
-      });
-      commands.push(packageEndedInYear);
-    }
-
-    const openPackageCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI1",
-      KeyConditionExpression: "entityType = :pk AND archived = :sk",
-      ExpressionAttributeValues: {
-        ":pk": `package#open`,
-        ":sk": "N",
-      },
-    });
-
-    commands.push(openPackageCommand);
-
-    try {
-      const results = await Promise.all(
-        commands.map((command) => client.send(command))
-      );
-
-      const allItems = results.flatMap((result) => result.Items);
-      const parsedResult = dbPackage.array().parse(allItems);
-      return parsedResult;
-    } catch (error) {
-      console.error("Error getting client requests:", error);
-      throw error;
-    }
-  }
-
   async getAllNotEndedYet(user: User): Promise<DbPackage[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
     const currentYear = parseInt(currentDate.slice(0, 4));
 
     const openPackageCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": `package#open`,
@@ -65,8 +20,8 @@ export class PackageRepository {
 
     const endsAfterTodayPackageCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
-      KeyConditionExpression: `entityType = :pk AND endDate >= :sK`,
+      IndexName: "GSI2",
+      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
       ExpressionAttributeValues: {
         ":pk": `package#${currentYear}`,
         ":sK": currentDate,
@@ -102,7 +57,7 @@ export class PackageRepository {
 
     const openPackageCommand = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI3",
+      IndexName: "GSI2",
       KeyConditionExpression: "entityType = :pk",
       ExpressionAttributeValues: {
         ":pk": `package#open`,
@@ -114,7 +69,7 @@ export class PackageRepository {
     for (let year = startYear; year <= currentYear; year++) {
       const packageEndedInYear = new QueryCommand({
         TableName: getTableName(user),
-        IndexName: "GSI3",
+        IndexName: "GSI2",
         KeyConditionExpression: `entityType = :pk`,
         ExpressionAttributeValues: {
           ":pk": `package#${year}`,
@@ -140,7 +95,7 @@ export class PackageRepository {
   async getById(packageId: string, user: User): Promise<DbPackage[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
-      IndexName: "GSI5",
+      IndexName: "GSI4",
       KeyConditionExpression: "sK = :sk",
       ExpressionAttributeValues: {
         ":sk": packageId,
@@ -158,7 +113,7 @@ export class PackageRepository {
   }
 
   async create(
-    newPackages: Omit<DbPackage, "sK">[],
+    newPackages: Omit<DbPackage | DbSolePackage, "sK">[],
     user: User
   ): Promise<string> {
     const uuid = uuidv4();
@@ -185,7 +140,10 @@ export class PackageRepository {
       throw error;
     }
   }
-  async update(updatedPackages: DbPackage[], user: User): Promise<void> {
+  async update(
+    updatedPackages: (DbPackage | DbSolePackage)[],
+    user: User
+  ): Promise<void> {
     const validatedLogs = dbPackage.array().parse(updatedPackages);
     try {
       await Promise.all(

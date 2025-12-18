@@ -5,16 +5,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "./ui/dialog";
+import { DeleteAlert } from "./DeleteAlert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { trpc } from "../utils/trpc";
-import type { ClientFull, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
-import { NotesEditor } from "./NotesEditor";
+import { Note, NotesEditor } from "./NotesEditor";
+import { PermissionGate } from "./PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { magLogColumns } from "@/routes/MagLogRoutes";
+import { requestColumns } from "@/routes/RequestRoutes";
+import { packageColumns } from "@/routes/PackageRoutes";
+import { formatYmdToDmy } from "@/utils/date";
 
 interface ClientDetailModalProps {
   clientId: string;
@@ -36,7 +40,15 @@ export function ClientDetailModal({
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const client = clientQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<{ date: string; note: string }[]>([]);
+  const [currentNotes, setCurrentNotes] = useState<
+    {
+      date: string;
+      note: string;
+      source: "Phone" | "Email" | "In Person";
+      minutesTaken: number;
+    }[]
+  >([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Update local notes when client data changes
   useEffect(() => {
@@ -48,103 +60,49 @@ export function ClientDetailModal({
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.clients.getById.queryKey({ id: clientId }) 
+        queryClient.invalidateQueries({
+          queryKey: trpc.clients.getById.queryKey({ id: clientId }),
         });
-        queryClient.invalidateQueries({ 
-          queryKey: trpc.clients.getAll.queryKey() 
+        queryClient.invalidateQueries({
+          queryKey: trpc.clients.getAll.queryKey(),
         });
       },
     })
   );
 
-  const handleNotesSubmit = () => {
+  const handleNotesSubmit = (notes: Note[]) => {
     if (client) {
       updateClientMutation.mutate({
         ...client,
         details: {
           ...client.details,
-          notes: currentNotes,
+          notes: notes,
         },
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.clients.getById.queryKey({ id: clientId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.clients.getAll.queryKey(),
       });
     }
   };
 
-  const magLogModalColumns: TableColumn<ClientFull["magLogs"][number]>[] = [
-    {
-      key: "date",
-      header: "Date",
-      render: (item: ClientFull["magLogs"][number]) => item.date,
-    },
-    {
-      key: "total",
-      header: "Total Attendees",
-      render: (item: ClientFull["magLogs"][number]) =>
-        item.details.totalVolunteers +
-        item.details.totalClients +
-        item.details.totalFamily +
-        item.details.totalMps +
-        item.details.otherAttendees,
-    },
-    {
-      key: "notes",
-      header: "Notes",
-      render: (item: ClientFull["magLogs"][number]) => item.details.notes,
-    },
-  ];
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
 
-  const requestModalColumns: TableColumn<ClientFull["requests"][number]>[] = [
-    {
-      key: "requestType",
-      header: "Type",
-      render: (item: ClientFull["requests"][number]) => item.requestType,
-    },
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item: ClientFull["requests"][number]) => item.startDate,
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (item: ClientFull["requests"][number]) => item.details.status,
-    },
-  ];
+  const handleDeleteConfirm = () => {
+    if (onDelete && client) {
+      onDelete(client.id);
+    }
+    setDeleteDialogOpen(false);
+    onClose(); // Close the main modal after deletion
+  };
 
-  const packageModalColumns: TableColumn<
-    ClientFull["requests"][number]["packages"][number]
-  >[] = [
-    {
-      key: "id",
-      header: "Package ID",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.id,
-    },
-    {
-      key: "name",
-      header: "Package Name",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.details.name,
-    },
-    {
-      key: "carerId",
-      header: "Carer ID",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.carerId,
-    },
-    {
-      key: "startDate",
-      header: "Start Date",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.startDate,
-    },
-    {
-      key: "endDate",
-      header: "End Date",
-      render: (item: ClientFull["requests"][number]["packages"][number]) =>
-        item.endDate === "open" ? "Ongoing" : item.endDate,
-    },
-  ];
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
 
   const renderDetailItem = (
     label: string,
@@ -176,10 +134,6 @@ export function ClientDetailModal({
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Client Details: {client.details.name}
           </DialogTitle>
-          <DialogDescription>
-            View and manage detailed information for this client including
-            contact info, services & needs, activity logs, and requests.
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
@@ -196,10 +150,22 @@ export function ClientDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Contact Information
+                General Info
               </h3>
               {renderDetailItem("ID", client.id)}
-              {renderDetailItem("Date of Birth", client.dateOfBirth)}
+              {renderDetailItem(
+                "Date of Birth",
+                client.dateOfBirth ? formatYmdToDmy(client.dateOfBirth) : ""
+              )}
+              {renderDetailItem(
+                "End Date",
+                client.endDate !== "open" ? formatYmdToDmy(client.endDate) : ""
+              )}
+              {client.endDate !== "open" &&
+                renderDetailItem(
+                  "End Reason",
+                  client.details.endReason || undefined
+                )}
               {renderDetailItem(
                 "Street Address",
                 client.details.address.streetAddress
@@ -207,6 +173,43 @@ export function ClientDetailModal({
               {renderDetailItem("Locality", client.details.address.locality)}
               {renderDetailItem("County", client.details.address.county)}
               {renderDetailItem("Post Code", client.details.address.postCode)}
+              {client.details.address.deprivation && (
+                <div className="mb-2">
+                  <span className="font-semibold text-gray-700">
+                    Deprivation Indicators:{" "}
+                  </span>
+                  <div className="ml-4 mt-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Income:</span>
+                      <span
+                        className={`text-sm px-2 py-1 rounded ${
+                          client.details.address.deprivation.income
+                            ? "bg-red-100 text-orange-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {client.details.address.deprivation.income
+                          ? "High"
+                          : "Low"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Health:</span>
+                      <span
+                        className={`text-sm px-2 py-1 rounded ${
+                          client.details.address.deprivation.health
+                            ? "bg-red-100 text-orange-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {client.details.address.deprivation.health
+                          ? "High"
+                          : "Low"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               {renderDetailItem("Phone", client.details.phone)}
               {renderDetailItem("Email", client.details.email)}
               {renderDetailItem("Next of Kin", client.details.nextOfKin)}
@@ -223,6 +226,8 @@ export function ClientDetailModal({
               {renderDetailItem(
                 "Client Agreement Date",
                 client.details.clientAgreementDate
+                  ? formatYmdToDmy(client.details.clientAgreementDate)
+                  : ""
               )}
               {renderDetailItem(
                 "Client Agreement Comments",
@@ -231,6 +236,8 @@ export function ClientDetailModal({
               {renderDetailItem(
                 "Risk Assessment Date",
                 client.details.riskAssessmentDate
+                  ? formatYmdToDmy(client.details.riskAssessmentDate)
+                  : ""
               )}
               {renderDetailItem(
                 "Risk Assessment Comments",
@@ -238,10 +245,37 @@ export function ClientDetailModal({
               )}
               {renderDetailItem("Services Provided", client.details.services)}
               {renderDetailItem("Requests", client.requests.length)}
-              {renderDetailItem(
-                "Attendance Allowance?",
-                client.details.attendanceAllowance
-              )}
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-700 mb-2">
+                  Attendance Allowance
+                </h4>
+                <div className="ml-4 space-y-1">
+                  {renderDetailItem(
+                    "Requested Level",
+                    client.details.attendanceAllowance.requestedLevel
+                  )}
+                  {renderDetailItem(
+                    "Requested Date",
+                    client.details.attendanceAllowance.requestedDate
+                      ? formatYmdToDmy(
+                          client.details.attendanceAllowance.requestedDate
+                        )
+                      : ""
+                  )}
+                  {renderDetailItem(
+                    "Status",
+                    client.details.attendanceAllowance.status
+                  )}
+                  {renderDetailItem(
+                    "Confirmation Date",
+                    client.details.attendanceAllowance.confirmationDate
+                      ? formatYmdToDmy(
+                          client.details.attendanceAllowance.confirmationDate
+                        )
+                      : ""
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent
@@ -255,7 +289,7 @@ export function ClientDetailModal({
                 {client.requests.flatMap((req) => req.packages).length > 0 ? (
                   <DataTable
                     data={client.requests.flatMap((req) => req.packages)}
-                    columns={packageModalColumns}
+                    columns={packageColumns}
                     title=""
                     searchPlaceholder="Search packages..."
                     resource="packages"
@@ -273,7 +307,7 @@ export function ClientDetailModal({
                 {client.magLogs.length > 0 ? (
                   <DataTable
                     data={client.magLogs}
-                    columns={magLogModalColumns}
+                    columns={magLogColumns}
                     title=""
                     searchPlaceholder="Search MAG logs..."
                     resource="mag"
@@ -296,7 +330,7 @@ export function ClientDetailModal({
               {client.requests.length > 0 ? (
                 <DataTable
                   data={client.requests}
-                  columns={requestModalColumns}
+                  columns={requestColumns}
                   title=""
                   searchPlaceholder="Search requests..."
                   resource="requests"
@@ -312,18 +346,10 @@ export function ClientDetailModal({
               value="notes"
               className="p-4 border rounded-lg bg-white/80 space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-                <Button
-                  onClick={handleNotesSubmit}
-                  disabled={updateClientMutation.isPending}
-                  size="sm"
-                  className="ml-auto"
-                >
-                  {updateClientMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
               <NotesEditor
+                onSubmit={handleNotesSubmit}
+                isPending={updateClientMutation.isPending}
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
@@ -332,22 +358,35 @@ export function ClientDetailModal({
         </div>
         <DialogFooter className="mt-4">
           <div className="flex gap-2">
-            {onEdit && (
-              <Button variant="default" onClick={() => onEdit(client.id)}>
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button variant="destructive" onClick={() => onDelete(client.id)}>
-                Delete
-              </Button>
-            )}
+            <PermissionGate resource="clients" action="update">
+              {onEdit && (
+                <Button variant="default" onClick={() => onEdit(client.id)}>
+                  Edit
+                </Button>
+              )}
+            </PermissionGate>
+            <PermissionGate resource="clients" action="delete">
+              {onDelete && (
+                <Button variant="destructive" onClick={handleDeleteClick}>
+                  Delete
+                </Button>
+              )}
+            </PermissionGate>
           </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
+
+      <DeleteAlert
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        itemName={client?.details.name}
+        itemType="client"
+      />
     </Dialog>
   );
 }

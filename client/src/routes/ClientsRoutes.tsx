@@ -3,17 +3,23 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
+import { InfoForm } from "../pages/InfoForm";
 import { ClientDetailModal } from "../components/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { calculateAgeBracket, capitalise } from "@/utils/helpers";
+import { capitalise } from "@/utils/helpers";
+import { formatYmdToDmy } from "@/utils/date";
+import EndDialog from "../components/EndDialog";
+import type { EndPersonDetails } from "shared";
+import { endReasons } from "shared/const";
+import { Select } from "../components/ui/select";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
   {
-    key: "id",
-    header: "ID",
-    render: (item: ClientMetadata) => item.id,
+    key: "customId",
+    header: "Custom ID",
+    render: (item: ClientMetadata) => item.details.customId || "",
   },
   {
     key: "name",
@@ -22,28 +28,42 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
   },
   {
     key: "dob",
-    header: "Age",
-    render: (item: ClientMetadata) =>
-      item.dateOfBirth
-        ? calculateAgeBracket(item.dateOfBirth) + " years"
-        : "Unknown",
+    header: "Date of Birth",
+    render: (item: ClientMetadata) => formatYmdToDmy(item.dateOfBirth || ""),
   },
-
+  {
+    key: "startDate",
+    header: "Agreement Date",
+    render: (item: ClientMetadata) =>
+      formatYmdToDmy(item.details.clientAgreementDate || ""),
+  },
   {
     key: "postCode",
     header: "Post Code",
     render: (item: ClientMetadata) => item.details.address.postCode,
   },
   {
-    key: "services",
-    header: "Services",
-    render: (item: ClientMetadata) => item.details.services.join(", "),
+    key: "attendanceAllowance",
+    header: "AA Status",
+    render: (item: ClientMetadata) =>
+      capitalise(item.details.attendanceAllowance.status),
   },
   {
-    key: "attendanceAllowance",
-    header: "Has AA?",
-    render: (item: ClientMetadata) =>
-      capitalise(item.details.attendanceAllowance),
+    key: "deprivationFlags",
+    header: "Deprivation Flags",
+    render: (item: ClientMetadata) => {
+      if (
+        item.details.address.deprivation.income &&
+        item.details.address.deprivation.health
+      ) {
+        return "Both";
+      } else if (item.details.address.deprivation.income) {
+        return "Income";
+      } else if (item.details.address.deprivation.health) {
+        return "Health";
+      }
+      return "None";
+    },
   },
 ];
 
@@ -51,21 +71,31 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showEnded, setShowEnded] = useState(false);
+  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+  const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(
-    showArchived
+    showEnded
       ? trpc.clients.getAll.queryOptions()
-      : trpc.clients.getAllNotArchived.queryOptions()
+      : trpc.clients.getAllNotEndedYet.queryOptions()
   );
-  const clientsQueryKey = showArchived
-    ? trpc.clients.getAll.queryKey()
-    : trpc.clients.getAllNotArchived.queryKey();
 
-  const archiveClientMutation = useMutation(
-    trpc.clients.toggleArchive.mutationOptions({
+  const updateClientMutation = useMutation(
+    trpc.clients.update.mutationOptions({
+      onSuccess: () => {
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+        navigate("/clients");
+      },
+    })
+  );
+
+  const endClientMutation = useMutation(
+    trpc.clients.end.mutationOptions({
       onSuccess: () => {
         associatedClientRoutes.forEach((route) => {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
@@ -77,17 +107,15 @@ export default function ClientsRoutes() {
   const deleteClientMutation = useMutation(
     trpc.clients.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+        associatedClientRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
       },
     })
   );
 
   const handleAddNew = () => {
     navigate("/clients/create");
-  };
-
-  const handleArchiveToggle = (id: string) => {
-    archiveClientMutation.mutate({ id });
   };
 
   const handleEdit = (id: string) => {
@@ -99,8 +127,8 @@ export default function ClientsRoutes() {
     deleteClientMutation.mutate({ id });
   };
 
-  const handleViewClient = (client: ClientMetadata) => {
-    setSelectedClientId(client.id);
+  const handleViewClient = (id: string) => {
+    setSelectedClientId(id);
     setIsClientModalOpen(true);
   };
 
@@ -109,8 +137,64 @@ export default function ClientsRoutes() {
     setSelectedClientId(null);
   };
 
+  const handleAddRequest = (clientId: string) => {
+    const encodedId = encodeURIComponent(clientId);
+    navigate(`/requests/create?clientId=${encodedId}`);
+  };
+
+  const handleAddInfo = (clientId: string) => {
+    const encodedId = encodeURIComponent(clientId);
+    navigate(`/clients/info?clientId=${encodedId}`);
+  };
+
+  const handleEnd = (client: ClientMetadata) => {
+    if (client.endDate === "open") {
+      // if now open then need to prepare for ending
+      setEndDetails({
+        personId: client.id,
+        endDate: "",
+        endReason: "Deceased",
+      });
+      setIsEndDialogOpen(true);
+    } else {
+      // if now not open then endDetails set BACK TO "open" TO prepare for end UNDO
+      setEndDetails({
+        personId: client.id,
+        endDate: "open",
+        endReason: "None",
+      });
+      setIsEndDialogOpen(true);
+    }
+  };
+
+  const handleConfirmEnd = () => {
+    if (!endDetails?.personId || !endDetails.endDate) return;
+    if (endDetails.endDate === "open") {
+      const selectedClient = clientsQuery.data?.find(
+        (c) => c.id === endDetails.personId
+      );
+      if (!selectedClient) return;
+      const client = { ...selectedClient, endDate: null };
+      updateClientMutation.mutate({
+        ...client,
+        endDate: "open",
+      });
+    } else {
+      endClientMutation.mutate(endDetails);
+    }
+    setIsEndDialogOpen(false);
+    setEndDetails(null);
+  };
+
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
+
+  // Ensure rows are shown in alphabetical order by client name
+  const sortedClients = (clientsQuery.data || []).slice().sort((a, b) =>
+    a.details.name.localeCompare(b.details.name, undefined, {
+      sensitivity: "base",
+    })
+  );
 
   return (
     <Routes>
@@ -119,25 +203,27 @@ export default function ClientsRoutes() {
         element={
           <>
             <DataTable
-              key={`clients-${showArchived}`}
+              key={`clients-${showEnded}`}
               title="Clients"
               searchPlaceholder="Search clients..."
-              data={clientsQuery.data || []}
+              data={sortedClients}
               columns={clientColumns}
-              onArchive={handleArchiveToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onViewItem={handleViewClient as (item: unknown) => void}
-              onAddNew={handleAddNew}
+              onAddRequest={handleAddRequest}
+              onAddInfo={handleAddInfo}
+              onEnd={handleEnd}
+              onViewItem={handleViewClient}
+              onCreate={handleAddNew}
               resource="clients"
               customActions={
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant={showEnded ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
+                  onClick={() => setShowEnded(!showEnded)}
                   className="shadow-sm"
                 >
-                  {showArchived ? "Hide Archived" : "Show Archived"}
+                  {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
             />
@@ -150,21 +236,73 @@ export default function ClientsRoutes() {
                 onDelete={handleDelete}
               />
             )}
+            <EndDialog
+              isOpen={isEndDialogOpen}
+              onOpenChange={(open) => {
+                setIsEndDialogOpen(open);
+                if (!open) {
+                  setEndDetails(null);
+                }
+              }}
+              entityLabel="Client"
+              endDate={endDetails?.endDate}
+              onEndDateChange={(date) =>
+                setEndDetails((prev) =>
+                  prev ? { ...prev, endDate: date } : prev
+                )
+              }
+              onConfirm={handleConfirmEnd}
+              confirmDisabled={
+                (endDetails?.endDate !== "open" && !endDetails?.endDate) ||
+                !endDetails?.personId ||
+                endClientMutation.isPending
+              }
+              endDescription="Select an end date. This will also archive the client."
+              undoDescription="This will undo ending the client. Associated requests will not be affected."
+              extraContent={
+                endDetails?.endDate !== "open" ? (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-700">End Reason</label>
+                    <Select
+                      options={endReasons
+                        .filter((r) => r !== "None")
+                        .map((r) => ({ label: r, value: r }))}
+                      value={
+                        endDetails?.endReason
+                          ? {
+                              label: endDetails.endReason,
+                              value: endDetails.endReason,
+                            }
+                          : null
+                      }
+                      onChange={(opt) =>
+                        setEndDetails((prev) =>
+                          prev ? { ...prev, endReason: opt!.value } : prev
+                        )
+                      }
+                      placeholder="Select a reason..."
+                      required
+                    />
+                  </div>
+                ) : null
+              }
+            />
           </>
         }
       />
       <Route path="create" element={<ClientForm />} />
       <Route path="edit/:id" element={<ClientForm />} />
+      <Route path="info" element={<InfoForm />} />
     </Routes>
   );
 }
 
-const associatedClientRoutes = [
+export const associatedClientRoutes: any[] = [
   // Dashboard Analytics
 
   // Clients
   trpc.clients.getAll,
-  trpc.clients.getAllNotArchived,
+  trpc.clients.getAllNotEndedYet,
   trpc.clients.getById,
 
   // MAG
@@ -173,20 +311,21 @@ const associatedClientRoutes = [
 
   // Packages
   trpc.packages.getAll,
-  trpc.packages.getAllNotArchived,
-  trpc.packages.getAllNotEndedYet,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
   trpc.packages.getById,
 
   // Requests
-  trpc.requests.getAll,
-  trpc.requests.getAllNotArchived,
-  trpc.requests.getAllNotEndedYet,
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
   trpc.requests.getById,
-  trpc.requests.getAllMetadata,
 
   // Training records
   trpc.trainingRecords.getAll,
-  trpc.trainingRecords.getAllNotArchived,
+  trpc.trainingRecords.getAllNotEndedYet,
   trpc.trainingRecords.getById,
   trpc.trainingRecords.getByExpiringBefore,
 ];
