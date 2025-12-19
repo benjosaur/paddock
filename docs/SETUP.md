@@ -1,0 +1,4 @@
+- Add the .env file in /server
+- Setup NoSQL workbench
+- Set up local dynamodb
+- TODO make this clear
