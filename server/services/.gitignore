@@ -1,0 +1,8 @@
+# Need to ignore deprivationn CSV because it is 300 MB...
+# Download from:
+# https://deprivation.communities.gov.uk/download-all
+# download deprivation data for all postcodes in England.
+
+Indices_of_Deprivation-2025-data_download-file-postcode_join.csv
+
+# we may need https://git-lfs.com
