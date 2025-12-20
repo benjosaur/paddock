@@ -11,8 +11,9 @@
 - [ ] trustee = board member of charity -> love arcane data like pi chart of things like who joined what month, could make a chart / graph builder
 - [ ] add dark mode
 - [ ] pdfs-> ocr, ai agent workflows
-- [ ] reuzed — Yesterday at 21:51
-- [ ] 676 hours weeekly requested
-- [ ] 75 clients acticve requests
+
 - [ ] geospatial visualisation
 - [ ] separate map into hexes, see care hotspots
+
+676 hours weeekly requested
+75 clients active requests
