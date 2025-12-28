@@ -21,7 +21,11 @@ export const attendanceAllowanceStatuses = [
   "Pending",
   "Low",
   "High",
-] as const;
+] as const; // "Unsent" does not count as 'requested' for metrics
+export const hasRequestedStatuses: (typeof attendanceAllowanceStatuses)[number][] =
+  ["Pending", "Low", "High"] as const;
+export const isReceivingStatuses: (typeof attendanceAllowanceStatuses)[number][] =
+  ["Low", "High"] as const;
 export const booleanTypes = ["Y", "N"] as const;
 export const notesSource = ["Phone", "Email", "In Person"] as const;
 export const serviceOptions = [

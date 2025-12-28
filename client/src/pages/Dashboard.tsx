@@ -469,34 +469,47 @@ export function Dashboard() {
                             <h4 className="text-xl font-semibold mb-4 text-blue-600">
                               {year.year} Summary
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                              <div className="bg-gray-50 p-4 rounded">
+                                <h5 className="text-lg font-medium mb-3 text-gray-700">
+                                  Requests
+                                </h5>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>Total Requested</span>
+                                    <span className="font-semibold">
+                                      {year.totalRequested}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                    <span>Requested High</span>
+                                    <span className="font-semibold text-amber-600">
+                                      {year.totalRequestedHigh}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                               <div className="bg-gray-50 p-4 rounded">
                                 <h5 className="text-lg font-medium mb-3 text-gray-700">
                                   Confirmations
                                 </h5>
                                 <div className="space-y-2 text-sm">
                                   <div className="flex justify-between bg-white px-2 py-1 rounded">
-                                    <span>Total Confirmed</span>
-                                    <span className="font-semibold">
-                                      {year.total}
+                                    <span>Total Receiving</span>
+                                    <span className="font-semibold text-green-600">
+                                      {year.totalReceiving}
                                     </span>
                                   </div>
                                   <div className="flex justify-between bg-white px-2 py-1 rounded">
-                                    <span>High Level</span>
-                                    <span className="font-semibold">
-                                      {year.totalHigh}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between bg-white px-2 py-1 rounded">
-                                    <span>Requested High</span>
-                                    <span className="font-semibold">
-                                      {year.totalRequestedHigh}
+                                    <span>Receiving High</span>
+                                    <span className="font-semibold text-green-700">
+                                      {year.totalReceivingHigh}
                                     </span>
                                   </div>
                                   <div className="flex justify-between bg-white px-2 py-1 rounded">
                                     <span>High & Requested High</span>
-                                    <span className="font-semibold">
-                                      {year.totalHighRequestedHigh}
+                                    <span className="font-semibold text-blue-600">
+                                      {year.totalReceivingHighRequestedHigh}
                                     </span>
                                   </div>
                                 </div>
@@ -551,27 +564,35 @@ export function Dashboard() {
                                       </div>
                                       <div className="space-y-1 text-sm">
                                         <div className="flex justify-between bg-white px-2 py-1 rounded">
-                                          <span>Total Confirmed</span>
+                                          <span>Total Requested</span>
                                           <span className="font-medium">
-                                            {month.total}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
-                                          <span>High Level</span>
-                                          <span className="font-medium">
-                                            {month.totalHigh}
+                                            {month.totalRequested}
                                           </span>
                                         </div>
                                         <div className="flex justify-between bg-white px-2 py-1 rounded">
                                           <span>Requested High</span>
-                                          <span className="font-medium">
+                                          <span className="font-medium text-amber-600">
                                             {month.totalRequestedHigh}
                                           </span>
                                         </div>
                                         <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>Total Receiving</span>
+                                          <span className="font-medium text-green-600">
+                                            {month.totalReceiving}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
+                                          <span>Receiving High</span>
+                                          <span className="font-medium text-green-700">
+                                            {month.totalReceivingHigh}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between bg-white px-2 py-1 rounded">
                                           <span>High & Requested High</span>
-                                          <span className="font-medium">
-                                            {month.totalHighRequestedHigh}
+                                          <span className="font-medium text-blue-600">
+                                            {
+                                              month.totalReceivingHighRequestedHigh
+                                            }
                                           </span>
                                         </div>
                                       </div>
@@ -913,34 +934,47 @@ export function Dashboard() {
           <div className="space-y-6">
             <div className="space-y-3">
               <h3 className="text-lg font-medium text-gray-700">
-                Overall In Receipt
+                Overall Status
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <AnimatedCounter
-                  targetValue={attendanceAllowanceData.overallInReceipt.total}
-                  label="Total Clients"
+                  targetValue={
+                    attendanceAllowanceData.overallInReceipt.totalRequested
+                  }
+                  label="Total Requested"
+                />
+                <AnimatedCounter
+                  targetValue={
+                    attendanceAllowanceData.overallInReceipt.totalReceiving
+                  }
+                  label="Total Receiving"
+                />
+                <AnimatedCounter
+                  targetValue={
+                    attendanceAllowanceData.overallInReceipt.totalPending
+                  }
+                  label="Total Pending"
+                />
+                <AnimatedCounter
+                  targetValue={
+                    attendanceAllowanceData.overallInReceipt.totalReceivingHigh
+                  }
+                  label="Receiving High"
                 />
                 <AnimatedCounter
                   targetValue={calculatePercentage(
-                    attendanceAllowanceData.overallInReceipt.totalHigh,
-                    attendanceAllowanceData.overallInReceipt.total
+                    attendanceAllowanceData.overallInReceipt.totalReceivingHigh,
+                    attendanceAllowanceData.overallInReceipt.totalReceiving
                   )}
-                  label="% High"
-                />
-                <AnimatedCounter
-                  targetValue={calculatePercentage(
-                    attendanceAllowanceData.overallInReceipt.totalRequestedHigh,
-                    attendanceAllowanceData.overallInReceipt.total
-                  )}
-                  label="% Requested High"
+                  label="% Receiving High"
                 />
                 <AnimatedCounter
                   targetValue={calculatePercentage(
                     attendanceAllowanceData.overallInReceipt
-                      .totalHighRequestedHigh,
-                    attendanceAllowanceData.overallInReceipt.total
+                      .totalReceivingHighRequestedHigh,
+                    attendanceAllowanceData.overallInReceipt.totalReceiving
                   )}
-                  label="% High & Requested High"
+                  label="% High who Requested High"
                 />
               </div>
             </div>
@@ -949,33 +983,25 @@ export function Dashboard() {
               <h3 className="text-lg font-medium text-gray-700">
                 Confirmed This Month
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <AnimatedCounter
-                  targetValue={attendanceAllowanceData.thisMonthConfirmed.total}
-                  label="Total Clients"
+                  targetValue={
+                    attendanceAllowanceData.thisMonthConfirmed.totalRequested
+                  }
+                  label="New Requested"
                 />
                 <AnimatedCounter
-                  targetValue={calculatePercentage(
-                    attendanceAllowanceData.thisMonthConfirmed.totalHigh,
-                    attendanceAllowanceData.thisMonthConfirmed.total
-                  )}
-                  label="% High"
+                  targetValue={
+                    attendanceAllowanceData.thisMonthConfirmed.totalReceiving
+                  }
+                  label="New Receiving"
                 />
                 <AnimatedCounter
-                  targetValue={calculatePercentage(
+                  targetValue={
                     attendanceAllowanceData.thisMonthConfirmed
-                      .totalRequestedHigh,
-                    attendanceAllowanceData.thisMonthConfirmed.total
-                  )}
-                  label="% Requested High"
-                />
-                <AnimatedCounter
-                  targetValue={calculatePercentage(
-                    attendanceAllowanceData.thisMonthConfirmed
-                      .totalHighRequestedHigh,
-                    attendanceAllowanceData.thisMonthConfirmed.total
-                  )}
-                  label="% High & Requested High"
+                      .totalReceivingHigh
+                  }
+                  label="New Receiving High"
                 />
               </div>
             </div>

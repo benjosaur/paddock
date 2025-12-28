@@ -44,8 +44,10 @@ export function MagLogForm() {
   const clientsQuery = useQuery(
     trpc.clients.getAllWithMagService.queryOptions()
   );
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const volunteersQuery = useQuery(trpc.volunteers.getAll.queryOptions());
+  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
+  );
 
   const magLogQuery = useQuery({
     ...trpc.mag.getById.queryOptions({ id }),

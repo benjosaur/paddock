@@ -258,16 +258,20 @@ export const volunteerFullSchema = volunteerMetadataSchema
 export const attendanceAllowanceCrossSectionSchema = z.object({
   // need to infer not in receipt of AA if termination date given.
   overallInReceipt: z.object({
-    total: z.coerce.number().default(0),
-    totalHigh: z.coerce.number().min(0).default(0),
-    totalHighRequestedHigh: z.coerce.number().min(0).default(0),
+    totalRequested: z.coerce.number().default(0),
     totalRequestedHigh: z.coerce.number().min(0).default(0),
+    totalReceiving: z.coerce.number().default(0),
+    totalReceivingHigh: z.coerce.number().min(0).default(0),
+    totalReceivingHighRequestedHigh: z.coerce.number().min(0).default(0),
+    totalUnsent: z.coerce.number().min(0).default(0), // only needed in cross section
+    totalPending: z.coerce.number().min(0).default(0), // only needed in cross section
   }),
   thisMonthConfirmed: z.object({
-    total: z.coerce.number().default(0),
-    totalHigh: z.coerce.number().min(0).default(0),
-    totalHighRequestedHigh: z.coerce.number().min(0).default(0),
+    totalRequested: z.coerce.number().default(0),
     totalRequestedHigh: z.coerce.number().min(0).default(0),
+    totalReceiving: z.coerce.number().default(0),
+    totalReceivingHigh: z.coerce.number().min(0).default(0),
+    totalReceivingHighRequestedHigh: z.coerce.number().min(0).default(0),
   }),
 });
 
