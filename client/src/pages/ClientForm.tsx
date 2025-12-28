@@ -14,6 +14,8 @@ import {
   attendanceAllowanceStatuses,
   serviceOptions,
   localities,
+  hasRequestedStatuses,
+  isReceivingStatuses,
 } from "shared/const";
 import { FieldEditModal } from "../components/FieldEditModal";
 import toast from "react-hot-toast";
@@ -343,6 +345,13 @@ export function ClientForm() {
       value: service,
       label: service,
     }));
+
+  const isAAReqDateRequired = hasRequestedStatuses.includes(
+    formData.details.attendanceAllowance.requestedLevel
+  );
+  const isAAConfDateRequired = isReceivingStatuses.includes(
+    formData.details.attendanceAllowance.status
+  );
 
   if (isEditing && clientQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && clientQuery.error) return <div>Error loading client</div>;
@@ -793,7 +802,7 @@ export function ClientForm() {
                     htmlFor="attendanceAllowanceRequestedDate"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Requested Date
+                    Requested Date{isAAReqDateRequired && "*"}
                   </label>
                   <Input
                     id="attendanceAllowanceRequestedDate"
@@ -803,6 +812,7 @@ export function ClientForm() {
                       formData.details.attendanceAllowance.requestedDate || ""
                     }
                     onChange={handleInputChange}
+                    required={isAAReqDateRequired}
                     disabled={
                       formData.details.attendanceAllowance.requestedLevel ===
                       "None"
@@ -819,7 +829,7 @@ export function ClientForm() {
                   }
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    Receipt Status
                   </label>
                   <Select
                     options={attendanceAllowanceStatusOptions}
@@ -858,7 +868,7 @@ export function ClientForm() {
                     htmlFor="attendanceAllowanceConfirmationDate"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Confirmation Date
+                    Confirmation Date{isAAConfDateRequired && "*"}
                   </label>
                   <Input
                     id="attendanceAllowanceConfirmationDate"
@@ -869,6 +879,7 @@ export function ClientForm() {
                       ""
                     }
                     onChange={handleInputChange}
+                    required={isAAConfDateRequired}
                     disabled={
                       formData.details.attendanceAllowance.requestedLevel ===
                         "None" ||

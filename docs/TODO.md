@@ -9,6 +9,11 @@
 
 ## Reu
 
+- [ ] Deprivation 2025 microservice
+- [ ] Deprivation 2015 -> 2025 Migration Script
+
+//////////////
+
 - [ ] CODE REVIEW (OPINIONATED)
 - [ ] json <-> form
 - [ ] images (client agreement form/AA/call notes//transcription) -> update database (i.e. prefill relevant frontend page(s) with info)
@@ -16,21 +21,19 @@
 
 ## Disscussed in setup discord call 18 Dec:
 
-- [ ] sfix analytics bug 108 %
-- [ ] sdeprivation index
-- [ ] sben work on blue badge
-- [ ] sben hub and grub infra
-- [ ] swrite docs
-- [ ] swrite how to use system docs
-- [ ] strustee = board member of charity -> love arcane data like pi chart of things like who joined what month, could make a chart / graph builder
-- [ ] sadd dark mode
-- [ ] spdfs-> ocr, ai agent workflows
-      s
-- [ ] sgeospatial visualisation
-- [ ] sseparate map into hexes, see care hotspots
-      s
-      676 hosurs weeekly requested
-      75 clisents active requests
+- [ ] fix analytics bug 108 %
+- [ ] deprivation index
+- [ ] ben work on blue badge
+- [ ] ben hub and grub infra
+- [ ] write docs
+- [ ] write how to use system docs
+- [ ] trustee = board member of charity -> love arcane data like pi chart of things like who joined what month, could make a chart / graph builder
+- [ ] add dark mode
+- [ ] pdfs-> ocr, ai agent workflows
+- [ ] geospatial visualisation
+- [ ] separate map into hexes, see care hotspots
+      676 hours weeekly requested
+      75 clients active requests
 
 ## Dec 22 Call
 
