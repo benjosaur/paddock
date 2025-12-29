@@ -16,6 +16,8 @@ import { validateOrToast } from "@/utils/validation";
 import { associatedPackageRoutes } from "@/routes/PackageRoutes";
 import { updateNestedValue } from "@/utils/helpers";
 
+// Will need to fix this to handle End Date Guarding (Maybe just disable this for any ended packages)
+
 export function CoverPackageForm() {
   const navigate = useNavigate();
   const packageId = useParams<{ id: string }>().id || "";

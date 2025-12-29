@@ -18,6 +18,8 @@ import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
 import { validateOrToast } from "@/utils/validation";
+import { formatYmdToDmy, getEarliestEndDate } from "@/utils/date";
+import { isIdMp, isIdVolunteer } from "shared/utils";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -52,8 +54,6 @@ export function PackageForm() {
     },
   });
 
-  // no local error state; rely on max attribute for validation
-
   const queryClient = useQueryClient();
 
   const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
@@ -66,54 +66,45 @@ export function PackageForm() {
     enabled: isEditing,
   });
 
+  // When editing package the original carer (&request) may have an end date which the package needs to adhere to. The selection of other carers, however, only presents from those not ended.
+  const originalCarerId = packageQuery.data?.carerId;
+  const originalCarerName = packageQuery.data?.details.name;
+
   // below only fetches after above query returns (or given by state if adding from requests screen)
   const requestQuery = useQuery({
     ...trpc.requests.getById.queryOptions({ id: formData.requestId }),
     enabled: Boolean(formData.requestId),
   });
 
+  const originalMpQuery = useQuery({
+    ...trpc.mps.getById.queryOptions({ id: originalCarerId! }), // assertion that not undef as a result of enabled condition
+    enabled: Boolean(originalCarerId && isIdMp(originalCarerId)),
+  });
+
+  const originalVolunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id: originalCarerId! }), // assertion that not undef as a result of enabled condition
+    enabled: Boolean(originalCarerId && isIdVolunteer(originalCarerId)),
+  });
+
   const requestEndDate = requestQuery.data?.endDate;
 
-  // Fetch carer data to get their end date
-  const mpQuery = useQuery({
-    ...trpc.mps.getById.queryOptions({ id: formData.carerId }),
-    enabled: Boolean(formData.carerId) && (mpsQuery.data || []).some(mp => mp.id === formData.carerId),
-  });
+  const originalCarerEndDate =
+    originalMpQuery.data?.endDate || originalVolunteerQuery.data?.endDate;
 
-  const volunteerQuery = useQuery({
-    ...trpc.volunteers.getById.queryOptions({ id: formData.carerId }),
-    enabled: Boolean(formData.carerId) && (volunteersQuery.data || []).some(v => v.id === formData.carerId),
-  });
+  const isCarerEndDate = Boolean(
+    originalCarerEndDate && originalCarerEndDate !== "open"
+  );
+  const isRequestEndDate = Boolean(requestEndDate && requestEndDate !== "open");
+  const isEndDateRequired =
+    (formData.carerId == originalCarerId && isCarerEndDate) || isRequestEndDate;
 
-  const carerEndDate = mpQuery.data?.endDate || volunteerQuery.data?.endDate;
-
-  // Calculate the earliest end date between request and carer
-  const getEarliestEndDate = () => {
-    const dates: string[] = [];
-
-    if (requestEndDate && requestEndDate !== "open") {
-      dates.push(requestEndDate);
-    }
-
-    if (carerEndDate && carerEndDate !== "open") {
-      dates.push(carerEndDate);
-    }
-
-    if (dates.length === 0) return undefined;
-
-    // Return the earliest date
-    return dates.sort()[0];
-  };
-
-  const earliestEndDate = getEarliestEndDate();
-  const isEndDateRequired = Boolean(earliestEndDate);
-
-  const formatDateDmy = (date?: string | null) => {
-    if (!date) return "";
-    if (date === "open") return "open";
-    const [y, m, d] = date.split("-");
-    return y && m && d ? `${d} ${m} ${y}` : date;
-  };
+  let earliestEndDate;
+  if (isEndDateRequired) {
+    earliestEndDate = getEarliestEndDate([
+      originalCarerEndDate!,
+      requestEndDate!,
+    ]); // boolean asserts guarantee string values
+  }
 
   const createPackageMutation = useMutation(
     trpc.packages.create.mutationOptions({
@@ -180,9 +171,9 @@ export function PackageForm() {
       label: v.details.name,
     }));
 
-  const currentOption = {
-    value: formData.carerId,
-    label: formData.details.name,
+  const originalCarerOption = {
+    value: originalCarerId as string,
+    label: originalCarerName as string,
   };
 
   let carerOptions;
@@ -190,10 +181,10 @@ export function PackageForm() {
   carerOptions = [...mpOptions, ...volunteerOptions];
 
   if (
-    formData.carerId &&
-    !carerOptions.some((option) => option.value == formData.carerId)
+    originalCarerId &&
+    !carerOptions.some((carer) => carer.value == originalCarerId)
   ) {
-    carerOptions = [...carerOptions, currentOption];
+    carerOptions = [...carerOptions, originalCarerOption];
   }
 
   const serviceSelectOptions = serviceOptions.map((service) => ({
@@ -256,7 +247,13 @@ export function PackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error) return <div>Error loading package</div>;
-  if (mpsQuery.isLoading || volunteersQuery.isLoading || requestQuery.isLoading || mpQuery.isLoading || volunteerQuery.isLoading)
+  if (
+    mpsQuery.isLoading ||
+    volunteersQuery.isLoading ||
+    requestQuery.isLoading ||
+    originalMpQuery.isLoading ||
+    originalVolunteerQuery.isLoading
+  )
     return <div>Loading...</div>;
   if (mpsQuery.error || volunteersQuery.error)
     return <div>Error loading carers</div>;
@@ -268,7 +265,6 @@ export function PackageForm() {
           {isEditing ? "Edit Package" : "Create New Package"}
         </h1>
       </div>
-
       <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -289,7 +285,7 @@ export function PackageForm() {
                   name="requestId"
                   value={`${
                     requestQuery.data?.details.customId || ""
-                  } - ${formatDateDmy(requestQuery.data?.startDate)}`}
+                  } - ${formatYmdToDmy(requestQuery.data?.startDate)}`}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -372,7 +368,7 @@ export function PackageForm() {
                   name="endDate"
                   type="date"
                   value={formData.endDate === "open" ? "" : formData.endDate}
-                  max={earliestEndDate}
+                  max={earliestEndDate == "open" ? undefined : earliestEndDate}
                   required={isEndDateRequired}
                   onChange={(e) => {
                     const value = e.target.value || "open";
@@ -381,21 +377,23 @@ export function PackageForm() {
                     );
                   }}
                 />
-                {!isEndDateRequired && (
+                {isEndDateRequired ? (
+                  <small className="text-gray-500 block">
+                    Must end by {formatYmdToDmy(earliestEndDate)}
+                    {isCarerEndDate && (
+                      <div>
+                        (Carer Ends: {formatYmdToDmy(originalCarerEndDate)})
+                      </div>
+                    )}
+                    {isRequestEndDate && (
+                      <div className="text-gray-500 block">
+                        (Request Ends: {formatYmdToDmy(requestEndDate)})
+                      </div>
+                    )}
+                  </small>
+                ) : (
                   <small className="text-gray-500 block">
                     Leave empty for ongoing package
-                  </small>
-                )}
-                {earliestEndDate && (
-                  <small className="text-gray-500 block">
-                    Must end by {formatDateDmy(earliestEndDate)}
-                    {requestEndDate && requestEndDate !== "open" && carerEndDate && carerEndDate !== "open" ? (
-                      <> (Request: {formatDateDmy(requestEndDate)}, Carer: {formatDateDmy(carerEndDate)})</>
-                    ) : requestEndDate && requestEndDate !== "open" ? (
-                      <> (Request end date)</>
-                    ) : (
-                      <> (Carer end date)</>
-                    )}
                   </small>
                 )}
               </div>

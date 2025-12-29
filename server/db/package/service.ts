@@ -221,8 +221,8 @@ export class PackageService {
       const validatedOldPackage = packageSchema.parse(oldPackage);
       const validatedNewPackage = z
         .union([
-          solePackageSchema.omit({ id: true }),
           reqPackageSchema.omit({ id: true }),
+          solePackageSchema.omit({ id: true }),
         ])
         .parse(newPackage);
 

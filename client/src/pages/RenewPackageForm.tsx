@@ -8,9 +8,9 @@ import { trpc } from "../utils/trpc";
 import type {
   Package,
   MpMetadata,
-  RequestMetadata,
   ReqPackage,
   SolePackage,
+  VolunteerMetadata,
 } from "../types";
 import { packageSchema, reqPackageSchema, solePackageSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
@@ -18,7 +18,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
-import { cn } from "@/lib/utils";
+import { formatYmdToDmy, getEarliestEndDate } from "@/utils/date";
+import { isIdMp, isIdVolunteer } from "shared/utils";
 
 export function RenewPackageForm() {
   const navigate = useNavigate();
@@ -53,15 +54,97 @@ export function RenewPackageForm() {
 
   const queryClient = useQueryClient();
 
-  const mpsQuery = useQuery(trpc.mps.getAll.queryOptions());
-  const requestsQuery = useQuery(
-    trpc.requests.getAllMetadataWithoutInfo.queryOptions()
+  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
 
   const packageQuery = useQuery({
     ...trpc.packages.getById.queryOptions({ id }),
     enabled: Boolean(id),
   });
+
+  // request should be immutable between old and new package anyway
+  const requestQuery = useQuery({
+    ...trpc.requests.getById.queryOptions({
+      id: "requestId" in newPackageData ? newPackageData.requestId : "",
+    }),
+    enabled: "requestId" in newPackageData && Boolean(newPackageData.requestId),
+  });
+
+  // When editing package the original carer (&request) may have an end date which the package needs to adhere to. The selection of other carers, however, only presents from those not ended.
+  const originalCarerId = packageQuery.data?.carerId;
+  const originalCarerName = packageQuery.data?.details.name;
+
+  const originalMpQuery = useQuery({
+    ...trpc.mps.getById.queryOptions({ id: originalCarerId! }), // assertion that not undef as a result of enabled condition
+    enabled: Boolean(originalCarerId && isIdMp(originalCarerId)),
+  });
+
+  const originalVolunteerQuery = useQuery({
+    ...trpc.volunteers.getById.queryOptions({ id: originalCarerId! }), // assertion that not undef as a result of enabled condition
+    enabled: Boolean(originalCarerId && isIdVolunteer(originalCarerId)),
+  });
+
+  const mpOptions = (mpsQuery.data || [])
+    .filter((mp: MpMetadata) => mp.id && mp.details?.name)
+    .map((mp: MpMetadata) => ({
+      value: mp.id,
+      label: mp.details.name,
+    }));
+
+  const volunteerOptions = (volunteersQuery.data || [])
+    .filter((v: VolunteerMetadata) => v.id && v.details?.name)
+    .map((v: VolunteerMetadata) => ({
+      value: v.id,
+      label: v.details.name,
+    }));
+
+  const originalCarerOption = {
+    value: originalCarerId as string,
+    label: originalCarerName as string,
+  };
+
+  let carerOptions;
+  carerOptions = [...mpOptions, ...volunteerOptions];
+  if (
+    originalCarerId &&
+    !carerOptions.some((carer) => carer.value == originalCarerId) // will exist if original carer not ended
+  ) {
+    carerOptions = [...carerOptions, originalCarerOption];
+  }
+
+  const requestEndDate = requestQuery.data?.endDate;
+  const isRequestEndDate = Boolean(requestEndDate && requestEndDate !== "open");
+
+  const originalCarerEndDate =
+    originalMpQuery.data?.endDate || originalVolunteerQuery.data?.endDate;
+  const isCarerEndDate = Boolean(
+    originalCarerEndDate && originalCarerEndDate !== "open"
+  );
+
+  const isEndDateRequiredForOldPackage =
+    (oldPackageData?.carerId == originalCarerId && isCarerEndDate) ||
+    isRequestEndDate;
+
+  let earliestEndDateForOldPackage: string;
+  if (isEndDateRequiredForOldPackage) {
+    earliestEndDateForOldPackage = getEarliestEndDate([
+      originalCarerEndDate!,
+      requestEndDate!,
+    ]); // boolean asserts guarantee string values
+  }
+
+  const isEndDateRequiredForNewPackage =
+    (newPackageData.carerId == originalCarerId && isCarerEndDate) ||
+    isRequestEndDate;
+  let earliestEndDateForNewPackage: string;
+  if (isEndDateRequiredForNewPackage) {
+    earliestEndDateForNewPackage = getEarliestEndDate([
+      originalCarerEndDate!,
+      requestEndDate!,
+    ]); // boolean asserts guarantee string values
+  }
 
   const renewPackageMutation = useMutation(
     trpc.packages.renew.mutationOptions({
@@ -73,25 +156,6 @@ export function RenewPackageForm() {
       },
     })
   );
-
-  const mpOptions = (mpsQuery.data || [])
-    .filter((mp: MpMetadata) => mp.id && mp.details?.name)
-    .map((mp: MpMetadata) => ({
-      value: mp.id,
-      label: mp.details.name,
-    }));
-
-  const requestOptions = (requestsQuery.data || [])
-    .filter((request: RequestMetadata) => request.id && request.details?.name)
-    .map((request: RequestMetadata) => ({
-      value: request.id,
-      label: `${request.details.name} - ${request.requestType}`,
-    }));
-
-  const serviceSelectOptions = serviceOptions.map((service) => ({
-    value: service,
-    label: service,
-  }));
 
   useEffect(() => {
     if (packageQuery.data) {
@@ -243,11 +307,22 @@ export function RenewPackageForm() {
     navigate("/packages");
   };
 
-  if (packageQuery.isLoading || mpsQuery.isLoading || requestsQuery.isLoading) {
+  if (
+    packageQuery.isLoading ||
+    mpsQuery.isLoading ||
+    requestQuery.isLoading ||
+    originalMpQuery.isLoading ||
+    originalVolunteerQuery.isLoading
+  ) {
     return <div>Loading...</div>;
   }
   if (packageQuery.error) return <div>Error loading package</div>;
   if (!oldPackageData) return <div>Package not found</div>;
+
+  const serviceSelectOptions = serviceOptions.map((service) => ({
+    value: service,
+    label: service,
+  }));
 
   const renderFormSection = (
     title: string,
@@ -263,51 +338,24 @@ export function RenewPackageForm() {
               Package Information
             </h3>
 
-            <div>
-              <label
-                htmlFor={`name-${isOld ? "old" : "new"}`}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Client Name
-              </label>
-              <Input
-                id={`name-${isOld ? "old" : "new"}`}
-                name="details.name"
-                value={formData.details.name || ""}
-                placeholder="Auto-generated from selected request"
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
-
             {"requestId" in formData && (
-              <>
-                <div>
-                  <label
-                    htmlFor={`requestId-${isOld ? "old" : "new"}`}
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Request *
-                  </label>
-                </div>
-
-                <Select
-                  options={requestOptions}
-                  value={
-                    requestOptions.find(
-                      (option) => option.value === formData.requestId
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    handleSelectChange("requestId", selectedOption, isOld)
-                  }
-                  placeholder="Select a request..."
-                  isSearchable
-                  noOptionsMessage={() => "No requests found"}
-                  isClearable
-                  isDisabled={true}
+              <div>
+                <label
+                  htmlFor="requestId"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Request
+                </label>
+                <Input
+                  id="requestId"
+                  name="requestId"
+                  value={`${
+                    requestQuery.data?.details.customId || ""
+                  } - ${formatYmdToDmy(requestQuery.data?.startDate)}`}
+                  readOnly
+                  className="bg-gray-50"
                 />
-              </>
+              </div>
             )}
           </div>
 
@@ -319,10 +367,11 @@ export function RenewPackageForm() {
               Carer *
             </label>
             <Select
-              options={mpOptions}
+              options={carerOptions}
               value={
-                mpOptions.find((option) => option.value === formData.carerId) ||
-                null
+                carerOptions.find(
+                  (option) => option.value === formData.carerId
+                ) || null
               }
               onChange={(selectedOption) =>
                 handleSelectChange("carerId", selectedOption, isOld)
@@ -358,13 +407,30 @@ export function RenewPackageForm() {
               htmlFor={`endDate-${isOld ? "old" : "new"}`}
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              End Date
+              End Date{" "}
+              {isOld
+                ? isEndDateRequiredForOldPackage && "*"
+                : isEndDateRequiredForNewPackage && "*"}
             </label>
             <Input
               id={`endDate-${isOld ? "old" : "new"}`}
               name="endDate"
               type="date"
               value={formData.endDate === "open" ? "" : formData.endDate}
+              max={
+                isOld
+                  ? earliestEndDateForOldPackage == "open"
+                    ? undefined
+                    : earliestEndDateForOldPackage
+                  : earliestEndDateForNewPackage == "open"
+                  ? undefined
+                  : earliestEndDateForNewPackage
+              }
+              required={
+                isOld
+                  ? isEndDateRequiredForOldPackage
+                  : isEndDateRequiredForNewPackage
+              }
               onChange={(e) => {
                 const value = e.target.value || "open";
                 if (isOld && oldPackageData) {
@@ -378,11 +444,39 @@ export function RenewPackageForm() {
                 }
               }}
             />
-            {
-              <small className={cn("text-gray-500", isOld && "invisible")}>
+            {(isOld && isEndDateRequiredForOldPackage) ||
+            (!isOld && isEndDateRequiredForNewPackage) ? (
+              <small className="text-gray-500 block">
+                Must end by{" "}
+                {formatYmdToDmy(
+                  isOld
+                    ? earliestEndDateForOldPackage
+                    : earliestEndDateForNewPackage
+                )}
+                {(isOld &&
+                  isEndDateRequiredForOldPackage &&
+                  originalCarerId == oldPackageData.carerId) ||
+                  (!isOld &&
+                    isEndDateRequiredForNewPackage &&
+                    originalCarerId == newPackageData.carerId &&
+                    isCarerEndDate && (
+                      <div>
+                        (Carer Ends: {formatYmdToDmy(originalCarerEndDate)})
+                      </div>
+                    ))}
+                {((isOld && isEndDateRequiredForOldPackage) ||
+                  (!isOld && isEndDateRequiredForNewPackage)) &&
+                  isRequestEndDate && (
+                    <div className="text-gray-500 block">
+                      (Request Ends: {formatYmdToDmy(requestEndDate)})
+                    </div>
+                  )}
+              </small>
+            ) : (
+              <small className="text-gray-500 block">
                 Leave empty for ongoing package
               </small>
-            }
+            )}
           </div>
         </div>
 
