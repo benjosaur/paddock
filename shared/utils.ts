@@ -19,3 +19,17 @@ export const isIdTrainingRecord = (id: string): boolean => {
 export const isIdMagLog = (id: string): boolean => {
   return id.startsWith("mag#");
 };
+
+export const getEarliestDate = (
+  dates: (string | undefined)[]
+): string | undefined => {
+  // dates can be yyyy-mm-dd or open
+
+  return dates.sort().at(0); // asc by default and numbers come before letters by default
+};
+
+export const getLatestDate = (dates: string[]): string | undefined => {
+  // dates can be yyyy-mm-dd or open
+
+  return dates.sort().at(-1); // asc by default and numbers come before letters by default
+};

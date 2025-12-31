@@ -59,21 +59,21 @@ export const coreTrainingRecordCompletionSchema = z.object({
     name: z.string(),
   }),
   coreCompletionRate: z.coerce.number().min(0).default(0),
-  earliestCompletionDate: z
+  earliestCoreCompletionDate: z
     .union([z.string().date(), z.literal("")])
     .default(""),
-  coreRecords: z.array(
-    // all this does is narrow recordName field type -- everything else identical
-    trainingRecordSchema.omit({ details: true }).extend({
-      details: z.object({
-        ...trainingRecordSchema.shape.details
-          .omit({ recordName: true })
-          .extend({
-            recordName: z.enum(coreTrainingRecordTypes),
-          }).shape,
-      }),
-    })
-  ),
+  // coreRecords: z.array(
+  //   // all this does is narrow recordName field type -- everything else identical
+  //   trainingRecordSchema.omit({ details: true }).extend({
+  //     details: z.object({
+  //       ...trainingRecordSchema.shape.details
+  //         .omit({ recordName: true })
+  //         .extend({
+  //           recordName: z.enum(coreTrainingRecordTypes),
+  //         }).shape,
+  //     }),
+  //   })
+  // ),
 });
 
 export type AnalyticsDetails = z.infer<typeof analyticsDetailsSchema>;

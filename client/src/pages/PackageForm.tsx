@@ -18,8 +18,8 @@ import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
 import { validateOrToast } from "@/utils/validation";
-import { formatYmdToDmy, getEarliestEndDate } from "@/utils/date";
-import { isIdMp, isIdVolunteer } from "shared/utils";
+import { formatYmdToDmy } from "@/utils/date";
+import { isIdMp, isIdVolunteer, getEarliestDate } from "shared/utils";
 
 export function PackageForm() {
   const navigate = useNavigate();
@@ -100,10 +100,7 @@ export function PackageForm() {
 
   let earliestEndDate;
   if (isEndDateRequired) {
-    earliestEndDate = getEarliestEndDate([
-      originalCarerEndDate!,
-      requestEndDate!,
-    ]); // boolean asserts guarantee string values
+    earliestEndDate = getEarliestDate([originalCarerEndDate!, requestEndDate!]); // boolean asserts guarantee string values
   }
 
   const createPackageMutation = useMutation(

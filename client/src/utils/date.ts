@@ -5,12 +5,11 @@ export function formatYmdToDmy(value?: string | null): string {
   return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
 }
 
-export const getEarliestEndDate = (dates: string[]) => {
-  // dates can be yyyy-mm-dd or open
-
-  if (dates.length === 0)
-    throw new Error("Can't find earliest date for date array of length 0");
-
-  // Return the earliest date
-  return dates.sort()[0]; // asc by default and numbers come before letters by default
+export const compareDates = (a: string, b: string): number => {
+  const aExp = a || "";
+  const bExp = b || "";
+  if (aExp === bExp) return 0;
+  if (aExp === "") return -1;
+  if (bExp === "") return 1;
+  return aExp.localeCompare(bExp);
 };

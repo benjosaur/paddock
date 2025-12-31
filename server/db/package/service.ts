@@ -323,7 +323,10 @@ export class PackageService {
     }
   }
 
-  async endPackage(user: User, endDetails: EndPackageDetails): Promise<void> {
+  async endPackageIfNotAlready(
+    user: User,
+    endDetails: EndPackageDetails
+  ): Promise<void> {
     try {
       const packageRecords = await this.packageRepository.getById(
         endDetails.packageId,

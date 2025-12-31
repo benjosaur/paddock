@@ -18,8 +18,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
-import { formatYmdToDmy, getEarliestEndDate } from "@/utils/date";
-import { isIdMp, isIdVolunteer } from "shared/utils";
+import { formatYmdToDmy } from "@/utils/date";
+import { isIdMp, isIdVolunteer, getEarliestDate } from "shared/utils";
 
 export function RenewPackageForm() {
   const navigate = useNavigate();
@@ -127,20 +127,20 @@ export function RenewPackageForm() {
     (oldPackageData?.carerId == originalCarerId && isCarerEndDate) ||
     isRequestEndDate;
 
-  let earliestEndDateForOldPackage: string;
+  let earliestEndDateForOldPackage: string | undefined;
   if (isEndDateRequiredForOldPackage) {
-    earliestEndDateForOldPackage = getEarliestEndDate([
-      originalCarerEndDate!,
-      requestEndDate!,
+    earliestEndDateForOldPackage = getEarliestDate([
+      originalCarerEndDate,
+      requestEndDate,
     ]); // boolean asserts guarantee string values
   }
 
   const isEndDateRequiredForNewPackage =
     (newPackageData.carerId == originalCarerId && isCarerEndDate) ||
     isRequestEndDate;
-  let earliestEndDateForNewPackage: string;
+  let earliestEndDateForNewPackage: string | undefined;
   if (isEndDateRequiredForNewPackage) {
-    earliestEndDateForNewPackage = getEarliestEndDate([
+    earliestEndDateForNewPackage = getEarliestDate([
       originalCarerEndDate!,
       requestEndDate!,
     ]); // boolean asserts guarantee string values

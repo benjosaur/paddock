@@ -20,6 +20,7 @@ import { RequestService } from "../requests/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { coreTrainingRecordTypes } from "shared/const";
+import { getEarliestDate, getLatestDate } from "shared/utils";
 
 export class MpService {
   mpRepository = new MpRepository();
@@ -105,32 +106,46 @@ export class MpService {
         : await this.getAllNotEndedYet(user);
 
       const coreCompletions = mps.map((mp): CoreTrainingRecordCompletion => {
-        const coreTrainingRecords = mp.trainingRecords.filter((tr) => {
-          return coreTrainingRecordTypes.some(
-            (type) => type === tr.details.recordName
+        const mpCoreCompletionDates = coreTrainingRecordTypes.reduce(
+          (acc, recordName) => {
+            acc[recordName] = [];
+            return acc;
+          },
+          {} as Record<(typeof coreTrainingRecordTypes)[number], string[]>
+        );
+
+        for (const record of mp.trainingRecords) {
+          const isCoreRecord = coreTrainingRecordTypes.some(
+            (name) => name == record.details.recordName
           );
-        });
-        const earliestCompletedRecord =
-          coreTrainingRecords.length > 0
-            ? coreTrainingRecords.reduce((earliest, current) => {
-                return new Date(current.completionDate) <
-                  new Date(earliest.completionDate)
-                  ? current
-                  : earliest;
-              }, coreTrainingRecords[0])
-            : null;
+          if (isCoreRecord)
+            mpCoreCompletionDates[
+              record.details
+                .recordName as (typeof coreTrainingRecordTypes)[number]
+            ].push(record.completionDate);
+        }
+
+        const latestMpCoreCompletions = Object.entries(
+          mpCoreCompletionDates
+        ).reduce((acc, entry) => {
+          const [_, dates] = entry;
+          const earliestDate = getLatestDate(dates);
+          if (earliestDate) return [...acc, earliestDate];
+          return acc;
+        }, [] as string[]);
+
+        const earliestCoreCompletionDate = getEarliestDate(
+          latestMpCoreCompletions
+        );
+
+        const coreCompletionCount = latestMpCoreCompletions.length;
+        const coreCompletionRate =
+          coreCompletionCount / coreTrainingRecordTypes.length;
 
         return {
           carer: { id: mp.id, name: mp.details.name },
-          coreCompletionRate: Number(
-            (
-              100 *
-              (coreTrainingRecords.length / coreTrainingRecordTypes.length)
-            ).toFixed(2)
-          ),
-          earliestCompletionDate: earliestCompletedRecord?.completionDate ?? "",
-          coreRecords:
-            coreTrainingRecords as CoreTrainingRecordCompletion["coreRecords"],
+          coreCompletionRate: Number((100 * coreCompletionRate).toFixed(2)),
+          earliestCoreCompletionDate: earliestCoreCompletionDate ?? "",
         };
       });
 
@@ -320,7 +335,7 @@ export class MpService {
       );
 
       const pkgUpdates = (packages ?? []).map((pkg: any) =>
-        this.packageService.endPackage(user, {
+        this.packageService.endPackageIfNotAlready(user, {
           packageId: pkg.id,
           endDate: validated.endDate,
         })

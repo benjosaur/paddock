@@ -16,8 +16,8 @@ import { PermissionGate } from "./PermissionGate";
 import { DeleteAlert } from "./DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
-import { trainingRecordColumns } from "@/routes/RecordsRoutes";
 import { formatYmdToDmy } from "@/utils/date";
+import { trainingRecordColumns } from "./TrainingRecordDetailModal";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -152,7 +152,7 @@ export function VolunteerDetailModal({
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">General Info</TabsTrigger>
               <TabsTrigger value="Services">Services</TabsTrigger>
-              <TabsTrigger value="training">Training Record</TabsTrigger>
+              <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
@@ -221,7 +221,7 @@ export function VolunteerDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Training Record
+                Training Records
               </h3>
               {volunteer.trainingRecords.length > 0 ? (
                 <DataTable

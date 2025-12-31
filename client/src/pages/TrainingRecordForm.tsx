@@ -11,8 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
 import { trainingRecordTypes } from "shared/const";
-import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
-import { associatedMpRoutes } from "../routes/MpsRoutes";
+import { associatedRecordRoutes } from "@/routes/RecordsRoutes";
 
 export function TrainingRecordForm() {
   const navigate = useNavigate();
@@ -56,11 +55,9 @@ export function TrainingRecordForm() {
     trpc.trainingRecords.create.mutationOptions({
       onSuccess: () => {
         // Invalidate both volunteer and MP routes since we don't know which one we're updating
-        [...associatedVolunteerRoutes, ...associatedMpRoutes].forEach(
-          (route) => {
-            queryClient.invalidateQueries({ queryKey: route.queryKey() });
-          }
-        );
+        associatedRecordRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/records");
       },
     })
@@ -69,11 +66,9 @@ export function TrainingRecordForm() {
   const updateMutation = useMutation(
     trpc.trainingRecords.update.mutationOptions({
       onSuccess: () => {
-        [...associatedVolunteerRoutes, ...associatedMpRoutes].forEach(
-          (route) => {
-            queryClient.invalidateQueries({ queryKey: route.queryKey() });
-          }
-        );
+        associatedRecordRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
         navigate("/records");
       },
     })
@@ -301,7 +296,7 @@ export function TrainingRecordForm() {
                 Additional Information
               </h3>
 
-              <div>
+              {/* <div>
                 <label
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
@@ -320,7 +315,7 @@ export function TrainingRecordForm() {
                   onChange={handleInputChange}
                   disabled
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label

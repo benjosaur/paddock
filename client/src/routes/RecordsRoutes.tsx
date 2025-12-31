@@ -1,19 +1,12 @@
 import { useMemo, useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
 import { Button } from "../components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
 import { trpc } from "../utils/trpc";
-import { formatYmdToDmy } from "@/utils/date";
-import type { TrainingRecord, TableColumn } from "../types";
+import { compareDates, formatYmdToDmy } from "@/utils/date";
+import type { TableColumn } from "../types";
 import type { CoreTrainingRecordCompletion } from "shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Tabs,
   TabsContent,
@@ -21,40 +14,9 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 import { TrainingRecordForm } from "../pages/TrainingRecordForm";
-import { associatedVolunteerRoutes } from "./VolunteersRoutes";
-import { associatedMpRoutes } from "./MpsRoutes";
-import EndDialog from "../components/EndDialog";
-import type { EndTrainingRecordDetails } from "shared";
+import { TrainingRecordDetailModal } from "@/components/TrainingRecordDetailModal";
 
-export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
-  {
-    key: "personName",
-    header: "Name",
-    render: (item) => item.details.name,
-  },
-  {
-    key: "recordName",
-    header: "Training Record",
-    render: (item) => item.details.recordName,
-  },
-  {
-    key: "recordNumber",
-    header: "Training Record Number",
-    render: (item) => item.details.recordNumber,
-  },
-  {
-    key: "date",
-    header: "Expiry Date",
-    render: (item) => formatYmdToDmy(item.expiryDate || ""),
-  },
-  {
-    key: "notes",
-    header: "Notes",
-    render: (item) => item.details.notes,
-  },
-];
-
-// Columns reused for the detail modal DataTable of individual records
+// This is a summary table. Need to go into a row to get into CRUD for individual records.
 
 type CoreCompletionRow = CoreTrainingRecordCompletion & { id: string };
 
@@ -67,7 +29,7 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
   {
     key: "earliest",
     header: "Earliest Completion",
-    render: (item) => formatYmdToDmy(item.earliestCompletionDate || ""),
+    render: (item) => formatYmdToDmy(item.earliestCoreCompletionDate || ""),
   },
   {
     key: "rate",
@@ -77,13 +39,9 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
 ];
 
 export default function RecordsRoutes() {
-  const navigate = useNavigate();
   const [showEnded, setShowEnded] = useState(false);
-  const queryClient = useQueryClient();
-  const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
-  const [endDetails, setEndDetails] = useState<EndTrainingRecordDetails | null>(
-    null
-  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
 
   const mpRecordsQuery = useQuery(
     trpc.mps.getCoreTrainingRecordCompletions.queryOptions({
@@ -97,66 +55,28 @@ export default function RecordsRoutes() {
     })
   );
 
-  const recordsQueryKeys = [
-    trpc.mps.getCoreTrainingRecordCompletions.queryKey(),
-    trpc.volunteers.getCoreTrainingRecordCompletions.queryKey(),
-  ];
-
-  const deleteRecordMutation = useMutation(
-    trpc.trainingRecords.delete.mutationOptions({
-      onSuccess: () => {
-        // Invalidate training records queries and related routes
-        [
-          ...recordsQueryKeys,
-          ...associatedVolunteerRoutes,
-          ...associatedMpRoutes,
-        ].forEach((route) => {
-          queryClient.invalidateQueries({ queryKey: route.queryKey() });
-        });
-      },
-    })
-  );
-
-  const endRecordMutation = useMutation(
-    trpc.trainingRecords.end.mutationOptions({
-      onSuccess: () => {
-        [
-          ...recordsQueryKeys,
-          ...associatedVolunteerRoutes,
-          ...associatedMpRoutes,
-        ].forEach((route) => {
-          queryClient.invalidateQueries({ queryKey: route.queryKey() });
-        });
-      },
-    })
-  );
-
   const mpRecords = mpRecordsQuery.data || [];
   const volunteerRecords = volunteerRecordsQuery.data || [];
-
-  const compareByExpiry = <T extends { earliestCompletionDate?: string }>(
-    a: T,
-    b: T
-  ) => {
-    const aExp = a.earliestCompletionDate || "";
-    const bExp = b.earliestCompletionDate || "";
-    if (aExp === bExp) return 0;
-    if (aExp === "") return -1;
-    if (bExp === "") return 1;
-    return aExp.localeCompare(bExp);
-  };
 
   const sortedMpRecords = useMemo(
     () =>
       [...((mpRecords as CoreTrainingRecordCompletion[]) || [])].sort(
-        compareByExpiry
+        (record1, record2) =>
+          compareDates(
+            record1.earliestCoreCompletionDate,
+            record2.earliestCoreCompletionDate
+          )
       ),
     [mpRecords]
   );
   const sortedVolunteerRecords = useMemo(
     () =>
       [...((volunteerRecords as CoreTrainingRecordCompletion[]) || [])].sort(
-        compareByExpiry
+        (record1, record2) =>
+          compareDates(
+            record1.earliestCoreCompletionDate,
+            record2.earliestCoreCompletionDate
+          )
       ),
     [volunteerRecords]
   );
@@ -178,48 +98,10 @@ export default function RecordsRoutes() {
     [sortedVolunteerRecords]
   );
 
-  const handleEditRecord = (item: TrainingRecord) => {
-    const encodedId = encodeURIComponent(item.id);
-    const encodedOwnerId = encodeURIComponent(item.ownerId);
-    navigate(`/records/edit?id=${encodedId}&ownerId=${encodedOwnerId}`);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCarerId(null);
   };
-
-  const handleDeleteRecord = (item: TrainingRecord) => {
-    deleteRecordMutation.mutate({ id: item.id, ownerId: item.ownerId });
-  };
-
-  const handleEnd = (item: TrainingRecord) => {
-    // Only allow end from non-Ended view; un-end is not supported for training records
-    if (item.endDate === "open") {
-      setEndDetails({ ownerId: item.ownerId, recordId: item.id, endDate: "" });
-      setIsEndDialogOpen(true);
-    }
-  };
-
-  // Detail modal state for viewing a carer's core records
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<CoreCompletionRow | null>(
-    null
-  );
-
-  const selectedCoreAsTrainingRecords: TrainingRecord[] = useMemo(() => {
-    if (!selectedRow) return [];
-    return selectedRow.coreRecords.map((carer) => ({
-      id: carer.id,
-      ownerId: carer.ownerId,
-      completionDate: carer.completionDate,
-      expiryDate: carer.expiryDate,
-      endDate: carer.endDate,
-      details: {
-        name: carer.details.name,
-        // cast is safe: core types are subset of full trainingRecordTypes
-        recordName: carer.details
-          .recordName as TrainingRecord["details"]["recordName"],
-        recordNumber: carer.details.recordNumber,
-        notes: carer.details.notes,
-      },
-    }));
-  }, [selectedRow]);
 
   if (mpRecordsQuery.isLoading || volunteerRecordsQuery.isLoading)
     return <div>Loading...</div>;
@@ -269,9 +151,9 @@ export default function RecordsRoutes() {
                   data={mpRows}
                   columns={aggregateColumns}
                   onViewItem={(id) => {
-                    const row = mpRows.find((r) => r.id === id) || null;
-                    setSelectedRow(row);
-                    setIsViewOpen(!!row);
+                    const row = mpRows.find((r) => r.id === id);
+                    setSelectedCarerId(row?.carer.id ?? null);
+                    setIsModalOpen(!!row);
                   }}
                   resource="trainingRecords"
                 />
@@ -285,79 +167,21 @@ export default function RecordsRoutes() {
                   data={volunteerRows}
                   columns={aggregateColumns}
                   onViewItem={(id) => {
-                    const row = volunteerRows.find((r) => r.id === id) || null;
-                    setSelectedRow(row);
-                    setIsViewOpen(!!row);
+                    const row = volunteerRows.find((r) => r.id === id);
+                    setSelectedCarerId(row?.carer.id ?? null);
+                    setIsModalOpen(!!row);
                   }}
                   resource="trainingRecords"
                 />
               </TabsContent>
             </Tabs>
-            {/* Detail modal showing core records for selected person */}
-            <div>
-              <EndDialog
-                isOpen={isEndDialogOpen}
-                onOpenChange={(open) => {
-                  setIsEndDialogOpen(open);
-                  if (!open) setEndDetails(null);
-                }}
-                entityLabel="Training Record"
-                endDate={endDetails?.endDate}
-                onEndDateChange={(date) =>
-                  setEndDetails((prev) =>
-                    prev ? { ...prev, endDate: date } : prev
-                  )
-                }
-                onConfirm={() => {
-                  if (
-                    !endDetails?.ownerId ||
-                    !endDetails.recordId ||
-                    !endDetails.endDate
-                  )
-                    return;
-                  endRecordMutation.mutate(endDetails);
-                  setIsEndDialogOpen(false);
-                  setEndDetails(null);
-                }}
-                confirmDisabled={
-                  !endDetails?.endDate ||
-                  !endDetails?.ownerId ||
-                  !endDetails?.recordId ||
-                  endRecordMutation.isPending
-                }
-                endDescription="Select an end date. This will archive the training record."
-                undoDescription=""
-              />
-            </div>
             {/* View Modal */}
-            {selectedRow && (
-              <div>
-                {/* Reuse dialog primitives via ui/dialog */}
-                <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                  <DialogContent className="max-w-5xl">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {selectedRow.carer.name}'s Core Training Records
-                      </DialogTitle>
-                      <DialogDescription>
-                        View and manage individual core training records.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="mt-2">
-                      <DataTable<TrainingRecord>
-                        title="Core Records"
-                        searchPlaceholder="Search records..."
-                        data={selectedCoreAsTrainingRecords}
-                        columns={trainingRecordColumns}
-                        onEditRecord={handleEditRecord}
-                        onDeleteRecord={handleDeleteRecord}
-                        onEnd={!showEnded ? handleEnd : undefined}
-                        resource="trainingRecords"
-                      />
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+            {selectedCarerId && (
+              <TrainingRecordDetailModal
+                carerId={selectedCarerId}
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+              />
             )}
           </div>
         }
@@ -365,3 +189,54 @@ export default function RecordsRoutes() {
     </Routes>
   );
 }
+
+export const associatedRecordRoutes: any[] = [
+  trpc.mps.getAll,
+  trpc.mps.getAllNotEndedYet,
+  trpc.mps.getById,
+
+  // MAG
+  trpc.mag.getAll,
+  trpc.mag.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
+  trpc.requests.getById,
+
+  trpc.volunteers.getAll,
+  trpc.volunteers.getAllNotEndedYet,
+  trpc.volunteers.getById,
+
+  // Packages
+  trpc.packages.getAll,
+  trpc.packages.getAllInfo,
+  trpc.packages.getAllWithoutInfo,
+  trpc.packages.getAllWithoutInfoNotEndedYet,
+  trpc.packages.getById,
+
+  // Requests
+  trpc.requests.getAllWithoutInfoWithPackages,
+  trpc.requests.getAllInfoMetadata,
+  trpc.requests.getAllMetadataWithoutInfo,
+  trpc.requests.getAllWithoutInfoNotEndedYetWithPackages,
+  trpc.requests.getById,
+
+  trpc.mps.getCoreTrainingRecordCompletions,
+  trpc.volunteers.getCoreTrainingRecordCompletions,
+
+  // Training records
+  trpc.trainingRecords.getAll,
+  trpc.trainingRecords.getAllNotEndedYet,
+  trpc.trainingRecords.getById,
+  trpc.trainingRecords.getByExpiringBefore,
+];
