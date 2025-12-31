@@ -17,7 +17,7 @@ import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { formatYmdToDmy } from "@/utils/date";
-import { trainingRecordColumns } from "./TrainingRecordDetailModal";
+import { TrainingRecordsTable } from "../tables/TrainingRecordsTable";
 
 interface VolunteerDetailModalProps {
   volunteerId: string;
@@ -224,13 +224,7 @@ export function VolunteerDetailModal({
                 Training Records
               </h3>
               {volunteer.trainingRecords.length > 0 ? (
-                <DataTable
-                  data={volunteer.trainingRecords}
-                  columns={trainingRecordColumns}
-                  title=""
-                  searchPlaceholder="Search training records..."
-                  resource="volunteers"
-                />
+                <TrainingRecordsTable data={volunteer.trainingRecords} />
               ) : (
                 <p className="text-sm text-gray-500">
                   No training records found for this volunteer.

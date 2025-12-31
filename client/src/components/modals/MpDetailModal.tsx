@@ -17,7 +17,7 @@ import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { formatYmdToDmy } from "@/utils/date";
-import { trainingRecordColumns } from "./TrainingRecordDetailModal";
+import { TrainingRecordsTable } from "../tables/TrainingRecordsTable";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -222,13 +222,7 @@ export function MpDetailModal({
                 Training Records
               </h3>
               {mp.trainingRecords.length > 0 ? (
-                <DataTable
-                  data={mp.trainingRecords}
-                  columns={trainingRecordColumns}
-                  title=""
-                  searchPlaceholder="Search training records..."
-                  resource="mps"
-                />
+                <TrainingRecordsTable data={mp.trainingRecords} />
               ) : (
                 <p className="text-sm text-gray-500">
                   No training records found for this MP.
