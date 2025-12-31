@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { PackageForm } from "../pages/PackageForm";
 import { RenewPackageForm } from "../pages/RenewPackageForm";
-import { RequestDetailModal } from "../components/RequestDetailModal";
-import { PackageDetailModal } from "../components/PackageDetailModal";
+import { RequestDetailModal } from "../components/modals/RequestDetailModal";
+import { PackageDetailModal } from "../components/modals/PackageDetailModal";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { Package, TableColumn } from "../types";

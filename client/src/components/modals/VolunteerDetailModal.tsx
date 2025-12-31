@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,80 +7,75 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "./ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { trpc } from "../utils/trpc";
-import { DataTable } from "./DataTable";
-import { Note, NotesEditor } from "./NotesEditor";
-import { PermissionGate } from "./PermissionGate";
-import { DeleteAlert } from "./DeleteAlert";
+} from "../ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { trpc } from "../../utils/trpc";
+import { DataTable } from "../tables/DataTable";
+import { Note, NotesEditor } from "../NotesEditor";
+import { PermissionGate } from "../PermissionGate";
+import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { formatYmdToDmy } from "@/utils/date";
 import { trainingRecordColumns } from "./TrainingRecordDetailModal";
 
-interface MpDetailModalProps {
-  mpId: string;
+interface VolunteerDetailModalProps {
+  volunteerId: string;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-export function MpDetailModal({
-  mpId,
+export function VolunteerDetailModal({
+  volunteerId,
   isOpen,
   onClose,
   onEdit,
   onDelete,
-}: MpDetailModalProps) {
+}: VolunteerDetailModalProps) {
   const queryClient = useQueryClient();
-  const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
-  const mp = mpQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<
-    {
-      date: string;
-      note: string;
-      source: "Phone" | "Email" | "In Person";
-      minutesTaken: number;
-    }[]
-  >([]);
+  const volunteerQuery = useQuery(
+    trpc.volunteers.getById.queryOptions({ id: volunteerId })
+  );
+  const volunteer = volunteerQuery.data;
+  const [currentNotes, setCurrentNotes] = useState<Note[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Update local notes when mp data changes
+  // Update local notes when volunteer data changes
   useEffect(() => {
-    if (mp?.details.notes) {
-      setCurrentNotes(mp.details.notes);
+    if (volunteer?.details.notes) {
+      setCurrentNotes(volunteer.details.notes);
     }
-  }, [mp?.details.notes]);
+  }, [volunteer?.details.notes]);
 
-  const updateMpMutation = useMutation(
-    trpc.mps.update.mutationOptions({
+  const updateVolunteerMutation = useMutation(
+    trpc.volunteers.update.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.mps.getById.queryKey({ id: mpId }),
+          queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
         });
         queryClient.invalidateQueries({
-          queryKey: trpc.mps.getAll.queryKey(),
+          queryKey: trpc.volunteers.getAll.queryKey(),
         });
       },
     })
   );
 
   const handleNotesSubmit = (notes: Note[]) => {
-    if (mp) {
-      updateMpMutation.mutate({
-        ...mp,
+    if (volunteer) {
+      updateVolunteerMutation.mutate({
+        ...volunteer,
         details: {
-          ...mp.details,
+          ...volunteer.details,
           notes,
         },
       });
       queryClient.invalidateQueries({
-        queryKey: trpc.mps.getById.queryKey({ id: mpId }),
+        queryKey: trpc.volunteers.getById.queryKey({ id: volunteerId }),
       });
       queryClient.invalidateQueries({
-        queryKey: trpc.mps.getAll.queryKey(),
+        queryKey: trpc.volunteers.getAll.queryKey(),
       });
     }
   };
@@ -90,8 +85,8 @@ export function MpDetailModal({
   };
 
   const handleDeleteConfirm = () => {
-    if (onDelete && mp) {
-      onDelete(mp.id);
+    if (onDelete && volunteer) {
+      onDelete(volunteer.id);
     }
     setDeleteDialogOpen(false);
     onClose(); // Close the main modal after deletion
@@ -142,14 +137,14 @@ export function MpDetailModal({
     );
   };
 
-  if (!mp) return null;
+  if (!volunteer) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[80vw] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            MP Details: {mp.details.name}
+            Volunteer Details: {volunteer.details.name}
           </DialogTitle>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
@@ -169,37 +164,44 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 General Information
               </h3>
-              {renderDetailItem("ID", mp.id)}
-              {renderDetailItem("Name", mp.details.name)}
-              {renderDetailItem("Address", mp.details.address)}
-              {renderDetailItem("Phone", mp.details.phone)}
-              {renderDetailItem("Email", mp.details.email)}
+              {renderDetailItem("ID", volunteer.id)}
+              {renderDetailItem("Name", volunteer.details.name)}
+              {renderDetailItem("Role", volunteer.details.role)}
+              {renderDetailItem("Address", volunteer.details.address)}
+              {renderDetailItem("Phone", volunteer.details.phone)}
+              {renderDetailItem("Email", volunteer.details.email)}
               {renderDetailItem(
                 "Start Date",
-                mp.details.startDate ? formatYmdToDmy(mp.details.startDate) : ""
+                volunteer.details.startDate
+                  ? formatYmdToDmy(volunteer.details.startDate)
+                  : ""
               )}
               {renderDetailItem(
                 "End Date",
-                mp.endDate === "open"
+                volunteer.endDate === "open"
                   ? "Ongoing"
-                  : mp.endDate
-                  ? formatYmdToDmy(mp.endDate)
+                  : volunteer.endDate
+                  ? formatYmdToDmy(volunteer.endDate)
                   : ""
               )}
-              {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
+              {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
               {renderDetailItem(
                 "DBS Expiry",
-                mp.dbsExpiry ? formatYmdToDmy(mp.dbsExpiry) : undefined
+                volunteer.dbsExpiry
+                  ? formatYmdToDmy(volunteer.dbsExpiry)
+                  : undefined
               )}
               {renderDetailItem(
                 "Public Liability Expiry",
-                mp.publicLiabilityExpiry
-                  ? formatYmdToDmy(mp.publicLiabilityExpiry)
+                volunteer.publicLiabilityExpiry
+                  ? formatYmdToDmy(volunteer.publicLiabilityExpiry)
                   : undefined
               )}
               {renderDetailItem(
                 "Date of Birth",
-                mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : ""
+                volunteer.dateOfBirth
+                  ? formatYmdToDmy(volunteer.dateOfBirth)
+                  : ""
               )}
             </TabsContent>
 
@@ -210,8 +212,8 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Services
               </h3>
-              {renderDetailItem("Services", mp.details.services)}
-              {renderDetailItem("Capacity", mp.details.capacity)}
+              {renderDetailItem("Services", volunteer.details.services)}
+              {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 
             <TabsContent
@@ -221,17 +223,17 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Training Records
               </h3>
-              {mp.trainingRecords.length > 0 ? (
+              {volunteer.trainingRecords.length > 0 ? (
                 <DataTable
-                  data={mp.trainingRecords}
+                  data={volunteer.trainingRecords}
                   columns={trainingRecordColumns}
                   title=""
                   searchPlaceholder="Search training records..."
-                  resource="mps"
+                  resource="volunteers"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
-                  No training records found for this MP.
+                  No training records found for this volunteer.
                 </p>
               )}
             </TabsContent>
@@ -243,9 +245,9 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Packages
               </h3>
-              {mp.requests.flatMap((req) => req.packages).length > 0 ? (
+              {volunteer.requests.flatMap((req) => req.packages).length > 0 ? (
                 <DataTable
-                  data={mp.requests.flatMap((req) => req.packages)}
+                  data={volunteer.requests.flatMap((req) => req.packages)}
                   columns={packageColumns}
                   title=""
                   searchPlaceholder="Search packages..."
@@ -253,7 +255,7 @@ export function MpDetailModal({
                 />
               ) : (
                 <p className="text-sm text-gray-500">
-                  No packages found for this MP.
+                  No packages found for this volunteer.
                 </p>
               )}
             </TabsContent>
@@ -265,7 +267,7 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
               <NotesEditor
                 onSubmit={handleNotesSubmit}
-                isPending={updateMpMutation.isPending}
+                isPending={updateVolunteerMutation.isPending}
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
@@ -274,14 +276,14 @@ export function MpDetailModal({
         </div>
         <DialogFooter className="mt-4">
           <div className="flex gap-2">
-            <PermissionGate resource="mps" action="update">
+            <PermissionGate resource="volunteers" action="update">
               {onEdit && (
-                <Button onClick={() => onEdit(mp.id)} variant="default">
+                <Button onClick={() => onEdit(volunteer.id)} variant="default">
                   Edit
                 </Button>
               )}
             </PermissionGate>
-            <PermissionGate resource="mps" action="delete">
+            <PermissionGate resource="volunteers" action="delete">
               {onDelete && (
                 <Button onClick={handleDeleteClick} variant="destructive">
                   Delete
@@ -300,8 +302,8 @@ export function MpDetailModal({
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
-        itemName={mp?.details.name}
-        itemType="MP"
+        itemName={volunteer?.details.name}
+        itemType="volunteer"
       />
     </Dialog>
   );

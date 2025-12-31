@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,12 +8,12 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "./ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { trpc } from "../utils/trpc";
-import { DataTable } from "./DataTable";
-import { PermissionGate } from "./PermissionGate";
-import { DeleteAlert } from "./DeleteAlert";
+} from "../ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { trpc } from "../../utils/trpc";
+import { DataTable } from "../tables/DataTable";
+import { PermissionGate } from "../PermissionGate";
+import { DeleteAlert } from "../DeleteAlert";
 import { useQuery } from "@tanstack/react-query";
 import { packageColumns } from "@/routes/PackageRoutes";
 import { formatYmdToDmy } from "@/utils/date";

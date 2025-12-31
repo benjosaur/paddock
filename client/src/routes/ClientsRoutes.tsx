@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
 import { InfoForm } from "../pages/InfoForm";
-import { ClientDetailModal } from "../components/ClientDetailModal";
+import { ClientDetailModal } from "../components/modals/ClientDetailModal";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

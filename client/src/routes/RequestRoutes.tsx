@@ -1,10 +1,10 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import EndDialog from "../components/EndDialog";
 import { RequestForm } from "../pages/RequestForm";
 import { RenewRequestForm } from "../pages/RenewRequestForm";
-import { RequestDetailModal } from "../components/RequestDetailModal";
+import { RequestDetailModal } from "../components/modals/RequestDetailModal";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { RequestFull, TableColumn } from "../types";

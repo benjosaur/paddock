@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,13 +7,13 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "./ui/dialog";
-import { DeleteAlert } from "./DeleteAlert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { trpc } from "../utils/trpc";
-import { DataTable } from "./DataTable";
-import { Note, NotesEditor } from "./NotesEditor";
-import { PermissionGate } from "./PermissionGate";
+} from "../ui/dialog";
+import { DeleteAlert } from "../DeleteAlert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { trpc } from "../../utils/trpc";
+import { DataTable } from "../tables/DataTable";
+import { Note, NotesEditor } from "../NotesEditor";
+import { PermissionGate } from "../PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
 import { requestColumns } from "@/routes/RequestRoutes";

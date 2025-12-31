@@ -1,5 +1,5 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { MagLogForm } from "../pages/MagLogForm";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";

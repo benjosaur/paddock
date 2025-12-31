@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { MpForm } from "../pages/MpForm";
-import { MpDetailModal } from "../components/MpDetailModal";
+import { MpDetailModal } from "../components/modals/MpDetailModal";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, TableColumn } from "../types";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,16 +7,16 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "./ui/dialog";
-import { trpc } from "../utils/trpc";
-import { DataTable } from "./DataTable";
+} from "../ui/dialog";
+import { trpc } from "../../utils/trpc";
+import { DataTable } from "../tables/DataTable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatYmdToDmy } from "@/utils/date";
 import { isIdMp, isIdVolunteer } from "shared/utils";
 import { EndTrainingRecordDetails, TrainingRecord } from "shared";
 import { useNavigate } from "react-router-dom";
 import { associatedRecordRoutes } from "@/routes/RecordsRoutes";
-import EndDialog from "./EndDialog";
+import EndDialog from "../EndDialog";
 import { TableColumn } from "@/types";
 
 export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [

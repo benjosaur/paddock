@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";

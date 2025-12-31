@@ -8,7 +8,7 @@ import { volunteerFullSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
-import { FieldEditModal } from "@/components/FieldEditModal";
+import { FieldEditModal } from "@/components/modals/FieldEditModal";
 import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
 import { serviceOptions, localities, volunteerRoles } from "shared/const";

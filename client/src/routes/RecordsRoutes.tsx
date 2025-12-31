@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
 import { compareDates, formatYmdToDmy } from "@/utils/date";
@@ -14,7 +14,7 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 import { TrainingRecordForm } from "../pages/TrainingRecordForm";
-import { TrainingRecordDetailModal } from "@/components/TrainingRecordDetailModal";
+import { TrainingRecordDetailModal } from "@/components/modals/TrainingRecordDetailModal";
 
 // This is a summary table. Need to go into a row to get into CRUD for individual records.
 

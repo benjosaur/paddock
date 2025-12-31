@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "./ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import {
   Search,
   MoreHorizontal,
@@ -21,9 +21,9 @@ import {
   CalendarCheck,
   Undo2,
 } from "lucide-react";
-import { PermissionGate } from "./PermissionGate";
-import { DeleteAlert } from "./DeleteAlert";
-import type { TableColumn, TrainingRecord } from "../types";
+import { PermissionGate } from "../PermissionGate";
+import { DeleteAlert } from "../DeleteAlert";
+import type { TableColumn, TrainingRecord } from "../../types";
 import { AppRouterKeys } from "shared";
 
 interface DataTableProps<T> {

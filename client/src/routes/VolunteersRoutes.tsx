@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { DataTable } from "../components/DataTable";
+import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
-import { VolunteerDetailModal } from "../components/VolunteerDetailModal";
+import { VolunteerDetailModal } from "../components/modals/VolunteerDetailModal";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { VolunteerMetadata, TableColumn } from "../types";

@@ -17,7 +17,7 @@ import {
   hasRequestedStatuses,
   isReceivingStatuses,
 } from "shared/const";
-import { FieldEditModal } from "../components/FieldEditModal";
+import { FieldEditModal } from "../components/modals/FieldEditModal";
 import toast from "react-hot-toast";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
 
