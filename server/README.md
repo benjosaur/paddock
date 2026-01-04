@@ -57,3 +57,12 @@ The server provides a tRPC API with the following routers:
 - `PORT` - Server port (default: 3001)
 - `CLIENT_URL` - Frontend URL for CORS (default: http://localhost:5173)
 - `NODE_ENV` - Environment (development/production)
+
+## Deprivation data preprocessing
+
+- Source CSV: `server/services/Indices_of_Deprivation-2025-data_download-file-postcode_join.csv` (≈500MB).
+- Generate the compact CSV the service reads:
+  - All data: `bun run deprivation:preprocess`
+  - Filtered set: `bun run deprivation:preprocess -- --postcodes-file ./postcodes.txt`
+- Output: `server/services/deprivation-compact.csv` (postcode, incomeDecile, healthDecile; postcodes normalized to uppercase with no spaces).
+- Override the path with `DEPRIVATION_CSV_PATH` if you need to point at a different generated file.

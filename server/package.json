@@ -12,7 +12,8 @@
     "db:init": "bun run db.ts init",
     "db:seed": "bun run db.ts seed",
     "db:reset": "bun run db.ts reset",
-    "db:test": "bun run db.ts test"
+    "db:test": "bun run db.ts test",
+    "deprivation:preprocess": "bun run scripts/preprocess-deprivation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.830.0",

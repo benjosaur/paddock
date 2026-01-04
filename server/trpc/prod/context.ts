@@ -6,7 +6,7 @@ import { createServices } from "../../db/service";
 // Create JWT verifier for your Cognito User Pool
 const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: process.env.COGNITO_USER_POOL_ID!,
-  tokenUse: "id", // or "id" depending on which token you're using
+  tokenUse: "id",
   clientId: process.env.COGNITO_CLIENT_ID!, // Optional, only if you want to verify client ID
 });
 

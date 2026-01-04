@@ -39,7 +39,7 @@ import { AttendanceReportService } from "./attendance/service";
 // Facade service keeps API stable and delegates to sub-services
 
 export class ReportService {
-  // Keep references if needed elsewhere in app
+  // Keep references if needed elsewhere in app // Can these be removed? inconsistent naming
   clientService = new ClientService();
   requestService = new RequestService();
   packageService = new PackageService();
