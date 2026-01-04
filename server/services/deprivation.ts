@@ -1,7 +1,5 @@
-import fs from "fs";
-import path from "path";
-import readline from "readline";
-import { fileURLToPath } from "url";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
 import { DEPRIVATION_THRESHOLD_DECILE } from "../../shared/const";
 
@@ -11,122 +9,69 @@ interface DeprivationData {
   health: boolean;
 }
 
-type DeprivationCsvRow = {
+type DeprivationRecord = {
   incomeDecile: number;
   healthDecile: number;
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+type DeprivationServiceOptions = {
+  tableName?: string;
+  dynamo?: DynamoDBDocumentClient;
+  staticData?: Map<string, DeprivationRecord>; // for tests or fallback
+};
 
-const DEFAULT_COMPACT_CSV_PATH = path.join(__dirname, "deprivation-compact.csv");
+const DEFAULT_TABLE = process.env.DEPRIVATION_TABLE ?? "DeprivationCompact";
 
 function normalizePostcode(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
 }
 
-function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (const char of line) {
-    if (char === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (char === "," && !inQuotes) {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  cells.push(current);
-  return cells.map((cell) => cell.trim());
-}
-
 export class DeprivationService {
-  private dataPromise?: Promise<Map<string, DeprivationCsvRow>>;
-  private readonly csvPath: string;
+  private readonly tableName: string;
+  private readonly dynamo?: DynamoDBDocumentClient;
+  private readonly staticData?: Map<string, DeprivationRecord>;
 
-  constructor(csvPath?: string) {
-    this.csvPath =
-      csvPath ?? process.env.DEPRIVATION_CSV_PATH ?? DEFAULT_COMPACT_CSV_PATH;
-  }
-
-  private async loadData(): Promise<Map<string, DeprivationCsvRow>> {
-    if (!this.dataPromise) {
-      this.dataPromise = this.readCsv();
-    }
-    return this.dataPromise;
-  }
-
-  private async readCsv(): Promise<Map<string, DeprivationCsvRow>> {
-    const dataset = new Map<string, DeprivationCsvRow>();
-    const resolvedPath = path.resolve(this.csvPath);
-
-    if (!fs.existsSync(resolvedPath)) {
-      console.warn(
-        `Deprivation compact CSV not found at ${resolvedPath}. Returning empty dataset.`
+  constructor(options: DeprivationServiceOptions = {}) {
+    this.tableName = options.tableName ?? DEFAULT_TABLE;
+    this.staticData = options.staticData;
+    this.dynamo =
+      options.dynamo ??
+      DynamoDBDocumentClient.from(
+        new DynamoDBClient({
+          region: process.env.AWS_REGION ?? "eu-west-2",
+        }),
+        { marshallOptions: { removeUndefinedValues: true } }
       );
-      return dataset;
+  }
+
+  private async getFromStore(
+    postcode: string
+  ): Promise<DeprivationRecord | undefined> {
+    if (this.staticData) {
+      return this.staticData.get(postcode);
     }
 
-    const stream = fs.createReadStream(resolvedPath, { encoding: "utf-8" });
-    const reader = readline.createInterface({
-      input: stream,
-      crlfDelay: Infinity,
-    });
-
-    let headerParsed = false;
-    let postcodeIndex = -1;
-    let incomeIndex = -1;
-    let healthIndex = -1;
-
-    for await (const rawLine of reader) {
-      const line = rawLine.trimEnd();
-      if (!line) continue;
-
-      const values = parseCsvLine(line);
-
-      if (!headerParsed) {
-        const headers = values.map((h) =>
-          h.replace(/^"|"$/g, "").toLowerCase()
-        );
-
-        postcodeIndex = headers.findIndex((h) => h === "postcode");
-        incomeIndex = headers.findIndex(
-          (h) => h.includes("income") && h.includes("decile")
-        );
-        healthIndex = headers.findIndex(
-          (h) => h.includes("health") && h.includes("decile")
-        );
-
-        if (postcodeIndex === -1 || incomeIndex === -1 || healthIndex === -1) {
-          throw new Error(
-            "Required columns (postcode, incomeDecile, healthDecile) not found in deprivation CSV"
-          );
-        }
-
-        headerParsed = true;
-        continue;
-      }
-
-      const postcode = normalizePostcode(values[postcodeIndex] ?? "");
-      const incomeDecile = Number(values[incomeIndex]);
-      const healthDecile = Number(values[healthIndex]);
-
-      if (!postcode) continue;
-      if (Number.isNaN(incomeDecile) || Number.isNaN(healthDecile)) continue;
-
-      dataset.set(postcode, { incomeDecile, healthDecile });
+    if (!this.dynamo) {
+      throw new Error("DynamoDB client not configured");
     }
 
-    return dataset;
+    const result = await this.dynamo.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { postcode },
+      })
+    );
+
+    if (!result.Item) return undefined;
+
+    const incomeDecile = Number(result.Item.incomeDecile);
+    const healthDecile = Number(result.Item.healthDecile);
+
+    if (Number.isNaN(incomeDecile) || Number.isNaN(healthDecile)) {
+      return undefined;
+    }
+
+    return { incomeDecile, healthDecile };
   }
 
   async getDeprivationData(postcode: string): Promise<DeprivationData> {
@@ -141,8 +86,7 @@ export class DeprivationService {
     }
 
     try {
-      const data = await this.loadData();
-      const entry = data.get(normalizedPostcode);
+      const entry = await this.getFromStore(normalizedPostcode);
 
       if (!entry) {
         return {

@@ -1,19 +1,15 @@
 import { expect, test } from "bun:test";
-import path from "path";
-import { fileURLToPath } from "url";
 
 import { DeprivationService } from "./deprivation";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const fixturePath = path.join(
-  __dirname,
-  "__fixtures__",
-  "deprivation-compact.sample.csv"
-);
+const staticData = new Map([
+  ["SW1A1AA", { incomeDecile: 1, healthDecile: 2 }],
+  ["BS12AA", { incomeDecile: 5, healthDecile: 5 }],
+  ["TA41AA", { incomeDecile: 3, healthDecile: 4 }],
+]);
 
 test("returns deprivation flags for a known postcode", async () => {
-  const service = new DeprivationService(fixturePath);
+  const service = new DeprivationService({ staticData });
   const deprivationData = await service.getDeprivationData("SW1A 1AA");
 
   expect(deprivationData).toEqual({
@@ -24,7 +20,7 @@ test("returns deprivation flags for a known postcode", async () => {
 });
 
 test("handles postcodes above the deprivation threshold", async () => {
-  const service = new DeprivationService(fixturePath);
+  const service = new DeprivationService({ staticData });
   const deprivationData = await service.getDeprivationData("BS1 2AA");
 
   expect(deprivationData).toEqual({
@@ -35,7 +31,7 @@ test("handles postcodes above the deprivation threshold", async () => {
 });
 
 test("returns unmatched for missing postcodes", async () => {
-  const service = new DeprivationService(fixturePath);
+  const service = new DeprivationService({ staticData });
   const deprivationData = await service.getDeprivationData("ZZ1 1ZZ");
 
   expect(deprivationData).toEqual({

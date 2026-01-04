@@ -66,3 +66,15 @@ The server provides a tRPC API with the following routers:
   - Filtered set: `bun run deprivation:preprocess -- --postcodes-file ./postcodes.txt`
 - Output: `server/services/deprivation-compact.csv` (postcode, incomeDecile, healthDecile; postcodes normalized to uppercase with no spaces).
 - Override the path with `DEPRIVATION_CSV_PATH` if you need to point at a different generated file.
+
+## Deprivation data in DynamoDB
+
+Table name: `DeprivationCompact` (partition key `postcode`, number attributes `incomeDecile`, `healthDecile`).
+
+- Import to local DynamoDB (creates table if missing):
+  - `cd server && bun run deprivation:dynamo:local`
+- Import to remote DynamoDB (expects table to exist and AWS creds/region set):
+  - `cd server && bun run deprivation:dynamo:remote`
+
+Service resolution:
+- `DeprivationService` reads from DynamoDB table `DEPRIVATION_TABLE` (default `DeprivationCompact`).

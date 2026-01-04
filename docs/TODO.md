@@ -9,7 +9,7 @@
 
 ## Reu
 
-- [ ] Deprivation 2025 microservice
+- [x] Deprivation 2025 microservice
 - [ ] Deprivation 2015 -> 2025 Migration Script
 
 //////////////
@@ -18,6 +18,13 @@
 - [ ] json <-> form
 - [ ] images (client agreement form/AA/call notes//transcription) -> update database (i.e. prefill relevant frontend page(s) with info)
 - [ ] calendar view and/or pie charts
+
+## 4 Jan
+
+- Testing, postman integration tests
+- Dynamodb table for deprivaiton data
+- Frontend colours for end date and pagination / sorting (report show end date)
+  -
 
 ## Disscussed in setup discord call 18 Dec:
 

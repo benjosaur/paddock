@@ -13,7 +13,9 @@
     "db:seed": "bun run db.ts seed",
     "db:reset": "bun run db.ts reset",
     "db:test": "bun run db.ts test",
-    "deprivation:preprocess": "bun run scripts/preprocess-deprivation.ts"
+    "deprivation:preprocess": "bun run scripts/preprocess-deprivation.ts",
+    "deprivation:dynamo:local": "bun run scripts/deprivation-dynamo-import-local.ts",
+    "deprivation:dynamo:remote": "bun run scripts/deprivation-dynamo-import-remote.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.830.0",
