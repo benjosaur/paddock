@@ -77,6 +77,9 @@ export function SolePackageForm() {
     }
   }, [isEditing, packageQuery.data]);
 
+  console.log(derivedVolunteerId);
+  console.log(volunteerQuery.data);
+
   const createSolePackage = useMutation(
     trpc.packages.createSole.mutationOptions({
       onSuccess: () => {

@@ -24,6 +24,7 @@ import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
 import { coreTrainingRecordTypes, firstYear } from "shared/const";
+import { getEarliestDate, getLatestDate } from "shared/utils";
 
 export class VolunteerService {
   volunteerRepository = new VolunteerRepository();
@@ -57,7 +58,9 @@ export class VolunteerService {
 
   async getAllNotEndedYet(user: User): Promise<VolunteerMetadata[]> {
     try {
-      const dbVolunteers = await this.volunteerRepository.getAllNotEndedYet(user);
+      const dbVolunteers = await this.volunteerRepository.getAllNotEndedYet(
+        user
+      );
       const dbTrainingRecords =
         await this.trainingRecordRepository.getAllNotEndedYet(user);
       const dbPackages = await this.packageRepository.getAllNotEndedYet(user);
@@ -169,34 +172,46 @@ export class VolunteerService {
 
       const coreCompletions = volunteers.map(
         (volunteer): CoreTrainingRecordCompletion => {
-          const coreTrainingRecords = volunteer.trainingRecords.filter((tr) =>
-            coreTrainingRecordTypes.some(
-              (type) => type === tr.details.recordName
-            )
+          const volunteerCoreCompletionDates = coreTrainingRecordTypes.reduce(
+            (acc, recordName) => {
+              acc[recordName] = [];
+              return acc;
+            },
+            {} as Record<(typeof coreTrainingRecordTypes)[number], string[]>
           );
 
-          const earliestCompletedRecord =
-            coreTrainingRecords.length > 0
-              ? coreTrainingRecords.reduce((earliest, current) => {
-                  return new Date(current.completionDate) <
-                    new Date(earliest.completionDate)
-                    ? current
-                    : earliest;
-                }, coreTrainingRecords[0])
-              : null;
+          for (const record of volunteer.trainingRecords) {
+            const isCoreRecord = coreTrainingRecordTypes.some(
+              (name) => name == record.details.recordName
+            );
+            if (isCoreRecord)
+              volunteerCoreCompletionDates[
+                record.details
+                  .recordName as (typeof coreTrainingRecordTypes)[number]
+              ].push(record.completionDate);
+          }
+
+          const latestVolunteerCoreCompletions = Object.entries(
+            volunteerCoreCompletionDates
+          ).reduce((acc, entry) => {
+            const [_, dates] = entry;
+            const earliestDate = getLatestDate(dates);
+            if (earliestDate) return [...acc, earliestDate];
+            return acc;
+          }, [] as string[]);
+
+          const earliestCoreCompletionDate = getEarliestDate(
+            latestVolunteerCoreCompletions
+          );
+
+          const coreCompletionCount = latestVolunteerCoreCompletions.length;
+          const coreCompletionRate =
+            coreCompletionCount / coreTrainingRecordTypes.length;
 
           return {
             carer: { id: volunteer.id, name: volunteer.details.name },
-            coreCompletionRate: Number(
-              (
-                100 *
-                (coreTrainingRecords.length / coreTrainingRecordTypes.length)
-              ).toFixed(2)
-            ),
-            earliestCompletionDate:
-              earliestCompletedRecord?.completionDate ?? "",
-            coreRecords:
-              coreTrainingRecords as CoreTrainingRecordCompletion["coreRecords"],
+            coreCompletionRate: Number((100 * coreCompletionRate).toFixed(2)),
+            earliestCoreCompletionDate: earliestCoreCompletionDate ?? "",
           };
         }
       );
@@ -368,10 +383,20 @@ export class VolunteerService {
           ...rest,
         });
         continue;
+      } else if (item.sK.startsWith("pkg")) {
+        // this must be a Sole Package
+        if (!volunteer.packages) volunteer.packages = [];
+        const { pK, sK, entityType, ...rest } = item as DbSolePackage;
+        volunteer.packages.push({
+          id: sK,
+          carerId: pK,
+          ...rest,
+        });
+        continue;
       } else if (item.sK.startsWith("mag")) {
         continue;
       } else {
-        console.dir(`Undefined Case: ${item}`, { depth: null });
+        console.dir(item, { depth: null });
         throw new Error(`Undefined Case: ${item}`);
       }
     }
@@ -413,7 +438,7 @@ export class VolunteerService {
       );
 
       const pkgUpdates = (packages ?? []).map((pkg: any) =>
-        this.packageService.endPackage(user, {
+        this.packageService.endPackageIfNotAlready(user, {
           packageId: pkg.id,
           endDate: validated.endDate,
         })
