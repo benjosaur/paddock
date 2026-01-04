@@ -10,14 +10,13 @@ import {
 } from "../ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { trpc } from "../../utils/trpc";
-import { DataTable } from "../tables/DataTable";
 import { Note, NotesEditor } from "../NotesEditor";
 import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { packageColumns } from "@/routes/PackageRoutes";
 import { formatYmdToDmy } from "@/utils/date";
 import { TrainingRecordsTable } from "../tables/TrainingRecordsTable";
+import { CarerPackagesTable } from "../tables/CarerPackagesTable";
 
 interface MpDetailModalProps {
   mpId: string;
@@ -237,19 +236,11 @@ export function MpDetailModal({
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Packages
               </h3>
-              {mp.requests.flatMap((req) => req.packages).length > 0 ? (
-                <DataTable
-                  data={mp.requests.flatMap((req) => req.packages)}
-                  columns={packageColumns}
-                  title=""
-                  searchPlaceholder="Search packages..."
-                  resource="packages"
-                />
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No packages found for this MP.
-                </p>
-              )}
+              <CarerPackagesTable
+                key={`${mpId}-carer-packages`}
+                carerId={mpId}
+                requests={mp.requests}
+              />
             </TabsContent>
 
             <TabsContent

@@ -296,12 +296,12 @@ export function TrainingRecordForm() {
                 Additional Information
               </h3>
 
-              {/* <div>
+              <div>
                 <label
                   htmlFor="endDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  End Date
+                  Archived Date
                 </label>
                 <Input
                   id="endDate"
@@ -315,7 +315,7 @@ export function TrainingRecordForm() {
                   onChange={handleInputChange}
                   disabled
                 />
-              </div> */}
+              </div>
 
               <div>
                 <label
