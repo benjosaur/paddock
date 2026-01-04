@@ -2,8 +2,9 @@
 
 ## Ben
 
-- [ ] Add gmail reubenjoshua99@gmail.com
-- [ ] Spring cleaning analytics
+- [x] Add gmail reubenjoshua99@gmail.com
+- [ ] ben work on blue badge
+- [ ] ben hub and grub infra
 - [ ] Minimum Viable Compliance
 - [ ] Add uploading images to database
 
@@ -23,15 +24,12 @@
 
 - Testing, postman integration tests
 - Dynamodb table for deprivaiton data
-- Frontend colours for end date and pagination / sorting (report show end date)
-  -
+- ## Frontend colours for end date and pagination / sorting (report show end date)
 
 ## Disscussed in setup discord call 18 Dec:
 
-- [ ] fix analytics bug 108 %
+- [x] fix analytics bug 108 %
 - [ ] deprivation index
-- [ ] ben work on blue badge
-- [ ] ben hub and grub infra
 - [ ] write docs
 - [ ] write how to use system docs
 - [ ] trustee = board member of charity -> love arcane data like pi chart of things like who joined what month, could make a chart / graph builder
