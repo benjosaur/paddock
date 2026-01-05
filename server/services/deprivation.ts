@@ -21,6 +21,9 @@ type DeprivationServiceOptions = {
 };
 
 const DEFAULT_TABLE = process.env.DEPRIVATION_TABLE ?? "DeprivationCompact";
+const DEFAULT_REGION = process.env.AWS_REGION ?? "eu-west-2";
+const CUSTOM_ENDPOINT =
+  process.env.DEPRIVATION_DYNAMO_ENDPOINT ?? process.env.DYNAMO_ENDPOINT;
 
 function normalizePostcode(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
@@ -38,14 +41,16 @@ export class DeprivationService {
       options.dynamo ??
       DynamoDBDocumentClient.from(
         new DynamoDBClient({
-          region: process.env.AWS_REGION ?? "eu-west-2",
+          region: DEFAULT_REGION,
+          endpoint: CUSTOM_ENDPOINT,
         }),
         { marshallOptions: { removeUndefinedValues: true } }
       );
   }
 
   private async getFromStore(
-    postcode: string
+    postcode: string,
+    rawPostcode?: string
   ): Promise<DeprivationRecord | undefined> {
     if (this.staticData) {
       return this.staticData.get(postcode);
@@ -62,16 +67,37 @@ export class DeprivationService {
       })
     );
 
-    if (!result.Item) return undefined;
+    if (result.Item) {
+      const incomeDecile = Number(result.Item.incomeDecile);
+      const healthDecile = Number(result.Item.healthDecile);
 
-    const incomeDecile = Number(result.Item.incomeDecile);
-    const healthDecile = Number(result.Item.healthDecile);
-
-    if (Number.isNaN(incomeDecile) || Number.isNaN(healthDecile)) {
-      return undefined;
+      if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
+        return { incomeDecile, healthDecile };
+      }
     }
 
-    return { incomeDecile, healthDecile };
+    // Fallback: if data was inserted without stripping spaces, try the raw uppercase value
+    const rawKey =
+      rawPostcode?.toUpperCase().trim() === postcode
+        ? undefined
+        : rawPostcode?.toUpperCase().trim();
+    if (rawKey) {
+      const fallback = await this.dynamo.send(
+        new GetCommand({
+          TableName: this.tableName,
+          Key: { postcode: rawKey },
+        })
+      );
+      if (fallback.Item) {
+        const incomeDecile = Number(fallback.Item.incomeDecile);
+        const healthDecile = Number(fallback.Item.healthDecile);
+        if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
+          return { incomeDecile, healthDecile };
+        }
+      }
+    }
+
+    return undefined;
   }
 
   async getDeprivationData(postcode: string): Promise<DeprivationData> {
@@ -86,7 +112,7 @@ export class DeprivationService {
     }
 
     try {
-      const entry = await this.getFromStore(normalizedPostcode);
+      const entry = await this.getFromStore(normalizedPostcode, postcode);
 
       if (!entry) {
         return {
@@ -111,4 +137,3 @@ export class DeprivationService {
     }
   }
 }
-

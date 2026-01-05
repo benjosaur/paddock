@@ -77,4 +77,5 @@ Table name: `DeprivationCompact` (partition key `postcode`, number attributes `i
   - `cd server && bun run deprivation:dynamo:remote`
 
 Service resolution:
+
 - `DeprivationService` reads from DynamoDB table `DEPRIVATION_TABLE` (default `DeprivationCompact`).
