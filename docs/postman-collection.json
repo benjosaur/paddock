@@ -1,0 +1,1537 @@
+{
+  "info": {
+    "_postman_id": "8f6ccf7f-9c5d-4c5a-b456-1234567890ab",
+    "name": "Paddock tRPC API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated tRPC endpoints. Set apiBase (e.g. http://localhost:3001 or prod API Gateway base) and authToken (Cognito ID token) variables before running."
+  },
+  "variable": [
+    { "key": "apiBase", "value": "http://localhost:3001" },
+    { "key": "authToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{apiBase}}/health",
+          "host": ["{{apiBase}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "tRPC",
+      "item": [
+        {
+          "name": "Clients",
+          "item": [
+            {
+              "name": "clients.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.getAll"]
+                }
+              }
+            },
+            {
+              "name": "clients.getAllNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.getAllNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.getAllNotEndedYet"]
+                }
+              }
+            },
+            {
+              "name": "clients.getAllWithMagService",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.getAllWithMagService",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.getAllWithMagService"]
+                }
+              }
+            },
+            {
+              "name": "clients.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.getById?input={\"id\":\"CLIENT_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.getById"],
+                  "query": [
+                    { "key": "input", "value": "{\"id\":\"CLIENT_ID\"}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "clients.end",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientId\": \"CLIENT_ID\",\n  \"endDate\": \"2024-12-31\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.end",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.end"]
+                }
+              }
+            },
+            {
+              "name": "clients.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"customId\": \"\",\n  \"postcode\": \"\",\n  \"...\": \"fill schema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.create"]
+                }
+              }
+            },
+            {
+              "name": "clients.createInfoEntry",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client\": { \"name\": \"\", \"customId\": \"\" },\n  \"infoDetails\": { \"details\": \"...\" }\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.createInfoEntry",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.createInfoEntry"]
+                }
+              }
+            },
+            {
+              "name": "clients.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"CLIENT_ID\",\n  \"name\": \"\",\n  \"customId\": \"\",\n  \"postcode\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.update"]
+                }
+              }
+            },
+            {
+              "name": "clients.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"CLIENT_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.delete"]
+                }
+              }
+            },
+            {
+              "name": "clients.updateName",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client\": { \"id\": \"CLIENT_ID\", \"name\": \"\" },\n  \"newName\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.updateName",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.updateName"]
+                }
+              }
+            },
+            {
+              "name": "clients.updateCustomId",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client\": { \"id\": \"CLIENT_ID\", \"customId\": \"\" },\n  \"newCustomId\": \"NEW_ID\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.updateCustomId",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.updateCustomId"]
+                }
+              }
+            },
+            {
+              "name": "clients.updatePostCode",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"client\": { \"id\": \"CLIENT_ID\", \"postcode\": \"\" },\n  \"newPostcode\": \"NEW_POSTCODE\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/clients.updatePostCode",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "clients.updatePostCode"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Packages",
+          "item": [
+            {
+              "name": "packages.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.getAll"]
+                }
+              }
+            },
+            {
+              "name": "packages.getAllWithoutInfoNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.getAllWithoutInfoNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.getAllWithoutInfoNotEndedYet"]
+                }
+              }
+            },
+            {
+              "name": "packages.getAllInfo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.getAllInfo",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.getAllInfo"]
+                }
+              }
+            },
+            {
+              "name": "packages.getAllWithoutInfo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.getAllWithoutInfo",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.getAllWithoutInfo"]
+                }
+              }
+            },
+            {
+              "name": "packages.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.getById?input={\"id\":\"PACKAGE_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.getById"],
+                  "query": [
+                    { "key": "input", "value": "{\"id\":\"PACKAGE_ID\"}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "packages.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"requestId\": \"\",\n  \"type\": \"req\",\n  \"...\": \"fill reqPackageSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.create"]
+                }
+              }
+            },
+            {
+              "name": "packages.createSole",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"requestId\": \"\",\n  \"type\": \"sole\",\n  \"...\": \"fill solePackageSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.createSole",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.createSole"]
+                }
+              }
+            },
+            {
+              "name": "packages.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"PACKAGE_ID\",\n  \"...\": \"fill packageSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.update"]
+                }
+              }
+            },
+            {
+              "name": "packages.renew",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldPackage\": { \"id\": \"OLD_PACKAGE_ID\", \"...\": \"\" },\n  \"newPackage\": { \"...\": \"without id\" }\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.renew",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.renew"]
+                }
+              }
+            },
+            {
+              "name": "packages.addCoverPeriod",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldPackage\": { \"id\": \"PACKAGE_ID\", \"...\": \"\" },\n  \"coverDetails\": { \"startDate\": \"\", \"endDate\": \"\" }\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.addCoverPeriod",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.addCoverPeriod"]
+                }
+              }
+            },
+            {
+              "name": "packages.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"PACKAGE_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.delete"]
+                }
+              }
+            },
+            {
+              "name": "packages.end",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"packageId\": \"PACKAGE_ID\",\n  \"endDate\": \"2024-12-31\",\n  \"reason\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/packages.end",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "packages.end"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Requests",
+          "item": [
+            {
+              "name": "requests.getAllWithoutInfoWithPackages",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getAllWithoutInfoWithPackages",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.getAllWithoutInfoWithPackages"]
+                }
+              }
+            },
+            {
+              "name": "requests.getAllWithoutInfoNotEndedYetWithPackages",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getAllWithoutInfoNotEndedYetWithPackages",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "requests.getAllWithoutInfoNotEndedYetWithPackages"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "requests.getAllInfoMetadata",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getAllInfoMetadata",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.getAllInfoMetadata"]
+                }
+              }
+            },
+            {
+              "name": "requests.getAllMetadataWithoutInfo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getAllMetadataWithoutInfo",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.getAllMetadataWithoutInfo"]
+                }
+              }
+            },
+            {
+              "name": "requests.getAllMetadataWithoutInfoNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getAllMetadataWithoutInfoNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "requests.getAllMetadataWithoutInfoNotEndedYet"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "requests.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getById?input={\"id\":\"REQUEST_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.getById"],
+                  "query": [
+                    { "key": "input", "value": "{\"id\":\"REQUEST_ID\"}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "requests.getRequestWithOnePackageByPackageId",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.getRequestWithOnePackageByPackageId?input={\"packageId\":\"PACKAGE_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "requests.getRequestWithOnePackageByPackageId"
+                  ],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"packageId\":\"PACKAGE_ID\"}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "requests.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientId\": \"\",\n  \"...\": \"fill requestMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.create"]
+                }
+              }
+            },
+            {
+              "name": "requests.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"REQUEST_ID\",\n  \"...\": \"fill requestMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.update"]
+                }
+              }
+            },
+            {
+              "name": "requests.renew",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldRequest\": { \"id\": \"REQUEST_ID\", \"...\": \"\" },\n  \"newRequest\": { \"...\": \"without id\" }\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.renew",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.renew"]
+                }
+              }
+            },
+            {
+              "name": "requests.endRequestAndPackages",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"requestId\": \"REQUEST_ID\",\n  \"endDate\": \"2024-12-31\",\n  \"reason\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.endRequestAndPackages",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.endRequestAndPackages"]
+                }
+              }
+            },
+            {
+              "name": "requests.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"REQUEST_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/requests.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "requests.delete"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Volunteers",
+          "item": [
+            {
+              "name": "volunteers.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.getAll"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.getAllNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.getAllNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.getAllNotEndedYet"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.getById?input={\"id\":\"VOLUNTEER_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.getById"],
+                  "query": [
+                    { "key": "input", "value": "{\"id\":\"VOLUNTEER_ID\"}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "volunteers.getCoreTrainingRecordCompletions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.getCoreTrainingRecordCompletions?input={\"withEnded\":false}",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "volunteers.getCoreTrainingRecordCompletions"
+                  ],
+                  "query": [
+                    { "key": "input", "value": "{\"withEnded\":false}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "volunteers.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"...\": \"fill volunteerMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.create"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"VOLUNTEER_ID\",\n  \"...\": \"fill volunteerMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.update"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.updateName",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"volunteer\": { \"id\": \"VOLUNTEER_ID\" },\n  \"newName\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.updateName",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.updateName"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.getAllPackagesByCoordinator",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.getAllPackagesByCoordinator",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "volunteers.getAllPackagesByCoordinator"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "volunteers.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"VOLUNTEER_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.delete"]
+                }
+              }
+            },
+            {
+              "name": "volunteers.end",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"volunteerId\": \"VOLUNTEER_ID\",\n  \"endDate\": \"2024-12-31\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/volunteers.end",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "volunteers.end"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mps",
+          "item": [
+            {
+              "name": "mps.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.getAll"]
+                }
+              }
+            },
+            {
+              "name": "mps.getAllNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.getAllNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.getAllNotEndedYet"]
+                }
+              }
+            },
+            {
+              "name": "mps.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.getById?input={\"id\":\"MP_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.getById"],
+                  "query": [{ "key": "input", "value": "{\"id\":\"MP_ID\"}" }]
+                }
+              }
+            },
+            {
+              "name": "mps.getCoreTrainingRecordCompletions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.getCoreTrainingRecordCompletions?input={\"withEnded\":false}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.getCoreTrainingRecordCompletions"],
+                  "query": [
+                    { "key": "input", "value": "{\"withEnded\":false}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "mps.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"...\": \"fill mpMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.create"]
+                }
+              }
+            },
+            {
+              "name": "mps.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"MP_ID\",\n  \"...\": \"fill mpMetadata fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.update"]
+                }
+              }
+            },
+            {
+              "name": "mps.updateName",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mp\": { \"id\": \"MP_ID\" },\n  \"newName\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.updateName",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.updateName"]
+                }
+              }
+            },
+            {
+              "name": "mps.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"MP_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.delete"]
+                }
+              }
+            },
+            {
+              "name": "mps.end",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mpId\": \"MP_ID\",\n  \"endDate\": \"2024-12-31\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mps.end",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mps.end"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TrainingRecords",
+          "item": [
+            {
+              "name": "trainingRecords.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.getAll"]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.getAllNotEndedYet",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.getAllNotEndedYet",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.getAllNotEndedYet"]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.getByExpiringBefore",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.getByExpiringBefore?input={\"expiryDate\":\"2024-12-31\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.getByExpiringBefore"],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"expiryDate\":\"2024-12-31\"}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.getById?input={\"id\":\"TRAINING_ID\",\"ownerId\":\"OWNER_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.getById"],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"id\":\"TRAINING_ID\",\"ownerId\":\"OWNER_ID\"}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ownerId\": \"\",\n  \"title\": \"\",\n  \"expiryDate\": \"\",\n  \"...\": \"fill trainingRecordSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.create"]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"TRAINING_ID\",\n  \"ownerId\": \"OWNER_ID\",\n  \"...\": \"fill trainingRecordSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.update"]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"TRAINING_ID\", \"ownerId\": \"OWNER_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.delete"]
+                }
+              }
+            },
+            {
+              "name": "trainingRecords.end",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"trainingId\": \"TRAINING_ID\",\n  \"ownerId\": \"OWNER_ID\",\n  \"endDate\": \"2024-12-31\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/trainingRecords.end",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "trainingRecords.end"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mag Logs",
+          "item": [
+            {
+              "name": "mag.getAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.getAll",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.getAll"]
+                }
+              }
+            },
+            {
+              "name": "mag.getById",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.getById?input={\"id\":\"MAG_ID\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.getById"],
+                  "query": [{ "key": "input", "value": "{\"id\":\"MAG_ID\"}" }]
+                }
+              }
+            },
+            {
+              "name": "mag.getByDateInterval",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.getByDateInterval?input={\"startDate\":\"2024-01-01\",\"endDate\":\"2024-12-31\"}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.getByDateInterval"],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"startDate\":\"2024-01-01\",\"endDate\":\"2024-12-31\"}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "mag.create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"\",\n  \"details\": \"\",\n  \"...\": \"fill magLogSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.create",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.create"]
+                }
+              }
+            },
+            {
+              "name": "mag.update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"MAG_ID\",\n  \"...\": \"fill magLogSchema fields\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.update",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.update"]
+                }
+              }
+            },
+            {
+              "name": "mag.delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"id\": \"MAG_ID\" }",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{apiBase}}/trpc/mag.delete",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "mag.delete"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "item": [
+            {
+              "name": "analytics.generateAttendanceAllowanceCrossSection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.generateAttendanceAllowanceCrossSection",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.generateAttendanceAllowanceCrossSection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.generateAttendanceAllowanceReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.generateAttendanceAllowanceReport?input={\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.generateAttendanceAllowanceReport"
+                  ],
+                  "query": [
+                    { "key": "input", "value": "{\"startYear\":2020}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.generateCoordinatorAttendanceReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.generateCoordinatorAttendanceReport?input={\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.generateCoordinatorAttendanceReport"
+                  ],
+                  "query": [
+                    { "key": "input", "value": "{\"startYear\":2020}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getActiveRequestsCrossSection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getActiveRequestsCrossSection",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.getActiveRequestsCrossSection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getActivePackagesCrossSection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getActivePackagesCrossSection",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.getActivePackagesCrossSection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getRequestsReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getRequestsReport?input={\"isInfo\":false,\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "analytics.getRequestsReport"],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"isInfo\":false,\"startYear\":2020}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getPackagesReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getPackagesReport?input={\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "analytics.getPackagesReport"],
+                  "query": [
+                    { "key": "input", "value": "{\"startYear\":2020}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.generateCoordinatorPackagesReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.generateCoordinatorPackagesReport?input={\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.generateCoordinatorPackagesReport"
+                  ],
+                  "query": [
+                    { "key": "input", "value": "{\"startYear\":2020}" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getActiveRequestsDeprivationCrossSection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getActiveRequestsDeprivationCrossSection",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.getActiveRequestsDeprivationCrossSection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getActivePackagesDeprivationCrossSection",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getActivePackagesDeprivationCrossSection",
+                  "host": ["{{apiBase}}"],
+                  "path": [
+                    "trpc",
+                    "analytics.getActivePackagesDeprivationCrossSection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getRequestsDeprivationReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getRequestsDeprivationReport?input={\"isInfo\":false,\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "analytics.getRequestsDeprivationReport"],
+                  "query": [
+                    {
+                      "key": "input",
+                      "value": "{\"isInfo\":false,\"startYear\":2020}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics.getPackagesDeprivationReport",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{authToken}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBase}}/trpc/analytics.getPackagesDeprivationReport?input={\"startYear\":2020}",
+                  "host": ["{{apiBase}}"],
+                  "path": ["trpc", "analytics.getPackagesDeprivationReport"],
+                  "query": [
+                    { "key": "input", "value": "{\"startYear\":2020}" }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
