@@ -1,7 +1,7 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
 
 import { DEPRIVATION_THRESHOLD_DECILE } from "../../shared/const";
+import { client } from "../db/repository";
 
 interface DeprivationData {
   matched: boolean;
@@ -15,91 +15,21 @@ type DeprivationRecord = {
 };
 
 type DeprivationServiceOptions = {
-  tableName?: string;
-  dynamo?: DynamoDBDocumentClient;
   staticData?: Map<string, DeprivationRecord>; // for tests or fallback
 };
 
 const DEFAULT_TABLE = process.env.DEPRIVATION_TABLE ?? "DeprivationCompact";
-const DEFAULT_REGION = process.env.AWS_REGION ?? "eu-west-2";
-const CUSTOM_ENDPOINT =
-  process.env.DEPRIVATION_DYNAMO_ENDPOINT ?? process.env.DYNAMO_ENDPOINT;
 
 function normalizePostcode(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
 }
 
 export class DeprivationService {
-  private readonly tableName: string;
-  private readonly dynamo?: DynamoDBDocumentClient;
   private readonly staticData?: Map<string, DeprivationRecord>;
 
   constructor(options: DeprivationServiceOptions = {}) {
-    this.tableName = options.tableName ?? DEFAULT_TABLE;
     this.staticData = options.staticData;
-    this.dynamo =
-      options.dynamo ??
-      DynamoDBDocumentClient.from(
-        new DynamoDBClient({
-          region: DEFAULT_REGION,
-          endpoint: CUSTOM_ENDPOINT,
-        }),
-        { marshallOptions: { removeUndefinedValues: true } }
-      );
   }
-
-  private async getFromStore(
-    postcode: string,
-    rawPostcode?: string
-  ): Promise<DeprivationRecord | undefined> {
-    if (this.staticData) {
-      return this.staticData.get(postcode);
-    }
-
-    if (!this.dynamo) {
-      throw new Error("DynamoDB client not configured");
-    }
-
-    const result = await this.dynamo.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { postcode },
-      })
-    );
-
-    if (result.Item) {
-      const incomeDecile = Number(result.Item.incomeDecile);
-      const healthDecile = Number(result.Item.healthDecile);
-
-      if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
-        return { incomeDecile, healthDecile };
-      }
-    }
-
-    // Fallback: if data was inserted without stripping spaces, try the raw uppercase value
-    const rawKey =
-      rawPostcode?.toUpperCase().trim() === postcode
-        ? undefined
-        : rawPostcode?.toUpperCase().trim();
-    if (rawKey) {
-      const fallback = await this.dynamo.send(
-        new GetCommand({
-          TableName: this.tableName,
-          Key: { postcode: rawKey },
-        })
-      );
-      if (fallback.Item) {
-        const incomeDecile = Number(fallback.Item.incomeDecile);
-        const healthDecile = Number(fallback.Item.healthDecile);
-        if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
-          return { incomeDecile, healthDecile };
-        }
-      }
-    }
-
-    return undefined;
-  }
-
   async getDeprivationData(postcode: string): Promise<DeprivationData> {
     const normalizedPostcode = normalizePostcode(postcode);
 
@@ -135,5 +65,52 @@ export class DeprivationService {
         health: false,
       };
     }
+  }
+
+  private async getFromStore(
+    postcode: string,
+    rawPostcode?: string
+  ): Promise<DeprivationRecord | undefined> {
+    if (this.staticData) {
+      return this.staticData.get(postcode);
+    }
+    const result = await client.send(
+      new GetCommand({
+        TableName: DEFAULT_TABLE,
+        Key: { postcode },
+      })
+    );
+
+    if (result.Item) {
+      const incomeDecile = Number(result.Item.incomeDecile);
+      const healthDecile = Number(result.Item.healthDecile);
+
+      if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
+        return { incomeDecile, healthDecile };
+      }
+    }
+
+    // Fallback: if data was inserted without stripping spaces, try the raw uppercase value
+    const rawKey =
+      rawPostcode?.toUpperCase().trim() === postcode
+        ? undefined
+        : rawPostcode?.toUpperCase().trim();
+    if (rawKey) {
+      const fallback = await client.send(
+        new GetCommand({
+          TableName: DEFAULT_TABLE,
+          Key: { postcode: rawKey },
+        })
+      );
+      if (fallback.Item) {
+        const incomeDecile = Number(fallback.Item.incomeDecile);
+        const healthDecile = Number(fallback.Item.healthDecile);
+        if (!Number.isNaN(incomeDecile) && !Number.isNaN(healthDecile)) {
+          return { incomeDecile, healthDecile };
+        }
+      }
+    }
+
+    return undefined;
   }
 }

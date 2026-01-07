@@ -24,6 +24,7 @@ const DEFAULT_INPUT = path.resolve(
 const DEFAULT_TABLE = "DeprivationCompact";
 const DEFAULT_REGION = process.env.AWS_REGION ?? "eu-west-2";
 const BATCH_SIZE = 25;
+const isProd = process.env.NODE_ENV == "production";
 
 type ImportConfig = {
   inputPath: string;
@@ -126,7 +127,7 @@ async function flushBatch(
     );
     const unprocessed = response.UnprocessedItems ?? {};
     if (Object.keys(unprocessed).length === 0) break;
-    pending = unprocessed;
+    pending = unprocessed as typeof pending; // forced
     await sleep(200);
   }
 }
@@ -151,6 +152,12 @@ export async function runImport(
   const baseClient = new DynamoDBClient({
     region: config.region,
     endpoint: config.endpoint,
+    credentials: isProd
+      ? undefined
+      : {
+          accessKeyId: "dummy",
+          secretAccessKey: "dummy",
+        },
   });
   const docClient = DynamoDBDocumentClient.from(baseClient, {
     marshallOptions: { removeUndefinedValues: true },
@@ -214,4 +221,3 @@ export async function runImport(
     `Imported ${written} rows into ${config.tableName} from ${config.inputPath} (read ${total} data rows).`
   );
 }
-
