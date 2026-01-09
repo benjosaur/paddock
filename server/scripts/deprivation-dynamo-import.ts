@@ -152,7 +152,7 @@ export async function runImport(
   const baseClient = new DynamoDBClient({
     region: config.region,
     endpoint: config.endpoint,
-    credentials: isProd
+    credentials: isProd // this wont make a difference if run locally
       ? undefined
       : {
           accessKeyId: "dummy",
