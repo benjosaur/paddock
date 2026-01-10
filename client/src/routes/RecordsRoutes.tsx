@@ -29,7 +29,7 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
   {
     key: "earliest",
     header: "Earliest Completion",
-    render: (item) => formatYmdToDmy(item.earliestCoreCompletionDate || ""),
+    render: (item) => formatYmdToDmy(item.earliestCoreExpiryDate || ""),
   },
   {
     key: "rate",
@@ -63,8 +63,8 @@ export default function RecordsRoutes() {
       [...((mpRecords as CoreTrainingRecordCompletion[]) || [])].sort(
         (record1, record2) =>
           compareDates(
-            record1.earliestCoreCompletionDate,
-            record2.earliestCoreCompletionDate
+            record1.earliestCoreExpiryDate,
+            record2.earliestCoreExpiryDate
           )
       ),
     [mpRecords]
@@ -74,8 +74,8 @@ export default function RecordsRoutes() {
       [...((volunteerRecords as CoreTrainingRecordCompletion[]) || [])].sort(
         (record1, record2) =>
           compareDates(
-            record1.earliestCoreCompletionDate,
-            record2.earliestCoreCompletionDate
+            record1.earliestCoreExpiryDate,
+            record2.earliestCoreExpiryDate
           )
       ),
     [volunteerRecords]

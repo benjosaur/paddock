@@ -1,8 +1,8 @@
 // schemas for convenience functionality, wrapping core functionality
 
 import { z } from "zod";
-import { clientMetadataSchema, trainingRecordSchema } from ".";
-import { coreTrainingRecordTypes, endReasons, serviceOptions } from "../const";
+import { clientMetadataSchema } from ".";
+import { endReasons, serviceOptions } from "../const";
 
 export const coverDetailsSchema = z.object({
   carerId: z.string(),
@@ -54,12 +54,13 @@ export const analyticsDetailsSchema = z.object({
 });
 
 export const coreTrainingRecordCompletionSchema = z.object({
+  // expiry date is compulsory for record completion but not completion date - work off expiry
   carer: z.object({
     id: z.string(),
     name: z.string(),
   }),
   coreCompletionRate: z.coerce.number().min(0).default(0),
-  earliestCoreCompletionDate: z
+  earliestCoreExpiryDate: z
     .union([z.string().date(), z.literal("")])
     .default(""),
   // coreRecords: z.array(

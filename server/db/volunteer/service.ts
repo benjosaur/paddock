@@ -172,7 +172,7 @@ export class VolunteerService {
 
       const coreCompletions = volunteers.map(
         (volunteer): CoreTrainingRecordCompletion => {
-          const volunteerCoreCompletionDates = coreTrainingRecordTypes.reduce(
+          const volunteerCoreExpiryDates = coreTrainingRecordTypes.reduce(
             (acc, recordName) => {
               acc[recordName] = [];
               return acc;
@@ -185,14 +185,14 @@ export class VolunteerService {
               (name) => name == record.details.recordName
             );
             if (isCoreRecord)
-              volunteerCoreCompletionDates[
+              volunteerCoreExpiryDates[
                 record.details
                   .recordName as (typeof coreTrainingRecordTypes)[number]
-              ].push(record.completionDate);
+              ].push(record.expiryDate);
           }
 
-          const latestVolunteerCoreCompletions = Object.entries(
-            volunteerCoreCompletionDates
+          const latestVolunteerCoreExpiries = Object.entries(
+            volunteerCoreExpiryDates
           ).reduce((acc, entry) => {
             const [_, dates] = entry;
             const earliestDate = getLatestDate(dates);
@@ -200,18 +200,18 @@ export class VolunteerService {
             return acc;
           }, [] as string[]);
 
-          const earliestCoreCompletionDate = getEarliestDate(
-            latestVolunteerCoreCompletions
+          const earliestCoreExpiryDate = getEarliestDate(
+            latestVolunteerCoreExpiries
           );
 
-          const coreCompletionCount = latestVolunteerCoreCompletions.length;
+          const coreCompletionCount = latestVolunteerCoreExpiries.length;
           const coreCompletionRate =
             coreCompletionCount / coreTrainingRecordTypes.length;
 
           return {
             carer: { id: volunteer.id, name: volunteer.details.name },
             coreCompletionRate: Number((100 * coreCompletionRate).toFixed(2)),
-            earliestCoreCompletionDate: earliestCoreCompletionDate ?? "",
+            earliestCoreExpiryDate: earliestCoreExpiryDate ?? "",
           };
         }
       );

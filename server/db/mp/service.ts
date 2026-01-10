@@ -106,7 +106,7 @@ export class MpService {
         : await this.getAllNotEndedYet(user);
 
       const coreCompletions = mps.map((mp): CoreTrainingRecordCompletion => {
-        const mpCoreCompletionDates = coreTrainingRecordTypes.reduce(
+        const mpCoreExpiryDates = coreTrainingRecordTypes.reduce(
           (acc, recordName) => {
             acc[recordName] = [];
             return acc;
@@ -119,33 +119,32 @@ export class MpService {
             (name) => name == record.details.recordName
           );
           if (isCoreRecord)
-            mpCoreCompletionDates[
+            mpCoreExpiryDates[
               record.details
                 .recordName as (typeof coreTrainingRecordTypes)[number]
-            ].push(record.completionDate);
+            ].push(record.expiryDate);
         }
 
-        const latestMpCoreCompletions = Object.entries(
-          mpCoreCompletionDates
-        ).reduce((acc, entry) => {
-          const [_, dates] = entry;
-          const earliestDate = getLatestDate(dates);
-          if (earliestDate) return [...acc, earliestDate];
-          return acc;
-        }, [] as string[]);
-
-        const earliestCoreCompletionDate = getEarliestDate(
-          latestMpCoreCompletions
+        const latestMpCoreExpiries = Object.entries(mpCoreExpiryDates).reduce(
+          (acc, entry) => {
+            const [_, dates] = entry;
+            const earliestDate = getLatestDate(dates);
+            if (earliestDate) return [...acc, earliestDate];
+            return acc;
+          },
+          [] as string[]
         );
 
-        const coreCompletionCount = latestMpCoreCompletions.length;
+        const earliestCoreExpiryDate = getEarliestDate(latestMpCoreExpiries);
+
+        const coreCompletionCount = latestMpCoreExpiries.length;
         const coreCompletionRate =
           coreCompletionCount / coreTrainingRecordTypes.length;
 
         return {
           carer: { id: mp.id, name: mp.details.name },
           coreCompletionRate: Number((100 * coreCompletionRate).toFixed(2)),
-          earliestCoreCompletionDate: earliestCoreCompletionDate ?? "",
+          earliestCoreExpiryDate: earliestCoreExpiryDate ?? "",
         };
       });
 

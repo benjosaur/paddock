@@ -101,6 +101,9 @@ export const packagesRouter = router({
   end: createProtectedProcedure("packages", "update")
     .input(endPackageDetailsSchema)
     .mutation(async ({ ctx, input }) => {
-      return await ctx.services.packages.endPackage(ctx.user, input);
+      return await ctx.services.packages.endPackageIfNotAlready(
+        ctx.user,
+        input
+      );
     }),
 });
