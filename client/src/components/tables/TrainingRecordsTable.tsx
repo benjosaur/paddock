@@ -130,7 +130,6 @@ export function TrainingRecordsTable({ data }: TrainingRecordsTableProps) {
           undoDescription=""
         />
       </div>
-      ;
     </>
   );
 }

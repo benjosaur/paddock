@@ -28,7 +28,7 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
   },
   {
     key: "earliest",
-    header: "Earliest Completion",
+    header: "Earliest Expiry",
     render: (item) => formatYmdToDmy(item.earliestCoreExpiryDate || ""),
   },
   {

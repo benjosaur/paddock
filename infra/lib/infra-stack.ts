@@ -9,6 +9,7 @@ import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import { Database } from "./database";
 import { ImageService } from "./images";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
 
 interface MainStackProps extends cdk.StackProps {
   // edgeFunctionVersion: lambda.IVersion;
@@ -219,7 +220,13 @@ export class InfraStack extends cdk.Stack {
       tableName: "Test2",
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    const deprivationTable = Table.fromTableName(
+      this,
+      "Deprivation",
+      "DeprivationCompact" // tableName
+    );
 
+    deprivationTable.grantReadWriteData(trpcLambda);
     prodDatabase.table.grantReadWriteData(trpcLambda);
     testDatabase.table.grantReadWriteData(trpcLambda);
 
