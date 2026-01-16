@@ -72,11 +72,12 @@ The server supports both local development and AWS Lambda deployment:
 Main entities include:
 - Clients - Care recipients
 - Volunteers - Care providers
-- MPs (Member Packages) - Care assignments
+- MPs - Members/care providers with member status
 - Requests - Service requests
-- Training Records - Volunteer certifications
+- Training Records - Volunteer and MP certifications
 - Packages - Bundled services
-- Analytics - Usage metrics
+- MAG Logs - Memory Activity Group session records
+- Analytics - Usage metrics and reports
 
 ### Frontend Architecture
 - React Router for routing (`client/src/routes/`)
