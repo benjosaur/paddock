@@ -1,15 +1,51 @@
 # Paddock
 
-Paddock is a case-management style app for WiveyCares data: tracking clients, volunteers, MPs, requests, care packages, training records, and MAG (Memory Activity Group) logs. It is built as a TypeScript monorepo with a React client, a server that talks to DynamoDB, and CDK-based infrastructure.
+Paddock is a case-management system designed for community-based care coordination, specifically built to support the microprovider model of care. It tracks clients, volunteers, microproviders (MPs), care requests, packages, training records, and MAG (Memory Activity Group) logs through an intuitive TypeScript monorepo with React frontend, tRPC backend, and AWS CDK infrastructure.
 
 **Live site**: [paddock.health](https://paddock.health)
+
+## The Microprovider Model
+
+Paddock directly supports [WiveyCares](https://wiveycares.net), a pioneering charity-run matching service operating in Wiveliscombe, Somerset. WiveyCares supports the self-employed microprovider care model championed by [Somerset County Council](https://www.somerset.gov.uk/care-and-support-for-adults/somerset-micro-enterprise-project/) - which has created over 1,250 micro-providers delivering 30,000+ hours of weekly support to nearly 6,000 people across the county.
+
+**Important**: WiveyCares is a matching service, not an employer. Microproviders remain self-employed, maintaining their independence while benefiting from community coordination and administrative support.
+
+### What are Microproviders?
+
+Microproviders are self-employed local carers operating small, community-based care services with no more than eight workers, completely independent of larger organisations. They provide:
+- Personal, flexible and responsive support
+- Support to live independently at home
+- Day support and help around the home
+- Short breaks and socialisation activities
+- Transport and access to community services
+
+Unlike traditional care agencies, microproviders are not CQC-regulated medical professionals. They fill the vital space between informal care from friends/family and formal agency care - offering personalized, community-centered support from people who know the local area and residents well.
+
+### The Village-Centered Innovation
+
+While Somerset has pioneered the microprovider model at a county level, **WiveyCares innovates by centering this model at the village level** rather than county-wide coordination. This hyperlocal approach creates:
+
+- **Higher Reputational Capital**: Village coordinators personally know both clients and carers, building deeper trust
+- **Better Quality Matching**: Local knowledge enables nuanced matching based on personalities, needs, and community ties
+- **Stronger Community Cohesion**: Care relationships strengthen existing village networks rather than importing external support
+- **Responsive Coordination**: Village-scale enables rapid response and personal touch impossible at county scale
+
+A trusted part-time village coordinator serves as the community hub, who:
+- Personalises matching between clients and microproviders
+- Manages onboarding (DBS checks, tax reminders, training)
+- Signposts new care requests to available microproviders
+- Maintains community trust as the first point of contact
+
+This **villagers caring for villagers** model has proven superior to Somerset's county-wide brokerage tool because village-level coordination keeps information current, leverages deep local knowledge, and maintains the personal relationships that make community care effective.
+
+**Paddock's Role**: While WiveyCares manages matching through personal relationships and mailing lists (which works well), coordinators faced legacy database systems that made data queries painful - especially when preparing funding applications requiring aggregate statistics across 100+ client entries. Paddock provides a modern database and analytics layer to 10x querying efficiency and support the coordination work that makes this model successful.
 
 ## Features
 
 ### Dashboard Analytics
 Get real-time insights into your care operations with comprehensive analytics at a glance:
 - **Active Requests Tracking**: Monitor clients with active care requests (2 shown in example)
-- **Care Provider Utilization**: Track MPs and volunteers with active packages (1 MP, 0 volunteers shown)
+- **Care Provider Utilization**: Track microproviders (MPs) and volunteers with active packages (1 MP, 0 volunteers shown)
 - **Care Hours Management**: View current requested (40h) vs. brokered (20h) weekly care hours
 - **Resource Allocation**: Identify gaps between care demand and supply to optimize scheduling
 
