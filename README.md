@@ -4,6 +4,36 @@ Paddock is a case-management style app for WiveyCares data: tracking clients, vo
 
 **Live site**: [paddock.health](https://paddock.health)
 
+## Features
+
+### Dashboard Analytics
+Get real-time insights into your care operations with comprehensive analytics at a glance:
+- **Active Requests Tracking**: Monitor clients with active care requests (2 shown in example)
+- **Care Provider Utilization**: Track MPs and volunteers with active packages (1 MP, 0 volunteers shown)
+- **Care Hours Management**: View current requested (40h) vs. brokered (20h) weekly care hours
+- **Resource Allocation**: Identify gaps between care demand and supply to optimize scheduling
+
+![Dashboard](.github/images/dashboard.png)
+
+### Client Management with Deprivation Indicators
+Track comprehensive client information with automatic deprivation analysis:
+- **Contact & Service Information**: Complete client profiles with contact details, services needed, and care history
+- **Automatic Deprivation Assessment**: Postcodes are automatically checked against the UK Government's [English Indices of Deprivation 2025](https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025/english-indices-of-deprivation-2025-statistical-release) to identify income and health deprivation levels
+- **Request & Package Tracking**: View all care requests and packages associated with each client
+- **Notes & Documentation**: Maintain detailed care notes and important client information
+
+![Client Details Modal](.github/images/client-details-modal.png)
+
+### Advanced Analytics Reporting
+Generate detailed reports breaking down care hours by multiple dimensions:
+- **Service Breakdown**: Hours analyzed by service type (Blue Badge, Sitting Service, Meal Prep, Overnight, Transport)
+- **Locality Analysis**: Coverage across the [10 parishes of Wiveliscombe](https://wiveliscombe.com/parishes/) including Wiveliscombe, and surrounding areas
+- **Cross-Dimensional Insights**: Service distribution within each locality to identify local care patterns
+- **Temporal Trends**: Monthly and annual summaries with year-over-year comparisons
+- **Exportable Reports**: Generate comprehensive PDF reports for trustees and stakeholders
+
+![Analytics Report](.github/images/report.png)
+
 ## High-level architecture
 
 - **Client (`client/`)**: Vite + React + TypeScript. Talks to the server via tRPC. UI is organized into forms, tables, and modals for the main entities (clients, volunteers, MPs, requests, packages, training, MAG logs).
