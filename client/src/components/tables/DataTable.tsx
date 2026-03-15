@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -20,6 +20,9 @@ import {
   TreePalm,
   CalendarCheck,
   Undo2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
@@ -48,6 +51,8 @@ interface DataTableProps<T> {
   onCreate?: () => void;
   resource: AppRouterKeys;
   customActions?: React.ReactNode;
+  defaultSortKey?: string;
+  defaultSortDirection?: "asc" | "desc";
 }
 
 export function DataTable<
@@ -74,12 +79,20 @@ export function DataTable<
   searchPlaceholder,
   resource,
   customActions,
+  defaultSortKey,
+  defaultSortDirection = "asc",
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {}
+  );
+  const [sortKey, setSortKey] = useState<string>(
+    defaultSortKey ?? (String(columns[0]?.key) || "")
+  );
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
+    defaultSortDirection
   );
 
   const matchValue = (value: any, searchTerm: string): boolean => {
@@ -122,6 +135,70 @@ export function DataTable<
 
     return matchesSearch && matchesColumnFilters;
   });
+
+  const handleSort = (columnKey: string) => {
+    if (sortKey === columnKey) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(columnKey);
+      setSortDirection("asc");
+    }
+  };
+
+  const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
+
+  const isEmptyValue = (v: unknown): boolean => {
+    if (v === null || v === undefined) return true;
+    if (typeof v === "string" && EMPTY_VALUES.has(v.toLowerCase().trim())) return true;
+    return false;
+  };
+
+  const DD_MM_YYYY = /^\d{2}-\d{2}-\d{4}$/;
+
+  const parseDmy = (s: string): number => {
+    const [d, m, y] = s.split("-");
+    return Number(y) * 10000 + Number(m) * 100 + Number(d);
+  };
+
+  const sortedData = useMemo(() => {
+    const sortColumn = columns.find((col) => String(col.key) === sortKey);
+    if (!sortColumn) return filteredData;
+
+    const dirFactor = sortDirection === "asc" ? 1 : -1;
+
+    return [...filteredData].sort((a, b) => {
+      const aRaw = sortColumn.sortValue
+        ? sortColumn.sortValue(a)
+        : (a[sortColumn.key as keyof T] as unknown);
+      const bRaw = sortColumn.sortValue
+        ? sortColumn.sortValue(b)
+        : (b[sortColumn.key as keyof T] as unknown);
+
+      const aEmpty = isEmptyValue(aRaw);
+      const bEmpty = isEmptyValue(bRaw);
+      if (aEmpty && bEmpty) return 0;
+      if (aEmpty) return 1;
+      if (bEmpty) return -1;
+
+      const aStr = String(aRaw);
+      const bStr = String(bRaw);
+
+      // Date comparison (DD-MM-YYYY)
+      if (DD_MM_YYYY.test(aStr) && DD_MM_YYYY.test(bStr)) {
+        return (parseDmy(aStr) - parseDmy(bStr)) * dirFactor;
+      }
+
+      // Numeric comparison
+      const aNum = Number(aStr);
+      const bNum = Number(bStr);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return (aNum - bNum) * dirFactor;
+      }
+
+      // String comparison
+      return aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dirFactor;
+    });
+  }, [filteredData, sortKey, sortDirection, columns]);
 
   const handleDeleteClick = (item: T) => {
     setItemToDelete(item);
@@ -207,11 +284,23 @@ export function DataTable<
               {columns.map((col, index) => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-4 text-left text-sm font-semibold text-gray-800 ${
+                  className={`px-6 py-4 text-left text-sm font-semibold text-gray-800 cursor-pointer select-none hover:bg-gray-100/50 transition-colors duration-150 ${
                     index === 0 ? "rounded-tl-xl" : ""
                   }`}
+                  onClick={() => handleSort(String(col.key))}
                 >
-                  {col.header}
+                  <div className="flex items-center gap-1.5">
+                    {col.header}
+                    {sortKey === String(col.key) ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-3.5 w-3.5 text-gray-600" />
+                      ) : (
+                        <ArrowDown className="h-3.5 w-3.5 text-gray-600" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+                    )}
+                  </div>
                 </th>
               ))}
               {functionProvided && (
@@ -238,18 +327,18 @@ export function DataTable<
             </tr>
           </thead>
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">
-            {filteredData.map((item, index) => (
+            {sortedData.map((item, index) => (
               <tr
                 key={item.id}
                 className={`hover:bg-gray-100/80 transition-colors duration-150 ease-in-out ${
-                  index === filteredData.length - 1 ? "rounded-b-xl" : ""
+                  index === sortedData.length - 1 ? "rounded-b-xl" : ""
                 }`}
               >
                 {columns.map((col, colIndex) => (
                   <td
                     key={String(col.key)}
                     className={`px-6 py-4 text-sm text-gray-700 ${
-                      index === filteredData.length - 1 && colIndex === 0
+                      index === sortedData.length - 1 && colIndex === 0
                         ? "rounded-bl-xl"
                         : ""
                     }`}
@@ -262,7 +351,7 @@ export function DataTable<
                 {functionProvided && (
                   <td
                     className={`px-6 py-4 text-right ${
-                      index === filteredData.length - 1 ? "rounded-br-xl" : ""
+                      index === sortedData.length - 1 ? "rounded-br-xl" : ""
                     }`}
                   >
                     <DropdownMenu>
