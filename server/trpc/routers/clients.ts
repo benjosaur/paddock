@@ -20,6 +20,12 @@ export const clientsRouter = router({
     }
   ),
 
+  getAllWithHubGrubService: createProtectedProcedure("clients", "read").query(
+    async ({ ctx }) => {
+      return await ctx.services.client.getAllWithHubGrubService(ctx.user);
+    }
+  ),
+
   getById: createProtectedProcedure("clients", "read")
     .input(clientFullSchema.pick({ id: true }))
     .query(async ({ ctx, input }) => {

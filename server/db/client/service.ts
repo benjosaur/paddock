@@ -91,6 +91,25 @@ export class ClientService {
     }
   }
 
+  async getAllWithHubGrubService(user: User): Promise<ClientMetadata[]> {
+    try {
+      const dbClients = await this.clientRepository.getAllWithHubGrubService(user);
+      const dbRequests = await this.requestRepository.getAll(user);
+      const transformedResult = this.transformDbClientToSharedMetaData([
+        ...dbClients,
+        ...dbRequests,
+      ]);
+      const parsedResult = transformedResult
+        .map((client) => clientMetadataSchema.safeParse(client))
+        .filter((result) => result.success)
+        .map((result) => result.data);
+      return parsedResult;
+    } catch (error) {
+      console.error("Service Layer Error getting Hub & Grub clients:", error);
+      throw error;
+    }
+  }
+
   async getById(clientId: string, user: User): Promise<ClientFull> {
     try {
       const client = await this.clientRepository.getById(clientId, user);
