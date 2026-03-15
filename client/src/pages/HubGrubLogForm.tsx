@@ -1,0 +1,451 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Select, { MultiValue } from "react-select";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { trpc } from "../utils/trpc";
+import type {
+  HubGrubLog,
+  ClientMetadata,
+  MpMetadata,
+  VolunteerMetadata,
+} from "../types";
+import { hubGrubLogSchema } from "../types";
+import { validateOrToast } from "@/utils/validation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { updateNestedValue } from "@/utils/helpers";
+import { associatedHubGrubLogRoutes } from "../routes/HubGrubLogRoutes";
+import { useTodaysDate } from "@/hooks/useTodaysDate";
+import { DEFAULT_HUB_GRUB_DURATION_HOURS } from "shared/const";
+
+export function HubGrubLogForm() {
+  const navigate = useNavigate();
+  const id = useParams<{ id: string }>().id || "";
+  const isEditing = Boolean(id);
+
+  const [formData, setFormData] = useState<Omit<HubGrubLog, "id">>({
+    date: "",
+    totalHours: DEFAULT_HUB_GRUB_DURATION_HOURS,
+    clients: [],
+    mps: [],
+    volunteers: [],
+    details: {
+      totalClients: 0,
+      totalFamily: 0,
+      totalVolunteers: 0,
+      totalMps: 0,
+      otherAttendees: 0,
+      notes: "",
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const clientsQuery = useQuery(
+    trpc.clients.getAllWithMagService.queryOptions()
+  );
+  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
+  const volunteersQuery = useQuery(
+    trpc.volunteers.getAllNotEndedYet.queryOptions()
+  );
+
+  const hubGrubLogQuery = useQuery({
+    ...trpc.hubGrub.getById.queryOptions({ id }),
+    enabled: isEditing && !!id,
+  });
+
+  const createHubGrubLogMutation = useMutation(
+    trpc.hubGrub.create.mutationOptions({
+      onSuccess: () => {
+        associatedHubGrubLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+        navigate("/hub-grub");
+      },
+    })
+  );
+
+  const updateHubGrubLogMutation = useMutation(
+    trpc.hubGrub.update.mutationOptions({
+      onSuccess: () => {
+        associatedHubGrubLogRoutes.forEach((route) => {
+          queryClient.invalidateQueries({ queryKey: route.queryKey() });
+        });
+        navigate("/hub-grub");
+      },
+    })
+  );
+
+  // Load existing data when editing
+  useEffect(() => {
+    if (hubGrubLogQuery.data) {
+      const { id: _, ...dataWithoutId } = hubGrubLogQuery.data as HubGrubLog;
+      setFormData(dataWithoutId);
+    }
+  }, [hubGrubLogQuery.data]);
+
+  useTodaysDate({
+    enabled: !isEditing && !formData.date,
+    setDate: (value) => setFormData((prev) => ({ ...prev, date: value })),
+  });
+
+  const clientOptions = (clientsQuery.data || []).map(
+    (client: ClientMetadata) => ({
+      value: client.id,
+      label: client.details.name,
+    })
+  );
+
+  const mpOptions = (mpsQuery.data || []).map((mp: MpMetadata) => ({
+    value: mp.id,
+    label: mp.details.name,
+  }));
+
+  const volunteerOptions = (volunteersQuery.data || []).map(
+    (volunteer: VolunteerMetadata) => ({
+      value: volunteer.id,
+      label: volunteer.details.name,
+    })
+  );
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const field = e.target.name;
+    let value: string | number | boolean =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+    setFormData((prev) => updateNestedValue(field, value, prev));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validated = validateOrToast<HubGrubLog>(
+      hubGrubLogSchema.omit({ id: true }),
+      formData,
+      { toastPrefix: "Form Validation Error", logPrefix: "Hub & Grub log form" }
+    );
+    if (!validated) return;
+    if (isEditing) {
+      updateHubGrubLogMutation.mutate({ ...validated, id } as HubGrubLog);
+    } else {
+      createHubGrubLogMutation.mutate(validated as Omit<HubGrubLog, "id">);
+    }
+  };
+
+  const handleMultiSelectChange = (
+    field: string,
+    options: ({ id: string } & Record<string, any>)[],
+    newValues: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const matchedOptions = options.filter((option) =>
+      newValues.map((value) => value.value).includes(option.id)
+    );
+    setFormData((prev) => updateNestedValue(field, matchedOptions, prev));
+  };
+
+  const handleCancel = () => {
+    navigate("/hub-grub");
+  };
+
+  return (
+    <div className="space-y-6 animate-in">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          {isEditing ? "Edit Hub & Grub Log" : "Create New Hub & Grub Log"}
+        </h1>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-sm p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Basic Information
+              </h3>
+
+              <div className="max-w-md">
+                <label
+                  htmlFor="date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Date *
+                </label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={formData.date || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="max-w-md">
+                <label
+                  htmlFor="totalHours"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Duration (hours) *
+                </label>
+                <Input
+                  id="totalHours"
+                  name="totalHours"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={formData.totalHours ?? ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Attendance Numbers
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label
+                    htmlFor="totalClients"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Clients *
+                  </label>
+                  <Input
+                    id="totalClients"
+                    name="details.totalClients"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalClients ?? ""}
+                    onChange={handleInputChange}
+                    placeholder=""
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalFamily"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Family Members
+                  </label>
+                  <Input
+                    id="totalFamily"
+                    name="details.totalFamily"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalFamily ?? ""}
+                    onChange={handleInputChange}
+                    placeholder=""
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalVolunteers"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total Volunteers
+                  </label>
+                  <Input
+                    id="totalVolunteers"
+                    name="details.totalVolunteers"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalVolunteers ?? ""}
+                    onChange={handleInputChange}
+                    placeholder=""
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="totalMps"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Total MPs
+                  </label>
+                  <Input
+                    id="totalMps"
+                    name="details.totalMps"
+                    type="number"
+                    min="0"
+                    value={formData.details.totalMps ?? ""}
+                    onChange={handleInputChange}
+                    placeholder=""
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="otherAttendees"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Other Attendees
+                  </label>
+                  <Input
+                    id="otherAttendees"
+                    name="details.otherAttendees"
+                    type="number"
+                    min="0"
+                    value={formData.details.otherAttendees ?? ""}
+                    onChange={handleInputChange}
+                    placeholder=""
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">Attendees</h3>
+
+              <div>
+                <label
+                  htmlFor="attendees"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Registered Attendees (Clients)
+                </label>
+                <Select
+                  options={clientOptions}
+                  value={
+                    clientOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.clients
+                          ?.map((client) => client.id)
+                          .includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "clients",
+                      clientsQuery.data ?? [],
+                      newValues
+                    )
+                  }
+                  placeholder="Search and select clients..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No clients found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by client name to add registered attendees
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="mps"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  MPs
+                </label>
+                <Select
+                  options={mpOptions}
+                  value={
+                    mpOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.mps?.map((mp) => mp.id).includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "mps",
+                      mpsQuery.data ?? [],
+                      newValues
+                    )
+                  }
+                  placeholder="Search and select MPs..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No MPs found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">Search by MP name</p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="volunteers"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Volunteers
+                </label>
+                <Select
+                  options={volunteerOptions}
+                  value={
+                    volunteerOptions.filter(
+                      (option: { value: string; label: string }) =>
+                        formData.volunteers
+                          ?.map((volunteer) => volunteer.id)
+                          .includes(option.value)
+                    ) || null
+                  }
+                  onChange={(newValues) =>
+                    handleMultiSelectChange(
+                      "volunteers",
+                      volunteersQuery.data ?? [],
+                      newValues
+                    )
+                  }
+                  placeholder="Search and select volunteers..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isSearchable
+                  isMulti
+                  noOptionsMessage={() => "No volunteers found"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Search by volunteer name to add volunteers
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-700">
+              Additional Information
+            </h3>
+            <div>
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                name="details.notes"
+                value={formData.details.notes || ""}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Additional notes about the Hub & Grub session..."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {isEditing ? "Update Hub & Grub Log" : "Create Hub & Grub Log"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
