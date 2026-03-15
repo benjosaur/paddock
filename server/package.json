@@ -15,7 +15,9 @@
     "db:test": "bun run db.ts test",
     "deprivation:preprocess": "bun run scripts/preprocess-deprivation.ts",
     "deprivation:dynamo:local": "bun run scripts/deprivation-dynamo-import-local.ts",
-    "deprivation:dynamo:remote": "bun run scripts/deprivation-dynamo-import-remote.ts"
+    "deprivation:dynamo:remote": "bun run scripts/deprivation-dynamo-import-remote.ts",
+    "deprivation:migrate:local": "bun run scripts/migrate-deprivation-remote.ts",
+    "deprivation:migrate:remote": "NODE_ENV=production bun run scripts/migrate-deprivation-remote.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.830.0",
