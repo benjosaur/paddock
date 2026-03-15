@@ -26,6 +26,12 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     sortValue: (item) => item.dateOfBirth || "",
   },
   {
+    key: "startDate",
+    header: "Start Date",
+    render: (item: MpMetadata) =>
+      formatYmdToDmy(item.details.startDate || ""),
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: MpMetadata) => item.details.address.postCode,
