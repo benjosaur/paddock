@@ -30,6 +30,7 @@ const carerPackageColumns: TableColumn<CarerPackageSummary>[] = [
     key: "startDate",
     header: "Start Date",
     render: (item) => formatYmdToDmy(item.startDate),
+    sortValue: (item) => item.startDate || null,
   },
   {
     key: "endDate",

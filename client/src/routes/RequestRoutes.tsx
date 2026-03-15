@@ -35,6 +35,7 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     key: "requestType",
     header: "Type",
     render: (item) => item.requestType,
+    sortValue: (item) => item.requestType,
   },
   {
     key: "startDate",
@@ -123,6 +124,7 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
       key: "requestType",
       header: "Type",
       render: (item) => item.requestType,
+      sortValue: (item) => item.requestType,
     },
     {
       key: "startDate",

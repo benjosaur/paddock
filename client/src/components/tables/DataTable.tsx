@@ -29,6 +29,14 @@ import { DeleteAlert } from "../DeleteAlert";
 import type { TableColumn, TrainingRecord } from "../../types";
 import { AppRouterKeys } from "shared";
 
+const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
+
+function isEmptyValue(v: unknown): boolean {
+  if (v === null || v === undefined) return true;
+  if (typeof v === "string" && EMPTY_VALUES.has(v.toLowerCase().trim())) return true;
+  return false;
+}
+
 interface DataTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
@@ -145,21 +153,6 @@ export function DataTable<
     }
   };
 
-  const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
-
-  const isEmptyValue = (v: unknown): boolean => {
-    if (v === null || v === undefined) return true;
-    if (typeof v === "string" && EMPTY_VALUES.has(v.toLowerCase().trim())) return true;
-    return false;
-  };
-
-  const DD_MM_YYYY = /^\d{2}-\d{2}-\d{4}$/;
-
-  const parseDmy = (s: string): number => {
-    const [d, m, y] = s.split("-");
-    return Number(y) * 10000 + Number(m) * 100 + Number(d);
-  };
-
   const sortedData = useMemo(() => {
     const sortColumn = columns.find((col) => String(col.key) === sortKey);
     if (!sortColumn) return filteredData;
@@ -174,6 +167,7 @@ export function DataTable<
         ? sortColumn.sortValue(b)
         : (b[sortColumn.key as keyof T] as unknown);
 
+      // Empty/N/A values always sort to bottom regardless of direction
       const aEmpty = isEmptyValue(aRaw);
       const bEmpty = isEmptyValue(bRaw);
       if (aEmpty && bEmpty) return 0;
@@ -183,11 +177,6 @@ export function DataTable<
       const aStr = String(aRaw);
       const bStr = String(bRaw);
 
-      // Date comparison (DD-MM-YYYY)
-      if (DD_MM_YYYY.test(aStr) && DD_MM_YYYY.test(bStr)) {
-        return (parseDmy(aStr) - parseDmy(bStr)) * dirFactor;
-      }
-
       // Numeric comparison
       const aNum = Number(aStr);
       const bNum = Number(bStr);
@@ -195,7 +184,7 @@ export function DataTable<
         return (aNum - bNum) * dirFactor;
       }
 
-      // String comparison
+      // String comparison (handles YYYY-MM-DD dates correctly via lexicographic order)
       return aStr.localeCompare(bStr, undefined, { sensitivity: "base" }) * dirFactor;
     });
   }, [filteredData, sortKey, sortDirection, columns]);
