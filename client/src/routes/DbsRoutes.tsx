@@ -18,17 +18,20 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
     key: "name",
     header: "Name",
     render: (item) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "dbsNumber",
     header: "DBS Number",
     render: (item) => item.details.dbsNumber || "",
+    sortValue: (item) => item.details.dbsNumber || null,
   },
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item) =>
       item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
+    sortValue: (item) => item.dbsExpiry || null,
   },
 ];
 
@@ -50,18 +53,6 @@ export default function DbsRoutes() {
 
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
-
-  const compareByDbsExpiry = <T extends { dbsExpiry?: string }>(a: T, b: T) => {
-    const aExp = a.dbsExpiry || "";
-    const bExp = b.dbsExpiry || "";
-    if (aExp === bExp) return 0;
-    if (aExp === "") return -1;
-    if (bExp === "") return 1;
-    return aExp.localeCompare(bExp);
-  };
-
-  const sortedMps = [...mps].sort(compareByDbsExpiry);
-  const sortedVolunteers = [...volunteers].sort(compareByDbsExpiry);
 
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
@@ -106,8 +97,9 @@ export default function DbsRoutes() {
                   key={`mps-dbs-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={sortedMps}
+                  data={mps}
                   columns={mpDbsColumns}
+                  defaultSortKey="dbsExpiry"
                   resource="mps"
                 />
               </TabsContent>
@@ -117,8 +109,9 @@ export default function DbsRoutes() {
                   key={`volunteers-dbs-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={sortedVolunteers}
+                  data={volunteers}
                   columns={volunteerDbsColumns}
+                  defaultSortKey="dbsExpiry"
                   resource="volunteers"
                 />
               </TabsContent>

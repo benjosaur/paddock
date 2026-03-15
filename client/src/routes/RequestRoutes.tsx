@@ -23,11 +23,13 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     key: "clientCustomId",
     header: "Client Custom Id",
     render: (item) => item.details.customId,
+    sortValue: (item) => item.details.customId,
   },
   {
     key: "clientName",
     header: "Client Name",
     render: (item) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "requestType",
@@ -38,6 +40,7 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     key: "startDate",
     header: "Start Date",
     render: (item) => formatYmdToDmy(item.startDate),
+    sortValue: (item) => item.startDate || null,
   },
   {
     key: "endDate",
@@ -46,11 +49,13 @@ export const requestColumns: TableColumn<RequestFull>[] = [
       item.endDate === "open"
         ? "Ongoing"
         : formatYmdToDmy(item.endDate as string),
+    sortValue: (item) => (item.endDate === "open" ? null : item.endDate || null),
   },
   {
     key: "oneOffStartDateHours",
     header: "One Off Hours",
     render: (item) => item.details.oneOffStartDateHours,
+    sortValue: (item) => item.details.oneOffStartDateHours,
   },
   {
     key: "oneOffServicedHours",
@@ -59,11 +64,16 @@ export const requestColumns: TableColumn<RequestFull>[] = [
       item.packages
         .map((pkg) => pkg.details.oneOffStartDateHours)
         .reduce((a, b) => a + b, 0),
+    sortValue: (item) =>
+      item.packages
+        .map((pkg) => pkg.details.oneOffStartDateHours)
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "weeklyHours",
     header: "Weekly Hours",
     render: (item) => item.details.weeklyHours,
+    sortValue: (item) => item.details.weeklyHours,
   },
   {
     key: "weeklyServicedHours",
@@ -77,11 +87,21 @@ export const requestColumns: TableColumn<RequestFull>[] = [
           return 0;
         })
         .reduce((a, b) => a + b, 0),
+    sortValue: (item) =>
+      item.packages
+        .map((pkg) => {
+          if (pkg.endDate == "open" || new Date(pkg.endDate) > new Date()) {
+            return pkg.details.weeklyHours;
+          }
+          return 0;
+        })
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "status",
     header: "Status",
     render: (item) => item.details.status,
+    sortValue: (item) => item.details.status,
   },
 ];
 
@@ -91,11 +111,13 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
       key: "clientCustomId",
       header: "Client Custom Id",
       render: (item) => item.details.customId,
+      sortValue: (item) => item.details.customId,
     },
     {
       key: "clientName",
       header: "Client Name",
       render: (item) => item.details.name,
+      sortValue: (item) => item.details.name,
     },
     {
       key: "requestType",
@@ -106,6 +128,7 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
       key: "startDate",
       header: "Start Date",
       render: (item) => formatYmdToDmy(item.startDate),
+      sortValue: (item) => item.startDate || null,
     },
     {
       key: "endDate",
@@ -114,16 +137,19 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
         item.endDate === "open"
           ? "Ongoing"
           : formatYmdToDmy(item.endDate as string),
+      sortValue: (item) => (item.endDate === "open" ? null : item.endDate || null),
     },
     {
       key: "oneOffStartDateHours",
       header: "One Off Hours",
       render: (item) => item.details.oneOffStartDateHours.toFixed(2),
+      sortValue: (item) => item.details.oneOffStartDateHours,
     },
     {
       key: "status",
       header: "Status",
       render: (item) => item.details.status,
+      sortValue: (item) => item.details.status,
     },
   ];
 
@@ -154,18 +180,6 @@ export default function RequestRoutes() {
   const infoRequests = infoRequestsQuery.data || [];
   const otherRequests = requests.filter(
     (r) => !r.details.services?.includes("Information")
-  );
-
-  const sortedOtherRequests = otherRequests.slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
-  );
-
-  const sortedInfoRequests = infoRequests.slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
   );
 
   const deleteRequestMutation = useMutation(
@@ -250,8 +264,9 @@ export default function RequestRoutes() {
                   key={`requests-care-${showEnded ? "ended" : "active"}`}
                   title="Requests"
                   searchPlaceholder="Search requests..."
-                  data={sortedOtherRequests}
+                  data={otherRequests}
                   columns={requestColumns}
+                  defaultSortKey="clientName"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddPackage={handleAddPackage}
@@ -277,8 +292,9 @@ export default function RequestRoutes() {
                   key={`requests-info-${showEnded ? "ended" : "active"}`}
                   title="Requests"
                   searchPlaceholder="Search requests..."
-                  data={sortedInfoRequests}
+                  data={infoRequests}
                   columns={infoRequestColumns}
+                  defaultSortKey="clientName"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddPackage={handleAddPackage}

@@ -16,38 +16,45 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     key: "name",
     header: "Name",
     render: (item: VolunteerMetadata) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "role",
     header: "Role",
     render: (item: VolunteerMetadata) => item.details.role,
+    sortValue: (item) => item.details.role,
   },
   {
     key: "dob",
     header: "Date of Birth",
     render: (item: VolunteerMetadata) =>
       item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
+    sortValue: (item) => item.dateOfBirth || null,
   },
   {
     key: "postCode",
     header: "Post Code",
     render: (item: VolunteerMetadata) => item.details.address.postCode,
+    sortValue: (item) => item.details.address.postCode,
   },
   {
     key: "services",
     header: "Services",
     render: (item: VolunteerMetadata) => item.details.services.join(", "),
+    sortValue: (item) => item.details.services.join(", "),
   },
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item: VolunteerMetadata) =>
       item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
+    sortValue: (item) => item.dbsExpiry || null,
   },
   {
     key: "capacity",
     header: "Capacity?",
     render: (item: VolunteerMetadata) => item.details.capacity,
+    sortValue: (item) => item.details.capacity,
   },
 ];
 
@@ -164,12 +171,7 @@ export function VolunteersRoutes() {
   if (volunteersQuery.isLoading) return <div>Loading...</div>;
   if (volunteersQuery.error) return <div>Error loading Volunteers</div>;
 
-  // Ensure rows are shown in alphabetical order by Volunteer name
-  const sortedVolunteers = (volunteersQuery.data || []).slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
-  );
+  const volunteers = volunteersQuery.data || [];
 
   return (
     <Routes>
@@ -181,8 +183,9 @@ export function VolunteersRoutes() {
               key={`volunteers-${showEnded}`}
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
-              data={sortedVolunteers}
+              data={volunteers}
               columns={volunteerColumns}
+              defaultSortKey="name"
               onAddPackage={handleAddSolePackage}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}

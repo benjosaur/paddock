@@ -16,38 +16,45 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     key: "name",
     header: "Name",
     render: (item: MpMetadata) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "dob",
     header: "Date of Birth",
     render: (item: MpMetadata) =>
       item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
+    sortValue: (item) => item.dateOfBirth || null,
   },
   {
     key: "startDate",
     header: "Start Date",
     render: (item: MpMetadata) =>
       formatYmdToDmy(item.details.startDate || ""),
+    sortValue: (item) => item.details.startDate || null,
   },
   {
     key: "postCode",
     header: "Post Code",
     render: (item: MpMetadata) => item.details.address.postCode,
+    sortValue: (item) => item.details.address.postCode,
   },
   {
     key: "services",
     header: "Services",
     render: (item: MpMetadata) => item.details.services.join(", "),
+    sortValue: (item) => item.details.services.join(", "),
   },
   {
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item: MpMetadata) => item.dbsExpiry || "No DBS",
+    sortValue: (item) => item.dbsExpiry || null,
   },
   {
     key: "capacity",
     header: "Capacity?",
     render: (item: MpMetadata) => item.details.capacity,
+    sortValue: (item) => item.details.capacity,
   },
 ];
 
@@ -156,12 +163,7 @@ export function MpsRoutes() {
   if (mpsQuery.isLoading) return <div>Loading...</div>;
   if (mpsQuery.error) return <div>Error loading MPs</div>;
 
-  // Ensure rows are shown in alphabetical order by MP name
-  const sortedMps = (mpsQuery.data || []).slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
-  );
+  const mps = mpsQuery.data || [];
 
   return (
     <Routes>
@@ -173,8 +175,9 @@ export function MpsRoutes() {
               key={`mps-${showEnded}`}
               title="MPs"
               searchPlaceholder="Search MPs..."
-              data={sortedMps}
+              data={mps}
               columns={mpColumns}
+              defaultSortKey="name"
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}

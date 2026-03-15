@@ -14,26 +14,31 @@ export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
     key: "personName",
     header: "Name",
     render: (item) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "recordName",
     header: "Training Record",
     render: (item) => item.details.recordName,
+    sortValue: (item) => item.details.recordName,
   },
   {
     key: "recordNumber",
     header: "Training Record Number",
     render: (item) => item.details.recordNumber,
+    sortValue: (item) => item.details.recordNumber || null,
   },
   {
     key: "date",
     header: "Expiry Date",
     render: (item) => formatYmdToDmy(item.expiryDate || ""),
+    sortValue: (item) => item.expiryDate || null,
   },
   {
     key: "notes",
     header: "Notes",
     render: (item) => item.details.notes,
+    sortValue: (item) => item.details.notes || null,
   },
 ];
 

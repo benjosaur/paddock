@@ -36,6 +36,7 @@ const carerPackageColumns: TableColumn<CarerPackageSummary>[] = [
     header: "End Date",
     render: (item) =>
       item.endDate === "open" ? "Ongoing" : formatYmdToDmy(item.endDate),
+    sortValue: (item) => (item.endDate === "open" ? null : item.endDate),
   },
   {
     key: "requestedWeeklyHours",
@@ -61,6 +62,7 @@ const carerPackageColumns: TableColumn<CarerPackageSummary>[] = [
     key: "services",
     header: "Services",
     render: (item) => item.services.join(", "),
+    sortValue: (item) => item.services.join(", "),
   },
 ];
 
