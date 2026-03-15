@@ -66,7 +66,7 @@ export class HubGrubLogRepository {
         "#date": "date",
       },
       ExpressionAttributeValues: {
-        ":pk": "hubGrubLog",
+        ":pk": "hubGrubLogEntity",
         ":startDate": startDate,
         ":endDate": endDate,
       },

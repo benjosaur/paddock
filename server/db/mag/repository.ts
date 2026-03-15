@@ -66,7 +66,7 @@ export class MagLogRepository {
         "#date": "date",
       },
       ExpressionAttributeValues: {
-        ":pk": "magLog",
+        ":pk": "magLogEntity",
         ":startDate": startDate,
         ":endDate": endDate,
       },
