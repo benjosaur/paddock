@@ -350,18 +350,12 @@ export function LandingPage() {
               </div>
 
               {/* Second product screenshot slot */}
-              <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 aspect-[4/3] flex items-center justify-center">
-                {/* REPLACE with a second screenshot, e.g. the Volunteers or Dashboard view */}
-                {/* <img src="/images/volunteers.png" alt="Volunteers view" className="w-full h-full object-cover object-top" /> */}
-                <div className="text-center text-slate-400 p-8">
-                  <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 mx-auto mb-3 opacity-40" aria-hidden="true">
-                    <rect x="4" y="12" width="56" height="40" rx="4" stroke="currentColor" strokeWidth="2" />
-                    <circle cx="22" cy="28" r="6" stroke="currentColor" strokeWidth="2" />
-                    <path d="M4 44l16-12 10 8 10-14 20 14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                  </svg>
-                  <p className="text-sm font-medium">Second screenshot goes here</p>
-                  <p className="text-xs mt-1 opacity-70">e.g. Volunteers or Dashboard view</p>
-                </div>
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200">
+                <img
+                  src="/images/dashboard.png"
+                  alt="Wivey Cares dashboard showing care metrics, attendance allowance pipeline, brokered hours, and deprivation analytics"
+                  className="w-full h-full object-cover object-top aspect-[4/3]"
+                />
                 <div className="absolute top-4 right-4 bg-white rounded-xl shadow-lg px-5 py-4">
                   <div className="text-2xl font-bold text-[#1e3a5f]">100%</div>
                   <div className="text-xs text-slate-500 mt-0.5">Audit-ready records</div>
@@ -444,7 +438,7 @@ export function LandingPage() {
                     className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-white shadow"
                   />
                   <div>
-                    <div className="font-semibold text-[#1a2535]">Reuben</div>
+                    <div className="font-semibold text-[#1a2535]">Ben</div>
                     {/* UPDATE name/title as needed */}
                     <div className="text-sm text-slate-500 mb-2">Founder, Paddock Health</div>
                     <p className="text-sm text-slate-600 leading-relaxed">

@@ -20,6 +20,13 @@ The backend requires some configuration to work correctly. First setup environme
 - In the `.env` you need to provide `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` from Ben.
   Then we need to set up our local instance of dynamodb. Download this ffrom the internet and run inn terminal with
 
+for reu
+
+```bash
+cd /Users/reuben/Desktop/dynamodb_local_latest
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
+```
+
 ```bash
 cd EXTRACTED_DYNAMODB_FOLDER
 java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb

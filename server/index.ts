@@ -2,8 +2,11 @@ import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
 import { prodAppRouter } from "./trpc/prod/router";
 import { createLambdaContext } from "./trpc/prod/context";
 import dotenv from "dotenv";
+import { join } from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+dotenv.config({ path: join(__dirname, ".env") });
 
 export const handler = awsLambdaRequestHandler({
   router: prodAppRouter,
@@ -32,10 +35,16 @@ const port = process.env.PORT || 3001;
 
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "https://paddock.health",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. Postman, curl)
+      if (!origin) return callback(null, true);
+      // Allow any localhost port
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin))
+        return callback(null, true);
+      // Allow production
+      if (origin === "https://paddock.health") return callback(null, true);
+      callback(null, false);
+    },
     credentials: true,
   })
 );
@@ -47,6 +56,14 @@ app.use(
   createExpressMiddleware({
     router: localAppRouter,
     createContext: createExpressContext,
+    onError(opts) {
+      const { path, error } = opts;
+      const code = (error as { code?: string }).code;
+      console.error(`[tRPC] Error on ${path}:`, error.message);
+      if (code !== "UNAUTHORIZED" && code !== "FORBIDDEN") {
+        console.error("[tRPC] Stack:", error.stack);
+      }
+    },
   })
 );
 
