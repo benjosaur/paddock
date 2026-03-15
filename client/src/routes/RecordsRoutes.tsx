@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { trpc } from "../utils/trpc";
-import { compareDates, formatYmdToDmy } from "@/utils/date";
+import { formatYmdToDmy } from "@/utils/date";
 import type { TableColumn } from "../types";
 import type { CoreTrainingRecordCompletion } from "shared";
 import { useQuery } from "@tanstack/react-query";
@@ -25,16 +25,19 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
     key: "name",
     header: "Name",
     render: (item) => item.carer.name,
+    sortValue: (item) => item.carer.name,
   },
   {
     key: "earliest",
     header: "Earliest Expiry",
     render: (item) => formatYmdToDmy(item.earliestCoreExpiryDate || ""),
+    sortValue: (item) => item.earliestCoreExpiryDate || null,
   },
   {
     key: "rate",
     header: "Core Completion Rate",
     render: (item) => `${Math.round(item.coreCompletionRate)}%`,
+    sortValue: (item) => item.coreCompletionRate,
   },
 ];
 
@@ -58,44 +61,21 @@ export default function RecordsRoutes() {
   const mpRecords = mpRecordsQuery.data || [];
   const volunteerRecords = volunteerRecordsQuery.data || [];
 
-  const sortedMpRecords = useMemo(
-    () =>
-      [...((mpRecords as CoreTrainingRecordCompletion[]) || [])].sort(
-        (record1, record2) =>
-          compareDates(
-            record1.earliestCoreExpiryDate,
-            record2.earliestCoreExpiryDate
-          )
-      ),
-    [mpRecords]
-  );
-  const sortedVolunteerRecords = useMemo(
-    () =>
-      [...((volunteerRecords as CoreTrainingRecordCompletion[]) || [])].sort(
-        (record1, record2) =>
-          compareDates(
-            record1.earliestCoreExpiryDate,
-            record2.earliestCoreExpiryDate
-          )
-      ),
-    [volunteerRecords]
-  );
-
   const mpRows: CoreCompletionRow[] = useMemo(
     () =>
-      sortedMpRecords.map((r) => ({
+      ((mpRecords as CoreTrainingRecordCompletion[]) || []).map((r) => ({
         ...r,
         id: r.carer.id,
       })),
-    [sortedMpRecords]
+    [mpRecords]
   );
   const volunteerRows: CoreCompletionRow[] = useMemo(
     () =>
-      sortedVolunteerRecords.map((r) => ({
+      ((volunteerRecords as CoreTrainingRecordCompletion[]) || []).map((r) => ({
         ...r,
         id: r.carer.id,
       })),
-    [sortedVolunteerRecords]
+    [volunteerRecords]
   );
 
   const handleCloseModal = () => {
@@ -150,6 +130,7 @@ export default function RecordsRoutes() {
                   searchPlaceholder="Search MPs..."
                   data={mpRows}
                   columns={aggregateColumns}
+                  defaultSortKey="earliest"
                   onViewItem={(id) => {
                     const row = mpRows.find((r) => r.id === id);
                     setSelectedCarerId(row?.carer.id ?? null);
@@ -166,6 +147,7 @@ export default function RecordsRoutes() {
                   searchPlaceholder="Search volunteers..."
                   data={volunteerRows}
                   columns={aggregateColumns}
+                  defaultSortKey="earliest"
                   onViewItem={(id) => {
                     const row = volunteerRows.find((r) => r.id === id);
                     setSelectedCarerId(row?.carer.id ?? null);

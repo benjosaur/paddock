@@ -7,11 +7,22 @@ import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "date", header: "Date", render: (item) => formatYmdToDmy(item.date) },
+  {
+    key: "date",
+    header: "Date",
+    render: (item) => formatYmdToDmy(item.date),
+    sortValue: (item) => item.date || null,
+  },
   {
     key: "total",
     header: "Total Attendees",
     render: (item: ClientFull["magLogs"][number]) =>
+      item.details.totalVolunteers +
+      item.details.totalClients +
+      item.details.totalFamily +
+      item.details.totalMps +
+      item.details.otherAttendees,
+    sortValue: (item) =>
       item.details.totalVolunteers +
       item.details.totalClients +
       item.details.totalFamily +
@@ -26,11 +37,17 @@ export const magLogColumns: TableColumn<MagLog>[] = [
       const count = item.volunteers?.length ?? 0;
       return Math.round(duration * count * 100) / 100;
     },
+    sortValue: (item) => {
+      const duration = item.totalHours ?? 0;
+      const count = item.volunteers?.length ?? 0;
+      return Math.round(duration * count * 100) / 100;
+    },
   },
   {
     key: "notes",
     header: "Notes",
     render: (item) => item.details.notes,
+    sortValue: (item) => item.details.notes || null,
   },
 ];
 
@@ -42,11 +59,6 @@ export default function MagLogRoutes() {
   const magQuery = useQuery(trpc.mag.getAll.queryOptions());
 
   const mag = magQuery.data || [];
-
-  // Sort logs by date (newest first)
-  const sortedMag = mag
-    .slice()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const deleteMagLogMutation = useMutation(
     trpc.mag.delete.mutationOptions({
@@ -83,8 +95,10 @@ export default function MagLogRoutes() {
             key="mag-logs"
             title="MAG "
             searchPlaceholder="Search MAG logs..."
-            data={sortedMag}
+            data={mag}
             columns={magLogColumns}
+            defaultSortKey="date"
+            defaultSortDirection="desc"
             onEdit={handleEdit}
             onDelete={handleDelete}
             onCreate={handleAddNew}

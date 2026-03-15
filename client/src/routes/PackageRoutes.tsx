@@ -24,11 +24,13 @@ export const packageColumns: TableColumn<Package>[] = [
     key: "name",
     header: "Carer Name",
     render: (item: Package) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "startDate",
     header: "Start Date",
     render: (item: Package) => formatYmdToDmy(item.startDate),
+    sortValue: (item) => item.startDate || null,
   },
   {
     key: "endDate",
@@ -37,16 +39,19 @@ export const packageColumns: TableColumn<Package>[] = [
       item.endDate === "open"
         ? "Ongoing"
         : formatYmdToDmy(item.endDate as string),
+    sortValue: (item) => (item.endDate === "open" ? null : item.endDate || null),
   },
   {
     key: "oneOff",
     header: "One-Off Hours",
     render: (item: Package) => item.details.oneOffStartDateHours || 0,
+    sortValue: (item) => item.details.oneOffStartDateHours || 0,
   },
   {
     key: "weeklyHours",
     header: "Weekly Hours",
     render: (item: Package) => item.details.weeklyHours,
+    sortValue: (item) => item.details.weeklyHours,
   },
   {
     key: "locality",
@@ -56,11 +61,14 @@ export const packageColumns: TableColumn<Package>[] = [
         return item.details.address.locality;
       }
     },
+    sortValue: (item) =>
+      "requestId" in item ? item.details.address.locality : null,
   },
   {
     key: "services",
     header: "Services",
     render: (item: Package) => item.details.services.join(", "),
+    sortValue: (item) => item.details.services.join(", "),
   },
 ];
 
@@ -92,19 +100,6 @@ export default function PackageRoutes() {
   );
   const independentPackages = packages.filter(
     (p: any) => !("requestId" in p) || !p.requestId
-  );
-
-  // Ensure rows are shown in alphabetical order by carer name
-  const sortedRequestPackages = requestPackages.slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
-  );
-
-  const sortedIndependentPackages = independentPackages.slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
   );
 
   const deletePackageMutation = useMutation(
@@ -195,8 +190,9 @@ export default function PackageRoutes() {
                   key={`packages-requests-${showEnded ? "ended" : "active"}`}
                   title="Packages"
                   searchPlaceholder="Search packages..."
-                  data={sortedRequestPackages}
+                  data={requestPackages}
                   columns={packageColumns}
+                  defaultSortKey="name"
                   onEdit={handleEdit}
                   onCover={handleCover}
                   onDelete={handleDelete}
@@ -222,8 +218,9 @@ export default function PackageRoutes() {
                   key={`packages-independent-${showEnded ? "ended" : "active"}`}
                   title="Packages"
                   searchPlaceholder="Search packages..."
-                  data={sortedIndependentPackages}
+                  data={independentPackages}
                   columns={packageColumns}
+                  defaultSortKey="name"
                   onEdit={handleEditSolePackage}
                   onCover={handleCover}
                   onDelete={handleDelete}

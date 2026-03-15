@@ -18,12 +18,14 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
     key: "name",
     header: "Name",
     render: (item) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "publicLiabilityNumber",
     header: "Public Liability Number",
     render: (item) =>
       item.details.publicLiabilityNumber || "No Public Liability",
+    sortValue: (item) => item.details.publicLiabilityNumber || null,
   },
   {
     key: "publicLiabilityExpiry",
@@ -32,6 +34,7 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
       item.publicLiabilityExpiry
         ? formatYmdToDmy(item.publicLiabilityExpiry)
         : "No Public Liability",
+    sortValue: (item) => item.publicLiabilityExpiry || null,
   },
 ];
 
@@ -54,23 +57,6 @@ export default function PublicLiabilityRoutes() {
 
   const mps = mpsQuery.data || [];
   const volunteers = volunteersQuery.data || [];
-
-  const compareByPublicLiabilityExpiry = <
-    T extends { publicLiabilityExpiry?: string }
-  >(
-    a: T,
-    b: T
-  ) => {
-    const aExp = a.publicLiabilityExpiry || "";
-    const bExp = b.publicLiabilityExpiry || "";
-    if (aExp === bExp) return 0;
-    if (aExp === "") return -1;
-    if (bExp === "") return 1;
-    return aExp.localeCompare(bExp);
-  };
-
-  const sortedMps = [...mps].sort(compareByPublicLiabilityExpiry);
-  const sortedVolunteers = [...volunteers].sort(compareByPublicLiabilityExpiry);
 
   if (mpsQuery.isLoading || volunteersQuery.isLoading)
     return <div>Loading...</div>;
@@ -115,8 +101,9 @@ export default function PublicLiabilityRoutes() {
                   key={`mps-public-liability-${showArchived}`}
                   title="MPs"
                   searchPlaceholder="Search MPs..."
-                  data={sortedMps}
+                  data={mps}
                   columns={mpPublicLiabilityColumns}
+                  defaultSortKey="publicLiabilityExpiry"
                   resource="mps"
                 />
               </TabsContent>
@@ -126,8 +113,9 @@ export default function PublicLiabilityRoutes() {
                   key={`volunteers-public-liability-${showArchived}`}
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
-                  data={sortedVolunteers}
+                  data={volunteers}
                   columns={volunteerPublicLiabilityColumns}
+                  defaultSortKey="publicLiabilityExpiry"
                   resource="volunteers"
                 />
               </TabsContent>

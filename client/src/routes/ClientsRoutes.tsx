@@ -20,33 +20,39 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     key: "customId",
     header: "Custom ID",
     render: (item: ClientMetadata) => item.details.customId || "",
+    sortValue: (item) => item.details.customId || null,
   },
   {
     key: "name",
     header: "Name",
     render: (item: ClientMetadata) => item.details.name,
+    sortValue: (item) => item.details.name,
   },
   {
     key: "dob",
     header: "Date of Birth",
     render: (item: ClientMetadata) => formatYmdToDmy(item.dateOfBirth || ""),
+    sortValue: (item) => item.dateOfBirth || null,
   },
   {
     key: "startDate",
     header: "Agreement Date",
     render: (item: ClientMetadata) =>
       formatYmdToDmy(item.details.clientAgreementDate || ""),
+    sortValue: (item) => item.details.clientAgreementDate || null,
   },
   {
     key: "postCode",
     header: "Post Code",
     render: (item: ClientMetadata) => item.details.address.postCode,
+    sortValue: (item) => item.details.address.postCode,
   },
   {
     key: "attendanceAllowance",
     header: "AA Status",
     render: (item: ClientMetadata) =>
       capitalise(item.details.attendanceAllowance.status),
+    sortValue: (item) => item.details.attendanceAllowance.status,
   },
   {
     key: "deprivationFlags",
@@ -62,6 +68,12 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
       } else if (item.details.address.deprivation.health) {
         return "Health";
       }
+      return "None";
+    },
+    sortValue: (item) => {
+      if (item.details.address.deprivation.income && item.details.address.deprivation.health) return "Both";
+      if (item.details.address.deprivation.income) return "Income";
+      if (item.details.address.deprivation.health) return "Health";
       return "None";
     },
   },
@@ -189,12 +201,7 @@ export default function ClientsRoutes() {
   if (clientsQuery.isLoading) return <div>Loading...</div>;
   if (clientsQuery.error) return <div>Error loading clients</div>;
 
-  // Ensure rows are shown in alphabetical order by client name
-  const sortedClients = (clientsQuery.data || []).slice().sort((a, b) =>
-    a.details.name.localeCompare(b.details.name, undefined, {
-      sensitivity: "base",
-    })
-  );
+  const clients = clientsQuery.data || [];
 
   return (
     <Routes>
@@ -206,8 +213,9 @@ export default function ClientsRoutes() {
               key={`clients-${showEnded}`}
               title="Clients"
               searchPlaceholder="Search clients..."
-              data={sortedClients}
+              data={clients}
               columns={clientColumns}
+              defaultSortKey="name"
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAddRequest={handleAddRequest}
