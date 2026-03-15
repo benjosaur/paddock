@@ -1,4 +1,5 @@
 import { ClientService } from "./client/service";
+import { HubGrubLogService } from "./hubGrub/service";
 import { MagLogService } from "./mag/service";
 import { MpService } from "./mp/service";
 import { PackageService } from "./package/service";
@@ -22,6 +23,7 @@ export function addDbMiddleware<T>(
 export function createServices() {
   return {
     client: new ClientService(),
+    hubGrubLog: new HubGrubLogService(),
     magLog: new MagLogService(),
     mp: new MpService(),
     packages: new PackageService(),
