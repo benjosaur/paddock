@@ -18,6 +18,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: true, update: true, delete: true },
     packages: { read: true, create: true, update: true, delete: true },
     mag: { read: true, create: true, update: true, delete: true },
+    hubGrub: { read: true, create: true, update: true, delete: true },
     requests: { read: true, create: true, update: true, delete: true },
     trainingRecords: {
       read: true,
@@ -33,6 +34,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: true, update: true, delete: true },
     packages: { read: true, create: true, update: true, delete: true },
     mag: { read: true, create: true, update: true, delete: true },
+    hubGrub: { read: true, create: true, update: true, delete: true },
     requests: { read: true, create: true, update: true, delete: true },
     trainingRecords: {
       read: true,
@@ -48,6 +50,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: false, update: false, delete: false },
     packages: { read: true, create: false, update: false, delete: false },
     mag: { read: true, create: false, update: false, delete: false },
+    hubGrub: { read: true, create: false, update: false, delete: false },
     requests: { read: true, create: false, update: false, delete: false },
     trainingRecords: {
       read: true,
@@ -63,6 +66,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: true, update: true, delete: true },
     packages: { read: true, create: true, update: true, delete: true },
     mag: { read: true, create: true, update: true, delete: true },
+    hubGrub: { read: true, create: true, update: true, delete: true },
     requests: { read: true, create: true, update: true, delete: true },
     trainingRecords: {
       read: true,
@@ -78,6 +82,7 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     volunteers: { read: true, create: false, update: false, delete: false },
     packages: { read: true, create: false, update: false, delete: false },
     mag: { read: true, create: false, update: false, delete: false },
+    hubGrub: { read: true, create: false, update: false, delete: false },
     requests: { read: true, create: false, update: false, delete: false },
     trainingRecords: {
       read: false,
