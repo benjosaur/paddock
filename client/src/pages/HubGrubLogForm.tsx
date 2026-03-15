@@ -42,7 +42,7 @@ export function HubGrubLogForm() {
   const queryClient = useQueryClient();
 
   const clientsQuery = useQuery(
-    trpc.clients.getAllWithMagService.queryOptions()
+    trpc.clients.getAllWithHubGrubService.queryOptions()
   );
   const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
   const volunteersQuery = useQuery(

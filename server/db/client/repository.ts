@@ -93,6 +93,27 @@ export class ClientRepository {
     }
   }
 
+  async getAllWithHubGrubService(user: User): Promise<DbClientEntity[]> {
+    const command = new QueryCommand({
+      TableName: getTableName(user),
+      IndexName: "GSI2",
+      KeyConditionExpression: "entityType = :pk",
+      FilterExpression: "contains(details.services, :hubGrubService)",
+      ExpressionAttributeValues: {
+        ":pk": "client",
+        ":hubGrubService": "Hub & Grub",
+      },
+    });
+    try {
+      const result = await client.send(command);
+      const parsedResult = dbClientEntity.array().parse(result.Items);
+      return parsedResult;
+    } catch (error) {
+      console.error("Repository Layer Error getting Hub & Grub clients:", error);
+      throw error;
+    }
+  }
+
   async getById(clientId: string, user: User): Promise<DbClientFull[]> {
     const command = new QueryCommand({
       TableName: getTableName(user),
