@@ -381,6 +381,43 @@ export type SolePackage = z.infer<typeof solePackageSchema>;
 export type ReqPackage = z.infer<typeof reqPackageSchema>;
 export type Package = SolePackage | ReqPackage;
 export type MagLog = z.infer<typeof magLogSchema>;
+
+export const hubGrubLogSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  totalHours: z.coerce.number().default(0),
+  clients: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({
+        name: z.string(),
+        address: addressSchemaWithDeprivation,
+      }),
+    })
+  ),
+  mps: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  volunteers: z.array(
+    z.object({
+      id: z.string(),
+      details: z.object({ name: z.string() }),
+    })
+  ),
+  details: z.object({
+    totalClients: z.coerce.number().default(0),
+    totalFamily: z.coerce.number().default(0),
+    totalVolunteers: z.coerce.number().default(0),
+    totalMps: z.coerce.number().default(0),
+    otherAttendees: z.coerce.number().default(0),
+    notes: z.string().default(""),
+  }),
+});
+
+export type HubGrubLog = z.infer<typeof hubGrubLogSchema>;
 export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
 export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
