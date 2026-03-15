@@ -32,6 +32,21 @@ const mpColumns: TableColumn<MpMetadata>[] = [
       formatYmdToDmy(item.details.startDate || ""),
   },
   {
+    key: "endDate",
+    header: "End Date",
+    render: (item: MpMetadata) =>
+      item.endDate === "open"
+        ? "Ongoing"
+        : (
+            <span className="text-red-600 font-medium">
+              {formatYmdToDmy(item.endDate as string)} (ended)
+            </span>
+          ),
+    filterType: "date",
+    sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+    endDateColumn: true,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: MpMetadata) => item.details.address.postCode,
@@ -59,7 +74,7 @@ export function MpsRoutes() {
   const navigate = useNavigate();
   const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
@@ -179,6 +194,8 @@ export function MpsRoutes() {
               searchPlaceholder="Search MPs..."
               data={sortedMps}
               columns={mpColumns}
+              defaultSortKey="endDate"
+              defaultSortDir="asc"
               onEdit={handleEditNavigation}
               onDelete={handleDelete}
               onAddRecord={handleAddRecord}

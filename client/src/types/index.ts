@@ -13,4 +13,9 @@ export interface TableColumn<T> {
    * Falls back to the rendered value when omitted.
    */
   sortValue?: (item: T) => string | number;
+  /**
+   * When true, empty sort values (e.g. "ongoing" for end dates) sort first,
+   * so ended items appear at the bottom when sorting ascending.
+   */
+  endDateColumn?: boolean;
 }

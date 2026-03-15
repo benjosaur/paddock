@@ -34,6 +34,21 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     sortValue: (item) => item.dateOfBirth || "",
   },
   {
+    key: "endDate",
+    header: "End Date",
+    render: (item: VolunteerMetadata) =>
+      item.endDate === "open"
+        ? "Ongoing"
+        : (
+            <span className="text-red-600 font-medium">
+              {formatYmdToDmy(item.endDate as string)} (ended)
+            </span>
+          ),
+    filterType: "date",
+    sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+    endDateColumn: true,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: VolunteerMetadata) => item.details.address.postCode,
@@ -64,7 +79,7 @@ export function VolunteersRoutes() {
     null
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
@@ -190,6 +205,8 @@ export function VolunteersRoutes() {
               searchPlaceholder="Search volunteers..."
               data={sortedVolunteers}
               columns={volunteerColumns}
+              defaultSortKey="endDate"
+              defaultSortDir="asc"
               onAddPackage={handleAddSolePackage}
               onEdit={handleEditNavigation}
               onDelete={handleDelete}

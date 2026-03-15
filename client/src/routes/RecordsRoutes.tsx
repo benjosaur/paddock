@@ -43,7 +43,7 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
 ];
 
 export default function RecordsRoutes() {
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
 

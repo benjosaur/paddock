@@ -42,6 +42,21 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     sortValue: (item) => item.details.clientAgreementDate || "",
   },
   {
+    key: "endDate",
+    header: "End Date",
+    render: (item: ClientMetadata) =>
+      item.endDate === "open"
+        ? "Ongoing"
+        : (
+            <span className="text-red-600 font-medium">
+              {formatYmdToDmy(item.endDate as string)} (ended)
+            </span>
+          ),
+    filterType: "date",
+    sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+    endDateColumn: true,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: ClientMetadata) => item.details.address.postCode,
@@ -79,7 +94,7 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
 
@@ -216,6 +231,8 @@ export default function ClientsRoutes() {
               searchPlaceholder="Search clients..."
               data={sortedClients}
               columns={clientColumns}
+              defaultSortKey="endDate"
+              defaultSortDir="asc"
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAddRequest={handleAddRequest}

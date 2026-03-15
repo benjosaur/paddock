@@ -50,9 +50,14 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     render: (item) =>
       item.endDate === "open"
         ? "Ongoing"
-        : formatYmdToDmy(item.endDate as string),
+        : (
+            <span className="text-red-600 font-medium">
+              {formatYmdToDmy(item.endDate as string)} (ended)
+            </span>
+          ),
     filterType: "date",
     sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+    endDateColumn: true,
   },
   {
     key: "oneOffStartDateHours",
@@ -145,9 +150,14 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
       render: (item) =>
         item.endDate === "open"
           ? "Ongoing"
-          : formatYmdToDmy(item.endDate as string),
+          : (
+              <span className="text-red-600 font-medium">
+                {formatYmdToDmy(item.endDate as string)} (ended)
+              </span>
+            ),
       filterType: "date",
       sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+      endDateColumn: true,
     },
     {
       key: "oneOffStartDateHours",
@@ -167,7 +177,7 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
 
 export default function RequestRoutes() {
   const navigate = useNavigate();
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
@@ -290,6 +300,8 @@ export default function RequestRoutes() {
                   searchPlaceholder="Search requests..."
                   data={sortedOtherRequests}
                   columns={requestColumns}
+                  defaultSortKey="endDate"
+                  defaultSortDir="asc"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddPackage={handleAddPackage}
@@ -317,6 +329,8 @@ export default function RequestRoutes() {
                   searchPlaceholder="Search requests..."
                   data={sortedInfoRequests}
                   columns={infoRequestColumns}
+                  defaultSortKey="endDate"
+                  defaultSortDir="asc"
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddPackage={handleAddPackage}

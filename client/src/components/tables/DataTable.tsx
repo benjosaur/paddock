@@ -24,6 +24,7 @@ import {
   ArrowUp,
   ArrowDown,
   X,
+  Filter,
 } from "lucide-react";
 import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
@@ -32,27 +33,38 @@ import { AppRouterKeys } from "shared";
 
 // ── Filter types ─────────────────────────────────────────────────────────────
 
-type NumberFilter = {
-  comparator: "=" | ">" | "<" | ">=" | "<=";
-  value: string;
-};
-type DateFilter = { from: string; to: string };
+type NumberFilter = { from: string; to: string };
+type DateFilter = { day: string; month: string; year: string };
 type AnyColumnFilter = string | NumberFilter | DateFilter;
 
 function isNumberFilter(f: AnyColumnFilter): f is NumberFilter {
-  return typeof f === "object" && "comparator" in f;
+  return typeof f === "object" && "from" in f && !("day" in f);
 }
 
 function isDateFilter(f: AnyColumnFilter): f is DateFilter {
-  return typeof f === "object" && "from" in f;
+  return typeof f === "object" && "day" in f;
 }
 
 function hasActiveFilter(f: AnyColumnFilter | undefined): boolean {
   if (!f) return false;
   if (typeof f === "string") return f !== "";
-  if (isNumberFilter(f)) return f.value !== "";
-  if (isDateFilter(f)) return f.from !== "" || f.to !== "";
+  if (isNumberFilter(f)) return f.from !== "" || f.to !== "";
+  if (isDateFilter(f)) return f.day !== "" || f.month !== "" || f.year !== "";
   return false;
+}
+
+function dateMatchesFilter(df: DateFilter, rawYmd: string): boolean {
+  if (df.day === "" && df.month === "" && df.year === "") return true;
+  if (rawYmd === "") return false;
+  const pad2 = (n: string) => n.padStart(2, "0");
+  const padYear = (y: string) => (y.length <= 2 ? `20${pad2(y)}` : y);
+  const y = df.year ? padYear(df.year) : "";
+  const m = df.month ? pad2(df.month) : "";
+  const d = df.day ? pad2(df.day) : "";
+  if (y && m && d) return rawYmd === `${y}-${m}-${d}`;
+  if (y && m) return rawYmd.startsWith(`${y}-${m}`);
+  if (y) return rawYmd.startsWith(y);
+  return true;
 }
 
 // ── Sort helpers ──────────────────────────────────────────────────────────────
@@ -69,15 +81,16 @@ function getSortValue<T>(col: TableColumn<T>, item: T): string | number {
 function compareSortValues(
   a: string | number,
   b: string | number,
-  dir: "asc" | "desc"
+  dir: "asc" | "desc",
+  emptyFirst?: boolean
 ): number {
   const factor = dir === "asc" ? 1 : -1;
   if (typeof a === "number" && typeof b === "number") return (a - b) * factor;
   const aStr = String(a);
   const bStr = String(b);
-  // Empty strings sort last regardless of direction
-  if (aStr === "" && bStr !== "") return 1;
-  if (aStr !== "" && bStr === "") return -1;
+  // Empty strings: default sort last; emptyFirst (end date) sorts empty first (ongoing first, ended last)
+  if (aStr === "" && bStr !== "") return emptyFirst ? -1 : 1;
+  if (aStr !== "" && bStr === "") return emptyFirst ? 1 : -1;
   if (aStr === "" && bStr === "") return 0;
   return aStr.localeCompare(bStr) * factor;
 }
@@ -87,6 +100,10 @@ function compareSortValues(
 interface DataTableProps<T> {
   data: T[];
   columns: TableColumn<T>[];
+  /** Default column to sort by (e.g. "endDate" to put ended at bottom). */
+  defaultSortKey?: string;
+  /** Default sort direction. */
+  defaultSortDir?: "asc" | "desc";
   onEdit?: (id: string) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -124,52 +141,63 @@ function ColumnFilterInput<T>({
   if (filterType === "number") {
     const nf = isNumberFilter(value as AnyColumnFilter)
       ? (value as NumberFilter)
-      : { comparator: "=" as const, value: "" };
+      : { from: "", to: "" };
     return (
-      <div className="flex gap-1 items-center">
-        <select
-          className="h-8 text-xs border border-gray-200/60 rounded-md px-1 bg-white focus:outline-none focus:ring-1 focus:ring-gray-300"
-          value={nf.comparator}
-          onChange={(e) =>
-            onChange({ ...nf, comparator: e.target.value as NumberFilter["comparator"] })
-          }
-        >
-          <option value="=">=</option>
-          <option value=">">{">"}</option>
-          <option value="<">{"<"}</option>
-          <option value=">=">{">="}</option>
-          <option value="<=">{"<="}</option>
-        </select>
-        <Input
-          type="number"
-          placeholder="Value"
-          value={nf.value}
-          onChange={(e) => onChange({ comparator: nf.comparator, value: e.target.value })}
-          className="h-8 text-xs !font-normal placeholder:font-normal flex-1 min-w-0"
-        />
+      <div className="flex flex-col gap-0.5">
+        <div className="flex gap-1 items-center">
+          <Input
+            type="text"
+            inputMode="decimal"
+            placeholder="From"
+            value={nf.from}
+            onChange={(e) => onChange({ ...nf, from: e.target.value.replace(/[^0-9.-]/g, "") })}
+            className="h-[26px] text-[11px] !font-normal placeholder:font-normal"
+          />
+          <Input
+            type="text"
+            inputMode="decimal"
+            placeholder="To"
+            value={nf.to}
+            onChange={(e) => onChange({ ...nf, to: e.target.value.replace(/[^0-9.-]/g, "") })}
+            className="h-[26px] text-[11px] !font-normal placeholder:font-normal"
+          />
+        </div>
       </div>
     );
   }
 
   if (filterType === "date") {
+    const empty = { day: "", month: "", year: "" };
     const df = isDateFilter(value as AnyColumnFilter)
       ? (value as DateFilter)
-      : { from: "", to: "" };
+      : empty;
+    const inputCls =
+      "h-[26px] text-[11px] border border-gray-200/60 rounded-md px-1 bg-white w-9 focus:outline-none focus:ring-1 focus:ring-gray-300";
     return (
-      <div className="flex flex-col gap-0.5">
+      <div className="flex gap-0.5 items-center text-[10px] text-gray-500">
         <input
-          type="date"
-          title="From date"
-          value={df.from}
-          onChange={(e) => onChange({ from: e.target.value, to: df.to })}
-          className="h-[26px] text-[11px] border border-gray-200/60 rounded-md px-1.5 bg-white w-full focus:outline-none focus:ring-1 focus:ring-gray-300"
+          type="text"
+          placeholder="D"
+          title="Day"
+          value={df.day}
+          onChange={(e) => onChange({ ...df, day: e.target.value })}
+          className={inputCls}
         />
         <input
-          type="date"
-          title="To date"
-          value={df.to}
-          onChange={(e) => onChange({ from: df.from, to: e.target.value })}
-          className="h-[26px] text-[11px] border border-gray-200/60 rounded-md px-1.5 bg-white w-full focus:outline-none focus:ring-1 focus:ring-gray-300"
+          type="text"
+          placeholder="M"
+          title="Month"
+          value={df.month}
+          onChange={(e) => onChange({ ...df, month: e.target.value })}
+          className={inputCls}
+        />
+        <input
+          type="text"
+          placeholder="Y"
+          title="Year"
+          value={df.year}
+          onChange={(e) => onChange({ ...df, year: e.target.value })}
+          className={`${inputCls} w-11`}
         />
       </div>
     );
@@ -210,6 +238,8 @@ export function DataTable<
 >({
   data,
   columns,
+  defaultSortKey,
+  defaultSortDir = "asc",
   onEdit,
   onArchive,
   onDelete,
@@ -236,16 +266,19 @@ export function DataTable<
   const [columnFilters, setColumnFilters] = useState<
     Record<string, AnyColumnFilter>
   >({});
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSortDir);
+  const [showFilters, setShowFilters] = useState(false);
 
   // ── Matching helpers ──────────────────────────────────────────────────────
 
-  const matchValue = (value: unknown, term: string): boolean => {
+  const matchValue = (value: unknown, term: string, seen = new WeakSet<object>()): boolean => {
     if (value === null || value === undefined) return false;
     if (typeof value === "object") {
+      if (seen.has(value as object)) return false;
+      seen.add(value as object);
       return Object.values(value as Record<string, unknown>).some((v) =>
-        matchValue(v, term)
+        matchValue(v, term, seen)
       );
     }
     return String(value).toLowerCase().includes(term.toLowerCase());
@@ -261,7 +294,7 @@ export function DataTable<
     const filterType = col.filterType ?? "string";
 
     if (filterType === "number" && isNumberFilter(filter)) {
-      if (filter.value === "") return true;
+      if (filter.from === "" && filter.to === "") return true;
       const raw = col.sortValue
         ? col.sortValue(row)
         : col.render
@@ -269,25 +302,18 @@ export function DataTable<
           : (row[col.key as keyof T] as unknown);
       const num =
         typeof raw === "number" ? raw : parseFloat(String(raw ?? ""));
-      const target = parseFloat(filter.value);
-      if (isNaN(num) || isNaN(target)) return true;
-      switch (filter.comparator) {
-        case "=":  return num === target;
-        case ">":  return num > target;
-        case "<":  return num < target;
-        case ">=": return num >= target;
-        case "<=": return num <= target;
-      }
+      if (isNaN(num)) return true;
+      const fromVal = filter.from === "" ? -Infinity : parseFloat(filter.from);
+      const toVal = filter.to === "" ? Infinity : parseFloat(filter.to);
+      if (isNaN(fromVal) && isNaN(toVal)) return true;
+      const fromOk = isNaN(fromVal) || num >= fromVal;
+      const toOk = isNaN(toVal) || num <= toVal;
+      return fromOk && toOk;
     }
 
     if (filterType === "date" && isDateFilter(filter)) {
-      if (filter.from === "" && filter.to === "") return true;
-      // Use sortValue (should return YYYY-MM-DD) for reliable comparison
       const raw = col.sortValue ? String(col.sortValue(row)) : "";
-      if (raw === "") return filter.from === "" && filter.to === "";
-      const fromOk = filter.from === "" || raw >= filter.from;
-      const toOk = filter.to === "" || raw <= filter.to;
-      return fromOk && toOk;
+      return dateMatchesFilter(filter, raw);
     }
 
     if (filterType === "enum" && typeof filter === "string") {
@@ -337,7 +363,8 @@ export function DataTable<
         return compareSortValues(
           getSortValue(col, a),
           getSortValue(col, b),
-          sortDir
+          sortDir,
+          col.endDateColumn
         );
       })
     : filteredData;
@@ -364,8 +391,8 @@ export function DataTable<
   const handleClearFilters = () => {
     setSearchTerm("");
     setColumnFilters({});
-    setSortKey(null);
-    setSortDir("asc");
+    setSortKey(defaultSortKey ?? null);
+    setSortDir(defaultSortDir);
   };
 
   const handleDeleteClick = (item: T) => {
@@ -433,6 +460,15 @@ export function DataTable<
               className="pl-10 w-72 shadow-sm"
             />
           </div>
+          <Button
+            variant={showFilters ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters((s) => !s)}
+            className="shadow-sm"
+            title={showFilters ? "Hide filters" : "Show filters"}
+          >
+            <Filter className="w-3.5 h-3.5" />
+          </Button>
           {anyFilterActive && (
             <Button
               variant="outline"
@@ -496,25 +532,27 @@ export function DataTable<
             </tr>
 
             {/* Filter row */}
-            <tr className="bg-white/70">
-              {columns.map((col) => {
-                const key = String(col.key);
-                const active = hasActiveFilter(columnFilters[key]);
-                return (
-                  <th
-                    key={`filter-${key}`}
-                    className={`px-6 py-2 ${active ? "bg-blue-50/40" : ""}`}
-                  >
-                    <ColumnFilterInput
-                      col={col}
-                      value={columnFilters[key]}
-                      onChange={(v) => handleColumnFilterChange(key, v)}
-                    />
-                  </th>
-                );
-              })}
-              {functionProvided && <th className="px-6 py-2" />}
-            </tr>
+            {showFilters && (
+              <tr className="bg-white/70">
+                {columns.map((col) => {
+                  const key = String(col.key);
+                  const active = hasActiveFilter(columnFilters[key]);
+                  return (
+                    <th
+                      key={`filter-${key}`}
+                      className={`px-6 py-2 ${active ? "bg-blue-50/40" : ""}`}
+                    >
+                      <ColumnFilterInput
+                        col={col}
+                        value={columnFilters[key]}
+                        onChange={(v) => handleColumnFilterChange(key, v)}
+                      />
+                    </th>
+                  );
+                })}
+                {functionProvided && <th className="px-6 py-2" />}
+              </tr>
+            )}
           </thead>
 
           <tbody className="bg-white/50 backdrop-blur-sm divide-y divide-gray-200/50 rounded-b-xl">

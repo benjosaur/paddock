@@ -39,9 +39,14 @@ export const packageColumns: TableColumn<Package>[] = [
     render: (item: Package) =>
       item.endDate === "open"
         ? "Ongoing"
-        : formatYmdToDmy(item.endDate as string),
+        : (
+            <span className="text-red-600 font-medium">
+              {formatYmdToDmy(item.endDate as string)} (ended)
+            </span>
+          ),
     filterType: "date",
     sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
+    endDateColumn: true,
   },
   {
     key: "oneOff",
@@ -77,7 +82,7 @@ export const packageColumns: TableColumn<Package>[] = [
 
 export default function PackageRoutes() {
   const navigate = useNavigate();
-  const [showEnded, setShowEnded] = useState(false);
+  const [showEnded, setShowEnded] = useState(true);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
@@ -208,6 +213,8 @@ export default function PackageRoutes() {
                   searchPlaceholder="Search packages..."
                   data={sortedRequestPackages}
                   columns={packageColumns}
+                  defaultSortKey="endDate"
+                  defaultSortDir="asc"
                   onEdit={handleEdit}
                   onCover={handleCover}
                   onDelete={handleDelete}
@@ -235,6 +242,8 @@ export default function PackageRoutes() {
                   searchPlaceholder="Search packages..."
                   data={sortedIndependentPackages}
                   columns={packageColumns}
+                  defaultSortKey="endDate"
+                  defaultSortDir="asc"
                   onEdit={handleEditSolePackage}
                   onCover={handleCover}
                   onDelete={handleDelete}
