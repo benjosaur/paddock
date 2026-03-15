@@ -27,6 +27,7 @@ import type {
 } from "shared";
 import { firstYear } from "shared/const";
 import { cn } from "@/lib/utils";
+import { DashboardCharts } from "../components/DashboardCharts";
 
 export function Dashboard() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -801,8 +802,9 @@ export function Dashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="charts" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="charts">Charts</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="requests">Requests Breakdown</TabsTrigger>
           <TabsTrigger value="packages">Packages Breakdown</TabsTrigger>
@@ -810,6 +812,16 @@ export function Dashboard() {
             Attendance Allowance
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="charts" className="mt-6">
+          <DashboardCharts
+            analyticsRequests={analyticsRequests}
+            analyticsPackages={analyticsPackages}
+            analyticsRequestsDeprivation={analyticsRequestsDeprivation}
+            analyticsPackagesDeprivation={analyticsPackagesDeprivation}
+            attendanceAllowance={attendanceAllowanceData}
+          />
+        </TabsContent>
 
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
