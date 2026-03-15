@@ -22,6 +22,8 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     header: "Date of Birth",
     render: (item: MpMetadata) =>
       item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
+    filterType: "date",
+    sortValue: (item) => item.dateOfBirth || "",
   },
   {
     key: "postCode",
@@ -37,6 +39,8 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item: MpMetadata) => item.dbsExpiry || "No DBS",
+    filterType: "date",
+    sortValue: (item) => item.dbsExpiry || "",
   },
   {
     key: "capacity",

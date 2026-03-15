@@ -9,6 +9,7 @@ import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { RequestFull, TableColumn } from "../types";
 import type { EndRequestDetails } from "shared";
+import { requestTypes, requestStatus } from "shared/const";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -33,11 +34,15 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     key: "requestType",
     header: "Type",
     render: (item) => item.requestType,
+    filterType: "enum",
+    filterOptions: [...requestTypes],
   },
   {
     key: "startDate",
     header: "Start Date",
     render: (item) => formatYmdToDmy(item.startDate),
+    filterType: "date",
+    sortValue: (item) => item.startDate,
   },
   {
     key: "endDate",
@@ -46,11 +51,15 @@ export const requestColumns: TableColumn<RequestFull>[] = [
       item.endDate === "open"
         ? "Ongoing"
         : formatYmdToDmy(item.endDate as string),
+    filterType: "date",
+    sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
   },
   {
     key: "oneOffStartDateHours",
     header: "One Off Hours",
     render: (item) => item.details.oneOffStartDateHours,
+    filterType: "number",
+    sortValue: (item) => item.details.oneOffStartDateHours,
   },
   {
     key: "oneOffServicedHours",
@@ -59,11 +68,18 @@ export const requestColumns: TableColumn<RequestFull>[] = [
       item.packages
         .map((pkg) => pkg.details.oneOffStartDateHours)
         .reduce((a, b) => a + b, 0),
+    filterType: "number",
+    sortValue: (item) =>
+      item.packages
+        .map((pkg) => pkg.details.oneOffStartDateHours)
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "weeklyHours",
     header: "Weekly Hours",
     render: (item) => item.details.weeklyHours,
+    filterType: "number",
+    sortValue: (item) => item.details.weeklyHours,
   },
   {
     key: "weeklyServicedHours",
@@ -77,11 +93,23 @@ export const requestColumns: TableColumn<RequestFull>[] = [
           return 0;
         })
         .reduce((a, b) => a + b, 0),
+    filterType: "number",
+    sortValue: (item) =>
+      item.packages
+        .map((pkg) => {
+          if (pkg.endDate == "open" || new Date(pkg.endDate) > new Date()) {
+            return pkg.details.weeklyHours;
+          }
+          return 0;
+        })
+        .reduce((a, b) => a + b, 0),
   },
   {
     key: "status",
     header: "Status",
     render: (item) => item.details.status,
+    filterType: "enum",
+    filterOptions: [...requestStatus],
   },
 ];
 
@@ -101,11 +129,15 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
       key: "requestType",
       header: "Type",
       render: (item) => item.requestType,
+      filterType: "enum",
+      filterOptions: [...requestTypes],
     },
     {
       key: "startDate",
       header: "Start Date",
       render: (item) => formatYmdToDmy(item.startDate),
+      filterType: "date",
+      sortValue: (item) => item.startDate,
     },
     {
       key: "endDate",
@@ -114,16 +146,22 @@ export const infoRequestColumns: TableColumn<Omit<RequestFull, "packages">>[] =
         item.endDate === "open"
           ? "Ongoing"
           : formatYmdToDmy(item.endDate as string),
+      filterType: "date",
+      sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
     },
     {
       key: "oneOffStartDateHours",
       header: "One Off Hours",
       render: (item) => item.details.oneOffStartDateHours.toFixed(2),
+      filterType: "number",
+      sortValue: (item) => item.details.oneOffStartDateHours,
     },
     {
       key: "status",
       header: "Status",
       render: (item) => item.details.status,
+      filterType: "enum",
+      filterOptions: [...requestStatus],
     },
   ];
 

@@ -1,4 +1,5 @@
 import { EndTrainingRecordDetails, TrainingRecord } from "shared";
+import { trainingRecordTypes } from "shared/const";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { associatedRecordRoutes } from "@/routes/RecordsRoutes";
@@ -19,6 +20,8 @@ export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
     key: "recordName",
     header: "Training Record",
     render: (item) => item.details.recordName,
+    filterType: "enum",
+    filterOptions: [...trainingRecordTypes],
   },
   {
     key: "recordNumber",
@@ -29,6 +32,8 @@ export const trainingRecordColumns: TableColumn<TrainingRecord>[] = [
     key: "date",
     header: "Expiry Date",
     render: (item) => formatYmdToDmy(item.expiryDate || ""),
+    filterType: "date",
+    sortValue: (item) => item.expiryDate || "",
   },
   {
     key: "notes",

@@ -12,7 +12,7 @@ import { capitalise } from "@/utils/helpers";
 import { formatYmdToDmy } from "@/utils/date";
 import EndDialog from "../components/EndDialog";
 import type { EndPersonDetails } from "shared";
-import { endReasons } from "shared/const";
+import { endReasons, attendanceAllowanceStatuses } from "shared/const";
 import { Select } from "../components/ui/select";
 
 const clientColumns: TableColumn<ClientMetadata>[] = [
@@ -30,12 +30,16 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     key: "dob",
     header: "Date of Birth",
     render: (item: ClientMetadata) => formatYmdToDmy(item.dateOfBirth || ""),
+    filterType: "date",
+    sortValue: (item) => item.dateOfBirth || "",
   },
   {
     key: "startDate",
     header: "Agreement Date",
     render: (item: ClientMetadata) =>
       formatYmdToDmy(item.details.clientAgreementDate || ""),
+    filterType: "date",
+    sortValue: (item) => item.details.clientAgreementDate || "",
   },
   {
     key: "postCode",
@@ -47,6 +51,8 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     header: "AA Status",
     render: (item: ClientMetadata) =>
       capitalise(item.details.attendanceAllowance.status),
+    filterType: "enum",
+    filterOptions: attendanceAllowanceStatuses.map((s) => capitalise(s)),
   },
   {
     key: "deprivationFlags",
@@ -64,6 +70,8 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
       }
       return "None";
     },
+    filterType: "enum",
+    filterOptions: ["Both", "Income", "Health", "None"],
   },
 ];
 
