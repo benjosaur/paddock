@@ -11,6 +11,7 @@ import { LandingPage } from "./pages/LandingPage";
 import ClientsRoutes from "./routes/ClientsRoutes";
 import MpsRoutes from "./routes/MpsRoutes";
 import PackageRoutes from "./routes/PackageRoutes";
+import HubGrubLogRoutes from "./routes/HubGrubLogRoutes";
 import MagLogRoutes from "./routes/MagLogRoutes";
 import VolunteersRoutes from "./routes/VolunteersRoutes";
 import RequestRoutes from "./routes/RequestRoutes";
@@ -67,6 +68,7 @@ function AppContent() {
                 <Route path="/" element={<Navigate to="/dashboard" />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/packages/*" element={<PackageRoutes />} />
+                <Route path="/hub-grub/*" element={<HubGrubLogRoutes />} />
                 <Route path="/mag/*" element={<MagLogRoutes />} />
                 <Route path="/clients/*" element={<ClientsRoutes />} />
                 <Route path="/mps/*" element={<MpsRoutes />} />
