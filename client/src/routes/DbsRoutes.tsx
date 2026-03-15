@@ -29,6 +29,8 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
     header: "DBS Expiry",
     render: (item) =>
       item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
+    filterType: "date",
+    sortValue: (item) => item.dbsExpiry || "",
   },
 ];
 

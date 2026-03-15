@@ -30,11 +30,15 @@ const aggregateColumns: TableColumn<CoreCompletionRow>[] = [
     key: "earliest",
     header: "Earliest Expiry",
     render: (item) => formatYmdToDmy(item.earliestCoreExpiryDate || ""),
+    filterType: "date",
+    sortValue: (item) => item.earliestCoreExpiryDate || "",
   },
   {
     key: "rate",
     header: "Core Completion Rate",
     render: (item) => `${Math.round(item.coreCompletionRate)}%`,
+    filterType: "number",
+    sortValue: (item) => item.coreCompletionRate,
   },
 ];
 

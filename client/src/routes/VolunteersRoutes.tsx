@@ -9,6 +9,7 @@ import { formatYmdToDmy } from "@/utils/date";
 import type { VolunteerMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
+import { volunteerRoles } from "shared/const";
 import EndDialog from "../components/EndDialog";
 
 const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
@@ -21,12 +22,16 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     key: "role",
     header: "Role",
     render: (item: VolunteerMetadata) => item.details.role,
+    filterType: "enum",
+    filterOptions: [...volunteerRoles],
   },
   {
     key: "dob",
     header: "Date of Birth",
     render: (item: VolunteerMetadata) =>
       item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
+    filterType: "date",
+    sortValue: (item) => item.dateOfBirth || "",
   },
   {
     key: "postCode",
@@ -43,6 +48,8 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     header: "DBS Expiry",
     render: (item: VolunteerMetadata) =>
       item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
+    filterType: "date",
+    sortValue: (item) => item.dbsExpiry || "",
   },
   {
     key: "capacity",

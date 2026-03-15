@@ -32,6 +32,8 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
       item.publicLiabilityExpiry
         ? formatYmdToDmy(item.publicLiabilityExpiry)
         : "No Public Liability",
+    filterType: "date",
+    sortValue: (item) => item.publicLiabilityExpiry || "",
   },
 ];
 

@@ -12,6 +12,7 @@ import type { Package, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CoverPackageForm } from "@/pages/CoverPackageForm";
 import { SolePackageForm } from "@/pages/SolePackageForm";
+import { localities } from "shared/const";
 import {
   Tabs,
   TabsContent,
@@ -29,6 +30,8 @@ export const packageColumns: TableColumn<Package>[] = [
     key: "startDate",
     header: "Start Date",
     render: (item: Package) => formatYmdToDmy(item.startDate),
+    filterType: "date",
+    sortValue: (item) => item.startDate,
   },
   {
     key: "endDate",
@@ -37,16 +40,22 @@ export const packageColumns: TableColumn<Package>[] = [
       item.endDate === "open"
         ? "Ongoing"
         : formatYmdToDmy(item.endDate as string),
+    filterType: "date",
+    sortValue: (item) => (item.endDate === "open" ? "" : (item.endDate as string)),
   },
   {
     key: "oneOff",
     header: "One-Off Hours",
     render: (item: Package) => item.details.oneOffStartDateHours || 0,
+    filterType: "number",
+    sortValue: (item) => item.details.oneOffStartDateHours || 0,
   },
   {
     key: "weeklyHours",
     header: "Weekly Hours",
     render: (item: Package) => item.details.weeklyHours,
+    filterType: "number",
+    sortValue: (item) => item.details.weeklyHours,
   },
   {
     key: "locality",
@@ -56,6 +65,8 @@ export const packageColumns: TableColumn<Package>[] = [
         return item.details.address.locality;
       }
     },
+    filterType: "enum",
+    filterOptions: [...localities],
   },
   {
     key: "services",

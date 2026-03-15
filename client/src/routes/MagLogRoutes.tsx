@@ -7,11 +7,24 @@ import type { ClientFull, MagLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const magLogColumns: TableColumn<MagLog>[] = [
-  { key: "date", header: "Date", render: (item) => formatYmdToDmy(item.date) },
+  {
+    key: "date",
+    header: "Date",
+    render: (item) => formatYmdToDmy(item.date),
+    filterType: "date",
+    sortValue: (item) => item.date,
+  },
   {
     key: "total",
     header: "Total Attendees",
     render: (item: ClientFull["magLogs"][number]) =>
+      item.details.totalVolunteers +
+      item.details.totalClients +
+      item.details.totalFamily +
+      item.details.totalMps +
+      item.details.otherAttendees,
+    filterType: "number",
+    sortValue: (item) =>
       item.details.totalVolunteers +
       item.details.totalClients +
       item.details.totalFamily +
@@ -26,6 +39,9 @@ export const magLogColumns: TableColumn<MagLog>[] = [
       const count = item.volunteers?.length ?? 0;
       return Math.round(duration * count * 100) / 100;
     },
+    filterType: "number",
+    sortValue: (item) =>
+      Math.round((item.totalHours ?? 0) * (item.volunteers?.length ?? 0) * 100) / 100,
   },
   {
     key: "notes",
