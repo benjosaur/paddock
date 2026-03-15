@@ -24,6 +24,12 @@ const mpColumns: TableColumn<MpMetadata>[] = [
       item.dateOfBirth ? formatYmdToDmy(item.dateOfBirth) : "Unknown",
   },
   {
+    key: "startDate",
+    header: "Start Date",
+    render: (item: MpMetadata) =>
+      formatYmdToDmy(item.details.startDate || ""),
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: MpMetadata) => item.details.address.postCode,
