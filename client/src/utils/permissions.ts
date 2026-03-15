@@ -61,6 +61,12 @@ export function getVisibleMenuItems(userRole: UserRole) {
       path: "/mag",
       resource: "mag",
     },
+    {
+      key: "hubGrub",
+      label: "Hub & Grub",
+      path: "/hub-grub",
+      resource: "hubGrub",
+    },
   ];
 
   return allMenuItems.filter((item) => {
