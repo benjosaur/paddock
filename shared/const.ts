@@ -104,4 +104,4 @@ export const endReasons = [
 ] as const;
 export const DEPRIVATION_THRESHOLD_DECILE = 3;
 export const DEFAULT_MAG_DURATION_HOURS = 2;
-export const DEFAULT_HUB_GRUB_DURATION_HOURS = 2;
+export const DEFAULT_HUB_GRUB_DURATION_HOURS = 4;
