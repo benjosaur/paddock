@@ -88,6 +88,10 @@ export class AttendanceReportService {
       report.overallInReceipt.totalReceivingHigh += isReceivingHigh ? 1 : 0;
       report.overallInReceipt.totalReceivingHighRequestedHigh +=
         isReceivingHighRequestedHigh ? 1 : 0;
+      report.overallInReceipt.totalPending +=
+        client.details.attendanceAllowance.status === "Pending" ? 1 : 0;
+      report.overallInReceipt.totalUnsent +=
+        client.details.attendanceAllowance.status === "Unsent" ? 1 : 0;
     }
     return report;
   }
