@@ -4,7 +4,6 @@ import {
   DbHubGrubLog,
   DbHubGrubLogClient,
   DbHubGrubLogEntity,
-  DbHubGrubLogMp,
   DbHubGrubLogVolunteer,
 } from "./schema";
 import { addDbMiddleware } from "../service";
@@ -83,18 +82,6 @@ export class HubGrubLogService {
             user
           )
         );
-      const hubGrubLogMps: Omit<DbHubGrubLogMp, "sK">[] = validatedInput.mps.map((mp) =>
-        addDbMiddleware(
-          {
-            date: validatedInput.date,
-            entityType: "hubGrubLogMp",
-            entityOwner: "mp",
-            pK: mp.id,
-            ...mp,
-          },
-          user
-        )
-      );
       const hubGrubLogVolunteers: Omit<DbHubGrubLogVolunteer, "sK">[] =
         validatedInput.volunteers.map((volunteer) =>
           addDbMiddleware(
@@ -114,7 +101,7 @@ export class HubGrubLogService {
       );
       await this.hubGrubLogRepository.createHubGrubReference(
         createdLogId,
-        [...hubGrubLogClients, ...hubGrubLogMps, ...hubGrubLogVolunteers],
+        [...hubGrubLogClients, ...hubGrubLogVolunteers],
         user
       );
 
@@ -128,7 +115,7 @@ export class HubGrubLogService {
   async update(updatedHubGrubLog: HubGrubLog, user: User): Promise<void> {
     try {
       const validatedInput = hubGrubLogSchema.parse(updatedHubGrubLog);
-      const { id, clients, mps, volunteers, ...rest } = validatedInput;
+      const { id, clients, volunteers, ...rest } = validatedInput;
 
       await this.hubGrubLogRepository.delete(id, user);
 
@@ -154,18 +141,6 @@ export class HubGrubLogService {
         )
       );
 
-      const hubGrubLogMps: DbHubGrubLogMp[] = mps.map((mp) =>
-        addDbMiddleware(
-          {
-            pK: mp.id,
-            sK: id,
-            entityType: "hubGrubLogMp",
-            ...mp,
-          },
-          user
-        )
-      );
-
       const hubGrubLogVolunteers: DbHubGrubLogVolunteer[] = volunteers.map(
         (volunteer) =>
           addDbMiddleware(
@@ -180,7 +155,7 @@ export class HubGrubLogService {
       );
 
       await this.hubGrubLogRepository.update(
-        [hubGrubLogMain, ...hubGrubLogClients, ...hubGrubLogMps, ...hubGrubLogVolunteers],
+        [hubGrubLogMain, ...hubGrubLogClients, ...hubGrubLogVolunteers],
         user
       );
     } catch (error) {
@@ -213,9 +188,8 @@ export class HubGrubLogService {
 
       const hubGrubLog = hubGrubLogsMap.get(hubGrubLogId)!;
 
-      if (item.pK.startsWith("hubGrub")) {
+      if (item.pK.startsWith("hg")) {
         if (!hubGrubLog.clients) hubGrubLog.clients = [];
-        if (!hubGrubLog.mps) hubGrubLog.mps = [];
         if (!hubGrubLog.volunteers) hubGrubLog.volunteers = [];
         const { pK, sK, entityType, ...rest } = item as DbHubGrubLogEntity;
         Object.assign(hubGrubLog, rest);
@@ -228,13 +202,6 @@ export class HubGrubLogService {
           ...rest,
         });
         continue;
-      } else if (item.pK.startsWith("m")) {
-        if (!hubGrubLog.mps) hubGrubLog.mps = [];
-        const { pK, sK, entityType, ...rest } = item as DbHubGrubLogMp;
-        hubGrubLog.mps.push({
-          id: item.pK,
-          ...rest,
-        });
       } else if (item.pK.startsWith("v")) {
         if (!hubGrubLog.volunteers) hubGrubLog.volunteers = [];
         const { pK, sK, entityType, ...rest } = item as DbHubGrubLogVolunteer;

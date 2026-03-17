@@ -397,12 +397,6 @@ export const hubGrubLogSchema = z.object({
       }),
     }),
   ),
-  mps: z.array(
-    z.object({
-      id: z.string(),
-      details: z.object({ name: z.string() }),
-    }),
-  ),
   volunteers: z.array(
     z.object({
       id: z.string(),
@@ -411,9 +405,7 @@ export const hubGrubLogSchema = z.object({
   ),
   details: z.object({
     totalClients: z.coerce.number().default(0),
-    totalFamily: z.coerce.number().default(0),
     totalVolunteers: z.coerce.number().default(0),
-    totalMps: z.coerce.number().default(0),
     otherAttendees: z.coerce.number().default(0),
     notes: z.string().default(""),
   }),

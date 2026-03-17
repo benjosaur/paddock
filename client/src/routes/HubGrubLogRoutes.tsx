@@ -14,8 +14,6 @@ export const hubGrubLogColumns: TableColumn<HubGrubLog>[] = [
     render: (item: HubGrubLog) =>
       item.details.totalVolunteers +
       item.details.totalClients +
-      item.details.totalFamily +
-      item.details.totalMps +
       item.details.otherAttendees,
   },
   {

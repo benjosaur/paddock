@@ -7,7 +7,6 @@ import { trpc } from "../utils/trpc";
 import type {
   HubGrubLog,
   ClientMetadata,
-  MpMetadata,
   VolunteerMetadata,
 } from "../types";
 import { hubGrubLogSchema } from "../types";
@@ -27,13 +26,10 @@ export function HubGrubLogForm() {
     date: "",
     totalHours: DEFAULT_HUB_GRUB_DURATION_HOURS,
     clients: [],
-    mps: [],
     volunteers: [],
     details: {
       totalClients: 0,
-      totalFamily: 0,
       totalVolunteers: 0,
-      totalMps: 0,
       otherAttendees: 0,
       notes: "",
     },
@@ -44,7 +40,6 @@ export function HubGrubLogForm() {
   const clientsQuery = useQuery(
     trpc.clients.getAllWithHubGrubService.queryOptions()
   );
-  const mpsQuery = useQuery(trpc.mps.getAllNotEndedYet.queryOptions());
   const volunteersQuery = useQuery(
     trpc.volunteers.getAllNotEndedYet.queryOptions()
   );
@@ -95,11 +90,6 @@ export function HubGrubLogForm() {
       label: client.details.name,
     })
   );
-
-  const mpOptions = (mpsQuery.data || []).map((mp: MpMetadata) => ({
-    value: mp.id,
-    label: mp.details.name,
-  }));
 
   const volunteerOptions = (volunteersQuery.data || []).map(
     (volunteer: VolunteerMetadata) => ({
@@ -232,24 +222,6 @@ export function HubGrubLogForm() {
 
                 <div>
                   <label
-                    htmlFor="totalFamily"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Total Family Members
-                  </label>
-                  <Input
-                    id="totalFamily"
-                    name="details.totalFamily"
-                    type="number"
-                    min="0"
-                    value={formData.details.totalFamily ?? ""}
-                    onChange={handleInputChange}
-                    placeholder=""
-                  />
-                </div>
-
-                <div>
-                  <label
                     htmlFor="totalVolunteers"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
@@ -261,24 +233,6 @@ export function HubGrubLogForm() {
                     type="number"
                     min="0"
                     value={formData.details.totalVolunteers ?? ""}
-                    onChange={handleInputChange}
-                    placeholder=""
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="totalMps"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Total MPs
-                  </label>
-                  <Input
-                    id="totalMps"
-                    name="details.totalMps"
-                    type="number"
-                    min="0"
-                    value={formData.details.totalMps ?? ""}
                     onChange={handleInputChange}
                     placeholder=""
                   />
@@ -341,38 +295,6 @@ export function HubGrubLogForm() {
                 <p className="text-xs text-gray-500 mt-1">
                   Search by client name to add registered attendees
                 </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="mps"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  MPs
-                </label>
-                <Select
-                  options={mpOptions}
-                  value={
-                    mpOptions.filter(
-                      (option: { value: string; label: string }) =>
-                        formData.mps?.map((mp) => mp.id).includes(option.value)
-                    ) || null
-                  }
-                  onChange={(newValues) =>
-                    handleMultiSelectChange(
-                      "mps",
-                      mpsQuery.data ?? [],
-                      newValues
-                    )
-                  }
-                  placeholder="Search and select MPs..."
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isSearchable
-                  isMulti
-                  noOptionsMessage={() => "No MPs found"}
-                />
-                <p className="text-xs text-gray-500 mt-1">Search by MP name</p>
               </div>
 
               <div>
