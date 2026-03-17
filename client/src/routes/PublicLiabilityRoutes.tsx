@@ -13,7 +13,7 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 
-const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
+const publicLiabilityColumns: TableColumn<MpMetadata | VolunteerMetadata>[] = [
   {
     key: "name",
     header: "Name",
@@ -37,9 +37,6 @@ const mpPublicLiabilityColumns: TableColumn<MpMetadata>[] = [
     sortValue: (item) => item.publicLiabilityExpiry || null,
   },
 ];
-
-const volunteerPublicLiabilityColumns: TableColumn<VolunteerMetadata>[] =
-  mpPublicLiabilityColumns;
 
 export default function PublicLiabilityRoutes() {
   const [showArchived, setShowArchived] = useState(false);
@@ -102,7 +99,7 @@ export default function PublicLiabilityRoutes() {
                   title="MPs"
                   searchPlaceholder="Search MPs..."
                   data={mps}
-                  columns={mpPublicLiabilityColumns}
+                  columns={publicLiabilityColumns}
                   defaultSortKey="publicLiabilityExpiry"
                   resource="mps"
                 />
@@ -114,7 +111,7 @@ export default function PublicLiabilityRoutes() {
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
                   data={volunteers}
-                  columns={volunteerPublicLiabilityColumns}
+                  columns={publicLiabilityColumns}
                   defaultSortKey="publicLiabilityExpiry"
                   resource="volunteers"
                 />

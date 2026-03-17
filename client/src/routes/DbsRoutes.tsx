@@ -13,7 +13,7 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 
-const mpDbsColumns: TableColumn<MpMetadata>[] = [
+const dbsColumns: TableColumn<MpMetadata | VolunteerMetadata>[] = [
   {
     key: "name",
     header: "Name",
@@ -34,8 +34,6 @@ const mpDbsColumns: TableColumn<MpMetadata>[] = [
     sortValue: (item) => item.dbsExpiry || null,
   },
 ];
-
-const volunteerDbsColumns: TableColumn<VolunteerMetadata>[] = mpDbsColumns;
 
 export default function DbsRoutes() {
   const [showArchived, setShowArchived] = useState(false);
@@ -98,7 +96,7 @@ export default function DbsRoutes() {
                   title="MPs"
                   searchPlaceholder="Search MPs..."
                   data={mps}
-                  columns={mpDbsColumns}
+                  columns={dbsColumns}
                   defaultSortKey="dbsExpiry"
                   resource="mps"
                 />
@@ -110,7 +108,7 @@ export default function DbsRoutes() {
                   title="Volunteers"
                   searchPlaceholder="Search volunteers..."
                   data={volunteers}
-                  columns={volunteerDbsColumns}
+                  columns={dbsColumns}
                   defaultSortKey="dbsExpiry"
                   resource="volunteers"
                 />
