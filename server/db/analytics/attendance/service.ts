@@ -67,9 +67,6 @@ export class AttendanceReportService {
         const reqMonth = parseInt(requestedDate.slice(5, 7));
         if (reqYear === currentYear && reqMonth === currentMonth) {
           report.thisMonthConfirmed.totalRequested += hasRequested ? 1 : 0;
-          report.thisMonthConfirmed.totalRequestedHigh += hasRequestedHigh
-            ? 1
-            : 0;
         }
       }
 
