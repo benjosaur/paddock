@@ -395,6 +395,8 @@ export class VolunteerService {
         continue;
       } else if (item.sK.startsWith("mag")) {
         continue;
+      } else if (item.sK.startsWith("hg")) {
+        continue;
       } else {
         console.dir(item, { depth: null });
         throw new Error(`Undefined Case: ${item}`);

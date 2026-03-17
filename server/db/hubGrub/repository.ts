@@ -87,7 +87,7 @@ export class HubGrubLogRepository {
     user: User
   ): Promise<string> {
     const uuid = uuidv4();
-    const key = `hubGrub#${uuid}`;
+    const key = `hg#${uuid}`;
     const newItems = newHubGrubLogs.map((log) => ({ pK: key, sK: key, ...log }));
     const validatedItems = dbHubGrubLog.array().parse(newItems);
     try {

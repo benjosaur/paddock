@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { clientMetadataSchema } from "shared";
 import { dbMagLogClient } from "../mag/schema";
+import { dbHubGrubLogClient } from "../hubGrub/schema";
 import { dbRequestEntity } from "../requests/schema";
 import { dbEntrySchema } from "../schema";
 
@@ -19,7 +20,7 @@ export const dbClientEntity = dbEntrySchema
 
 export const dbClientMetadata = z.union([dbClientEntity, dbRequestEntity]);
 
-export const dbClientFull = z.union([dbClientMetadata, dbMagLogClient]);
+export const dbClientFull = z.union([dbClientMetadata, dbMagLogClient, dbHubGrubLogClient]);
 
 export type DbClientEntity = z.infer<typeof dbClientEntity>;
 export type DbClientMetadata = z.infer<typeof dbClientMetadata>;

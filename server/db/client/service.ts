@@ -13,6 +13,7 @@ import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
 import { DbRequestEntity } from "../requests/schema";
 import { DbMagLogClient } from "../mag/schema";
+import { DbHubGrubLogClient } from "../hubGrub/schema";
 import { PackageRepository } from "../package/repository";
 import { MagLogRepository } from "../mag/repository";
 import { RequestRepository } from "../requests/repository";
@@ -378,9 +379,9 @@ export class ClientService {
         user
       );
 
-      //filter out mags (these dont contain customId)
+      //filter out mags and hub & grub (these dont contain customId)
       const updatedClientRecords = initialClientRecords
-        .filter((record) => !record.sK.startsWith("mag"))
+        .filter((record) => !record.sK.startsWith("mag") && !record.sK.startsWith("hg"))
         .map((record) => {
           if (record.sK.startsWith("c#")) {
             return updatedClientEntity;
@@ -498,7 +499,7 @@ export class ClientService {
   }
 
   private transformDbClientToSharedMetaData(
-    items: (DbClientEntity | DbRequestEntity | DbMagLogClient)[]
+    items: (DbClientEntity | DbRequestEntity | DbMagLogClient | DbHubGrubLogClient)[]
   ): ClientMetadata[] {
     // for creating full clients handle fetching + adding full logs separately after transform
     const clientsMap = new Map<string, Partial<ClientMetadata>>();
@@ -532,6 +533,8 @@ export class ClientService {
         });
         continue;
       } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else if (item.sK.startsWith("hg")) {
         continue;
       } else throw new Error(`Undefined Case: ${item}`);
     }

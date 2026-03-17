@@ -3,6 +3,7 @@ import { volunteerMetadataSchema } from "shared";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
 import { dbMagLogVolunteer } from "../mag/schema";
+import { dbHubGrubLogVolunteer } from "../hubGrub/schema";
 import { dbEntrySchema } from "../schema";
 
 export const dbVolunteerEntity = dbEntrySchema
@@ -26,6 +27,7 @@ export const dbVolunteerFull = z.union([
   dbVolunteerMetadata,
   dbPackage,
   dbMagLogVolunteer,
+  dbHubGrubLogVolunteer,
 ]);
 
 export type DbVolunteerMetadata = z.infer<typeof dbVolunteerMetadata>;
