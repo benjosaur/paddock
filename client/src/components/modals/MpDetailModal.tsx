@@ -63,7 +63,7 @@ export function MpDetailModal({
           queryKey: trpc.mps.getAll.queryKey(),
         });
       },
-    })
+    }),
   );
 
   const handleNotesSubmit = (notes: Note[]) => {
@@ -102,7 +102,7 @@ export function MpDetailModal({
 
   const renderDetailItem = (
     label: string,
-    value?: string | string[] | number | object
+    value?: string | string[] | number | object,
   ) => {
     if (
       value === undefined ||
@@ -155,7 +155,6 @@ export function MpDetailModal({
           <Tabs defaultValue="contact" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">General Info</TabsTrigger>
-              <TabsTrigger value="Services">Services</TabsTrigger>
               <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -175,42 +174,33 @@ export function MpDetailModal({
               {renderDetailItem("Email", mp.details.email)}
               {renderDetailItem(
                 "Start Date",
-                mp.details.startDate ? formatYmdToDmy(mp.details.startDate) : ""
+                mp.details.startDate
+                  ? formatYmdToDmy(mp.details.startDate)
+                  : "",
               )}
               {renderDetailItem(
                 "End Date",
                 mp.endDate === "open"
                   ? "Ongoing"
                   : mp.endDate
-                  ? formatYmdToDmy(mp.endDate)
-                  : ""
+                    ? formatYmdToDmy(mp.endDate)
+                    : "",
               )}
               {renderDetailItem("Next of Kin", mp.details.nextOfKin)}
               {renderDetailItem(
                 "DBS Expiry",
-                mp.dbsExpiry ? formatYmdToDmy(mp.dbsExpiry) : undefined
+                mp.dbsExpiry ? formatYmdToDmy(mp.dbsExpiry) : undefined,
               )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 mp.publicLiabilityExpiry
                   ? formatYmdToDmy(mp.publicLiabilityExpiry)
-                  : undefined
+                  : undefined,
               )}
               {renderDetailItem(
                 "Date of Birth",
-                mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : ""
+                mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : "",
               )}
-            </TabsContent>
-
-            <TabsContent
-              value="Services"
-              className="p-4 border rounded-lg bg-white/80"
-            >
-              <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Services
-              </h3>
-              {renderDetailItem("Services", mp.details.services)}
-              {renderDetailItem("Capacity", mp.details.capacity)}
             </TabsContent>
 
             <TabsContent

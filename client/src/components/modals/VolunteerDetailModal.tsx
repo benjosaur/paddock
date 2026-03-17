@@ -35,7 +35,7 @@ export function VolunteerDetailModal({
 }: VolunteerDetailModalProps) {
   const queryClient = useQueryClient();
   const volunteerQuery = useQuery(
-    trpc.volunteers.getById.queryOptions({ id: volunteerId })
+    trpc.volunteers.getById.queryOptions({ id: volunteerId }),
   );
   const volunteer = volunteerQuery.data;
   const [currentNotes, setCurrentNotes] = useState<Note[]>([]);
@@ -58,7 +58,7 @@ export function VolunteerDetailModal({
           queryKey: trpc.volunteers.getAll.queryKey(),
         });
       },
-    })
+    }),
   );
 
   const handleNotesSubmit = (notes: Note[]) => {
@@ -97,7 +97,7 @@ export function VolunteerDetailModal({
 
   const renderDetailItem = (
     label: string,
-    value?: string | string[] | number | object
+    value?: string | string[] | number | object,
   ) => {
     if (
       value === undefined ||
@@ -150,7 +150,6 @@ export function VolunteerDetailModal({
           <Tabs defaultValue="contact" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">General Info</TabsTrigger>
-              <TabsTrigger value="Services">Services</TabsTrigger>
               <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Packages</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -173,46 +172,35 @@ export function VolunteerDetailModal({
                 "Start Date",
                 volunteer.details.startDate
                   ? formatYmdToDmy(volunteer.details.startDate)
-                  : ""
+                  : "",
               )}
               {renderDetailItem(
                 "End Date",
                 volunteer.endDate === "open"
                   ? "Ongoing"
                   : volunteer.endDate
-                  ? formatYmdToDmy(volunteer.endDate)
-                  : ""
+                    ? formatYmdToDmy(volunteer.endDate)
+                    : "",
               )}
               {renderDetailItem("Next of Kin", volunteer.details.nextOfKin)}
               {renderDetailItem(
                 "DBS Expiry",
                 volunteer.dbsExpiry
                   ? formatYmdToDmy(volunteer.dbsExpiry)
-                  : undefined
+                  : undefined,
               )}
               {renderDetailItem(
                 "Public Liability Expiry",
                 volunteer.publicLiabilityExpiry
                   ? formatYmdToDmy(volunteer.publicLiabilityExpiry)
-                  : undefined
+                  : undefined,
               )}
               {renderDetailItem(
                 "Date of Birth",
                 volunteer.dateOfBirth
                   ? formatYmdToDmy(volunteer.dateOfBirth)
-                  : ""
+                  : "",
               )}
-            </TabsContent>
-
-            <TabsContent
-              value="Services"
-              className="p-4 border rounded-lg bg-white/80"
-            >
-              <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Services
-              </h3>
-              {renderDetailItem("Services", volunteer.details.services)}
-              {renderDetailItem("Capacity", volunteer.details.capacity)}
             </TabsContent>
 
             <TabsContent

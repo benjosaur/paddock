@@ -9,9 +9,8 @@ import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/modals/FieldEditModal";
-import { MultiValue } from "react-select";
 import { Select } from "../components/ui/select";
-import { serviceOptions, localities, volunteerRoles } from "shared/const";
+import { localities, volunteerRoles } from "shared/const";
 import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
 
 export function VolunteerForm() {
@@ -35,8 +34,6 @@ export function VolunteerForm() {
       phone: "",
       email: "",
       nextOfKin: "",
-      services: [],
-      capacity: "",
       role: "Volunteer",
       attendsMag: false,
       publicLiabilityNumber: "",
@@ -64,7 +61,7 @@ export function VolunteerForm() {
         });
         navigate("/volunteers");
       },
-    })
+    }),
   );
 
   const updateVolunteerMutation = useMutation(
@@ -75,7 +72,7 @@ export function VolunteerForm() {
         });
         navigate("/volunteers");
       },
-    })
+    }),
   );
 
   const updateNameMutation = useMutation(
@@ -85,7 +82,7 @@ export function VolunteerForm() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   useEffect(() => {
@@ -96,27 +93,16 @@ export function VolunteerForm() {
   }, [volunteerQuery.data]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const field = e.target.name;
     let value: string | number | boolean =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
         : e.target instanceof HTMLInputElement && e.target.type === "number"
-        ? Number(e.target.value)
-        : e.target.value;
+          ? Number(e.target.value)
+          : e.target.value;
     setFormData((prev) => updateNestedValue(field, value, prev));
-  };
-
-  const handleMultiSelectChange = (
-    field: string,
-    newValues: MultiValue<{
-      label: string;
-      value: string;
-    }>
-  ) => {
-    const selectedValues = newValues.map((option) => option.value);
-    setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
   const handleSelectChange = (
@@ -124,19 +110,19 @@ export function VolunteerForm() {
     newValue: {
       label: string;
       value: string;
-    } | null
+    } | null,
   ) => {
     if (!newValue) return null;
     setFormData((prev) => updateNestedValue(field, newValue.value, prev));
   };
 
   const prepareVolunteerPayload = (
-    data: Omit<VolunteerFull, "id">
+    data: Omit<VolunteerFull, "id">,
   ): Omit<VolunteerFull, "id"> | null => {
     const validated = validateOrToast<Omit<VolunteerFull, "id">>(
       volunteerFullSchema.omit({ id: true }),
       data,
-      { toastPrefix: "Form Validation Error", logPrefix: "Volunteer form" }
+      { toastPrefix: "Form Validation Error", logPrefix: "Volunteer form" },
     );
     return validated;
   };
@@ -170,11 +156,6 @@ export function VolunteerForm() {
   const handleCancel = () => {
     navigate("/volunteers");
   };
-
-  const serviceSelectOptions = serviceOptions.map((service) => ({
-    value: service,
-    label: service,
-  }));
 
   const roleSelectOptions = volunteerRoles.map((role) => ({
     value: role,
@@ -297,7 +278,7 @@ export function VolunteerForm() {
                   onChange={(selectedOption) =>
                     handleSelectChange(
                       "details.address.locality",
-                      selectedOption
+                      selectedOption,
                     )
                   }
                   placeholder="Select locality..."
@@ -510,49 +491,6 @@ export function VolunteerForm() {
                   }
                   placeholder="Select role..."
                   required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="services"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Services Offered
-                </label>
-                <Select
-                  options={serviceSelectOptions}
-                  value={
-                    serviceSelectOptions.filter((option) =>
-                      formData.details.services?.includes(option.value)
-                    ) || null
-                  }
-                  onChange={(newValues) =>
-                    handleMultiSelectChange("details.services", newValues)
-                  }
-                  placeholder="Search and select services..."
-                  isSearchable
-                  isMulti
-                  noOptionsMessage={() => "No services found"}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Search by service name to add offered services
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="capacity"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Capacity
-                </label>
-                <Input
-                  id="capacity"
-                  name="details.capacity"
-                  value={formData.details.capacity || ""}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Full Time, Part Time"
                 />
               </div>
             </div>

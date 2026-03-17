@@ -28,8 +28,7 @@ const mpColumns: TableColumn<MpMetadata>[] = [
   {
     key: "startDate",
     header: "Start Date",
-    render: (item: MpMetadata) =>
-      formatYmdToDmy(item.details.startDate || ""),
+    render: (item: MpMetadata) => formatYmdToDmy(item.details.startDate || ""),
     sortValue: (item) => item.details.startDate || null,
   },
   {
@@ -39,22 +38,10 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     sortValue: (item) => item.details.address.postCode,
   },
   {
-    key: "services",
-    header: "Services",
-    render: (item: MpMetadata) => item.details.services.join(", "),
-    sortValue: (item) => item.details.services.join(", "),
-  },
-  {
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item: MpMetadata) => item.dbsExpiry || "No DBS",
     sortValue: (item) => item.dbsExpiry || null,
-  },
-  {
-    key: "capacity",
-    header: "Capacity?",
-    render: (item: MpMetadata) => item.details.capacity,
-    sortValue: (item) => item.details.capacity,
   },
 ];
 
@@ -71,7 +58,7 @@ export function MpsRoutes() {
   const mpsQuery = useQuery(
     showEnded
       ? trpc.mps.getAll.queryOptions()
-      : trpc.mps.getAllNotEndedYet.queryOptions()
+      : trpc.mps.getAllNotEndedYet.queryOptions(),
   );
   const mpsQueryKey = showEnded
     ? trpc.mps.getAll.queryKey()
@@ -82,7 +69,7 @@ export function MpsRoutes() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: mpsQueryKey });
       },
-    })
+    }),
   );
 
   const updateMpMutation = useMutation(
@@ -92,7 +79,7 @@ export function MpsRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const endMpMutation = useMutation(
@@ -102,7 +89,7 @@ export function MpsRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const handleAddNew = () => {
@@ -215,7 +202,7 @@ export function MpsRoutes() {
               endDate={endDetails?.endDate}
               onEndDateChange={(date) =>
                 setEndDetails((prev) =>
-                  prev ? { ...prev, endDate: date } : prev
+                  prev ? { ...prev, endDate: date } : prev,
                 )
               }
               onConfirm={handleConfirmEnd}

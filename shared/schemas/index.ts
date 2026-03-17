@@ -125,19 +125,19 @@ export const magLogSchema = z.object({
         name: z.string(),
         address: addressSchemaWithDeprivation,
       }),
-    })
+    }),
   ),
   mps: z.array(
     z.object({
       id: z.string(),
       details: z.object({ name: z.string() }),
-    })
+    }),
   ),
   volunteers: z.array(
     z.object({
       id: z.string(),
       details: z.object({ name: z.string() }),
-    })
+    }),
   ),
   details: z.object({
     totalClients: z.coerce.number().default(0),
@@ -155,7 +155,6 @@ const basePersonDetails = z.object({
   phone: z.string().default(""),
   email: z.string().default(""),
   nextOfKin: z.string().default(""),
-  services: z.array(z.enum(serviceOptions)).default([]),
   attendsMag: z.boolean().default(false),
   notes: z
     .array(
@@ -164,7 +163,7 @@ const basePersonDetails = z.object({
         note: z.string(),
         source: z.enum(notesSource),
         minutesTaken: z.coerce.number().min(0),
-      })
+      }),
     )
     .default([]),
 });
@@ -177,6 +176,7 @@ export const clientMetadataSchema = z.object({
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: basePersonDetails.omit({ address: true }).extend({
     customId: z.string().default(""),
+    services: z.array(z.enum(serviceOptions)).default([]),
     address: addressSchemaWithDeprivation,
     donationScheme: z.boolean().default(false),
     donationAmount: z.coerce.number().default(0),
@@ -220,7 +220,6 @@ export const mpMetadataSchema = z.object({
     .default(""),
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
-    capacity: z.string().default(""),
     dbsNumber: z.string().default(""),
     publicLiabilityNumber: z.string().default(""),
     startDate: z.union([z.string().date(), z.literal("")]).default(""),
@@ -238,7 +237,6 @@ export const volunteerMetadataSchema = mpMetadataSchema
   })
   .extend({
     details: basePersonDetails.extend({
-      capacity: z.string().default(""),
       dbsNumber: z.string().default(""),
       publicLiabilityNumber: z.string().default(""),
       startDate: z.union([z.string().date(), z.literal("")]).default(""),
@@ -284,9 +282,9 @@ export const attendanceAllowanceReportSchema = z.object({
         attendanceAllowanceCrossSectionSchema.shape.thisMonthConfirmed.extend({
           totalHours: z.coerce.number().default(0),
           month: z.coerce.number(),
-        })
+        }),
       ),
-    })
+    }),
   ),
 });
 
@@ -300,10 +298,10 @@ export const crossSectionSchema = z.object({
           z.object({
             name: z.enum(serviceOptions),
             totalHours: z.coerce.number().default(0),
-          })
+          }),
         ),
         totalHours: z.coerce.number().default(0),
-      })
+      }),
     )
     .default([]),
   services: z
@@ -311,7 +309,7 @@ export const crossSectionSchema = z.object({
       z.object({
         name: z.enum(serviceOptions),
         totalHours: z.coerce.number().default(0),
-      })
+      }),
     )
     .default([]),
 });
@@ -326,10 +324,10 @@ export const deprivationCrossSectionSchema = z.object({
           z.object({
             name: z.enum(serviceOptions),
             totalHours: z.coerce.number().default(0),
-          })
+          }),
         ),
         totalHours: z.coerce.number().default(0),
-      })
+      }),
     )
     .default([]),
   services: z
@@ -337,7 +335,7 @@ export const deprivationCrossSectionSchema = z.object({
       z.object({
         name: z.enum(serviceOptions),
         totalHours: z.coerce.number().default(0),
-      })
+      }),
     )
     .default([]),
 });
@@ -360,7 +358,7 @@ export const deprivationReportYearSchema = deprivationCrossSectionSchema.extend(
   {
     year: z.coerce.number(),
     months: z.array(deprivationReportMonthSchema),
-  }
+  },
 );
 
 export const reportSchema = z.object({
@@ -393,19 +391,19 @@ export const hubGrubLogSchema = z.object({
         name: z.string(),
         address: addressSchemaWithDeprivation,
       }),
-    })
+    }),
   ),
   mps: z.array(
     z.object({
       id: z.string(),
       details: z.object({ name: z.string() }),
-    })
+    }),
   ),
   volunteers: z.array(
     z.object({
       id: z.string(),
       details: z.object({ name: z.string() }),
-    })
+    }),
   ),
   details: z.object({
     totalClients: z.coerce.number().default(0),

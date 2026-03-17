@@ -38,30 +38,18 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     sortValue: (item) => item.details.address.postCode,
   },
   {
-    key: "services",
-    header: "Services",
-    render: (item: VolunteerMetadata) => item.details.services.join(", "),
-    sortValue: (item) => item.details.services.join(", "),
-  },
-  {
     key: "dbsExpiry",
     header: "DBS Expiry",
     render: (item: VolunteerMetadata) =>
       item.dbsExpiry ? formatYmdToDmy(item.dbsExpiry) : "No DBS",
     sortValue: (item) => item.dbsExpiry || null,
   },
-  {
-    key: "capacity",
-    header: "Capacity?",
-    render: (item: VolunteerMetadata) => item.details.capacity,
-    sortValue: (item) => item.details.capacity,
-  },
 ];
 
 export function VolunteersRoutes() {
   const navigate = useNavigate();
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<string | null>(
-    null
+    null,
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
   const [showEnded, setShowEnded] = useState(false);
@@ -73,7 +61,7 @@ export function VolunteersRoutes() {
   const volunteersQuery = useQuery(
     showEnded
       ? trpc.volunteers.getAll.queryOptions()
-      : trpc.volunteers.getAllNotEndedYet.queryOptions()
+      : trpc.volunteers.getAllNotEndedYet.queryOptions(),
   );
   const volunteersQueryKey = showEnded
     ? trpc.volunteers.getAll.queryKey()
@@ -84,7 +72,7 @@ export function VolunteersRoutes() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: volunteersQueryKey });
       },
-    })
+    }),
   );
 
   const updateVolunteerMutation = useMutation(
@@ -94,7 +82,7 @@ export function VolunteersRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const endVolunteerMutation = useMutation(
@@ -104,7 +92,7 @@ export function VolunteersRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const handleAddNew = () => {
@@ -154,7 +142,7 @@ export function VolunteersRoutes() {
     if (!endDetails?.personId || !endDetails.endDate) return;
     if (endDetails.endDate === "open") {
       const selected = volunteersQuery.data?.find(
-        (v) => v.id === endDetails.personId
+        (v) => v.id === endDetails.personId,
       );
       if (!selected) return;
       updateVolunteerMutation.mutate({
@@ -224,7 +212,7 @@ export function VolunteersRoutes() {
               endDate={endDetails?.endDate}
               onEndDateChange={(date) =>
                 setEndDetails((prev) =>
-                  prev ? { ...prev, endDate: date } : prev
+                  prev ? { ...prev, endDate: date } : prev,
                 )
               }
               onConfirm={handleConfirmEnd}
