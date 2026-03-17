@@ -311,11 +311,17 @@ export const associatedClientRoutes: any[] = [
   // Clients
   trpc.clients.getAll,
   trpc.clients.getAllNotEndedYet,
+  trpc.clients.getAllWithHubGrubService,
+  trpc.clients.getAllWithMagService,
   trpc.clients.getById,
 
   // MAG
   trpc.mag.getAll,
   trpc.mag.getById,
+
+  // Hub & Grub
+  trpc.hubGrub.getAll,
+  trpc.hubGrub.getById,
 
   // Packages
   trpc.packages.getAll,

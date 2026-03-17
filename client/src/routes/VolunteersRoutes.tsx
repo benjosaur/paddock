@@ -257,6 +257,10 @@ export const associatedVolunteerRoutes: any[] = [
   trpc.mag.getAll,
   trpc.mag.getById,
 
+  // Hub & Grub
+  trpc.hubGrub.getAll,
+  trpc.hubGrub.getById,
+
   // Packages
   trpc.packages.getAll,
   trpc.packages.getAllInfo,

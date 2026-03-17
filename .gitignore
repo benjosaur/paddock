@@ -31,3 +31,6 @@ test.sql
 
 *.env
 *.env.local
+
+# Tasks
+tasks/
