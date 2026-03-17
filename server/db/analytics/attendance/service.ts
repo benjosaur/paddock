@@ -61,26 +61,31 @@ export class AttendanceReportService {
 
       const isReceivingHighRequestedHigh = isReceivingHigh && hasRequestedHigh;
 
-      let confirmationYear: number | undefined,
-        confirmationMonth: number | undefined;
-      if (client.details.attendanceAllowance.confirmationDate) {
-        const confirmationDate =
-          client.details.attendanceAllowance.confirmationDate;
-        confirmationYear = parseInt(confirmationDate.slice(0, 4));
-        confirmationMonth = parseInt(confirmationDate.slice(5, 7));
+      const requestedDate = client.details.attendanceAllowance.requestedDate;
+      if (requestedDate) {
+        const reqYear = parseInt(requestedDate.slice(0, 4));
+        const reqMonth = parseInt(requestedDate.slice(5, 7));
+        if (reqYear === currentYear && reqMonth === currentMonth) {
+          report.thisMonthConfirmed.totalRequested += hasRequested ? 1 : 0;
+          report.thisMonthConfirmed.totalRequestedHigh += hasRequestedHigh
+            ? 1
+            : 0;
+        }
       }
-      if (
-        confirmationYear === currentYear &&
-        confirmationMonth === currentMonth
-      ) {
-        report.thisMonthConfirmed.totalRequested += hasRequested ? 1 : 0;
-        report.thisMonthConfirmed.totalRequestedHigh += hasRequestedHigh
-          ? 1
-          : 0;
-        report.thisMonthConfirmed.totalReceiving += isReceiving ? 1 : 0;
-        report.thisMonthConfirmed.totalReceivingHigh += isReceivingHigh ? 1 : 0;
-        report.thisMonthConfirmed.totalReceivingHighRequestedHigh +=
-          isReceivingHighRequestedHigh ? 1 : 0;
+
+      const confirmationDate =
+        client.details.attendanceAllowance.confirmationDate;
+      if (confirmationDate) {
+        const confYear = parseInt(confirmationDate.slice(0, 4));
+        const confMonth = parseInt(confirmationDate.slice(5, 7));
+        if (confYear === currentYear && confMonth === currentMonth) {
+          report.thisMonthConfirmed.totalReceiving += isReceiving ? 1 : 0;
+          report.thisMonthConfirmed.totalReceivingHigh += isReceivingHigh
+            ? 1
+            : 0;
+          report.thisMonthConfirmed.totalReceivingHighRequestedHigh +=
+            isReceivingHighRequestedHigh ? 1 : 0;
+        }
       }
       report.overallInReceipt.totalRequested += hasRequested ? 1 : 0;
       report.overallInReceipt.totalRequestedHigh += hasRequestedHigh ? 1 : 0;
