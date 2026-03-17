@@ -23,6 +23,7 @@ export function MpForm() {
     dateOfBirth: "",
     dbsExpiry: "",
     publicLiabilityExpiry: "",
+    feePaymentDate: "unpaid",
     details: {
       name: "",
       address: {
@@ -116,11 +117,13 @@ export function MpForm() {
   const prepareMpPayload = (
     data: Omit<MpFull, "id">,
   ): Omit<MpFull, "id"> | null => {
+    console.log(data);
     const validated = validateOrToast<Omit<MpFull, "id">>(
       mpFullSchema.omit({ id: true }),
       data,
       { toastPrefix: "Form Validation Error", logPrefix: "MP form" },
     );
+    console.log(validated);
     return validated;
   };
 
@@ -448,6 +451,35 @@ export function MpForm() {
                   }
                   onChange={handleInputChange}
                   disabled
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="feePaymentDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Fee Payment Date
+                </label>
+                <Input
+                  id="feePaymentDate"
+                  type="date"
+                  name="feePaymentDate"
+                  value={
+                    formData.feePaymentDate === "unpaid"
+                      ? ""
+                      : formData.feePaymentDate
+                  }
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        feePaymentDate: "unpaid",
+                      }));
+                    } else {
+                      handleInputChange(e);
+                    }
+                  }}
                 />
               </div>
             </div>

@@ -198,6 +198,14 @@ export function MpDetailModal({
                   : undefined,
               )}
               {renderDetailItem(
+                "End Date",
+                mp.feePaymentDate === "unpaid"
+                  ? "Unpaid"
+                  : mp.feePaymentDate
+                    ? formatYmdToDmy(mp.feePaymentDate)
+                    : "",
+              )}
+              {renderDetailItem(
                 "Date of Birth",
                 mp.dateOfBirth ? formatYmdToDmy(mp.dateOfBirth) : "",
               )}

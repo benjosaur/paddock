@@ -218,6 +218,9 @@ export const mpMetadataSchema = z.object({
   publicLiabilityExpiry: z
     .union([z.string().date(), z.literal("")])
     .default(""),
+  feePaymentDate: z
+    .union([z.string().date(), z.literal("unpaid")])
+    .default("unpaid"),
   trainingRecords: z.array(trainingRecordSchema).default([]),
   details: basePersonDetails.extend({
     dbsNumber: z.string().default(""),
@@ -233,6 +236,7 @@ export const mpFullSchema = mpMetadataSchema.omit({ packages: true }).extend({
 
 export const volunteerMetadataSchema = mpMetadataSchema
   .omit({
+    feePaymentDate: true,
     details: true,
   })
   .extend({

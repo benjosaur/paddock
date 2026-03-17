@@ -43,6 +43,13 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     render: (item: MpMetadata) => item.dbsExpiry || "No DBS",
     sortValue: (item) => item.dbsExpiry || null,
   },
+  {
+    key: "feePaymentDate",
+    header: "Fee Date",
+    render: (item: MpMetadata) =>
+      item.feePaymentDate == "unpaid" ? "Unpaid" : item.feePaymentDate,
+    sortValue: (item) => item.feePaymentDate || null,
+  },
 ];
 
 export function MpsRoutes() {
