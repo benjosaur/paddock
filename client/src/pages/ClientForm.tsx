@@ -163,6 +163,17 @@ export function ClientForm() {
     }
   }, [coordinatorDefault, formData.details.attendanceAllowance.completedBy.id]);
 
+  useEffect(() => {
+    if (
+      formData.details.attendanceAllowance.requestedLevel !== "None" &&
+      formData.details.attendanceAllowance.status === "None"
+    ) {
+      setFormData((prev) =>
+        updateNestedValue("details.attendanceAllowance.status", "Pending", prev)
+      );
+    }
+  }, [formData.details.attendanceAllowance.requestedLevel]);
+
   const createClientMutation = useMutation(
     trpc.clients.create.mutationOptions({
       onSuccess: (data) => {
