@@ -23,7 +23,7 @@ export const hubGrubLogColumns: TableColumn<HubGrubLog>[] = [
     header: "Volunteer Hours",
     render: (item: HubGrubLog) => {
       const duration = item.totalHours ?? 0;
-      const count = item.volunteers?.length ?? 0;
+      const count = item.details.totalVolunteers ?? 0;
       return Math.round(duration * count * 100) / 100;
     },
   },
