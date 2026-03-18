@@ -171,6 +171,20 @@ export function ClientForm() {
       setFormData((prev) =>
         updateNestedValue("details.attendanceAllowance.status", "Pending", prev)
       );
+    } else if (formData.details.attendanceAllowance.requestedLevel === "None") {
+      setFormData((prev) => ({
+        ...prev,
+        details: {
+          ...prev.details,
+          attendanceAllowance: {
+            ...prev.details.attendanceAllowance,
+            requestedLevel: "None",
+            requestedDate: "",
+            status: "None",
+            confirmationDate: "",
+          },
+        },
+      }));
     }
   }, [formData.details.attendanceAllowance.requestedLevel]);
 
