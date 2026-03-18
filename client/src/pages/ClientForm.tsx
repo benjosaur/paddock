@@ -840,7 +840,9 @@ export function ClientForm() {
                   }
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    Status{" "}
+                    {formData.details.attendanceAllowance.requestedLevel !==
+                      "None" && "*"}
                   </label>
                   <Select
                     options={attendanceAllowanceStatusOptions}
@@ -860,6 +862,10 @@ export function ClientForm() {
                     placeholder="Select status..."
                     isDisabled={
                       formData.details.attendanceAllowance.requestedLevel ===
+                      "None"
+                    }
+                    required={
+                      formData.details.attendanceAllowance.requestedLevel !==
                       "None"
                     }
                   />
