@@ -42,6 +42,12 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
     sortValue: (item) => item.details.clientAgreementDate || null,
   },
   {
+    key: "locality",
+    header: "Locality",
+    render: (item: ClientMetadata) => item.details.address.locality,
+    sortValue: (item) => item.details.address.locality,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: ClientMetadata) => item.details.address.postCode,
@@ -71,7 +77,11 @@ const clientColumns: TableColumn<ClientMetadata>[] = [
       return "None";
     },
     sortValue: (item) => {
-      if (item.details.address.deprivation.income && item.details.address.deprivation.health) return "Both";
+      if (
+        item.details.address.deprivation.income &&
+        item.details.address.deprivation.health
+      )
+        return "Both";
       if (item.details.address.deprivation.income) return "Income";
       if (item.details.address.deprivation.health) return "Health";
       return "None";
@@ -92,7 +102,7 @@ export default function ClientsRoutes() {
   const clientsQuery = useQuery(
     showEnded
       ? trpc.clients.getAll.queryOptions()
-      : trpc.clients.getAllNotEndedYet.queryOptions()
+      : trpc.clients.getAllNotEndedYet.queryOptions(),
   );
 
   const updateClientMutation = useMutation(
@@ -103,7 +113,7 @@ export default function ClientsRoutes() {
         });
         navigate("/clients");
       },
-    })
+    }),
   );
 
   const endClientMutation = useMutation(
@@ -113,7 +123,7 @@ export default function ClientsRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const deleteClientMutation = useMutation(
@@ -123,7 +133,7 @@ export default function ClientsRoutes() {
           queryClient.invalidateQueries({ queryKey: route.queryKey() });
         });
       },
-    })
+    }),
   );
 
   const handleAddNew = () => {
@@ -183,7 +193,7 @@ export default function ClientsRoutes() {
     if (!endDetails?.personId || !endDetails.endDate) return;
     if (endDetails.endDate === "open") {
       const selectedClient = clientsQuery.data?.find(
-        (c) => c.id === endDetails.personId
+        (c) => c.id === endDetails.personId,
       );
       if (!selectedClient) return;
       const client = { ...selectedClient, endDate: null };
@@ -256,7 +266,7 @@ export default function ClientsRoutes() {
               endDate={endDetails?.endDate}
               onEndDateChange={(date) =>
                 setEndDetails((prev) =>
-                  prev ? { ...prev, endDate: date } : prev
+                  prev ? { ...prev, endDate: date } : prev,
                 )
               }
               onConfirm={handleConfirmEnd}
@@ -285,7 +295,7 @@ export default function ClientsRoutes() {
                       }
                       onChange={(opt) =>
                         setEndDetails((prev) =>
-                          prev ? { ...prev, endReason: opt!.value } : prev
+                          prev ? { ...prev, endReason: opt!.value } : prev,
                         )
                       }
                       placeholder="Select a reason..."
