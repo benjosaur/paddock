@@ -32,6 +32,12 @@ const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
     sortValue: (item) => item.dateOfBirth || null,
   },
   {
+    key: "locality",
+    header: "Locality",
+    render: (item: VolunteerMetadata) => item.details.address.locality,
+    sortValue: (item) => item.details.address.locality,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: VolunteerMetadata) => item.details.address.postCode,

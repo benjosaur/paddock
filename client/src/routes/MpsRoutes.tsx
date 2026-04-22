@@ -32,6 +32,12 @@ const mpColumns: TableColumn<MpMetadata>[] = [
     sortValue: (item) => item.details.startDate || null,
   },
   {
+    key: "locality",
+    header: "Locality",
+    render: (item: MpMetadata) => item.details.address.locality,
+    sortValue: (item) => item.details.address.locality,
+  },
+  {
     key: "postCode",
     header: "Post Code",
     render: (item: MpMetadata) => item.details.address.postCode,
