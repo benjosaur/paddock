@@ -2,7 +2,7 @@
 
 Paddock is a case-management system designed to support charity microprovider networks linking self employed carers to locals in need. It tracks clients, volunteers, microproviders (MPs), care requests, packages, training records, and MAG (Memory Activity Group) logs through a TypeScript monorepo. Stack: React, tRPC backend, infra via AWS CDK.
 
-**Live site**: [paddock.health](https://paddock.health)
+**Live site**: [paddockhealth.com](https://paddockhealth.com)
 
 ## The Microprovider Model
 

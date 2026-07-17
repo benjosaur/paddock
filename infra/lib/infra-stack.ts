@@ -19,16 +19,24 @@ export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MainStackProps) {
     super(scope, id, props);
 
-    const domainName = "paddock.health";
+    const domainName = "paddockhealth.com";
     const homeRoute = "/";
-    const subdomainName = "www.paddock.health";
-    const authDomainName = "auth.paddock.health";
+    const subdomainName = "www.paddockhealth.com";
+    const authDomainName = "auth.paddockhealth.com";
+    const appUrl = "https://paddockhealth.com";
+    // Legacy raw CloudFront URL — kept in the Cognito callback and CORS lists so
+    // the app keeps working during the DNS cutover. Remove once the custom
+    // domain is fully live.
+    const cloudFrontUrl = "https://d16bybrorjyr80.cloudfront.net";
 
-    // SSL Certificate - Created in us-east-1 using cross-region reference
+    // SSL Certificate — must live in us-east-1 (required by both CloudFront and
+    // the Cognito custom domain). TODO: replace the ID below with the ARN of the
+    // NEW certificate covering paddockhealth.com, www.paddockhealth.com AND
+    // auth.paddockhealth.com. The old cert (…53bbfbcd…) only covered paddock.health.
     const certificate = certificatemanager.Certificate.fromCertificateArn(
       this,
       "Certificate",
-      `arn:aws:acm:us-east-1:${this.account}:certificate/53bbfbcd-cbc1-4568-83a6-cb1d74052461`
+      `arn:aws:acm:us-east-1:${this.account}:certificate/4d17134c-91b6-42f8-9d96-12f74e6f4e01`,
     );
 
     // Cognito User Pool
@@ -72,19 +80,18 @@ export class InfraStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    //    cooling off
+    // Custom Cognito login domain: https://auth.paddockhealth.com
+    // Requires the us-east-1 certificate above. IMPORTANT: Cognito only creates a
+    // custom domain once the PARENT domain (paddockhealth.com) already resolves in
+    // DNS — deploy CloudFront and add the apex A-record first, then add this.
+    // After deploy, add a Route 53 A-alias for auth.paddockhealth.com pointing at
+    // cognitoDomain.cloudFrontEndpoint (see the CognitoCloudFrontURL output).
     const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
       customDomain: {
         domainName: authDomainName,
-        certificate: certificate,
+        certificate,
       },
     });
-
-    // const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-    //   cognitoDomain: {
-    //     domainPrefix: "auth-paddock-health",
-    //   },
-    // });
 
     // Cognito User Pool Client
     const userPoolClient = new cognito.UserPoolClient(
@@ -101,13 +108,13 @@ export class InfraStack extends cdk.Stack {
         generateSecret: false,
         preventUserExistenceErrors: true,
         oAuth: {
-          callbackUrls: ["https://" + domainName + homeRoute],
-          logoutUrls: ["https://" + domainName + homeRoute],
+          callbackUrls: [appUrl + homeRoute, cloudFrontUrl + homeRoute],
+          logoutUrls: [appUrl + homeRoute, cloudFrontUrl + homeRoute],
           flows: {
             authorizationCodeGrant: true,
           },
         },
-      }
+      },
     );
 
     const groups = [
@@ -178,7 +185,7 @@ export class InfraStack extends cdk.Stack {
             aliases: [domainName, subdomainName],
             securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
             sslMethod: cloudfront.SSLMethod.SNI,
-          }
+          },
         ),
         errorConfigurations: [
           {
@@ -194,7 +201,7 @@ export class InfraStack extends cdk.Stack {
         ],
         // Redirect HTTP to HTTPS
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      }
+      },
     );
 
     //backend
@@ -223,7 +230,7 @@ export class InfraStack extends cdk.Stack {
     const deprivationTable = Table.fromTableName(
       this,
       "Deprivation",
-      "DeprivationCompact" // tableName
+      "DeprivationCompact", // tableName
     );
 
     deprivationTable.grantReadWriteData(trpcLambda);
@@ -234,7 +241,7 @@ export class InfraStack extends cdk.Stack {
       restApiName: "TRPC API",
       description: "API for TRPC backend",
       defaultCorsPreflightOptions: {
-        allowOrigins: [`https://${domainName}`, `https://${subdomainName}`],
+        allowOrigins: [appUrl, `https://${subdomainName}`, cloudFrontUrl],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ["Content-Type", "Authorization"],
       },

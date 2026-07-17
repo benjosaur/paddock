@@ -5,13 +5,28 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Origins allowed to call the API. The Lambda echoes back the request's Origin
+// when it appears here — a static Access-Control-Allow-Origin can only name one
+// origin, which would break the other during the DNS cutover. Drop the legacy
+// CloudFront URL once paddockhealth.com is fully live.
+const ALLOWED_ORIGINS = [
+  "https://paddockhealth.com",
+  "https://www.paddockhealth.com",
+  "https://d16bybrorjyr80.cloudfront.net",
+];
+
 export const handler = awsLambdaRequestHandler({
   router: prodAppRouter,
   createContext: createLambdaContext,
-  responseMeta() {
+  responseMeta({ ctx }) {
+    const origin =
+      ctx?.event?.headers?.origin || ctx?.event?.headers?.Origin || "";
+    const allowOrigin = ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : ALLOWED_ORIGINS[0];
     return {
       headers: {
-        "Access-Control-Allow-Origin": "https://paddock.health",
+        "Access-Control-Allow-Origin": allowOrigin,
         "Access-Control-Allow-Methods": "GET,POST",
         "Access-Control-Allow-Headers": "authorization",
       },
@@ -34,7 +49,8 @@ app.use(
   cors({
     origin: [
       process.env.CLIENT_URL || "http://localhost:5173",
-      "https://paddock.health",
+      "https://paddockhealth.com",
+      "https://www.paddockhealth.com",
     ],
     credentials: true,
   })
