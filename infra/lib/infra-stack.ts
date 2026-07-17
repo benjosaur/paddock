@@ -42,6 +42,8 @@ export class InfraStack extends cdk.Stack {
     // Cognito User Pool
     const userPool = new cognito.UserPool(this, "PaddockUserPool", {
       userPoolName: "paddock-health-user-pool",
+      // Essentials tier is required for the newer managed login experience.
+      featurePlan: cognito.FeaturePlan.ESSENTIALS,
       selfSignUpEnabled: false,
       signInCaseSensitive: false,
       userInvitation: {
@@ -87,6 +89,9 @@ export class InfraStack extends cdk.Stack {
     // After deploy, add a Route 53 A-alias for auth.paddockhealth.com pointing at
     // cognitoDomain.cloudFrontEndpoint (see the CognitoCloudFrontURL output).
     const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
+      // Version 2 = the newer managed login (branded, gradient UI) instead of
+      // the classic hosted UI.
+      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
       customDomain: {
         domainName: authDomainName,
         certificate,
@@ -116,6 +121,15 @@ export class InfraStack extends cdk.Stack {
         },
       },
     );
+
+    // Managed login branding. useCognitoProvidedValues applies Cognito's default
+    // branded design; customise later via the console branding editor or by
+    // supplying explicit `settings`/`assets`.
+    new cognito.CfnManagedLoginBranding(this, "PaddockManagedLoginBranding", {
+      userPoolId: userPool.userPoolId,
+      clientId: userPoolClient.userPoolClientId,
+      useCognitoProvidedValues: true,
+    });
 
     const groups = [
       { id: "AdminGroup", name: "Admin", description: "Administrators group" },
