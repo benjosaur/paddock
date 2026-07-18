@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -60,6 +61,27 @@ table {
 
 .slide-in-from-top {
   animation: slide-in-from-top 0.2s ease-out;
+}
+
+/* Paddock landing page brand tokens (pk-*) */
+@theme {
+  --color-pk-paper: #fbfbf8;
+  --color-pk-ink: #1c2733;
+  --color-pk-slate: #5b6774;
+  --color-pk-blue: #2f5d8a;
+  --color-pk-blue-deep: #264c72;
+  --color-pk-blue-soft: #e7eef5;
+  --color-pk-leaf: #4f7d4b;
+  --color-pk-leaf-soft: #e6efe4;
+  --color-pk-amber: #b96a24;
+  --color-pk-amber-soft: #f7ead8;
+  --color-pk-line: #e6e5dd;
+  --color-pk-cream: #f6f5f0;
+  --color-pk-mist: #faf9f5;
+  --color-pk-sand: #fbfaf6;
+  --color-pk-fog: #f0efe8;
+  --font-display: "Schibsted Grotesk", "Inter", sans-serif;
+  --font-plex: "IBM Plex Mono", monospace;
 }
 
 @theme inline {
