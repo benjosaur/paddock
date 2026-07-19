@@ -143,7 +143,10 @@ function TableColumnsEditor({
   const current = draft ?? visibleColumns;
 
   const visibleFor = (tableId: ConfigurableTableId) =>
-    current[tableId] ?? tableRegistry[tableId].columns.map((col) => col.key);
+    current[tableId] ??
+    tableRegistry[tableId].columns
+      .filter((col) => !col.defaultHidden)
+      .map((col) => col.key);
 
   const toggleColumn = (tableId: ConfigurableTableId, key: string) => {
     const visible = visibleFor(tableId);

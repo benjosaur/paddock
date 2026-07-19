@@ -65,6 +65,18 @@ export const packageColumns: TableColumn<Package>[] = [
       "requestId" in item ? item.details.address.locality : null,
   },
   {
+    key: "postCode",
+    header: "Post Code",
+    render: (item: Package) => {
+      if ("requestId" in item) {
+        return item.details.address.postCode;
+      }
+    },
+    sortValue: (item) =>
+      "requestId" in item ? item.details.address.postCode : null,
+    defaultHidden: true,
+  },
+  {
     key: "services",
     header: "Services",
     render: (item: Package) => item.details.services.join(", "),

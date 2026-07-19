@@ -32,6 +32,20 @@ export const requestColumns: TableColumn<RequestFull>[] = [
     sortValue: (item) => item.details.name,
   },
   {
+    key: "locality",
+    header: "Locality",
+    render: (item) => item.details.address.locality,
+    sortValue: (item) => item.details.address.locality,
+    defaultHidden: true,
+  },
+  {
+    key: "postCode",
+    header: "Post Code",
+    render: (item) => item.details.address.postCode,
+    sortValue: (item) => item.details.address.postCode,
+    defaultHidden: true,
+  },
+  {
     key: "requestType",
     header: "Type",
     render: (item) => item.requestType,

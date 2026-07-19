@@ -101,7 +101,7 @@ export function DataTable<
     : undefined;
   const columns = visibleKeys
     ? allColumns.filter((col) => visibleKeys.includes(String(col.key)))
-    : allColumns;
+    : allColumns.filter((col) => !col.defaultHidden);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);

@@ -9,14 +9,21 @@ import { packageColumns } from "../routes/PackageRoutes";
 export type ConfigurableTableId = (typeof configurableTableIds)[number];
 
 function columnMeta<T>(columns: TableColumn<T>[]) {
-  return columns.map((col) => ({ key: String(col.key), header: col.header }));
+  return columns.map((col) => ({
+    key: String(col.key),
+    header: col.header,
+    defaultHidden: col.defaultHidden ?? false,
+  }));
 }
 
 // Tables whose column visibility is admin-configurable (Settings → Table
 // Columns). Keys must match the tableId passed to that page's DataTable.
 export const tableRegistry: Record<
   ConfigurableTableId,
-  { label: string; columns: { key: string; header: string }[] }
+  {
+    label: string;
+    columns: { key: string; header: string; defaultHidden: boolean }[];
+  }
 > = {
   clients: { label: "Clients", columns: columnMeta(clientColumns) },
   mps: { label: "MPs", columns: columnMeta(mpColumns) },
