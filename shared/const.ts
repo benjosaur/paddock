@@ -96,6 +96,26 @@ export const localities = [
   "Other",
   "Unknown",
 ] as const;
+// The config panel must not allow archiving these: the app depends on them
+// (hardcoded queries, analytics info handling, form defaults).
+export const protectedServiceValues = [
+  "MAG",
+  "Hub & Grub",
+  "Information",
+  "Other",
+] as const;
+export const protectedLocalityValues = [
+  "Wiveliscombe",
+  "Other",
+  "Unknown",
+] as const;
+export const configurableTableIds = [
+  "clients",
+  "mps",
+  "volunteers",
+  "requests",
+  "packages",
+] as const;
 export const endReasons = [
   "Deceased",
   "Care Home",

@@ -16,14 +16,15 @@ import { packageSchema, reqPackageSchema, solePackageSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
-import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { useConfig, activeValues } from "@/hooks/useConfig";
 import { formatYmdToDmy } from "@/utils/date";
 import { isIdMp, isIdVolunteer, getEarliestDate } from "shared/utils";
 
 export function RenewPackageForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
+  const config = useConfig();
 
   const [oldPackageData, setOldPackageData] = useState<Package | null>(null);
   const [newPackageData, setNewPackageData] = useState<
@@ -319,7 +320,7 @@ export function RenewPackageForm() {
   if (packageQuery.error) return <div>Error loading care confirmation</div>;
   if (!oldPackageData) return <div>Care confirmation not found</div>;
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
+  const serviceSelectOptions = activeValues(config.services).map((service) => ({
     value: service,
     label: service,
   }));
@@ -549,7 +550,7 @@ export function RenewPackageForm() {
                         }
                       : null
                   }
-                  options={localities.map((locality) => ({
+                  options={activeValues(config.localities).map((locality) => ({
                     label: locality,
                     value: locality,
                   }))}

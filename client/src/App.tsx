@@ -24,6 +24,8 @@ import DbsRoutes from "./routes/DbsRoutes";
 import PublicLiabilityRoutes from "./routes/PublicLiabilityRoutes";
 import { Toaster } from "./components/ui/Toaster";
 import { Dashboard } from "./pages/Dashboard";
+import { SettingsPage } from "./pages/SettingsPage";
+import { PermissionGate } from "./components/PermissionGate";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -80,6 +82,18 @@ function AppContent() {
                   element={<PublicLiabilityRoutes />}
                 />
                 <Route path="/requests/*" element={<RequestRoutes />} />
+                <Route
+                  path="/settings"
+                  element={
+                    <PermissionGate
+                      resource="config"
+                      action="update"
+                      fallback={<Navigate to="/dashboard" replace />}
+                    >
+                      <SettingsPage />
+                    </PermissionGate>
+                  }
+                />
                 <Route
                   path="*"
                   element={

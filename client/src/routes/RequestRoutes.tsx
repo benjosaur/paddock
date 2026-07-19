@@ -264,6 +264,7 @@ export default function RequestRoutes() {
               <TabsContent value="care" className="mt-6">
                 <DataTable
                   key={`requests-care-${showEnded ? "ended" : "active"}`}
+                  tableId="requests"
                   title="Care Requests"
                   searchPlaceholder="Search care requests..."
                   data={otherRequests}

@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { clientMetadataSchema } from ".";
-import { endReasons, serviceOptions } from "../const";
+import { endReasons } from "../const";
 
 export const coverDetailsSchema = z.object({
   carerId: z.string(),
@@ -23,7 +23,7 @@ export const infoDetailsSchema = clientMetadataSchema.shape.details.shape.notes
     }),
     date: z.string().date(),
     note: z.string().default(""),
-    services: z.array(z.enum(serviceOptions)).default([]),
+    services: z.array(z.string()).default([]),
   });
 
 export const endRequestDetailsSchema = z.object({

@@ -2,7 +2,7 @@ import { ClientService } from "../../client/service";
 import { PackageService } from "../../package/service";
 import { RequestService } from "../../requests/service";
 import { VolunteerService } from "../../volunteer/service";
-import { firstYear, months, ServiceOption, serviceOptions } from "shared/const";
+import { firstYear, months, ServiceOption } from "shared/const";
 import {
   CrossSection,
   Package,
@@ -293,32 +293,16 @@ export class NormalReportService {
     serviceNames: string[]
   ) {
     for (const serviceName of serviceNames) {
-      if (
-        serviceOptions.includes(serviceName as (typeof serviceOptions)[number])
-      ) {
-        const reportService = reportServices.find((s) => s.name == serviceName);
-        if (!reportService) {
-          reportServices.push({
-            name: serviceName as (typeof serviceOptions)[number],
-            totalHours: parseFloat(hours.toFixed(2)),
-          });
-        } else {
-          reportService.totalHours = parseFloat(
-            (reportService.totalHours + hours).toFixed(2)
-          );
-        }
+      const reportService = reportServices.find((s) => s.name == serviceName);
+      if (!reportService) {
+        reportServices.push({
+          name: serviceName,
+          totalHours: parseFloat(hours.toFixed(2)),
+        });
       } else {
-        const otherService = reportServices.find((s) => s.name == "Other");
-        if (otherService) {
-          otherService.totalHours = parseFloat(
-            (otherService.totalHours + hours).toFixed(2)
-          );
-        } else {
-          reportServices.push({
-            name: "Other",
-            totalHours: parseFloat(hours.toFixed(2)),
-          });
-        }
+        reportService.totalHours = parseFloat(
+          (reportService.totalHours + hours).toFixed(2)
+        );
       }
     }
   }

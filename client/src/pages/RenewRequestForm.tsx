@@ -13,16 +13,16 @@ import { capitalise, updateNestedValue } from "@/utils/helpers";
 import {
   requestStatus,
   requestTypes,
-  serviceOptions,
-  localities,
 } from "shared/const";
 import { associatedRequestRoutes } from "../routes/RequestRoutes";
+import { useConfig, activeValues } from "../hooks/useConfig";
 import { cn } from "@/lib/utils";
 
 export function RenewRequestForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || "";
+  const config = useConfig();
 
   const [oldRequestData, setOldRequestData] = useState<RequestMetadata | null>(
     null
@@ -92,7 +92,7 @@ export function RenewRequestForm() {
     label: capitalise(option),
   }));
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
+  const serviceSelectOptions = activeValues(config.services).map((service) => ({
     value: service,
     label: service,
   }));
@@ -516,7 +516,7 @@ export function RenewRequestForm() {
                       }
                     : null
                 }
-                options={localities.map((locality) => ({
+                options={activeValues(config.localities).map((locality) => ({
                   label: locality,
                   value: locality,
                 }))}

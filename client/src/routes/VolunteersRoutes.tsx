@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
 import EndDialog from "../components/EndDialog";
 
-const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
+export const volunteerColumns: TableColumn<VolunteerMetadata>[] = [
   {
     key: "name",
     header: "Name",
@@ -175,6 +175,7 @@ export function VolunteersRoutes() {
           <>
             <DataTable
               key={`volunteers-${showEnded}`}
+              tableId="volunteers"
               title="Volunteers"
               searchPlaceholder="Search volunteers..."
               data={volunteers}

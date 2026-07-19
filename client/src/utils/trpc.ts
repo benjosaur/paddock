@@ -32,7 +32,7 @@ const trpcClient = createTRPCClient<AppRouter>({
       url:
         import.meta.env.MODE == "production"
           ? import.meta.env.VITE_API_URL
-          : "http://localhost:3001/trpc",
+          : import.meta.env.VITE_DEV_API_URL ?? "http://localhost:3001/trpc",
       headers: async () => {
         try {
           const session = await fetchAuthSession();

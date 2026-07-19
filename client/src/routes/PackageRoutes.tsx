@@ -188,6 +188,7 @@ export default function PackageRoutes() {
               <TabsContent value="requests" className="mt-6">
                 <DataTable
                   key={`packages-requests-${showEnded ? "ended" : "active"}`}
+                  tableId="packages"
                   title="Care Confirmed"
                   searchPlaceholder="Search care confirmations..."
                   data={requestPackages}
@@ -216,6 +217,7 @@ export default function PackageRoutes() {
               <TabsContent value="independent" className="mt-6">
                 <DataTable
                   key={`packages-independent-${showEnded ? "ended" : "active"}`}
+                  tableId="packages"
                   title="Care Confirmed"
                   searchPlaceholder="Search care confirmations..."
                   data={independentPackages}

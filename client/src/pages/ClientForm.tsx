@@ -12,11 +12,10 @@ import { Select } from "../components/ui/select";
 import {
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
-  serviceOptions,
-  localities,
   hasRequestedStatuses,
   isReceivingStatuses,
 } from "shared/const";
+import { useConfig, activeValues } from "../hooks/useConfig";
 import { FieldEditModal } from "../components/modals/FieldEditModal";
 import toast from "react-hot-toast";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
@@ -53,6 +52,7 @@ export function ClientForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
+  const config = useConfig();
 
   const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
     endDate: "open",
@@ -364,7 +364,7 @@ export function ClientForm() {
       label: capitalise(option),
     }));
 
-  const serviceSelectOptions = serviceOptions
+  const serviceSelectOptions = activeValues(config.services)
     .filter((service) => service !== "Information")
     .map((service) => ({
       value: service,
@@ -514,7 +514,7 @@ export function ClientForm() {
                         }
                       : null
                   }
-                  options={localities.map((locality) => ({
+                  options={activeValues(config.localities).map((locality) => ({
                     label: locality,
                     value: locality,
                   }))}
