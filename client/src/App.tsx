@@ -52,9 +52,9 @@ function AppContent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/30">
+        <div className="flex h-screen flex-col bg-gradient-to-br from-gray-50 to-gray-100/30 md:flex-row">
           <Sidebar user={user} onSignOut={signOut} />
-          <main className="flex-1 p-8 overflow-auto">
+          <main className="flex-1 overflow-auto p-4 md:p-8">
             <ErrorBoundary
               fallbackRender={(props) => {
                 return (
