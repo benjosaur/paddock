@@ -112,9 +112,10 @@ export function LandingPage() {
               </span>
             </h1>
             <p className="mx-auto mb-8 max-w-[41em] text-lg text-pk-slate">
-              Paddock simplifies tracking all you need to know about your microprovider network. See how your requests
-              and care delivered breaks down by month, localities and services. Have your dashboards tailored to suit
-              your bespoke needs for trustees, councils and clients.
+              Paddock tracks all you need to know about your microprovider network. See how your requests and care
+              delivered breaks down by month, localities and services. Find out which providers you need to chase to
+              renew their DBS checks. Tailor your dashboard to suit your bespoke needs for trustees, councils and
+              clients.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <button onClick={handleSignIn} className={btnPrimary}>
