@@ -23,6 +23,7 @@ import RecordsRoutes from "./routes/RecordsRoutes";
 import DbsRoutes from "./routes/DbsRoutes";
 import PublicLiabilityRoutes from "./routes/PublicLiabilityRoutes";
 import { Toaster } from "./components/ui/Toaster";
+import { StagingBanner } from "./components/StagingBanner";
 import { Dashboard } from "./pages/Dashboard";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PermissionGate } from "./components/PermissionGate";
@@ -128,6 +129,7 @@ function App() {
       }
     >
       <AppContent />
+      <StagingBanner />
       <Toaster />
     </AuthProvider>
   );

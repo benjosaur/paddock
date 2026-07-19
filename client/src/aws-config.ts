@@ -10,7 +10,8 @@ const amplifyConfig: ResourcesConfig = {
         "49lmaak5qm13k76tu38p58pgp4",
       loginWith: {
         oauth: {
-          domain: "auth.paddockhealth.com",
+          domain:
+            import.meta.env.VITE_COGNITO_DOMAIN || "auth.paddockhealth.com",
           scopes: ["email", "openid", "profile"],
           redirectSignIn: [`${window.location.origin}/`],
           redirectSignOut: [`${window.location.origin}/`],
