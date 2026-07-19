@@ -156,7 +156,7 @@ export function MpDetailModal({
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="contact">General Info</TabsTrigger>
               <TabsTrigger value="training">Training Records</TabsTrigger>
-              <TabsTrigger value="logs">Packages</TabsTrigger>
+              <TabsTrigger value="logs">Care Confirmed</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
@@ -232,7 +232,7 @@ export function MpDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Packages
+                Care Confirmed
               </h3>
               <CarerPackagesTable
                 key={`${mpId}-carer-packages`}

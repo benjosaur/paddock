@@ -80,13 +80,13 @@ export function PackageDetailModal({
       <DialogContent className="w-[80vw] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            Package Details: {pkg.details.name}
+            Care Confirmation Details: {pkg.details.name}
           </DialogTitle>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="details" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-1 mb-4">
-              <TabsTrigger value="details">Package Details</TabsTrigger>
+              <TabsTrigger value="details">Care Confirmation Details</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -94,9 +94,9 @@ export function PackageDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Package Information
+                Care Confirmation Information
               </h3>
-              {renderDetailItem("Package ID", pkg.id)}
+              {renderDetailItem("Care Confirmation ID", pkg.id)}
               {renderDetailItem("Carer Name", pkg.details.name)}
               {renderDetailItem("Start Date", formatYmdToDmy(pkg.startDate))}
               {renderDetailItem(
@@ -161,7 +161,7 @@ export function PackageDetailModal({
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         itemName={pkg?.details.name}
-        itemType="package"
+        itemType="care confirmed record"
       />
     </Dialog>
   );

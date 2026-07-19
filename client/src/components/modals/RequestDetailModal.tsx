@@ -91,14 +91,14 @@ export function RequestDetailModal({
       <DialogContent className="w-[80vw] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            Request Details: {request.details.name}
+            Care Request Details: {request.details.name}
           </DialogTitle>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="details" className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="details">Request Details</TabsTrigger>
-              <TabsTrigger value="packages">Associated Packages</TabsTrigger>
+              <TabsTrigger value="details">Care Request Details</TabsTrigger>
+              <TabsTrigger value="packages">Associated Care Confirmed</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -106,10 +106,10 @@ export function RequestDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Request Information
+                Care Request Information
               </h3>
-              {renderDetailItem("Request ID", request.id)}
-              {renderDetailItem("Request Type", request.requestType)}
+              {renderDetailItem("Care Request ID", request.id)}
+              {renderDetailItem("Care Request Type", request.requestType)}
               {renderDetailItem("Client Name", request.details.name)}
               {renderDetailItem(
                 "Start Date",
@@ -153,14 +153,14 @@ export function RequestDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                Associated Packages ({request.packages?.length || 0})
+                Associated Care Confirmed ({request.packages?.length || 0})
               </h3>
               {request.packages && request.packages.length > 0 ? (
                 <DataTable
                   data={request.packages}
                   columns={packageColumns}
                   title=""
-                  searchPlaceholder="Search packages..."
+                  searchPlaceholder="Search care confirmations..."
                   onViewItem={(id) => {
                     setSelectedPackageId(id);
                     setIsPackageModalOpen(true);
@@ -169,7 +169,7 @@ export function RequestDetailModal({
                 />
               ) : (
                 <p className="text-gray-500 text-center py-8">
-                  No packages associated with this request yet.
+                  No care confirmed records associated with this care request yet.
                 </p>
               )}
             </TabsContent>
@@ -204,7 +204,7 @@ export function RequestDetailModal({
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         itemName={request?.details.name}
-        itemType="request"
+        itemType="care request"
       />
       {selectedPackageId && (
         <PackageDetailModal

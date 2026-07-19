@@ -146,7 +146,7 @@ export function SolePackageForm() {
 
   if (isEditing && packageQuery.isLoading) return <div>Loading...</div>;
   if (isEditing && packageQuery.error)
-    return <div>Error loading sole package</div>;
+    return <div>Error loading sole care confirmation</div>;
 
   // keep create-mode validation when no volunteer id was provided
   if (!isEditing && !derivedVolunteerId)
@@ -165,7 +165,7 @@ export function SolePackageForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit Sole Package" : "Create Sole Package"}
+          {isEditing ? "Edit Sole Care Confirmed" : "Create Sole Care Confirmed"}
         </h1>
       </div>
 
@@ -174,7 +174,7 @@ export function SolePackageForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Package Information
+                Care Confirmation Information
               </h3>
 
               <div>
@@ -246,14 +246,14 @@ export function SolePackageForm() {
                   }}
                 />
                 <small className="text-gray-500">
-                  Leave empty for ongoing package
+                  Leave empty for ongoing care confirmation
                 </small>
               </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Package Details
+                Care Confirmation Details
               </h3>
 
               <div>

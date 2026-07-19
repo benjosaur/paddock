@@ -97,7 +97,7 @@ export function CarerPackagesTable({
       data={rows}
       columns={carerPackageColumns}
       title=""
-      searchPlaceholder="Search packages..."
+      searchPlaceholder="Search care confirmations..."
       resource="packages"
     />
   );

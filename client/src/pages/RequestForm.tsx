@@ -243,7 +243,7 @@ export function RequestForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          {isEditing ? "Edit Client Request" : "Create New Client Request"}
+          {isEditing ? "Edit Care Request" : "New Care Request"}
         </h1>
       </div>
 
@@ -252,7 +252,7 @@ export function RequestForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                Request Information
+                Care Request Information
               </h3>
 
               <div>
@@ -283,7 +283,7 @@ export function RequestForm() {
                   htmlFor="requestType"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Request Type *
+                  Care Request Type *
                 </label>
                 <Select
                   options={requestTypeOptions}
@@ -295,7 +295,7 @@ export function RequestForm() {
                   onChange={(selectedOption) =>
                     handleSelectChange("requestType", selectedOption)
                   }
-                  placeholder="Select request type..."
+                  placeholder="Select care request type..."
                   required
                 />
               </div>
@@ -349,13 +349,13 @@ export function RequestForm() {
                 />
                 {isEditing ? (
                   <small className="text-gray-500 block">
-                    End via the table button. This is to also end all ongoing packages.
+                    End via the table button. This is to also end all ongoing care confirmed records.
                   </small>
                 ) : (
                   <>
                     {!isEndDateRequired && (
                       <small className="text-gray-500 block">
-                        Leave empty for ongoing request
+                        Leave empty for ongoing care request
                       </small>
                     )}
                     {maxEndDate && (
@@ -453,7 +453,7 @@ export function RequestForm() {
                   name="details.notes"
                   value={formData.details.notes || ""}
                   onChange={handleInputChange}
-                  placeholder="Additional notes about the request"
+                  placeholder="Additional notes about the care request"
                 />
               </div>
 
@@ -575,8 +575,8 @@ export function RequestForm() {
               {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
                 : isEditing
-                ? "Update Request"
-                : "Create Request"}
+                ? "Update Care Request"
+                : "Create Care Request"}
             </Button>
           </div>
         </form>

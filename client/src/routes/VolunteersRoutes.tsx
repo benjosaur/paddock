@@ -228,7 +228,7 @@ export function VolunteersRoutes() {
                 endVolunteerMutation.isPending
               }
               endDescription="Select an end date. This will also archive the volunteer."
-              undoDescription="This will undo ending the volunteer. Associated packages will not be affected."
+              undoDescription="This will undo ending the volunteer. Associated care confirmed records will not be affected."
             />
           </>
         }

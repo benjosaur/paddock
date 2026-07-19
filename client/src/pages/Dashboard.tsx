@@ -197,10 +197,10 @@ export function Dashboard() {
   };
 
   const reportTypeOptions = [
-    { value: "requests", label: "Requests Report" },
-    { value: "packages", label: "Packages Report" },
+    { value: "requests", label: "Care Requests Report" },
+    { value: "packages", label: "Care Confirmed Report" },
     { value: "attendance", label: "Attendance Allowance Report" },
-    { value: "coordinator-packages", label: "Coordinator Packages Report" },
+    { value: "coordinator-packages", label: "Coordinator Care Confirmed Report" },
     {
       value: "coordinator-attendance",
       label: "Coordinator Attendance Allowance Report",
@@ -275,7 +275,7 @@ export function Dashboard() {
           </div>
           <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="lg">
+              <Button size="lg">
                 Generate Report
               </Button>
             </DialogTrigger>
@@ -423,13 +423,13 @@ export function Dashboard() {
                     <div>
                       <h3 className="text-lg font-semibold">
                         {reportType === "requests"
-                          ? "Requests"
+                          ? "Care Requests"
                           : reportType === "packages"
-                          ? "Packages"
+                          ? "Care Confirmed"
                           : reportType === "attendance"
                           ? "Attendance Allowance"
                           : reportType === "coordinator-packages"
-                          ? "Coordinator Packages"
+                          ? "Coordinator Care Confirmed"
                           : "Coordinator Attendance Allowance"}{" "}
                         Analytics Report
                         {startYear &&
@@ -804,8 +804,8 @@ export function Dashboard() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="requests">Requests Breakdown</TabsTrigger>
-          <TabsTrigger value="packages">Packages Breakdown</TabsTrigger>
+          <TabsTrigger value="requests">Care Requests</TabsTrigger>
+          <TabsTrigger value="packages">Care Confirmed</TabsTrigger>
           <TabsTrigger value="attendance-allowance">
             Attendance Allowance
           </TabsTrigger>
@@ -815,17 +815,17 @@ export function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatedCounter
               targetValue={totalActiveClients}
-              label="Clients with Active Requests"
+              label="Clients with Active Care Requests"
             />
 
             <AnimatedCounter
               targetValue={totalActiveMps}
-              label="MPs with Active Packages"
+              label="MPs with Active Care Confirmed"
             />
 
             <AnimatedCounter
               targetValue={totalActiveVolunteers}
-              label="Volunteers with Active Packages"
+              label="Volunteers with Active Care Confirmed"
             />
 
             <AnimatedCounter
