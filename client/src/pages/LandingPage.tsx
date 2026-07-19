@@ -1,5 +1,5 @@
 import { signInWithRedirect } from "aws-amplify/auth";
-import { LayoutGrid, LogOut } from "lucide-react";
+import { LayoutGrid, Linkedin, LogOut } from "lucide-react";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/ben-blaker-085108175/";
 const WIVEY_URL = "https://wiveycares.net";
@@ -54,27 +54,6 @@ const overviewCounters = [
   { value: "358", label: "Current Brokered Weekly Care Hours" },
 ];
 
-const audiences = [
-  {
-    who: "For coordinators",
-    title: "The day runs itself",
-    blurb: "Everything that used to live in your head, safely on one screen.",
-    points: ["Requests logged, matched, tracked", "Urgent flags that stay visible", "MAG & Hub & Grub logs in minutes"],
-  },
-  {
-    who: "For trustees",
-    title: "Governance without the chase",
-    blurb: "Compliance status you can read at a glance, not chase by email.",
-    points: ["DBS & insurance expiry monitoring", "Training records with renewals", "Role-based access & audit trails"],
-  },
-  {
-    who: "For funders",
-    title: "Evidence on demand",
-    blurb: "The numbers grant applications ask for, ready before they ask.",
-    points: ["Hours by parish & deprivation", "Requested vs serviced gap", "Monthly & annual summaries"],
-  },
-];
-
 const wiveyStats = [
   { value: "3 → 35", label: "care workforce since 2018" },
   { value: "£1.4m+", label: "benefits unlocked locally" },
@@ -100,9 +79,6 @@ export function LandingPage() {
             <Wordmark />
           </a>
           <div className="flex items-center gap-6 text-[0.94rem] font-medium">
-            <a href="#product" className="hidden text-pk-slate hover:text-pk-ink md:inline">
-              Product
-            </a>
             <a href="#wivey" className="hidden text-pk-slate hover:text-pk-ink md:inline">
               Wivey Cares
             </a>
@@ -125,15 +101,15 @@ export function LandingPage() {
               Powering <b className="font-semibold text-pk-ink">Wivey Cares</b> — Wiveliscombe, Somerset
             </span>
             <h1 className="mx-auto mb-5 mt-6 max-w-[18em] font-display text-[clamp(2.4rem,5.2vw,3.7rem)] font-extrabold leading-[1.08] tracking-[-0.015em]">
-              Run your community care scheme from one place<span className="text-pk-blue">.</span>{" "}
+              Run your microprovider network from one place<span className="text-pk-blue">.</span>{" "}
               <span className="mt-3.5 block text-[0.52em] font-bold tracking-normal text-pk-slate line-through decoration-pk-amber decoration-[2.5px]">
                 Not eleven spreadsheets.
               </span>
             </h1>
             <p className="mx-auto mb-8 max-w-[41em] text-lg text-pk-slate">
-              Paddock is case-management for charity-run care networks. Requests matched to local micro-providers and
-              volunteers, DBS and insurance kept current, and funder-ready reports by parish and deprivation — all in
-              one quiet, tidy system.
+              Paddock simplifies tracking all you need to know about your microprovider network. See how your requests
+              and care delivered breaks down by month, localities and services. Have your dashboards tailored to suit
+              your bespoke needs for trustees, councils and clients.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <button onClick={handleSignIn} className={btnPrimary}>
@@ -143,7 +119,7 @@ export function LandingPage() {
                 Book a walkthrough
               </a>
             </div>
-            <p className="mt-4 text-sm text-pk-slate">Built with Wivey Cares · in daily use across 10 Somerset parishes</p>
+            <p className="mt-4 text-sm text-pk-slate">Currently tracking £500k/yr in care</p>
           </div>
 
           {/* Dashboard mock — mirrors the real Dashboard's Live Overview */}
@@ -218,56 +194,25 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Audiences */}
-        <section id="product" className="px-6 py-16 md:py-20">
-          <div className="mx-auto max-w-[1120px]">
-            <p className="mb-4 font-plex text-xs font-semibold uppercase tracking-[0.14em] text-pk-blue">Who it's for</p>
-            <h2 className="font-display text-[clamp(1.7rem,3.2vw,2.4rem)] font-extrabold tracking-tight">
-              One system, three jobs done properly
-            </h2>
-            <div className="mt-10 grid gap-5 md:grid-cols-3">
-              {audiences.map((audience) => (
-                <div key={audience.who} className="rounded-[14px] border border-pk-line bg-white p-6">
-                  <p className="mb-3 font-plex text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-pk-blue">
-                    {audience.who}
-                  </p>
-                  <h3 className="mb-2.5 font-display text-lg font-bold">{audience.title}</h3>
-                  <p className="text-[0.93rem] text-pk-slate">{audience.blurb}</p>
-                  <ul className="mt-3.5 text-[0.9rem]">
-                    {audience.points.map((point) => (
-                      <li key={point} className="flex gap-2.5 border-t border-pk-fog py-1.5">
-                        <span aria-hidden="true" className="font-bold text-pk-leaf">
-                          —
-                        </span>
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Wivey Cares */}
-        <section id="wivey" className="border-y border-pk-line bg-white px-6 py-16 md:py-20">
+        <section id="wivey" className="mt-4 border-y border-pk-line bg-white px-6 py-16 md:py-20">
           <div className="mx-auto grid max-w-[1120px] items-center gap-9 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
               <p className="mb-4 font-plex text-xs font-semibold uppercase tracking-[0.14em] text-pk-blue">
                 Powering Wivey Cares
               </p>
-              <h2 className="mb-4 font-display text-[clamp(1.7rem,3.2vw,2.4rem)] font-extrabold tracking-tight">
-                Proven where it matters: a real town, every day
-              </h2>
               <p className="mb-4 max-w-[36em] text-pk-slate">
-                Wivey Cares is a charity in Wiveliscombe, Somerset that connects people who need support with trusted
-                self-employed carers — micro-providers — plus volunteers, a Memory Activity Group and a carers' group.
-                Founded in 2018 by a retired social worker, it has become the reference for community-led care.
+                Wivey Cares is a charity in Wiveliscombe pioneering Somerset's microprovider model of care. Instead of
+                expensive agency workers or care homes, where cost saving comes at the expense of the patient, the
+                microprovider model connects self employed local carers to locals in need. This strengthens community
+                bonds which acts as a check against exploitative practice. No bloated company takes a % of the cheque -
+                all of it goes to the carer.
               </p>
               <p className="mb-4 max-w-[36em] text-pk-slate">
-                Paddock is the system underneath it: every request, match, session log and funding report. The wider
-                Somerset micro-provider model now counts 1,250+ carers delivering 30,000+ hours of weekly support to
-                nearly 6,000 people.
+                Paddock was built in conjunction with Wivey Cares in early 2025 to replace their legacy recordkeeping
+                software with one allowing them to reap the benefits of modern technology. Since then £500k of care
+                has been tracked through the system. Analytics needed for council funding applications can be done in
+                seconds instead of hours.
               </p>
               <p className="font-plex text-xs text-pk-slate">
                 Registered charity 1183575 ·{" "}
@@ -311,23 +256,27 @@ export function LandingPage() {
                 className="h-36 w-36 rounded-2xl object-cover md:h-[210px] md:w-[210px]"
               />
               <div>
-                <p className="mb-2.5 font-plex text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-pk-blue">
-                  From the founder
-                </p>
-                <h2 className="mb-1.5 font-display text-2xl font-extrabold tracking-tight">Ben Blaker</h2>
-                <p className="mb-3.5 font-medium text-pk-slate">Founding CEO — civil servant &amp; AI engineer</p>
+                <div className="mb-3.5 flex items-center gap-2.5">
+                  <h2 className="font-display text-2xl font-extrabold tracking-tight">Ben Blaker - Founding CEO</h2>
+                  <a
+                    href={LINKEDIN_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Ben Blaker on LinkedIn"
+                    className="text-pk-blue transition hover:text-pk-blue-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pk-blue"
+                  >
+                    <Linkedin size={20} />
+                  </a>
+                </div>
                 <p className="mb-3 max-w-[40em] text-[0.97rem] text-pk-slate">
-                  Ben built Paddock alongside Wivey Cares to prove that a volunteer-run scheme can operate with the
-                  same rigour as a national provider — matching, compliance and evidence included — without losing the
-                  neighbourliness that makes it work.
+                  I turned down the path of making as much money as possible to instead pursue missions worth grinding
+                  for. Primarily, I care a lot about making sure all the recent technology gains are not kept to
+                  private sector firms and are diffused into the public and third sector too.
                 </p>
-                <p className="mb-4 max-w-[40em] text-[0.97rem] text-pk-slate">
-                  "Communities shouldn't need an IT department to look after each other. They just need tools that
-                  respect how they actually work."
+                <p className="max-w-[40em] text-[0.97rem] text-pk-slate">
+                  I am a full time civil servant economist alongside a CTO at an ADHD clinic. I'm always happy to help
+                  those who dedicate their lives to helping others.
                 </p>
-                <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={btnQuiet}>
-                  Connect on LinkedIn
-                </a>
               </div>
             </div>
           </div>
@@ -336,13 +285,9 @@ export function LandingPage() {
         {/* CTA */}
         <section className="px-6 pb-16 md:pb-20">
           <div className="mx-auto max-w-[1120px] rounded-[20px] bg-pk-ink px-8 py-14 text-center text-white md:py-16">
-            <h2 className="mb-3 font-display text-[clamp(1.9rem,3.8vw,2.7rem)] font-extrabold tracking-tight">
+            <h2 className="mb-7 font-display text-[clamp(1.9rem,3.8vw,2.7rem)] font-extrabold tracking-tight">
               See Paddock running a real network
             </h2>
-            <p className="mx-auto mb-7 max-w-[36em] text-[#b9c2cc]">
-              We'll walk you through how Wivey Cares uses Paddock day to day — and what it would take to run your
-              scheme on it.
-            </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
                 href={LINKEDIN_URL}
