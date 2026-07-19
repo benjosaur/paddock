@@ -5,4 +5,7 @@ export interface TableColumn<T> {
   header: string;
   render: (item: T) => React.ReactNode;
   sortValue?: (item: T) => string | number | null;
+  // Available in Settings → Table Columns but not shown unless an admin
+  // enables it there.
+  defaultHidden?: boolean;
 }
