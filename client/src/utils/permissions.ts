@@ -67,6 +67,12 @@ export function getVisibleMenuItems(userRole: UserRole) {
       path: "/hub-grub",
       resource: "hubGrub",
     },
+    {
+      key: "settings",
+      label: "Settings",
+      path: "/settings",
+      resource: "config",
+    },
   ];
 
   return allMenuItems.filter((item) => {
@@ -94,6 +100,11 @@ export function getVisibleMenuItems(userRole: UserRole) {
         hasPermission(userRole, "volunteers", "read") &&
         hasPermission(userRole, "mps", "read")
       );
+    }
+
+    // Settings is only useful to roles that can change the config
+    if (item.key === "settings") {
+      return hasPermission(userRole, "config", "update");
     }
 
     return hasPermission(userRole, item.resource, "read");
