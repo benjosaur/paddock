@@ -139,9 +139,6 @@ export function LandingPage() {
                 <i className="block h-2.5 w-2.5 rounded-full bg-[#ddd9cb]" />
                 <i className="block h-2.5 w-2.5 rounded-full bg-[#ddd9cb]" />
                 <i className="block h-2.5 w-2.5 rounded-full bg-[#ddd9cb]" />
-                <span className="mx-auto rounded-md border border-pk-line bg-white px-3.5 py-0.5 font-plex text-xs text-pk-slate">
-                  app.paddockhealth.com/dashboard
-                </span>
               </div>
               <div aria-hidden="true" className="grid min-h-[430px] md:grid-cols-[198px_1fr]">
                 <nav className="hidden flex-col border-r border-pk-line bg-pk-mist p-2.5 text-[0.8rem] md:flex">
@@ -172,7 +169,7 @@ export function LandingPage() {
                       <h4 className="font-display text-[1.05rem] font-bold leading-tight">Dashboard</h4>
                       <span className="text-[0.72rem] text-pk-slate">Live Overview</span>
                     </div>
-                    <span className="rounded-lg border border-pk-line bg-white px-3 py-1.5 text-[0.72rem] font-semibold shadow-sm">
+                    <span className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-[0.72rem] font-semibold text-white shadow-sm">
                       Generate Report
                     </span>
                   </div>
