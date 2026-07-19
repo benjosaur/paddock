@@ -58,7 +58,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
 
       <button
         onClick={onSignOut}
-        className="mt-3 flex w-full items-center space-x-2 rounded-md border-t border-gray-200/60 px-3 pb-2.5 pt-4 text-sm text-gray-600 transition-colors duration-150 ease-in-out hover:text-gray-800"
+        className="mt-3 flex w-full cursor-pointer items-center space-x-2 rounded-md border-t border-gray-200/60 px-3 pb-2.5 pt-4 text-sm text-gray-600 transition-colors duration-150 ease-in-out hover:text-gray-800"
       >
         <LogOut className="h-4 w-4" />
         <span>Sign Out</span>
