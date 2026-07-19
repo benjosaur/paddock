@@ -159,6 +159,7 @@ export function RequestDetailModal({
                 <DataTable
                   data={request.packages}
                   columns={packageColumns}
+                  tableId="packages"
                   title=""
                   searchPlaceholder="Search care confirmations..."
                   onViewItem={(id) => {
