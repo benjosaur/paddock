@@ -1,5 +1,5 @@
 import { signInWithRedirect } from "aws-amplify/auth";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, LogOut } from "lucide-react";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/ben-blaker-085108175/";
 const WIVEY_URL = "https://wiveycares.net";
@@ -8,22 +8,6 @@ const btnBase =
   "inline-flex items-center justify-center gap-2 rounded-[10px] px-6 py-3 font-semibold transition hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pk-blue";
 const btnPrimary = `${btnBase} bg-pk-blue text-white hover:bg-pk-blue-deep`;
 const btnQuiet = `${btnBase} border-[1.5px] border-pk-line bg-white text-pk-ink hover:border-pk-ink`;
-
-const chipStyles = {
-  urgent: "bg-pk-amber-soft text-pk-amber",
-  matched: "bg-pk-blue-soft text-pk-blue",
-  serviced: "bg-pk-leaf-soft text-pk-leaf",
-} as const;
-
-function Chip({ kind, label }: { kind: keyof typeof chipStyles; label: string }) {
-  return (
-    <span
-      className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[0.66rem] font-semibold ${chipStyles[kind]}`}
-    >
-      {label}
-    </span>
-  );
-}
 
 function Wordmark({ small = false }: { small?: boolean }) {
   return (
@@ -45,48 +29,29 @@ function Wordmark({ small = false }: { small?: boolean }) {
   );
 }
 
+// Mirrors the real app: getVisibleMenuItems() order and the Dashboard's
+// "Live Overview" tab. Keep in sync when the app's nav or dashboard changes.
 const sidebarItems = [
-  "Clients",
-  "Micro-providers",
-  "Volunteers",
   "Requests",
   "Packages",
+  "Clients",
+  "MPs",
+  "Volunteers",
+  "DBS",
+  "Public Liability",
+  "Records",
   "MAG",
   "Hub & Grub",
-  "Training records",
-  "DBS",
 ];
 
-const statTiles = [
-  { value: "87", label: "Active clients", note: "▲ 4 this month", tone: "text-pk-leaf" },
-  { value: "35", label: "Micro-providers", note: "all insured", tone: "text-pk-leaf" },
-  { value: "22", label: "Volunteers", note: "DBS current", tone: "text-pk-leaf" },
-  { value: "54 h", label: "Unmet hours", note: "needs cover", tone: "text-pk-amber" },
-];
+const dashboardTabs = ["Overview", "Requests Breakdown", "Packages Breakdown", "Attendance Allowance"];
 
-const requestRows: {
-  service: string;
-  client: string;
-  locality: string;
-  status: keyof typeof chipStyles;
-  label: string;
-}[] = [
-  { service: "Personal care", client: "M. Hartley", locality: "Wiveliscombe", status: "urgent", label: "Urgent" },
-  { service: "Transport — MAG", client: "D. Prescott", locality: "Milverton", status: "matched", label: "Matched" },
-  { service: "Meal prep", client: "J. Rowe", locality: "Halse", status: "serviced", label: "Serviced" },
-  { service: "Companionship", client: "P. Escott", locality: "Fitzhead", status: "matched", label: "Matched" },
-];
-
-const hourBars = [
-  { label: "Requested", width: "92%", color: "bg-pk-blue", value: "412" },
-  { label: "Serviced", width: "80%", color: "bg-pk-leaf", value: "358" },
-  { label: "Gap", width: "12%", color: "bg-pk-amber", value: "54" },
-];
-
-const expiringRows: { name: string; record: string; days: string; kind: keyof typeof chipStyles }[] = [
-  { name: "S. Talbot", record: "DBS check", days: "21 days", kind: "urgent" },
-  { name: "R. Venn", record: "First Aid", days: "44 days", kind: "matched" },
-  { name: "K. Doble", record: "Public liability", days: "58 days", kind: "matched" },
+const overviewCounters = [
+  { value: "87", label: "Clients with Active Requests" },
+  { value: "35", label: "MPs with Active Packages" },
+  { value: "22", label: "Volunteers with Active Packages" },
+  { value: "412", label: "Current Requested Weekly Care Hours" },
+  { value: "358", label: "Current Brokered Weekly Care Hours" },
 ];
 
 const audiences = [
@@ -181,11 +146,11 @@ export function LandingPage() {
             <p className="mt-4 text-sm text-pk-slate">Built with Wivey Cares · in daily use across 10 Somerset parishes</p>
           </div>
 
-          {/* Dashboard mock */}
+          {/* Dashboard mock — mirrors the real Dashboard's Live Overview */}
           <div className="mx-auto mt-8 max-w-[1040px]">
             <div
               role="img"
-              aria-label="Paddock dashboard showing stat tiles, a requests table with statuses, hours charts and expiring compliance records"
+              aria-label="Paddock dashboard showing the live overview: active clients, MPs and volunteers, and requested versus brokered weekly care hours"
               className="overflow-hidden rounded-2xl border border-pk-line bg-white text-left shadow-[0_20px_50px_rgba(28,39,51,0.12)]"
             >
               <div className="flex items-center gap-2 border-b border-pk-line bg-pk-cream px-4 py-2.5">
@@ -197,11 +162,14 @@ export function LandingPage() {
                 </span>
               </div>
               <div aria-hidden="true" className="grid min-h-[430px] md:grid-cols-[198px_1fr]">
-                <nav className="hidden border-r border-pk-line bg-pk-mist p-2.5 text-[0.8rem] md:block">
-                  <div className="flex items-center gap-2 px-2 pb-3.5 pt-1.5 text-[0.84rem] font-bold">
+                <nav className="hidden flex-col border-r border-pk-line bg-pk-mist p-2.5 text-[0.8rem] md:flex">
+                  <div className="flex items-center gap-2 px-2 pb-1.5 pt-1.5 text-[0.84rem] font-bold">
                     <img src="/wivey-cares.png" alt="" className="h-[22px] w-[22px] rounded" />
                     Wivey Cares
                   </div>
+                  <span className="mx-2 mb-2 w-fit rounded-full bg-pk-fog px-2 py-0.5 text-[0.66rem] font-semibold text-pk-slate">
+                    Coordinator
+                  </span>
                   <span className="flex items-center gap-2 rounded-[7px] bg-pk-blue-soft px-2 py-1.5 font-semibold text-pk-blue">
                     <LayoutGrid size={13} />
                     Dashboard
@@ -211,98 +179,38 @@ export function LandingPage() {
                       {item}
                     </span>
                   ))}
+                  <span className="mt-auto flex items-center gap-2 border-t border-pk-line px-2 pb-1 pt-3 font-medium text-pk-slate">
+                    <LogOut size={13} />
+                    Sign Out
+                  </span>
                 </nav>
                 <div className="p-5">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h4 className="font-display text-[1.05rem] font-bold">Dashboard</h4>
-                    <span className="font-plex text-[0.7rem] text-pk-slate">JULY 2026 · WIVELISCOMBE +9 PARISHES</span>
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-display text-[1.05rem] font-bold leading-tight">Dashboard</h4>
+                      <span className="text-[0.72rem] text-pk-slate">Live Overview</span>
+                    </div>
+                    <span className="rounded-lg border border-pk-line bg-white px-3 py-1.5 text-[0.72rem] font-semibold shadow-sm">
+                      Generate Report
+                    </span>
                   </div>
-                  <div className="mb-2.5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
-                    {statTiles.map((tile) => (
-                      <div key={tile.label} className="rounded-[10px] border border-pk-line bg-white px-3.5 py-3">
-                        <b className="block font-display text-[1.35rem] font-bold leading-tight">{tile.value}</b>
-                        <span className="text-xs text-pk-slate">{tile.label}</span>{" "}
-                        <span className={`text-[0.7rem] font-semibold ${tile.tone}`}>{tile.note}</span>
-                      </div>
+                  <div className="mb-3.5 grid grid-cols-2 gap-1 rounded-lg bg-pk-fog p-[3px] text-center text-[0.7rem] font-medium md:grid-cols-4">
+                    {dashboardTabs.map((tab, i) => (
+                      <span
+                        key={tab}
+                        className={i === 0 ? "rounded-md bg-white px-2 py-1 shadow-sm" : "px-2 py-1 text-pk-slate"}
+                      >
+                        {tab}
+                      </span>
                     ))}
                   </div>
-                  <div className="grid gap-2.5 md:grid-cols-[1.6fr_1fr]">
-                    <div className="overflow-hidden rounded-[10px] border border-pk-line bg-white">
-                      <div className="flex items-center justify-between border-b border-pk-line px-3.5 py-2.5 text-[0.8rem] font-semibold">
-                        Open requests <span className="font-plex text-[0.68rem] font-normal text-pk-slate">4 of 23</span>
+                  <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+                    {overviewCounters.map((counter) => (
+                      <div key={counter.label} className="rounded-[10px] border border-pk-line bg-white p-4 shadow-sm">
+                        <b className="block font-display text-[1.45rem] font-bold leading-tight">{counter.value}</b>
+                        <span className="text-[0.7rem] font-medium text-pk-slate">{counter.label}</span>
                       </div>
-                      <table className="w-full text-[0.76rem]">
-                        <thead>
-                          <tr>
-                            {["Service", "Client", "Locality", "Status"].map((heading, i) => (
-                              <th
-                                key={heading}
-                                className={`border-b border-pk-line bg-pk-sand px-3.5 py-1.5 text-left font-plex text-[0.62rem] font-medium uppercase tracking-[0.08em] text-pk-slate ${
-                                  i === 2 ? "hidden md:table-cell" : ""
-                                }`}
-                              >
-                                {heading}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {requestRows.map((row, i) => {
-                            const cell = `px-3.5 py-2 ${i < requestRows.length - 1 ? "border-b border-pk-fog" : ""}`;
-                            return (
-                              <tr key={row.client}>
-                                <td className={cell}>{row.service}</td>
-                                <td className={cell}>{row.client}</td>
-                                <td className={`${cell} hidden text-pk-slate md:table-cell`}>{row.locality}</td>
-                                <td className={cell}>
-                                  <Chip kind={row.status} label={row.label} />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="flex flex-col gap-2.5">
-                      <div className="rounded-[10px] border border-pk-line bg-white px-3.5 py-3 text-[0.76rem]">
-                        <div className="mb-2.5 flex justify-between text-[0.8rem] font-semibold">
-                          Hours this month{" "}
-                          <span className="font-plex text-[0.66rem] font-normal text-pk-slate">req / serviced</span>
-                        </div>
-                        {hourBars.map((bar) => (
-                          <div
-                            key={bar.label}
-                            className="mb-1.5 grid grid-cols-[70px_1fr_34px] items-center gap-2 text-[0.7rem] text-pk-slate"
-                          >
-                            <span>{bar.label}</span>
-                            <div className="h-2 overflow-hidden rounded-full bg-pk-fog">
-                              <div className={`h-full rounded-full ${bar.color}`} style={{ width: bar.width }} />
-                            </div>
-                            <span>{bar.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="rounded-[10px] border border-pk-line bg-white px-3.5 py-3 text-[0.76rem]">
-                        <div className="mb-1.5 flex justify-between text-[0.8rem] font-semibold">
-                          Expiring soon{" "}
-                          <span className="font-plex text-[0.66rem] font-normal text-pk-slate">next 60 days</span>
-                        </div>
-                        {expiringRows.map((row, i) => (
-                          <div
-                            key={row.name}
-                            className={`flex items-center justify-between py-1.5 ${
-                              i < expiringRows.length - 1 ? "border-b border-pk-fog" : ""
-                            }`}
-                          >
-                            <div>
-                              <b className="font-semibold">{row.name}</b>
-                              <span className="block text-[0.68rem] text-pk-slate">{row.record}</span>
-                            </div>
-                            <Chip kind={row.kind} label={row.days} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
