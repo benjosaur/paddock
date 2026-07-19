@@ -96,10 +96,15 @@ export function LandingPage() {
         {/* Hero */}
         <section className="px-6 pb-14 pt-16 text-center md:pt-20">
           <div className="mx-auto max-w-[1120px]">
-            <span className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-pk-line bg-white px-3.5 py-1.5 text-sm font-medium text-pk-slate">
+            <a
+              href={WIVEY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-pk-line bg-white px-3.5 py-1.5 text-sm font-medium text-pk-slate transition hover:border-pk-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pk-blue"
+            >
               <img src="/wivey-cares.png" alt="" className="h-[19px] w-[19px] rounded" />
-              Powering <b className="font-semibold text-pk-ink">Wivey Cares</b> — Wiveliscombe, Somerset
-            </span>
+              Powering <b className="font-semibold text-pk-ink">Wivey Cares</b>
+            </a>
             <h1 className="mx-auto mb-5 mt-6 max-w-[18em] font-display text-[clamp(2.4rem,5.2vw,3.7rem)] font-extrabold leading-[1.08] tracking-[-0.015em]">
               Run your microprovider network from one place<span className="text-pk-blue">.</span>{" "}
               <span className="mt-3.5 block text-[0.52em] font-bold tracking-normal text-pk-slate line-through decoration-pk-amber decoration-[2.5px]">
@@ -198,9 +203,9 @@ export function LandingPage() {
         <section id="wivey" className="mt-4 border-y border-pk-line bg-white px-6 py-16 md:py-20">
           <div className="mx-auto grid max-w-[1120px] items-center gap-9 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
-              <p className="mb-4 font-plex text-xs font-semibold uppercase tracking-[0.14em] text-pk-blue">
+              <h2 className="mb-4 font-display text-[clamp(1.7rem,3.2vw,2.4rem)] font-extrabold tracking-tight">
                 Powering Wivey Cares
-              </p>
+              </h2>
               <p className="mb-4 max-w-[36em] text-pk-slate">
                 Wivey Cares is a charity in Wiveliscombe pioneering Somerset's microprovider model of care. Instead of
                 expensive agency workers or care homes, where cost saving comes at the expense of the patient, the
