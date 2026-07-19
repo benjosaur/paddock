@@ -14,8 +14,8 @@ import {
 } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
-import { serviceOptions, localities } from "shared/const";
 import { associatedPackageRoutes } from "../routes/PackageRoutes";
+import { useConfig, activeValues } from "@/hooks/useConfig";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
 import { validateOrToast } from "@/utils/validation";
 import { formatYmdToDmy } from "@/utils/date";
@@ -26,6 +26,7 @@ export function PackageForm() {
   const location = useLocation();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
+  const config = useConfig();
 
   // below will now always be provided
   const initialRequestId = location.state?.requestId || "";
@@ -184,7 +185,7 @@ export function PackageForm() {
     carerOptions = [...carerOptions, originalCarerOption];
   }
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
+  const serviceSelectOptions = activeValues(config.services).map((service) => ({
     value: service,
     label: service,
   }));
@@ -461,7 +462,7 @@ export function PackageForm() {
                           }
                         : null
                     }
-                    options={localities.map((locality) => ({
+                    options={activeValues(config.localities).map((locality) => ({
                       label: locality,
                       value: locality,
                     }))}

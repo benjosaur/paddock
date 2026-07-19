@@ -11,13 +11,9 @@ import { requestMetadataSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { capitalise, updateNestedValue } from "@/utils/helpers";
-import {
-  requestStatus,
-  requestTypes,
-  serviceOptions,
-  localities,
-} from "shared/const";
+import { requestStatus, requestTypes } from "shared/const";
 import { associatedRequestRoutes } from "../routes/RequestRoutes";
+import { useConfig, activeValues } from "../hooks/useConfig";
 
 export function RequestForm() {
   const navigate = useNavigate();
@@ -26,6 +22,7 @@ export function RequestForm() {
   const clientId = searchParams.get("clientId") || "";
 
   const isEditing = Boolean(id);
+  const config = useConfig();
 
   const [formData, setFormData] = useState<Omit<RequestMetadata, "id">>({
     clientId: "",
@@ -119,7 +116,7 @@ export function RequestForm() {
     label: capitalise(option),
   }));
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
+  const serviceSelectOptions = activeValues(config.services).map((service) => ({
     value: service,
     label: service,
   }));
@@ -517,7 +514,7 @@ export function RequestForm() {
                         }
                       : null
                   }
-                  options={localities.map((locality) => ({
+                  options={activeValues(config.localities).map((locality) => ({
                     label: locality,
                     value: locality,
                   }))}

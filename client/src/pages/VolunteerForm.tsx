@@ -10,13 +10,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/modals/FieldEditModal";
 import { Select } from "../components/ui/select";
-import { localities, volunteerRoles } from "shared/const";
+import { volunteerRoles } from "shared/const";
 import { associatedVolunteerRoutes } from "../routes/VolunteersRoutes";
+import { useConfig, activeValues } from "../hooks/useConfig";
 
 export function VolunteerForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
+  const config = useConfig();
 
   const [formData, setFormData] = useState<Omit<VolunteerFull, "id">>({
     dateOfBirth: "",
@@ -271,7 +273,7 @@ export function VolunteerForm() {
                         }
                       : null
                   }
-                  options={localities.map((locality) => ({
+                  options={activeValues(config.localities).map((locality) => ({
                     label: locality,
                     value: locality,
                   }))}

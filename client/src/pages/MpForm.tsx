@@ -10,13 +10,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateNestedValue } from "@/utils/helpers";
 import { FieldEditModal } from "@/components/modals/FieldEditModal";
 import { Select } from "../components/ui/select";
-import { localities } from "shared/const";
 import { associatedMpRoutes } from "../routes/MpsRoutes";
+import { useConfig, activeValues } from "../hooks/useConfig";
 
 export function MpForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
+  const config = useConfig();
 
   const [formData, setFormData] = useState<Omit<MpFull, "id">>({
     endDate: "open",
@@ -263,7 +264,7 @@ export function MpForm() {
                         }
                       : null
                   }
-                  options={localities.map((locality) => ({
+                  options={activeValues(config.localities).map((locality) => ({
                     label: locality,
                     value: locality,
                   }))}

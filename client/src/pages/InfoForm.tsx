@@ -9,7 +9,8 @@ import type { ClientFull, VolunteerMetadata, InfoDetails } from "../types";
 import { infoDetailsSchema } from "../types";
 import { validateOrToast } from "@/utils/validation";
 import { associatedClientRoutes } from "../routes/ClientsRoutes";
-import { notesSource, serviceOptions } from "shared/const";
+import { notesSource } from "shared/const";
+import { useConfig, activeValues } from "@/hooks/useConfig";
 import { updateNestedValue } from "@/utils/helpers";
 import { MultiValue } from "react-select";
 import { useTodaysDate } from "@/hooks/useTodaysDate";
@@ -21,6 +22,7 @@ export function InfoForm() {
   const [searchParams] = useSearchParams();
   const encodedClientId = searchParams.get("clientId") || "";
   const clientId = decodeURIComponent(encodedClientId);
+  const config = useConfig();
 
   const [formData, setFormData] = useState<InfoDetails>({
     date: "",
@@ -115,7 +117,7 @@ export function InfoForm() {
     setFormData((prev) => updateNestedValue(field, selectedValues, prev));
   };
 
-  const serviceSelectOptions = serviceOptions.map((service) => ({
+  const serviceSelectOptions = activeValues(config.services).map((service) => ({
     value: service,
     label: service,
   }));
