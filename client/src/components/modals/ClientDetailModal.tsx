@@ -290,6 +290,7 @@ export function ClientDetailModal({
                   <DataTable
                     data={client.requests.flatMap((req) => req.packages)}
                     columns={packageColumns}
+                    tableId="packages"
                     title=""
                     searchPlaceholder="Search care confirmations..."
                     resource="packages"
@@ -331,6 +332,7 @@ export function ClientDetailModal({
                 <DataTable
                   data={client.requests}
                   columns={requestColumns}
+                  tableId="requests"
                   title=""
                   searchPlaceholder="Search care requests..."
                   resource="requests"
