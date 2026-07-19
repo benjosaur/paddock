@@ -28,6 +28,7 @@ import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
 import type { TableColumn, TrainingRecord } from "../../types";
 import { AppRouterKeys } from "shared";
+import { useConfig } from "../../hooks/useConfig";
 
 const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
 
@@ -61,13 +62,16 @@ interface DataTableProps<T> {
   customActions?: React.ReactNode;
   defaultSortKey?: string;
   defaultSortDirection?: "asc" | "desc";
+  // Key into the config's visibleColumns map; when set, the admin-configured
+  // column visibility for that table is applied.
+  tableId?: string;
 }
 
 export function DataTable<
   T extends { id: string; requestId?: string; endDate?: string }
 >({
   data,
-  columns,
+  columns: allColumns,
   onEdit,
   onArchive,
   onDelete,
@@ -89,7 +93,15 @@ export function DataTable<
   customActions,
   defaultSortKey,
   defaultSortDirection = "asc",
+  tableId,
 }: DataTableProps<T>) {
+  const config = useConfig();
+  const visibleKeys = tableId
+    ? config.tableColumns.visibleColumns[tableId]
+    : undefined;
+  const columns = visibleKeys
+    ? allColumns.filter((col) => visibleKeys.includes(String(col.key)))
+    : allColumns;
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);

@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EndPersonDetails } from "shared";
 import EndDialog from "../components/EndDialog";
 
-const mpColumns: TableColumn<MpMetadata>[] = [
+export const mpColumns: TableColumn<MpMetadata>[] = [
   {
     key: "name",
     header: "Name",
@@ -173,6 +173,7 @@ export function MpsRoutes() {
           <>
             <DataTable
               key={`mps-${showEnded}`}
+              tableId="mps"
               title="MPs"
               searchPlaceholder="Search MPs..."
               data={mps}

@@ -15,7 +15,7 @@ import type { EndPersonDetails } from "shared";
 import { endReasons } from "shared/const";
 import { Select } from "../components/ui/select";
 
-const clientColumns: TableColumn<ClientMetadata>[] = [
+export const clientColumns: TableColumn<ClientMetadata>[] = [
   {
     key: "customId",
     header: "Custom ID",
@@ -221,6 +221,7 @@ export default function ClientsRoutes() {
           <>
             <DataTable
               key={`clients-${showEnded}`}
+              tableId="clients"
               title="Clients"
               searchPlaceholder="Search clients..."
               data={clients}
