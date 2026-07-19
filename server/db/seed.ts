@@ -8,6 +8,9 @@ import { getTableName } from "./repository";
 // package.json — it runs with NODE_ENV=production so the DynamoDB client points
 // at AWS rather than local DynamoDB. Requires AWS credentials for the account
 // that owns Test2 (eu-west-2).
+// db:seed:staging keeps the Test role but points TABLE_NAME_TEST at the
+// staging MAIN table, so staging Admin/Coordinator accounts see the data.
+// Forgetting the override merely seeds prod's throwaway Test2 — never prod.
 const seedUser: User = { role: "Test", sub: "seed-script" };
 
 const clients: Omit<ClientMetadata, "id">[] = [

@@ -129,7 +129,16 @@ The application uses AWS infrastructure:
 - CloudFront for frontend distribution
 - Cognito for authentication
 
-Deploy with:
+Two isolated environments are deployed from the same CDK code (`infra/lib/infra-stack.ts`, parameterized by a `stage` prop):
+- **Staging** — `PaddockStack-Staging` at https://staging.paddockhealth.com (own Cognito pool with default hosted domain, `WiveyCares2-Staging`/`Test2-Staging` tables, staging banner in the UI). Client build config: committed `client/.env.staging`.
+- **Production** — `PaddockStack` at https://paddockhealth.com. Client build config: gitignored `client/.env`. The stack id and construct ids must never change (renames destroy/recreate resources, including the Cognito user pool).
+
+Workflow: deploy to staging, smoke test, then deploy the same commit to prod.
+
 ```bash
-cd server && bun run deploy
+bun run deploy:staging   # build client (--mode staging) + server, deploy PaddockStack-Staging
+bun run deploy:prod      # build client + server, deploy PaddockStack
+cd server && bun run db:seed:staging   # seed staging main table with fake data
 ```
+
+Each deploy script rebuilds the client for its stage first — never `cdk deploy --all`, which would ship one client bundle to both environments.
