@@ -21,6 +21,6 @@ export const tableRegistry: Record<
   clients: { label: "Clients", columns: columnMeta(clientColumns) },
   mps: { label: "MPs", columns: columnMeta(mpColumns) },
   volunteers: { label: "Volunteers", columns: columnMeta(volunteerColumns) },
-  requests: { label: "Requests", columns: columnMeta(requestColumns) },
-  packages: { label: "Packages", columns: columnMeta(packageColumns) },
+  requests: { label: "Care Requests", columns: columnMeta(requestColumns) },
+  packages: { label: "Care Confirmed", columns: columnMeta(packageColumns) },
 };
