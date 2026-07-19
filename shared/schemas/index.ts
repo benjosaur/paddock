@@ -3,11 +3,9 @@ import {
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
   endReasons,
-  localities,
   notesSource,
   requestStatus,
   requestTypes,
-  serviceOptions,
   soleServiceOptions,
   trainingRecordTypes,
   userRoles,
@@ -30,14 +28,9 @@ export const trainingRecordSchema = z.object({
 
 export const userRoleSchema = z.enum(userRoles);
 
-export const viewConfigSchema = z.object({
-  role: userRoleSchema,
-  availableViews: z.array(z.string()),
-});
-
 const addressSchema = z.object({
   streetAddress: z.string().default(""),
-  locality: z.enum(localities).default("Unknown"),
+  locality: z.string().default("Unknown"),
   county: z.string().default("Somerset"),
   postCode: z
     .string()
@@ -70,7 +63,7 @@ export const reqPackageSchema = z.object({
     oneOffStartDateHours: z.coerce.number().default(0),
     address: addressSchemaWithDeprivation,
     notes: z.string().default(""),
-    services: z.array(z.enum(serviceOptions)).default([]),
+    services: z.array(z.string()).default([]),
   }),
 });
 
@@ -105,7 +98,7 @@ export const requestMetadataSchema = z.object({
     oneOffStartDateHours: z.coerce.number().default(0),
     address: addressSchemaWithDeprivation,
     status: z.enum(requestStatus).default("normal"),
-    services: z.array(z.enum(serviceOptions)).default([]),
+    services: z.array(z.string()).default([]),
     notes: z.string().default(""),
   }),
 });
@@ -203,7 +196,7 @@ export const clientMetadataSchema = z.object({
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: basePersonDetails.omit({ address: true }).extend({
     customId: z.string().default(""),
-    services: z.array(z.enum(serviceOptions)).default([]),
+    services: z.array(z.string()).default([]),
     address: addressSchemaWithDeprivation,
     donationScheme: z.boolean().default(false),
     donationAmount: z.coerce.number().default(0),
@@ -327,7 +320,7 @@ export const crossSectionSchema = z.object({
         name: z.string(),
         services: z.array(
           z.object({
-            name: z.enum(serviceOptions),
+            name: z.string(),
             totalHours: z.coerce.number().default(0),
           }),
         ),
@@ -338,7 +331,7 @@ export const crossSectionSchema = z.object({
   services: z
     .array(
       z.object({
-        name: z.enum(serviceOptions),
+        name: z.string(),
         totalHours: z.coerce.number().default(0),
       }),
     )
@@ -353,7 +346,7 @@ export const deprivationCrossSectionSchema = z.object({
         name: z.string(), // "Health Only", "Income Only", "Both", "Neither"
         services: z.array(
           z.object({
-            name: z.enum(serviceOptions),
+            name: z.string(),
             totalHours: z.coerce.number().default(0),
           }),
         ),
@@ -364,7 +357,7 @@ export const deprivationCrossSectionSchema = z.object({
   services: z
     .array(
       z.object({
-        name: z.enum(serviceOptions),
+        name: z.string(),
         totalHours: z.coerce.number().default(0),
       }),
     )
@@ -415,7 +408,6 @@ export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
 export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
-export type ViewConfig = z.infer<typeof viewConfigSchema>;
 export type AttendanceAllowanceCrossSection = z.infer<
   typeof attendanceAllowanceCrossSectionSchema
 >;
