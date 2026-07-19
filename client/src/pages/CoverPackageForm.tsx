@@ -56,7 +56,7 @@ export function CoverPackageForm() {
   if (!request) {
     return (
       <div className="text-red-500">
-        No request found with package ID {packageId}
+        No care request found with care confirmation ID {packageId}
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function CoverPackageForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Create Cover Package
+          Create Cover Care Confirmed
         </h1>
       </div>
 
@@ -303,7 +303,7 @@ export function CoverPackageForm() {
             <Button type="submit" disabled={createCoverMutation.isPending}>
               {createCoverMutation.isPending
                 ? "Creating..."
-                : "Create Cover Package"}
+                : "Create Cover Care Confirmed"}
             </Button>
           </div>
         </form>

@@ -141,7 +141,7 @@ export function ClientDetailModal({
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="services">Services & Needs</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
-              <TabsTrigger value="requests">New Requests</TabsTrigger>
+              <TabsTrigger value="requests">New Care Requests</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
@@ -244,7 +244,7 @@ export function ClientDetailModal({
                 client.details.riskAssessmentComments
               )}
               {renderDetailItem("Services Provided", client.details.services)}
-              {renderDetailItem("Requests", client.requests.length)}
+              {renderDetailItem("Care Requests", client.requests.length)}
               <div className="mb-4">
                 <h4 className="font-semibold text-gray-700 mb-2">
                   Attendance Allowance
@@ -284,19 +284,19 @@ export function ClientDetailModal({
             >
               <div>
                 <h4 className="text-md font-semibold mb-2 text-gray-600">
-                  Packages
+                  Care Confirmed
                 </h4>
                 {client.requests.flatMap((req) => req.packages).length > 0 ? (
                   <DataTable
                     data={client.requests.flatMap((req) => req.packages)}
                     columns={packageColumns}
                     title=""
-                    searchPlaceholder="Search packages..."
+                    searchPlaceholder="Search care confirmations..."
                     resource="packages"
                   />
                 ) : (
                   <p className="text-sm text-gray-500">
-                    No packages found for this client.
+                    No care confirmed records found for this client.
                   </p>
                 )}
               </div>
@@ -325,19 +325,19 @@ export function ClientDetailModal({
               className="p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
-                New Requests
+                New Care Requests
               </h3>
               {client.requests.length > 0 ? (
                 <DataTable
                   data={client.requests}
                   columns={requestColumns}
                   title=""
-                  searchPlaceholder="Search requests..."
+                  searchPlaceholder="Search care requests..."
                   resource="requests"
                 />
               ) : (
                 <p className="text-sm text-gray-500">
-                  No new requests found for this client.
+                  No new care requests found for this client.
                 </p>
               )}
             </TabsContent>

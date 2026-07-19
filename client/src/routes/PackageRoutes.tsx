@@ -171,7 +171,7 @@ export default function PackageRoutes() {
   };
 
   if (packagesQuery.isLoading) return <div>Loading...</div>;
-  if (packagesQuery.error) return <div>Error loading packages</div>;
+  if (packagesQuery.error) return <div>Error loading care confirmations</div>;
 
   return (
     <>
@@ -181,15 +181,15 @@ export default function PackageRoutes() {
           element={
             <Tabs defaultValue="requests" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="requests">For Requests</TabsTrigger>
+                <TabsTrigger value="requests">For Care Requests</TabsTrigger>
                 <TabsTrigger value="independent">Independent</TabsTrigger>
               </TabsList>
 
               <TabsContent value="requests" className="mt-6">
                 <DataTable
                   key={`packages-requests-${showEnded ? "ended" : "active"}`}
-                  title="Packages"
-                  searchPlaceholder="Search packages..."
+                  title="Care Confirmed"
+                  searchPlaceholder="Search care confirmations..."
                   data={requestPackages}
                   columns={packageColumns}
                   defaultSortKey="name"
@@ -216,8 +216,8 @@ export default function PackageRoutes() {
               <TabsContent value="independent" className="mt-6">
                 <DataTable
                   key={`packages-independent-${showEnded ? "ended" : "active"}`}
-                  title="Packages"
-                  searchPlaceholder="Search packages..."
+                  title="Care Confirmed"
+                  searchPlaceholder="Search care confirmations..."
                   data={independentPackages}
                   columns={packageColumns}
                   defaultSortKey="name"

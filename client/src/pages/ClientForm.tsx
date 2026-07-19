@@ -569,7 +569,7 @@ export function ClientForm() {
                       field="details.address.postCode"
                       currentValue={formData.details.address.postCode}
                       onSubmit={handleFieldChangeSubmit}
-                      customDescription="This will not update postcodes attached to this client's existing requests."
+                      customDescription="This will not update postcodes attached to this client's existing care requests."
                       externalOpen={openField === "details.address.postCode"}
                       onExternalOpenChange={(o) =>
                         setOpenField(o ? "details.address.postCode" : null)

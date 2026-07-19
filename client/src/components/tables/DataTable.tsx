@@ -359,7 +359,7 @@ export function DataTable<
                             onClick={() => onViewRequest(item.requestId ?? "")}
                           >
                             <Eye className="mr-2 h-4 w-4" />
-                            Request
+                            Care Request
                           </DropdownMenuItem>
                         )}
                         <PermissionGate resource={resource} action="update">
@@ -376,7 +376,7 @@ export function DataTable<
                               onClick={() => onAddPackage(item.id)}
                             >
                               <Plus className="mr-2 h-4 w-4" />
-                              Package
+                              Care Confirmed
                             </DropdownMenuItem>
                           )}
                           {onAddRequest && (
@@ -384,7 +384,7 @@ export function DataTable<
                               onClick={() => onAddRequest(item.id)}
                             >
                               <Plus className="mr-2 h-4 w-4" />
-                              Request
+                              Care Request
                             </DropdownMenuItem>
                           )}
                           {onAddInfo && (

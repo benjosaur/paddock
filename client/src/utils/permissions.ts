@@ -19,13 +19,13 @@ export function getVisibleMenuItems(userRole: UserRole) {
     },
     {
       key: "requests",
-      label: "Requests",
+      label: "Care Requests",
       path: "/requests",
       resource: "requests",
     },
     {
       key: "packages",
-      label: "Packages",
+      label: "Care Confirmed",
       path: "/packages",
       resource: "packages",
     },

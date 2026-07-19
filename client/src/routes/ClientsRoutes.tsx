@@ -276,7 +276,7 @@ export default function ClientsRoutes() {
                 endClientMutation.isPending
               }
               endDescription="Select an end date. This will also archive the client."
-              undoDescription="This will undo ending the client. Associated requests will not be affected."
+              undoDescription="This will undo ending the client. Associated care requests will not be affected."
               extraContent={
                 endDetails?.endDate !== "open" ? (
                   <div className="flex flex-col gap-2">

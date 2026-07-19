@@ -247,7 +247,7 @@ export default function RequestRoutes() {
   };
 
   if (requestsQuery.isLoading) return <div>Loading...</div>;
-  if (requestsQuery.error) return <div>Error loading requests</div>;
+  if (requestsQuery.error) return <div>Error loading care requests</div>;
 
   return (
     <>
@@ -264,8 +264,8 @@ export default function RequestRoutes() {
               <TabsContent value="care" className="mt-6">
                 <DataTable
                   key={`requests-care-${showEnded ? "ended" : "active"}`}
-                  title="Requests"
-                  searchPlaceholder="Search requests..."
+                  title="Care Requests"
+                  searchPlaceholder="Search care requests..."
                   data={otherRequests}
                   columns={requestColumns}
                   defaultSortKey="clientName"
@@ -292,8 +292,8 @@ export default function RequestRoutes() {
               <TabsContent value="info" className="mt-6">
                 <DataTable
                   key={`requests-info-${showEnded ? "ended" : "active"}`}
-                  title="Requests"
-                  searchPlaceholder="Search requests..."
+                  title="Care Requests"
+                  searchPlaceholder="Search care requests..."
                   data={infoRequests}
                   columns={infoRequestColumns}
                   defaultSortKey="clientName"
@@ -338,7 +338,7 @@ export default function RequestRoutes() {
           setIsEndDialogOpen(open);
           if (!open) setEndRequestDetails(null);
         }}
-        entityLabel="Request"
+        entityLabel="Care Request"
         endDate={endRequestDetails?.endDate}
         onEndDateChange={(date) =>
           setEndRequestDetails((prev) =>
@@ -357,7 +357,7 @@ export default function RequestRoutes() {
           !endRequestDetails?.requestId ||
           endRequestMutation.isPending
         }
-        endDescription="Select an end date. This will also end all associated ongoing packages."
+        endDescription="Select an end date. This will also end all associated ongoing care confirmed records."
         undoDescription=""
       />
     </>

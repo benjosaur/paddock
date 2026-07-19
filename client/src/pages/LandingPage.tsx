@@ -32,8 +32,8 @@ function Wordmark({ small = false }: { small?: boolean }) {
 // Mirrors the real app: getVisibleMenuItems() order and the Dashboard's
 // "Live Overview" tab. Keep in sync when the app's nav or dashboard changes.
 const sidebarItems = [
-  "Requests",
-  "Packages",
+  "Care Requests",
+  "Care Confirmed",
   "Clients",
   "MPs",
   "Volunteers",
@@ -44,12 +44,12 @@ const sidebarItems = [
   "Hub & Grub",
 ];
 
-const dashboardTabs = ["Overview", "Requests Breakdown", "Packages Breakdown", "Attendance Allowance"];
+const dashboardTabs = ["Overview", "Care Requests", "Care Confirmed", "Attendance Allowance"];
 
 const overviewCounters = [
-  { value: "87", label: "Clients with Active Requests" },
-  { value: "35", label: "MPs with Active Packages" },
-  { value: "22", label: "Volunteers with Active Packages" },
+  { value: "87", label: "Clients with Active Care Requests" },
+  { value: "35", label: "MPs with Active Care Confirmed" },
+  { value: "22", label: "Volunteers with Active Care Confirmed" },
   { value: "412", label: "Current Requested Weekly Care Hours" },
   { value: "358", label: "Current Brokered Weekly Care Hours" },
 ];
@@ -112,7 +112,7 @@ export function LandingPage() {
               </span>
             </h1>
             <p className="mx-auto mb-8 max-w-[41em] text-lg text-pk-slate">
-              Paddock tracks all you need to know about your microprovider network. See how your requests and care
+              Paddock tracks all you need to know about your microprovider network. See how your care requests and care
               delivered breaks down by month, localities and services. Find out which providers you need to chase to
               renew their DBS checks. Tailor your dashboard to suit your bespoke needs for trustees, councils and
               clients.

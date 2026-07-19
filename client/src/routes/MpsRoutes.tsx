@@ -225,7 +225,7 @@ export function MpsRoutes() {
                 endMpMutation.isPending
               }
               endDescription="Select an end date. This will also archive the MP."
-              undoDescription="This will undo ending the MP. Associated packages will not be affected."
+              undoDescription="This will undo ending the MP. Associated care confirmed records will not be affected."
             />
           </>
         }

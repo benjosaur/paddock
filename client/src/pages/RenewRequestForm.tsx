@@ -252,8 +252,8 @@ export function RenewRequestForm() {
 
   if (requestQuery.isLoading || clientsQuery.isLoading)
     return <div>Loading...</div>;
-  if (requestQuery.error) return <div>Error loading request</div>;
-  if (!oldRequestData) return <div>Request not found</div>;
+  if (requestQuery.error) return <div>Error loading care request</div>;
+  if (!oldRequestData) return <div>Care request not found</div>;
 
   const renderFormSection = (
     title: string,
@@ -266,7 +266,7 @@ export function RenewRequestForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-700">
-              Request Information
+              Care Request Information
             </h3>
 
             <div>
@@ -299,7 +299,7 @@ export function RenewRequestForm() {
                 htmlFor={`requestType-${isOld ? "old" : "new"}`}
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Request Type *
+                Care Request Type *
               </label>
               <Select
                 options={requestTypeOptions}
@@ -311,7 +311,7 @@ export function RenewRequestForm() {
                 onChange={(selectedOption) =>
                   handleSelectChange("requestType", selectedOption, isOld)
                 }
-                placeholder="Select request type..."
+                placeholder="Select care request type..."
                 required
                 isDisabled={isOld}
               />
@@ -361,7 +361,7 @@ export function RenewRequestForm() {
                 }}
               />
               <small className={cn("text-gray-500", isOld && "invisible")}>
-                Leave empty for ongoing request
+                Leave empty for ongoing care request
               </small>
             </div>
           </div>
@@ -450,7 +450,7 @@ export function RenewRequestForm() {
                 name="details.notes"
                 value={formData.details.notes || ""}
                 onChange={(e) => handleInputChange(e, isOld)}
-                placeholder="Additional notes about the request"
+                placeholder="Additional notes about the care request"
                 readOnly={isOld}
               />
             </div>
@@ -574,14 +574,14 @@ export function RenewRequestForm() {
     <div className="space-y-6 animate-in">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Renew Request
+          Renew Care Request
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {renderFormSection("Current Request (Ending)", oldRequestData, true)}
-          {renderFormSection("New Request", newRequestData, false)}
+          {renderFormSection("Current Care Request (Ending)", oldRequestData, true)}
+          {renderFormSection("New Care Request", newRequestData, false)}
         </div>
 
         <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
@@ -589,7 +589,7 @@ export function RenewRequestForm() {
             Cancel
           </Button>
           <Button type="submit" disabled={renewMutation.isPending}>
-            {renewMutation.isPending ? "Renewing..." : "Renew Request"}
+            {renewMutation.isPending ? "Renewing..." : "Renew Care Request"}
           </Button>
         </div>
       </form>
