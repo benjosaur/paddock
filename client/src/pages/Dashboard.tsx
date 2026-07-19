@@ -268,7 +268,7 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600">Live Overview</p>
@@ -802,7 +802,7 @@ export function Dashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="requests">Requests Breakdown</TabsTrigger>
           <TabsTrigger value="packages">Packages Breakdown</TabsTrigger>
