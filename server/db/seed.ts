@@ -261,11 +261,15 @@ const mps: Omit<MpMetadata, "id">[] = [
   },
 ];
 
+// Every table the seed may ever write to — prod's WiveyCares2 must never be
+// listed. Anything unrecognised (typo, new env) is refused, not defaulted.
+const SEEDABLE_TABLES = ["Test2", "Test2-Staging", "WiveyCares2-Staging"];
+
 export async function runSeed() {
   const table = getTableName(seedUser);
-  if (table !== "Test2") {
+  if (!SEEDABLE_TABLES.includes(table)) {
     throw new Error(
-      `Refusing to seed: resolved table "${table}" is not the Test table (Test2).`
+      `Refusing to seed: resolved table "${table}" is not a known non-production table.`
     );
   }
 
