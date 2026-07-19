@@ -3,9 +3,11 @@ import {
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
   endReasons,
+  localities,
   notesSource,
   requestStatus,
   requestTypes,
+  serviceOptions,
   soleServiceOptions,
   trainingRecordTypes,
   userRoles,
@@ -393,6 +395,25 @@ export const deprivationReportSchema = z.object({
   years: z.array(deprivationReportYearSchema),
 });
 
+export const optionListSchema = z.object({
+  options: z.array(
+    z.object({
+      value: z.string().trim().min(1),
+      active: z.boolean(),
+    }),
+  ),
+});
+
+export const tableColumnConfigSchema = z.object({
+  visibleColumns: z.record(z.string(), z.array(z.string().min(1))).default({}),
+});
+
+export const appConfigSchema = z.object({
+  services: optionListSchema,
+  localities: optionListSchema,
+  tableColumns: tableColumnConfigSchema,
+});
+
 export type MpMetadata = z.infer<typeof mpMetadataSchema>;
 export type MpFull = z.infer<typeof mpFullSchema>;
 export type VolunteerMetadata = z.infer<typeof volunteerMetadataSchema>;
@@ -426,3 +447,18 @@ export type ReportYear = z.infer<typeof reportYearSchema>;
 export type DeprivationReportYear = z.infer<typeof deprivationReportYearSchema>;
 export type Report = z.infer<typeof reportSchema>;
 export type DeprivationReport = z.infer<typeof deprivationReportSchema>;
+export type OptionList = z.infer<typeof optionListSchema>;
+export type TableColumnConfig = z.infer<typeof tableColumnConfigSchema>;
+export type AppConfig = z.infer<typeof appConfigSchema>;
+
+// Compiled-in fallback: config sections not yet saved in the database
+// resolve to these values.
+export const defaultAppConfig: AppConfig = {
+  services: {
+    options: serviceOptions.map((value) => ({ value, active: true })),
+  },
+  localities: {
+    options: localities.map((value) => ({ value, active: true })),
+  },
+  tableColumns: { visibleColumns: {} },
+};
