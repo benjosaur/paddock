@@ -12,6 +12,7 @@ import { ImageService } from "./images";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 
 interface MainStackProps extends cdk.StackProps {
+  stage: "prod" | "staging";
   // edgeFunctionVersion: lambda.IVersion;
 }
 
@@ -19,15 +20,30 @@ export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MainStackProps) {
     super(scope, id, props);
 
+    // Everything below derives from the stage; prod values are exactly the
+    // pre-staging-split ones so the prod template never changes shape.
+    const isProd = props.stage === "prod";
+    const nameSuffix = isProd ? "" : "-staging"; // Cognito/S3 resource names
+    const tableSuffix = isProd ? "" : "-Staging"; // DynamoDB table names
+
     const domainName = "paddockhealth.com";
     const homeRoute = "/";
     const subdomainName = "www.paddockhealth.com";
     const authDomainName = "auth.paddockhealth.com";
-    const appUrl = "https://paddockhealth.com";
-    // Legacy raw CloudFront URL — kept in the Cognito callback and CORS lists so
-    // the app keeps working during the DNS cutover. Remove once the custom
-    // domain is fully live.
+    const appDomain = isProd ? domainName : `staging.${domainName}`;
+    const appUrl = `https://${appDomain}`;
+    // Legacy raw CloudFront URL — kept in the prod Cognito callback and CORS
+    // lists so the app keeps working during the DNS cutover. Remove once the
+    // custom domain is fully live.
     const cloudFrontUrl = "https://d16bybrorjyr80.cloudfront.net";
+    const aliases = isProd ? [domainName, subdomainName] : [appDomain];
+    // Origins allowed by API Gateway CORS preflight and echoed by the Lambda.
+    const corsOrigins = isProd
+      ? [appUrl, `https://${subdomainName}`, cloudFrontUrl]
+      : [appUrl];
+    const callbackUrls = isProd
+      ? [appUrl + homeRoute, cloudFrontUrl + homeRoute]
+      : [appUrl + homeRoute];
 
     // SSL Certificate — must live in us-east-1 (required by both CloudFront and
     // the Cognito custom domain). TODO: replace the ID below with the ARN of the
@@ -41,7 +57,7 @@ export class InfraStack extends cdk.Stack {
 
     // Cognito User Pool
     const userPool = new cognito.UserPool(this, "PaddockUserPool", {
-      userPoolName: "paddock-health-user-pool",
+      userPoolName: `paddock-health-user-pool${nameSuffix}`,
       // Essentials tier is required for the newer managed login experience.
       featurePlan: cognito.FeaturePlan.ESSENTIALS,
       selfSignUpEnabled: false,
@@ -88,15 +104,27 @@ export class InfraStack extends cdk.Stack {
     // DNS — deploy CloudFront and add the apex A-record first, then add this.
     // After deploy, add a Route 53 A-alias for auth.paddockhealth.com pointing at
     // cognitoDomain.cloudFrontEndpoint (see the CognitoCloudFrontURL output).
-    const cognitoDomain = userPool.addDomain("PaddockCognitoDomain", {
-      // Version 2 = the newer managed login (branded, gradient UI) instead of
-      // the classic hosted UI.
-      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
-      customDomain: {
-        domainName: authDomainName,
-        certificate,
-      },
-    });
+    // Staging skips the custom domain (no cert/DNS dance for an internal env)
+    // and uses the default Cognito domain instead.
+    const cognitoDomain = userPool.addDomain(
+      "PaddockCognitoDomain",
+      isProd
+        ? {
+            // Version 2 = the newer managed login (branded, gradient UI) instead
+            // of the classic hosted UI.
+            managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
+            customDomain: {
+              domainName: authDomainName,
+              certificate,
+            },
+          }
+        : {
+            managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
+            cognitoDomain: {
+              domainPrefix: "paddock-staging",
+            },
+          },
+    );
 
     // Cognito User Pool Client
     const userPoolClient = new cognito.UserPoolClient(
@@ -104,7 +132,7 @@ export class InfraStack extends cdk.Stack {
       "PaddockUserPoolClient",
       {
         userPool,
-        userPoolClientName: "paddock-health-user-pool-client",
+        userPoolClientName: `paddock-health-user-pool-client${nameSuffix}`,
         authFlows: {
           userSrp: true,
           userPassword: true,
@@ -113,8 +141,8 @@ export class InfraStack extends cdk.Stack {
         generateSecret: false,
         preventUserExistenceErrors: true,
         oAuth: {
-          callbackUrls: [appUrl + homeRoute, cloudFrontUrl + homeRoute],
-          logoutUrls: [appUrl + homeRoute, cloudFrontUrl + homeRoute],
+          callbackUrls,
+          logoutUrls: callbackUrls,
           flows: {
             authorizationCodeGrant: true,
           },
@@ -164,7 +192,7 @@ export class InfraStack extends cdk.Stack {
 
     //frontend
     const s3Bucket = new s3.Bucket(this, "S3Bucket", {
-      bucketName: `paddock-frontend-${this.account}-${this.region}`,
+      bucketName: `paddock-frontend${nameSuffix}-${this.account}-${this.region}`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       accessControl: s3.BucketAccessControl.PRIVATE,
       cors: [s3CorsRule],
@@ -196,7 +224,7 @@ export class InfraStack extends cdk.Stack {
         viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
           certificate,
           {
-            aliases: [domainName, subdomainName],
+            aliases,
             securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
             sslMethod: cloudfront.SSLMethod.SNI,
           },
@@ -228,17 +256,22 @@ export class InfraStack extends cdk.Stack {
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+        TABLE_NAME_MAIN: `WiveyCares2${tableSuffix}`,
+        TABLE_NAME_TEST: `Test2${tableSuffix}`,
+        ALLOWED_ORIGINS: corsOrigins.join(","),
         // NODE_ENV: "production", doesnt work
       },
     });
 
     //databases
-    const prodDatabase = new Database(this, "WiveyCaresTable2", {
-      tableName: "WiveyCares2",
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    const mainDatabase = new Database(this, "WiveyCaresTable2", {
+      tableName: `WiveyCares2${tableSuffix}`,
+      removalPolicy: isProd
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
     });
     const testDatabase = new Database(this, "TestTable2", {
-      tableName: "Test2",
+      tableName: `Test2${tableSuffix}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
     const deprivationTable = Table.fromTableName(
@@ -248,14 +281,14 @@ export class InfraStack extends cdk.Stack {
     );
 
     deprivationTable.grantReadWriteData(trpcLambda);
-    prodDatabase.table.grantReadWriteData(trpcLambda);
+    mainDatabase.table.grantReadWriteData(trpcLambda);
     testDatabase.table.grantReadWriteData(trpcLambda);
 
     const api = new apigateway.RestApi(this, "TrpcApi", {
       restApiName: "TRPC API",
       description: "API for TRPC backend",
       defaultCorsPreflightOptions: {
-        allowOrigins: [appUrl, `https://${subdomainName}`, cloudFrontUrl],
+        allowOrigins: corsOrigins,
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ["Content-Type", "Authorization"],
       },
@@ -313,10 +346,19 @@ export class InfraStack extends cdk.Stack {
       description: "Cognito User Pool Client ID",
     });
 
-    new cdk.CfnOutput(this, "CognitoCloudFrontURL", {
-      value: cognitoDomain.cloudFrontEndpoint,
-      description: "Endpoint for Hosted Cognito UI",
-    });
+    if (isProd) {
+      // Only meaningful for the custom auth domain: its CloudFront endpoint is
+      // the target of the manual auth.paddockhealth.com DNS record.
+      new cdk.CfnOutput(this, "CognitoCloudFrontURL", {
+        value: cognitoDomain.cloudFrontEndpoint,
+        description: "Endpoint for Hosted Cognito UI",
+      });
+    } else {
+      new cdk.CfnOutput(this, "CognitoHostedDomain", {
+        value: cognitoDomain.baseUrl(),
+        description: "Cognito hosted login domain",
+      });
+    }
 
     // new cdk.CfnOutput(this, "ImageApiUrl", {
     //   value: imageService.api.url,
