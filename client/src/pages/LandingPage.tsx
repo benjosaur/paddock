@@ -125,7 +125,7 @@ export function LandingPage() {
                 Book a walkthrough
               </a>
             </div>
-            <p className="mt-4 text-sm text-pk-slate">Currently tracking £500k/yr in care</p>
+            <p className="mt-4 text-sm text-pk-slate">Tracking over £500k in annual care</p>
           </div>
 
           {/* Dashboard mock — mirrors the real Dashboard's Live Overview */}
