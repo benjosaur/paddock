@@ -6,6 +6,7 @@ import {
   DynamoDBDocumentClient,
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
+import type { UserRole } from "shared/schemas";
 
 const createRawClient = (): DynamoDBClient => {
   const isProd = process.env.NODE_ENV == "production";
@@ -23,12 +24,22 @@ const createRawClient = (): DynamoDBClient => {
   });
 };
 
+// Typed Record<UserRole, string> so adding a role to userRoles forces a
+// mapping here; anything unmapped (e.g. a user with no Cognito group) is
+// refused rather than falling through to a default table.
+const roleTables: Record<UserRole, string> = {
+  Admin: "WiveyCares2",
+  Coordinator: "WiveyCares2",
+  Trustee: "WiveyCares2",
+  Finance: "WiveyCares2",
+  Test: "Test2",
+};
+
 export const getTableName = (user: User): string => {
-  const allowedGroups = ["Admin", "Coordinator", "Trustee", "Finance"];
-  if (allowedGroups.find((group) => user.role == group)) {
-    return "WiveyCares2";
+  if (!Object.hasOwn(roleTables, user.role)) {
+    throw new Error(`No table for role "${user.role}": refusing database access`);
   }
-  return "Test2";
+  return roleTables[user.role as UserRole];
 };
 
 export const client = DynamoDBDocumentClient.from(createRawClient());
