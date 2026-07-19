@@ -24,15 +24,20 @@ const createRawClient = (): DynamoDBClient => {
   });
 };
 
+// Table names come from the stack (staging and prod each set their own);
+// the fallbacks keep local dev and the prod Lambda working unconfigured.
+const mainTable = process.env.TABLE_NAME_MAIN ?? "WiveyCares2";
+const testTable = process.env.TABLE_NAME_TEST ?? "Test2";
+
 // Typed Record<UserRole, string> so adding a role to userRoles forces a
 // mapping here; anything unmapped (e.g. a user with no Cognito group) is
 // refused rather than falling through to a default table.
 const roleTables: Record<UserRole, string> = {
-  Admin: "WiveyCares2",
-  Coordinator: "WiveyCares2",
-  Trustee: "WiveyCares2",
-  Finance: "WiveyCares2",
-  Test: "Test2",
+  Admin: mainTable,
+  Coordinator: mainTable,
+  Trustee: mainTable,
+  Finance: mainTable,
+  Test: testTable,
 };
 
 export const getTableName = (user: User): string => {

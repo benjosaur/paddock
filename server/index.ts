@@ -7,9 +7,11 @@ dotenv.config();
 
 // Origins allowed to call the API. The Lambda echoes back the request's Origin
 // when it appears here — a static Access-Control-Allow-Origin can only name one
-// origin, which would break the other during the DNS cutover. Drop the legacy
-// CloudFront URL once paddockhealth.com is fully live.
-const ALLOWED_ORIGINS = [
+// origin, which would break the other during the DNS cutover. Each stack sets
+// ALLOWED_ORIGINS for its own environment; the fallback keeps an unconfigured
+// prod Lambda working. Drop the legacy CloudFront URL once paddockhealth.com is
+// fully live.
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") ?? [
   "https://paddockhealth.com",
   "https://www.paddockhealth.com",
   "https://d16bybrorjyr80.cloudfront.net",
