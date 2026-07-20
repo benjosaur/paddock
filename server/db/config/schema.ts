@@ -8,7 +8,7 @@ const dbConfigBase = dbEntrySchema.extend({
 });
 
 export const dbOptionListItem = dbConfigBase.extend({
-  sK: z.enum(["services", "localities"]),
+  sK: z.enum(["services", "localities", "trainingRecordTypes"]),
   data: optionListSchema,
 });
 
