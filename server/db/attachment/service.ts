@@ -8,7 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 import { Attachment, attachmentSchema } from "shared";
-import { allowedImageTypes, maxImageBytes } from "shared/const";
+import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { getTableName } from "../repository";
 import { addDbMiddleware } from "../service";
 import { AttachmentRepository } from "./repository";
@@ -51,7 +51,7 @@ export class AttachmentService {
   async createUploadUrl(
     input: {
       ownerId: string;
-      contentType: (typeof allowedImageTypes)[number];
+      contentType: (typeof allowedAttachmentTypes)[number];
       size: number;
     },
     user: User
@@ -91,19 +91,19 @@ export class AttachmentService {
           new HeadObjectCommand({ Bucket: bucket, Key: s3Key })
         );
       } catch {
-        throw new Error("Uploaded image not found; please upload again");
+        throw new Error("Uploaded file not found; please upload again");
       }
 
-      const contentType = allowedImageTypes.find(
+      const contentType = allowedAttachmentTypes.find(
         (type) => type === head.ContentType
       );
       const size = head.ContentLength ?? 0;
-      if (!contentType || size === 0 || size > maxImageBytes) {
+      if (!contentType || size === 0 || size > maxAttachmentBytes) {
         await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }));
         throw new Error(
-          `Upload rejected: must be an image (${allowedImageTypes.join(
+          `Upload rejected: must be an image or PDF (${allowedAttachmentTypes.join(
             ", "
-          )}) no larger than ${maxImageBytes / (1024 * 1024)}MB`
+          )}) no larger than ${maxAttachmentBytes / (1024 * 1024)}MB`
         );
       }
 

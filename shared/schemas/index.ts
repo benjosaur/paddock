@@ -1,11 +1,11 @@
 import { z } from "zod";
 import {
-  allowedImageTypes,
+  allowedAttachmentTypes,
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
   endReasons,
   localities,
-  maxImageBytes,
+  maxAttachmentBytes,
   notesSource,
   requestStatus,
   requestTypes,
@@ -30,16 +30,16 @@ export const trainingRecordSchema = z.object({
   }),
 });
 
-// Image attached to an entity (clients only for now); ownerId is the owning
-// entity's id. Storage details (S3 key, presigned URLs) stay server-side.
+// Image/PDF attached to an entity (client, MP or volunteer); ownerId is the
+// owning entity's id. Storage details (S3 key, presigned URLs) stay server-side.
 export const attachmentSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   updatedAt: z.string().datetime(),
   details: z.object({
     fileName: z.string().min(1),
-    contentType: z.enum(allowedImageTypes),
-    size: z.coerce.number().int().positive().max(maxImageBytes),
+    contentType: z.enum(allowedAttachmentTypes),
+    size: z.coerce.number().int().positive().max(maxAttachmentBytes),
   }),
 });
 

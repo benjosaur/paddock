@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { allowedImageTypes, maxImageBytes } from "shared/const";
+import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { trpc, trpcClient } from "../utils/trpc";
 import { Button } from "./ui/button";
 import { DeleteAlert } from "./DeleteAlert";
@@ -36,7 +36,7 @@ export function ImageAttachments({ ownerId }: ImageAttachmentsProps) {
       const { attachmentId, uploadUrl } =
         await trpcClient.attachments.createUploadUrl.mutate({
           ownerId,
-          contentType: file.type as (typeof allowedImageTypes)[number],
+          contentType: file.type as (typeof allowedAttachmentTypes)[number],
           size: file.size,
         });
       const putResponse = await fetch(uploadUrl, {
@@ -72,13 +72,13 @@ export function ImageAttachments({ ownerId }: ImageAttachmentsProps) {
     const file = event.target.files?.[0];
     event.target.value = ""; // allow re-selecting the same file
     if (!file) return;
-    if (!allowedImageTypes.some((type) => type === file.type)) {
-      toast.error("Only JPEG, PNG, GIF or WebP images are allowed");
+    if (!allowedAttachmentTypes.some((type) => type === file.type)) {
+      toast.error("Only JPEG, PNG, GIF, WebP or PDF files are allowed");
       return;
     }
-    if (file.size > maxImageBytes) {
+    if (file.size > maxAttachmentBytes) {
       toast.error(
-        `Image must be ${maxImageBytes / (1024 * 1024)}MB or smaller`
+        `File must be ${maxAttachmentBytes / (1024 * 1024)}MB or smaller`
       );
       return;
     }
@@ -95,7 +95,7 @@ export function ImageAttachments({ ownerId }: ImageAttachmentsProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept={allowedImageTypes.join(",")}
+            accept={allowedAttachmentTypes.join(",")}
             className="hidden"
             onChange={handleFileChange}
           />

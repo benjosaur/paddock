@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { allowedImageTypes, maxImageBytes } from "shared/const";
+import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { router, createProtectedProcedure } from "../prod/trpc";
 
 // Attachments piggyback on the owning entity's permissions (clients only for
@@ -19,8 +19,8 @@ export const attachmentsRouter = router({
     .input(
       z.object({
         ownerId: ownerIdSchema,
-        contentType: z.enum(allowedImageTypes),
-        size: z.number().int().positive().max(maxImageBytes),
+        contentType: z.enum(allowedAttachmentTypes),
+        size: z.number().int().positive().max(maxAttachmentBytes),
       })
     )
     .mutation(async ({ ctx, input }) => {
