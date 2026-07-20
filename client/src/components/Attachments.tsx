@@ -272,7 +272,7 @@ export function AttachmentsDialog({
 }: AttachmentsDialogProps) {
   return (
     <Dialog open={ownerId !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="md:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Attachments</DialogTitle>
         </DialogHeader>
