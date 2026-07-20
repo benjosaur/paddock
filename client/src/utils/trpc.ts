@@ -30,7 +30,8 @@ const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url:
-        import.meta.env.MODE == "production"
+        // PROD (not MODE) so `vite build --mode staging` also uses VITE_API_URL.
+        import.meta.env.PROD
           ? import.meta.env.VITE_API_URL
           : import.meta.env.VITE_DEV_API_URL ?? "http://localhost:3001/trpc",
       headers: async () => {
