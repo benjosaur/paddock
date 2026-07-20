@@ -47,6 +47,10 @@ function selectInnerInput(el: Element): HTMLInputElement | null {
   );
 }
 
+function dialogTitle(dialog: HTMLElement): string {
+  return dialog.querySelector("h2")?.textContent?.trim() || "Dialog";
+}
+
 export function discoverFields(): DiscoveredField[] {
   const out: DiscoveredField[] = [];
   const usedSlugs = new Set<string>();
@@ -89,7 +93,19 @@ export function discoverFields(): DiscoveredField[] {
     }
 
     claimed.add(control);
-    const base = copilotIdSegment(labelText) || "field";
+    // Fields inside an open dialog are scoped by its title
+    // (field.<dialog>.<label>): the page's same-labelled fields behind the
+    // overlay stay discoverable, so without the scope the two would collide
+    // and the positional -N suffix could rebind between snapshot and
+    // execution.
+    const container = control.closest<HTMLElement>('[role="dialog"]');
+    const scope =
+      container && isVisible(container)
+        ? copilotIdSegment(dialogTitle(container))
+        : "";
+    const labelSlug = copilotIdSegment(labelText) || "field";
+    const base =
+      scope && scope !== labelSlug ? `${scope}.${labelSlug}` : labelSlug;
     let slug = base;
     for (let i = 2; usedSlugs.has(slug); i++) slug = `${base}-${i}`;
     usedSlugs.add(slug);
@@ -137,10 +153,9 @@ export function discoverFields(): DiscoveredField[] {
   // labelled by the dialog's title.
   document.querySelectorAll<HTMLElement>('[role="dialog"]').forEach((dialog) => {
     if (!isVisible(dialog)) return;
-    const title = dialog.querySelector("h2")?.textContent?.trim() || "Dialog";
     dialog
       .querySelectorAll<HTMLElement>("input, textarea")
-      .forEach((el) => push(title, el));
+      .forEach((el) => push(dialogTitle(dialog), el));
   });
 
   return out.slice(0, 80);
