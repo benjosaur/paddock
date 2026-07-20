@@ -1,6 +1,7 @@
 // Generic, zero-instrumentation discovery of form fields: labels drive it,
 // so any page built from the app's <label> + <Input>/<Select> pattern is
 // editable by the copilot without per-form changes.
+import { copilotIdSegment } from "../utils/copilotId";
 
 export function isVisible(el: HTMLElement): boolean {
   if (typeof el.checkVisibility === "function" && !el.checkVisibility()) {
@@ -8,6 +9,14 @@ export function isVisible(el: HTMLElement): boolean {
   }
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
+}
+
+// Single source for the visible instrumented-target scan, shared by the
+// snapshot builder and the executor's effect diff so they cannot drift.
+export function visibleTargetElements(): HTMLElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>("[data-copilot-id]"),
+  ).filter(isVisible);
 }
 
 export interface DiscoveredField {
@@ -30,14 +39,6 @@ const SKIPPED_INPUT_TYPES = new Set([
   "submit",
   "reset",
 ]);
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
 
 // react-select renders a container div whose inner input is a combobox.
 function selectInnerInput(el: Element): HTMLInputElement | null {
@@ -88,7 +89,7 @@ export function discoverFields(): DiscoveredField[] {
     }
 
     claimed.add(control);
-    const base = slugify(labelText) || "field";
+    const base = copilotIdSegment(labelText) || "field";
     let slug = base;
     for (let i = 2; usedSlugs.has(slug); i++) slug = `${base}-${i}`;
     usedSlugs.add(slug);

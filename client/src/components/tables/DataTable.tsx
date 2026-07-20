@@ -31,6 +31,7 @@ import type { TableColumn, TrainingRecord } from "../../types";
 import { AppRouterKeys } from "shared";
 import { useConfig } from "../../hooks/useConfig";
 import { copilotIdSegment } from "../../utils/copilotId";
+import { applyColumnVisibility } from "../../utils/tableRegistry";
 
 const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
 
@@ -103,9 +104,7 @@ export function DataTable<
   const visibleKeys = tableId
     ? config.tableColumns.visibleColumns[tableId]
     : undefined;
-  const columns = visibleKeys
-    ? allColumns.filter((col) => visibleKeys.includes(String(col.key)))
-    : allColumns.filter((col) => !col.defaultHidden);
+  const columns = applyColumnVisibility(allColumns, visibleKeys);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);

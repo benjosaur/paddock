@@ -4,7 +4,12 @@ import type {
   CopilotToolUseBlock,
 } from "../types";
 import type { CursorHandle } from "./CopilotCursor";
-import { discoverFields, isVisible, type DiscoveredField } from "./fields";
+import {
+  discoverFields,
+  isVisible,
+  visibleTargetElements,
+  type DiscoveredField,
+} from "./fields";
 import { drainCapturedToasts } from "./toastCapture";
 
 // How long the executor waits after an action so navigation/re-render can
@@ -92,8 +97,7 @@ const MAX_DIFF_IDS = 8;
 
 function visibleTargetIdSet(): Set<string> {
   return new Set(
-    Array.from(document.querySelectorAll<HTMLElement>("[data-copilot-id]"))
-      .filter(isVisible)
+    visibleTargetElements()
       .map((el) => el.dataset.copilotId ?? "")
       .filter(Boolean),
   );
