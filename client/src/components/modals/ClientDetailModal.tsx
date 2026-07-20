@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { trpc } from "../../utils/trpc";
 import { DataTable } from "../tables/DataTable";
 import { Note, NotesEditor } from "../NotesEditor";
+import { ImageAttachments } from "../ImageAttachments";
 import { PermissionGate } from "../PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
@@ -137,12 +138,13 @@ export function ClientDetailModal({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-2">
           <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-5 mb-4">
+            <TabsList className="grid w-full grid-cols-6 mb-4">
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="services">Services & Needs</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="requests">New Care Requests</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="images">Images</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -355,6 +357,13 @@ export function ClientDetailModal({
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
+            </TabsContent>
+
+            <TabsContent
+              value="images"
+              className="p-4 border rounded-lg bg-white/80"
+            >
+              <ImageAttachments ownerId={client.id} />
             </TabsContent>
           </Tabs>
         </div>
