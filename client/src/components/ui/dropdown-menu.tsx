@@ -5,7 +5,8 @@ interface DropdownMenuProps {
   children: React.ReactNode;
 }
 
-interface DropdownMenuTriggerProps {
+interface DropdownMenuTriggerProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
@@ -16,7 +17,8 @@ interface DropdownMenuContentProps {
   className?: string;
 }
 
-interface DropdownMenuItemProps {
+interface DropdownMenuItemProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
@@ -61,6 +63,7 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
   children,
   className,
   onClick,
+  ...props
 }) => {
   const { isOpen, setIsOpen } = React.useContext(DropdownMenuContext);
 
@@ -71,6 +74,8 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
 
   return (
     <button
+      type="button"
+      {...props}
       onClick={handleClick}
       className={cn(
         "flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200/60 bg-white/80 backdrop-blur-sm hover:bg-gray-50/90 hover:border-gray-300/70 transition-all duration-200 ease-in-out transform active:scale-95 cursor-pointer",
@@ -106,6 +111,7 @@ const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
   children,
   className,
   onClick,
+  ...props
 }) => {
   const { setIsOpen } = React.useContext(DropdownMenuContext);
 
@@ -116,6 +122,8 @@ const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
 
   return (
     <button
+      type="button"
+      {...props}
       onClick={handleClick}
       className={cn(
         "relative flex w-full cursor-pointer select-none items-center rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 ease-in-out hover:bg-gray-100/80 hover:text-gray-900 focus:bg-gray-100/80 focus:text-gray-900 transform active:scale-[0.98]",

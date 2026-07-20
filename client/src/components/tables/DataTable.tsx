@@ -263,6 +263,7 @@ export function DataTable<
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              data-copilot-id={tableId ? `search.${tableId}` : undefined}
               className="pl-10 w-72 shadow-sm"
             />
           </div>
@@ -279,12 +280,25 @@ export function DataTable<
       </div>
 
       <div className="border select-none border-gray-200/60 rounded-xl shadow-sm bg-white/80 backdrop-blur-sm">
-        <table className="w-full select-text rounded-xl">
+        <table
+          className="w-full select-text rounded-xl"
+          data-copilot-table={tableId}
+        >
           <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/60 backdrop-blur-sm rounded-t-xl">
             <tr>
               {columns.map((col, index) => (
                 <th
                   key={String(col.key)}
+                  data-copilot-id={
+                    tableId ? `sort.${tableId}.${String(col.key)}` : undefined
+                  }
+                  aria-sort={
+                    sortKey === String(col.key)
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : undefined
+                  }
                   className={`px-6 py-4 text-left text-sm font-semibold text-gray-800 cursor-pointer select-none hover:bg-gray-100/50 transition-colors duration-150 ${
                     index === 0 ? "rounded-tl-xl" : ""
                   }`}
@@ -319,6 +333,11 @@ export function DataTable<
                     value={columnFilters[String(col.key)] || ""}
                     onChange={(e) =>
                       handleColumnFilterChange(String(col.key), e.target.value)
+                    }
+                    data-copilot-id={
+                      tableId
+                        ? `filter.${tableId}.${String(col.key)}`
+                        : undefined
                     }
                     className="h-8 text-xs !font-normal placeholder:font-normal"
                   />
@@ -356,18 +375,26 @@ export function DataTable<
                     }`}
                   >
                     <DropdownMenu>
-                      <DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        data-copilot-id={
+                          tableId ? `rowactions.${tableId}.${index}` : undefined
+                        }
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         {onViewItem && (
-                          <DropdownMenuItem onClick={() => onViewItem(item.id)}>
+                          <DropdownMenuItem
+                            data-copilot-id="rowmenu.view"
+                            onClick={() => onViewItem(item.id)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
                         )}
                         {onViewRequest && (
                           <DropdownMenuItem
+                            data-copilot-id="rowmenu.view-request"
                             onClick={() => onViewRequest(item.requestId ?? "")}
                           >
                             <Eye className="mr-2 h-4 w-4" />
@@ -376,7 +403,10 @@ export function DataTable<
                         )}
                         <PermissionGate resource={resource} action="update">
                           {onEdit && (
-                            <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                            <DropdownMenuItem
+                              data-copilot-id="rowmenu.edit"
+                              onClick={() => onEdit(item.id)}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
@@ -385,6 +415,7 @@ export function DataTable<
                         <PermissionGate resource={resource} action="create">
                           {onAddPackage && (
                             <DropdownMenuItem
+                              data-copilot-id="rowmenu.add-care-confirmed"
                               onClick={() => onAddPackage(item.id)}
                             >
                               <Plus className="mr-2 h-4 w-4" />
@@ -393,6 +424,7 @@ export function DataTable<
                           )}
                           {onAddRequest && (
                             <DropdownMenuItem
+                              data-copilot-id="rowmenu.add-care-request"
                               onClick={() => onAddRequest(item.id)}
                             >
                               <Plus className="mr-2 h-4 w-4" />
@@ -401,6 +433,7 @@ export function DataTable<
                           )}
                           {onAddInfo && (
                             <DropdownMenuItem
+                              data-copilot-id="rowmenu.add-info"
                               onClick={() => onAddInfo(item.id)}
                             >
                               <Plus className="mr-2 h-4 w-4" />
@@ -409,6 +442,7 @@ export function DataTable<
                           )}
                           {onAddRecord && (
                             <DropdownMenuItem
+                              data-copilot-id="rowmenu.add-training"
                               onClick={() => onAddRecord(item.id)}
                             >
                               <Target className="mr-2 h-4 w-4" />
@@ -418,7 +452,10 @@ export function DataTable<
                         </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onRenew && (
-                            <DropdownMenuItem onClick={() => onRenew(item.id)}>
+                            <DropdownMenuItem
+                              data-copilot-id="rowmenu.renew"
+                              onClick={() => onRenew(item.id)}
+                            >
                               <RefreshCw className="mr-2 h-4 w-4" />
                               Renew
                             </DropdownMenuItem>
@@ -426,7 +463,10 @@ export function DataTable<
                         </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onEnd && (
-                            <DropdownMenuItem onClick={() => onEnd(item)}>
+                            <DropdownMenuItem
+                              data-copilot-id="rowmenu.end"
+                              onClick={() => onEnd(item)}
+                            >
                               {item.endDate === "open" ? (
                                 <CalendarCheck className="mr-2 h-4 w-4" />
                               ) : (
@@ -438,7 +478,10 @@ export function DataTable<
                         </PermissionGate>
                         <PermissionGate resource={resource} action="update">
                           {onCover && (
-                            <DropdownMenuItem onClick={() => onCover(item.id)}>
+                            <DropdownMenuItem
+                              data-copilot-id="rowmenu.cover"
+                              onClick={() => onCover(item.id)}
+                            >
                               <TreePalm className="mr-2 h-4 w-4" />
                               Cover
                             </DropdownMenuItem>

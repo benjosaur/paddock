@@ -21,6 +21,8 @@ import { Input } from "../components/ui/input";
 
 interface OptionListEditorProps {
   title: string;
+  // Stable key used in copilot target ids (option-input.<key> etc.).
+  copilotKey: string;
   addPlaceholder: string;
   list: OptionList;
   protectedValues: readonly string[];
@@ -28,8 +30,15 @@ interface OptionListEditorProps {
   isSaving: boolean;
 }
 
+const optionSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 function OptionListEditor({
   title,
+  copilotKey,
   addPlaceholder,
   list,
   protectedValues,
@@ -96,6 +105,7 @@ function OptionListEditor({
               <Button
                 variant="outline"
                 size="sm"
+                data-copilot-id={`option-toggle.${copilotKey}.${optionSlug(option.value)}`}
                 onClick={() => toggleActive(option.value)}
               >
                 {option.active ? "Archive" : "Restore"}
@@ -114,9 +124,14 @@ function OptionListEditor({
               addOption();
             }
           }}
+          data-copilot-id={`option-input.${copilotKey}`}
           placeholder={addPlaceholder}
         />
-        <Button variant="outline" onClick={addOption}>
+        <Button
+          variant="outline"
+          data-copilot-id={`option-add.${copilotKey}`}
+          onClick={addOption}
+        >
           <Plus className="w-4 h-4 mr-1" />
           Add
         </Button>
@@ -240,13 +255,18 @@ export function SettingsPage() {
       </h1>
       <Tabs defaultValue="options" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="options">Dropdown Options</TabsTrigger>
-          <TabsTrigger value="columns">Table Columns</TabsTrigger>
+          <TabsTrigger value="options" data-copilot-id="tab.options">
+            Dropdown Options
+          </TabsTrigger>
+          <TabsTrigger value="columns" data-copilot-id="tab.columns">
+            Table Columns
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="options" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <OptionListEditor
               title="Services"
+              copilotKey="services"
               addPlaceholder="Add service..."
               list={config.services}
               protectedValues={protectedServiceValues}
@@ -255,6 +275,7 @@ export function SettingsPage() {
             />
             <OptionListEditor
               title="Localities"
+              copilotKey="localities"
               addPlaceholder="Add locality..."
               list={config.localities}
               protectedValues={protectedLocalityValues}

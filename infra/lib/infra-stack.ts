@@ -7,6 +7,7 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as iam from "aws-cdk-lib/aws-iam";
 import { Database } from "./database";
 import { ImageService } from "./images";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
@@ -259,6 +260,9 @@ export class InfraStack extends cdk.Stack {
         TABLE_NAME_MAIN: `WiveyCares2${tableSuffix}`,
         TABLE_NAME_TEST: `Test2${tableSuffix}`,
         ALLOWED_ORIGINS: corsOrigins.join(","),
+        // Copilot model. Keep the eu. prefix — it selects the EU-only geo
+        // inference profile (GDPR data residency).
+        BEDROCK_MODEL_ID: "eu.anthropic.claude-sonnet-4-6",
         // NODE_ENV: "production", doesnt work
       },
     });
@@ -283,6 +287,21 @@ export class InfraStack extends cdk.Stack {
     deprivationTable.grantReadWriteData(trpcLambda);
     mainDatabase.table.grantReadWriteData(trpcLambda);
     testDatabase.table.grantReadWriteData(trpcLambda);
+
+    // Copilot inference. Deliberately EU-scoped (GDPR): only eu.* inference
+    // profiles and EU-region foundation models are allowed, so a misconfigured
+    // model id fails with AccessDenied instead of routing outside the EU.
+    // Cross-region inference needs both the profile (source region) and the
+    // destination-region foundation models.
+    trpcLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["bedrock:InvokeModel"],
+        resources: [
+          `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/eu.anthropic.*`,
+          "arn:aws:bedrock:eu-*::foundation-model/*",
+        ],
+      }),
+    );
 
     const api = new apigateway.RestApi(this, "TrpcApi", {
       restApiName: "TRPC API",

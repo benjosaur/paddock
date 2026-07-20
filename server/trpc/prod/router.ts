@@ -9,6 +9,7 @@ import { requestsRouter } from "../routers/requests";
 import { trainingRecordsRouter } from "../routers/trainingRecords";
 import { analyticsRouter } from "../routers/analytics";
 import { configRouter } from "../routers/config";
+import { copilotRouter } from "../routers/copilot";
 
 export const prodAppRouter = router({
   mps: mpsRouter,
@@ -21,6 +22,7 @@ export const prodAppRouter = router({
   trainingRecords: trainingRecordsRouter,
   analytics: analyticsRouter,
   config: configRouter,
+  copilot: copilotRouter,
 });
 
 export type AppRouter = typeof prodAppRouter;
