@@ -4,6 +4,7 @@ import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { VolunteerForm } from "../pages/VolunteerForm";
 import { VolunteerDetailModal } from "../components/modals/VolunteerDetailModal";
+import { AttachmentsDialog } from "../components/Attachments";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { VolunteerMetadata, TableColumn } from "../types";
@@ -58,6 +59,9 @@ export function VolunteersRoutes() {
     null,
   );
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+  const [attachmentsOwnerId, setAttachmentsOwnerId] = useState<string | null>(
+    null,
+  );
   const [showEnded, setShowEnded] = useState(false);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
@@ -187,6 +191,7 @@ export function VolunteersRoutes() {
               onAddRecord={handleAddRecord}
               onEnd={handleEnd}
               onViewItem={handleViewVolunteer}
+              onAttachments={setAttachmentsOwnerId}
               onCreate={handleAddNew}
               resource="volunteers"
               customActions={
@@ -199,6 +204,11 @@ export function VolunteersRoutes() {
                   {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
+            />
+            <AttachmentsDialog
+              ownerId={attachmentsOwnerId}
+              resource="volunteers"
+              onClose={() => setAttachmentsOwnerId(null)}
             />
             {selectedVolunteerId && (
               <VolunteerDetailModal

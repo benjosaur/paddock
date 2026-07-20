@@ -26,7 +26,9 @@ export const queryClient = new QueryClient({
   },
 });
 
-const trpcClient = createTRPCClient<AppRouter>({
+// Exported for imperative calls outside react-query (e.g. multi-step upload
+// flows composed into a single useMutation).
+export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url:

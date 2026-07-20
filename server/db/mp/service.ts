@@ -17,6 +17,7 @@ import { TrainingRecordRepository } from "../training/repository";
 import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
+import { AttachmentService } from "../attachment/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { coreTrainingRecordTypes } from "shared/const";
@@ -29,6 +30,7 @@ export class MpService {
   requestService = new RequestService();
   trainingRecordService = new TrainingRecordService();
   trainingRecordRepository = new TrainingRecordRepository();
+  attachmentService = new AttachmentService();
 
   // archived concept removed; use getAll and filter by endDate where needed
 
@@ -222,7 +224,10 @@ export class MpService {
         user
       );
       const initialMpRecords = await this.mpRepository.getById(id, user);
-      const updatedMpRecords = initialMpRecords.map((record) => {
+      const updatedMpRecords = initialMpRecords
+        // attachments carry no duplicated mp name
+        .filter((record) => !record.sK.startsWith("att"))
+        .map((record) => {
         if (record.sK.startsWith("mp#")) {
           return updatedMpEntity;
         } else {
@@ -244,6 +249,9 @@ export class MpService {
 
   async delete(user: User, mpId: string): Promise<number[]> {
     try {
+      // remove attachment S3 objects first; the row sweep below would
+      // otherwise orphan them (their keys only live on the att# rows)
+      await this.attachmentService.purgeForOwner(mpId, user);
       const deletedCount = await this.mpRepository.delete(mpId, user);
       return deletedCount;
     } catch (error) {
@@ -298,6 +306,9 @@ export class MpService {
         });
         continue;
       } else if (item.sK.startsWith("mag")) {
+        continue;
+      } else if (item.sK.startsWith("att")) {
+        // attachments are fetched separately via the attachments router
         continue;
       } else throw new Error(`Undefined Case: ${item}`);
     }

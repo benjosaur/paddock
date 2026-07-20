@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { mpMetadataSchema } from "shared";
+import { dbAttachmentEntity } from "../attachment/schema";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
 import { dbMagLogMp } from "../mag/schema";
@@ -19,7 +20,12 @@ export const dbMpEntity = dbEntrySchema
 
 export const dbMpMetadata = z.union([dbMpEntity, dbTrainingRecord]);
 
-export const dbMpFull = z.union([dbMpMetadata, dbPackage, dbMagLogMp]);
+export const dbMpFull = z.union([
+  dbMpMetadata,
+  dbPackage,
+  dbMagLogMp,
+  dbAttachmentEntity,
+]);
 
 export type DbMpMetadata = z.infer<typeof dbMpMetadata>;
 export type DbMpEntity = z.infer<typeof dbMpEntity>;

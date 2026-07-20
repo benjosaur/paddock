@@ -1,3 +1,4 @@
+import { AttachmentService } from "./attachment/service";
 import { ClientService } from "./client/service";
 import { ConfigService } from "./config/service";
 import { HubGrubLogService } from "./hubGrub/service";
@@ -24,6 +25,7 @@ export function addDbMiddleware<T>(
 
 export function createServices() {
   return {
+    attachment: new AttachmentService(),
     client: new ClientService(),
     config: new ConfigService(),
     hubGrubLog: new HubGrubLogService(),

@@ -1,9 +1,11 @@
 import { z } from "zod";
 import {
+  allowedAttachmentTypes,
   attendanceAllowanceLevels,
   attendanceAllowanceStatuses,
   endReasons,
   localities,
+  maxAttachmentBytes,
   notesSource,
   requestStatus,
   requestTypes,
@@ -25,6 +27,19 @@ export const trainingRecordSchema = z.object({
     recordName: z.enum(trainingRecordTypes),
     recordNumber: z.string().default(""),
     notes: z.string().default(""),
+  }),
+});
+
+// Image/PDF attached to an entity (client, MP or volunteer); ownerId is the
+// owning entity's id. Storage details (S3 key, presigned URLs) stay server-side.
+export const attachmentSchema = z.object({
+  id: z.string(),
+  ownerId: z.string(),
+  updatedAt: z.string().datetime(),
+  details: z.object({
+    fileName: z.string().min(1),
+    contentType: z.enum(allowedAttachmentTypes),
+    size: z.coerce.number().int().positive().max(maxAttachmentBytes),
   }),
 });
 
@@ -428,6 +443,7 @@ export type HubGrubLog = z.infer<typeof hubGrubLogSchema>;
 export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
 export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
+export type Attachment = z.infer<typeof attachmentSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type AttendanceAllowanceCrossSection = z.infer<
   typeof attendanceAllowanceCrossSectionSchema

@@ -4,6 +4,7 @@ import { DataTable } from "../components/tables/DataTable";
 import { Button } from "../components/ui/button";
 import { MpForm } from "../pages/MpForm";
 import { MpDetailModal } from "../components/modals/MpDetailModal";
+import { AttachmentsDialog } from "../components/Attachments";
 import { trpc } from "../utils/trpc";
 import { formatYmdToDmy } from "@/utils/date";
 import type { MpMetadata, TableColumn } from "../types";
@@ -62,6 +63,9 @@ export function MpsRoutes() {
   const navigate = useNavigate();
   const [selectedMpId, setSelectedMpId] = useState<string | null>(null);
   const [isMpModalOpen, setIsMpModalOpen] = useState(false);
+  const [attachmentsOwnerId, setAttachmentsOwnerId] = useState<string | null>(
+    null,
+  );
   const [showEnded, setShowEnded] = useState(false);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
@@ -184,6 +188,7 @@ export function MpsRoutes() {
               onAddRecord={handleAddRecord}
               onEnd={handleEnd}
               onViewItem={handleViewMp}
+              onAttachments={setAttachmentsOwnerId}
               onCreate={handleAddNew}
               resource="mps"
               customActions={
@@ -196,6 +201,11 @@ export function MpsRoutes() {
                   {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
+            />
+            <AttachmentsDialog
+              ownerId={attachmentsOwnerId}
+              resource="mps"
+              onClose={() => setAttachmentsOwnerId(null)}
             />
             {selectedMpId && (
               <MpDetailModal

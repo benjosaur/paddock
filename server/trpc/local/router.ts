@@ -1,4 +1,5 @@
 import { localRouter } from "./trpc";
+import { attachmentsRouter } from "../routers/attachments";
 import { mpsRouter } from "../routers/mps";
 import { volunteersRouter } from "../routers/volunteers";
 import { clientsRouter } from "../routers/clients";
@@ -12,6 +13,7 @@ import { configRouter } from "../routers/config";
 import { copilotRouter } from "../routers/copilot";
 
 export const localAppRouter = localRouter({
+  attachments: attachmentsRouter,
   mps: mpsRouter,
   volunteers: volunteersRouter,
   clients: clientsRouter,

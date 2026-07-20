@@ -8,6 +8,8 @@ import {
 } from "shared";
 import { ClientRepository } from "./repository";
 import { DbClientEntity } from "./schema";
+import { AttachmentService } from "../attachment/service";
+import { DbAttachmentEntity } from "../attachment/schema";
 import { PackageService } from "../package/service";
 import { MagLogService } from "../mag/service";
 import { RequestService } from "../requests/service";
@@ -33,6 +35,7 @@ export class ClientService {
   requestRepository = new RequestRepository();
   deprivationService = new DeprivationService();
   volunteerService = new VolunteerService();
+  attachmentService = new AttachmentService();
 
   // Archived concept removed in favor of end dates. Use getAll and filter by endDate where needed.
 
@@ -379,9 +382,14 @@ export class ClientService {
         user
       );
 
-      //filter out mags and hub & grub (these dont contain customId)
+      //filter out mags, hub & grub and attachments (these dont contain customId)
       const updatedClientRecords = initialClientRecords
-        .filter((record) => !record.sK.startsWith("mag") && !record.sK.startsWith("hg"))
+        .filter(
+          (record) =>
+            !record.sK.startsWith("mag") &&
+            !record.sK.startsWith("hg") &&
+            !record.sK.startsWith("att")
+        )
         .map((record) => {
           if (record.sK.startsWith("c#")) {
             return updatedClientEntity;
@@ -427,19 +435,22 @@ export class ClientService {
         id,
         user
       );
-      const updatedClientRecords = initialClientRecords.map((record) => {
-        if (record.sK.startsWith("c#")) {
-          return updatedClientEntity;
-        }
+      const updatedClientRecords = initialClientRecords
+        // attachments carry no duplicated client name
+        .filter((record) => !record.sK.startsWith("att"))
+        .map((record) => {
+          if (record.sK.startsWith("c#")) {
+            return updatedClientEntity;
+          }
 
-        return addDbMiddleware(
-          {
-            ...record,
-            details: { ...record.details, name: newName },
-          },
-          user
-        );
-      });
+          return addDbMiddleware(
+            {
+              ...record,
+              details: { ...record.details, name: newName },
+            },
+            user
+          );
+        });
       await genericUpdate(updatedClientRecords, user);
     } catch (error) {
       console.error("Service Layer Error updating Client Name:", error);
@@ -449,6 +460,9 @@ export class ClientService {
 
   async delete(user: User, clientId: string): Promise<number[]> {
     try {
+      // remove attachment S3 objects first; the row sweep below would
+      // otherwise orphan them (their keys only live on the att# rows)
+      await this.attachmentService.purgeForOwner(clientId, user);
       const deletedCount = await this.clientRepository.delete(clientId, user);
       return deletedCount;
     } catch (error) {
@@ -499,7 +513,13 @@ export class ClientService {
   }
 
   private transformDbClientToSharedMetaData(
-    items: (DbClientEntity | DbRequestEntity | DbMagLogClient | DbHubGrubLogClient)[]
+    items: (
+      | DbClientEntity
+      | DbRequestEntity
+      | DbMagLogClient
+      | DbHubGrubLogClient
+      | DbAttachmentEntity
+    )[]
   ): ClientMetadata[] {
     // for creating full clients handle fetching + adding full logs separately after transform
     const clientsMap = new Map<string, Partial<ClientMetadata>>();
@@ -535,6 +555,9 @@ export class ClientService {
       } else if (item.sK.startsWith("mag")) {
         continue;
       } else if (item.sK.startsWith("hg")) {
+        continue;
+      } else if (item.sK.startsWith("att")) {
+        // image attachments are fetched separately via the attachments router
         continue;
       } else throw new Error(`Undefined Case: ${item}`);
     }

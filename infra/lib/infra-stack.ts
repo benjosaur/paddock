@@ -9,12 +9,11 @@ import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Database } from "./database";
-import { ImageService } from "./images";
+import { ImagesBucket } from "./images";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 
 interface MainStackProps extends cdk.StackProps {
   stage: "prod" | "staging";
-  // edgeFunctionVersion: lambda.IVersion;
 }
 
 export class InfraStack extends cdk.Stack {
@@ -247,6 +246,16 @@ export class InfraStack extends cdk.Stack {
       },
     );
 
+    // Client image attachments. Staging's bucket also allows localhost origins
+    // so local dev servers can exercise uploads against it (see server/.env.example).
+    const imagesBucket = new ImagesBucket(this, "ImagesBucket", {
+      bucketName: `paddock-images${nameSuffix}-${this.account}-${this.region}`,
+      corsOrigins: isProd
+        ? corsOrigins
+        : [...corsOrigins, "http://localhost:5173", "http://localhost:5174"],
+      isProd,
+    });
+
     //backend
     const trpcLambda = new lambda.Function(this, "TrpcApiFunction", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -263,9 +272,14 @@ export class InfraStack extends cdk.Stack {
         // Copilot model. Keep the eu. prefix — it selects the EU-only geo
         // inference profile (GDPR data residency).
         BEDROCK_MODEL_ID: "eu.anthropic.claude-sonnet-4-6",
+        IMAGES_BUCKET: imagesBucket.bucket.bucketName,
         // NODE_ENV: "production", doesnt work
       },
     });
+
+    imagesBucket.bucket.grantPut(trpcLambda);
+    imagesBucket.bucket.grantRead(trpcLambda);
+    imagesBucket.bucket.grantDelete(trpcLambda);
 
     //databases
     const mainDatabase = new Database(this, "WiveyCaresTable2", {
@@ -322,29 +336,9 @@ export class InfraStack extends cdk.Stack {
       anyMethod: true,
     });
 
-    // Image Upload Service
-    // const imageService = new ImageService(this, "ImageService", {
-    //   account: this.account,
-    //   region: this.region,
-    //   domains: [`https://${domainName}`, `https://${subdomainName}`],
-    //   s3CorsRule,
-    //   ALLOWED_GROUPS: ["Admin", "Coordinator"],
-    //   edgeFunctionVersion: props.edgeFunctionVersion,
-    // });
-
     // FE deployment
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
-      sources: [
-        s3deploy.Source.asset("../client/dist"),
-        // below is doesnt work
-        // s3deploy.Source.data(
-        //   "config.json",
-        //   JSON.stringify({
-        //     apiUrl: api.url,
-        //     imageApiUrl: imageService.api.url,
-        //   })
-        // ),
-      ],
+      sources: [s3deploy.Source.asset("../client/dist")],
       destinationBucket: s3Bucket,
       distribution,
       distributionPaths: ["/*"],
@@ -379,14 +373,9 @@ export class InfraStack extends cdk.Stack {
       });
     }
 
-    // new cdk.CfnOutput(this, "ImageApiUrl", {
-    //   value: imageService.api.url,
-    //   description: "Image Upload API URL",
-    // });
-
-    // new cdk.CfnOutput(this, "ImageCdnUrl", {
-    //   value: imageService.distribution.distributionDomainName,
-    //   description: "Image CDN URL",
-    // });
+    new cdk.CfnOutput(this, "ImagesBucketName", {
+      value: imagesBucket.bucket.bucketName,
+      description: "S3 bucket for client image attachments",
+    });
   }
 }
