@@ -15,6 +15,7 @@ import {
   Eye,
   Plus,
   FolderOpen,
+  Paperclip,
   RefreshCw,
   Target,
   TreePalm,
@@ -57,6 +58,7 @@ interface DataTableProps<T> {
   searchPlaceholder: string;
   onViewItem?: (id: string) => void;
   onViewRequest?: (requestId: string) => void;
+  onAttachments?: (id: string) => void;
   onCreate?: () => void;
   resource: AppRouterKeys;
   customActions?: React.ReactNode;
@@ -86,6 +88,7 @@ export function DataTable<
   onEnd,
   onViewItem,
   onViewRequest,
+  onAttachments,
   onCreate,
   title,
   searchPlaceholder,
@@ -243,6 +246,7 @@ export function DataTable<
     onEnd ||
     onViewItem ||
     onViewRequest ||
+    onAttachments ||
     onCreate;
 
   return (
@@ -399,6 +403,14 @@ export function DataTable<
                           >
                             <Eye className="mr-2 h-4 w-4" />
                             Care Request
+                          </DropdownMenuItem>
+                        )}
+                        {onAttachments && (
+                          <DropdownMenuItem
+                            onClick={() => onAttachments(item.id)}
+                          >
+                            <Paperclip className="mr-2 h-4 w-4" />
+                            Attachments
                           </DropdownMenuItem>
                         )}
                         <PermissionGate resource={resource} action="update">

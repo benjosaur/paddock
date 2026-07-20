@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "../ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Attachments } from "../Attachments";
 import { trpc } from "../../utils/trpc";
 import { Note, NotesEditor } from "../NotesEditor";
 import { PermissionGate } from "../PermissionGate";
@@ -158,6 +159,7 @@ export function MpDetailModal({
               <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Care Confirmed</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -252,6 +254,13 @@ export function MpDetailModal({
                 notes={currentNotes}
                 onChange={setCurrentNotes}
               />
+            </TabsContent>
+
+            <TabsContent
+              value="attachments"
+              className="p-4 border rounded-lg bg-white/80"
+            >
+              <Attachments ownerId={mp.id} resource="mps" layout="grid" />
             </TabsContent>
           </Tabs>
         </div>

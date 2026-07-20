@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
+import { Paperclip } from "lucide-react";
+import { AttachmentsDialog } from "../components/Attachments";
 import { Input } from "../components/ui/input";
 import { trpc } from "../utils/trpc";
 import { ClientFull, clientFullSchema, VolunteerMetadata } from "../types";
@@ -52,6 +54,7 @@ export function ClientForm() {
   const navigate = useNavigate();
   const id = useParams<{ id: string }>().id || "";
   const isEditing = Boolean(id);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const config = useConfig();
 
   const [formData, setFormData] = useState<Omit<ClientFull, "id">>({
@@ -387,7 +390,20 @@ export function ClientForm() {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           {isEditing ? "Edit Client" : "Create New Client"}
         </h1>
+        {isEditing && (
+          <Button variant="outline" onClick={() => setAttachmentsOpen(true)}>
+            <Paperclip className="mr-2 h-4 w-4" />
+            Attachments
+          </Button>
+        )}
       </div>
+      {isEditing && (
+        <AttachmentsDialog
+          ownerId={attachmentsOpen ? id : null}
+          resource="clients"
+          onClose={() => setAttachmentsOpen(false)}
+        />
+      )}
 
       <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-6">

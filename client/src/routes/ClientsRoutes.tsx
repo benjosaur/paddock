@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { ClientForm } from "../pages/ClientForm";
 import { InfoForm } from "../pages/InfoForm";
 import { ClientDetailModal } from "../components/modals/ClientDetailModal";
+import { AttachmentsDialog } from "../components/Attachments";
 import { trpc } from "../utils/trpc";
 import type { ClientMetadata, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,6 +94,9 @@ export default function ClientsRoutes() {
   const navigate = useNavigate();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [attachmentsOwnerId, setAttachmentsOwnerId] = useState<string | null>(
+    null,
+  );
   const [showEnded, setShowEnded] = useState(false);
   const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
   const [endDetails, setEndDetails] = useState<EndPersonDetails | null>(null);
@@ -233,6 +237,7 @@ export default function ClientsRoutes() {
               onAddInfo={handleAddInfo}
               onEnd={handleEnd}
               onViewItem={handleViewClient}
+              onAttachments={setAttachmentsOwnerId}
               onCreate={handleAddNew}
               resource="clients"
               customActions={
@@ -245,6 +250,11 @@ export default function ClientsRoutes() {
                   {showEnded ? "Hide Ended" : "Show Ended"}
                 </Button>
               }
+            />
+            <AttachmentsDialog
+              ownerId={attachmentsOwnerId}
+              resource="clients"
+              onClose={() => setAttachmentsOwnerId(null)}
             />
             {selectedClientId && (
               <ClientDetailModal
