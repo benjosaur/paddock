@@ -45,6 +45,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           <Link
             key={item.key}
             to={item.path}
+            data-copilot-id={`nav.${item.key}`}
             className={`block w-full select-none text-left px-3 py-2.5 text-sm rounded-md transition-colors duration-150 ease-in-out ${
               location.pathname === item.path
                 ? "bg-gray-200/70 text-gray-900 font-medium"

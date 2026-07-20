@@ -263,6 +263,7 @@ export function DataTable<
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              data-copilot-id={tableId ? `search.${tableId}` : undefined}
               className="pl-10 w-72 shadow-sm"
             />
           </div>
@@ -285,6 +286,16 @@ export function DataTable<
               {columns.map((col, index) => (
                 <th
                   key={String(col.key)}
+                  data-copilot-id={
+                    tableId ? `sort.${tableId}.${String(col.key)}` : undefined
+                  }
+                  aria-sort={
+                    sortKey === String(col.key)
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : undefined
+                  }
                   className={`px-6 py-4 text-left text-sm font-semibold text-gray-800 cursor-pointer select-none hover:bg-gray-100/50 transition-colors duration-150 ${
                     index === 0 ? "rounded-tl-xl" : ""
                   }`}
