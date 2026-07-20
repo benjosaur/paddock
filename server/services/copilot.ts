@@ -13,7 +13,8 @@ import {
 // exists on the classic bedrock-runtime endpoint (hence AnthropicBedrock, not
 // the newer Mantle client). The IAM policy is scoped to eu.* profiles, so a
 // non-EU model id here fails with AccessDenied rather than leaving the EU.
-const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? "eu.anthropic.claude-opus-4-8";
+const MODEL_ID =
+  process.env.BEDROCK_MODEL_ID ?? "eu.anthropic.claude-sonnet-4-6";
 
 const bedrock = new AnthropicBedrock({
   awsRegion: process.env.BEDROCK_REGION ?? process.env.AWS_REGION ?? "eu-west-2",

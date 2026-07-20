@@ -262,7 +262,7 @@ export class InfraStack extends cdk.Stack {
         ALLOWED_ORIGINS: corsOrigins.join(","),
         // Copilot model. Keep the eu. prefix — it selects the EU-only geo
         // inference profile (GDPR data residency).
-        BEDROCK_MODEL_ID: "eu.anthropic.claude-opus-4-8",
+        BEDROCK_MODEL_ID: "eu.anthropic.claude-sonnet-4-6",
         // NODE_ENV: "production", doesnt work
       },
     });
