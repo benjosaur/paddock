@@ -13,6 +13,23 @@ const SETTLE_MS = 400;
 const TARGET_TIMEOUT_MS = 4000;
 const TARGET_ID_PATTERN = /^[\w.-]+$/;
 
+// The complete grammar of instrumented target families. Anything outside it
+// is refused, so a data-copilot-id added to an unclassified control (e.g. a
+// future commit button) stays unreachable until deliberately listed here.
+const KNOWN_TARGET_PREFIXES = [
+  "nav.",
+  "tab.",
+  "sort.",
+  "search.",
+  "filter.",
+  "field.",
+  "rowactions.",
+  "rowmenu.",
+  "option-input.",
+  "option-add.",
+  "option-toggle.",
+];
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // The same target id can exist twice (e.g. nav links in the hidden mobile
@@ -146,9 +163,11 @@ export function notExecutedResult(
   return report(toolUse, null, { error: reason });
 }
 
-// HITL guard: committing buttons (form Save/Submit and dialog confirms) are
-// never instrumented, so they normally can't be targeted at all — this is
-// the backstop in case one ever ends up resolvable.
+// HITL backstop: committing buttons are protected by never being
+// instrumented and by the target-family allowlist; this additionally blocks
+// form submit buttons in case one ever becomes resolvable anyway. Note it
+// does NOT recognise plain-onClick commit buttons (dialog confirms, the
+// Settings Save) — those rely on the first two layers.
 function isCommitButton(el: HTMLElement): boolean {
   const button = el.closest("button");
   return !!button && button.type === "submit" && !!button.form;
@@ -213,6 +232,11 @@ export async function executeToolUse(
   if (!TARGET_ID_PATTERN.test(targetId)) {
     return report(toolUse, null, { error: "Invalid or missing target_id." });
   }
+  if (!KNOWN_TARGET_PREFIXES.some((prefix) => targetId.startsWith(prefix))) {
+    return report(toolUse, null, {
+      error: `Target "${targetId}" is not in a known target family.`,
+    });
+  }
 
   const isField = targetId.startsWith("field.");
   const field = isField ? await waitForField(targetId) : null;
@@ -240,8 +264,14 @@ export async function executeToolUse(
   }
 
   if (toolUse.name === "ui_type") {
-    const text =
-      typeof toolUse.input.text === "string" ? toolUse.input.text : "";
+    if (typeof toolUse.input.text !== "string") {
+      // Never default to "" — that is the documented clear semantics, and a
+      // malformed call must not silently wipe an input.
+      return report(toolUse, before, {
+        error: 'ui_type requires a "text" string (use "" to clear).',
+      });
+    }
+    const text = toolUse.input.text;
     if (field) {
       return typeIntoField(toolUse, field, text, cursor, before);
     }
