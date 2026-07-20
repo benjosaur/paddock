@@ -7,7 +7,9 @@ export function Toaster() {
   const capturing = useToastCapturing();
 
   // While the copilot drives the UI, divert toasts into its capture buffer
-  // (they resurface as tool-result feedback) before the browser paints them.
+  // (they resurface as tool-result feedback), removing them before the
+  // browser paints. HotToaster stays mounted so toasts that predate the run
+  // keep displaying and expiring on their own timers.
   useLayoutEffect(() => {
     if (!capturing) return;
     for (const t of toasts) {
@@ -15,7 +17,6 @@ export function Toaster() {
     }
   }, [capturing, toasts]);
 
-  if (capturing) return null;
   return (
     <HotToaster
       position="top-center"

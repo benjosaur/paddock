@@ -95,17 +95,18 @@ export function useCopilot(
     setBusy(true);
     abortRef.current = false;
     push("user", trimmedText);
-    // No toast popups while the copilot works: toasts are captured into the
-    // tool results as app feedback instead of appearing over the screen.
-    startToastCapture();
 
-    const catalog = buildCatalog(role, config);
     const wire: CopilotMessage[] = [
       ...wireRef.current,
       { role: "user", content: [{ type: "text", text: trimmedText }] },
     ];
 
     try {
+      // No toast popups while the copilot works: toasts are captured into
+      // the tool results as app feedback instead of appearing over the
+      // screen. Inside the try so the finally always undoes it.
+      startToastCapture();
+      const catalog = buildCatalog(role, config);
       for (let turn = 0; turn < RUNAWAY_TURN_LIMIT; turn++) {
         if (abortRef.current) break;
         setStatus("Thinking…");
@@ -176,6 +177,9 @@ export function useCopilot(
 
   const stop = () => {
     abortRef.current = true;
+    // Don't wait for an in-flight request to settle before giving toasts
+    // back to the user; the finally's stopToastCapture is a no-op by then.
+    stopToastCapture();
   };
 
   return { entries, busy, status, send, stop };
