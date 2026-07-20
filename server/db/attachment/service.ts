@@ -19,7 +19,13 @@ const VIEW_URL_TTL_SECONDS = 3600; // outlives the client's 5 min query staleTim
 
 // Region/credentials come from the environment: the Lambda role in prod, the
 // developer's AWS profile locally (see server/.env.example).
-const s3 = new S3Client({});
+// WHEN_REQUIRED stops the SDK (>=3.729) signing a CRC32 of the empty body
+// into presigned PUT urls, which would make every real browser upload fail
+// S3's checksum validation.
+const s3 = new S3Client({
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
+});
 
 const getImagesBucket = (): string => {
   const bucket = process.env.IMAGES_BUCKET;
