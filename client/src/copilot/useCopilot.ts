@@ -19,25 +19,37 @@ export interface CopilotEntry {
   text: string;
 }
 
-// Model-call ceiling per user request; the model usually needs 2-3.
-const MAX_TURNS = 6;
-// Keep the replayed conversation under the server's 40-message cap.
+// Not a product limit — a runaway backstop so a pathological model loop
+// can't burn tokens unattended. The stop button is the real control.
+const RUNAWAY_TURN_LIMIT = 50;
+// Target size for replayed history (the active request is never trimmed).
 const MAX_WIRE_MESSAGES = 30;
 
-// Drop oldest turns while keeping the head a plain user text message, so
-// tool_use blocks never lose their paired tool_result.
+function isUserTextMessage(message: CopilotMessage): boolean {
+  return message.role === "user" && message.content[0]?.type === "text";
+}
+
+// Drop oldest turns, keeping two invariants: the head stays a plain user
+// text message (so tool_use blocks never lose their paired tool_result) and
+// everything from the ACTIVE request's user message onward is untouchable —
+// a long action chain must not trim away its own goal mid-loop.
 function trimWire(messages: CopilotMessage[]): CopilotMessage[] {
-  const trimmed = [...messages];
-  while (trimmed.length > MAX_WIRE_MESSAGES) {
-    trimmed.shift();
-    while (
-      trimmed.length &&
-      !(trimmed[0].role === "user" && trimmed[0].content[0]?.type === "text")
-    ) {
-      trimmed.shift();
+  let activeStart = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (isUserTextMessage(messages[i])) {
+      activeStart = i;
+      break;
     }
   }
-  return trimmed;
+  let history = messages.slice(0, activeStart);
+  const active = messages.slice(activeStart);
+  while (history.length + active.length > MAX_WIRE_MESSAGES && history.length) {
+    history = history.slice(1);
+    while (history.length && !isUserTextMessage(history[0])) {
+      history = history.slice(1);
+    }
+  }
+  return [...history, ...active];
 }
 
 function describeAction(
@@ -90,7 +102,7 @@ export function useCopilot(
     ];
 
     try {
-      for (let turn = 0; turn < MAX_TURNS; turn++) {
+      for (let turn = 0; turn < RUNAWAY_TURN_LIMIT; turn++) {
         if (abortRef.current) break;
         setStatus("Thinking…");
         const response = await chat.mutateAsync({
@@ -140,8 +152,8 @@ export function useCopilot(
         // valid, even when stopping early.
         wire.push({ role: "user", content: results });
         if (abortRef.current) break;
-        if (turn === MAX_TURNS - 1) {
-          push("error", "Stopped: reached the copilot's step limit for one request.");
+        if (turn === RUNAWAY_TURN_LIMIT - 1) {
+          push("error", "Stopped a runaway action loop — try rephrasing the request.");
         }
       }
     } catch (error) {

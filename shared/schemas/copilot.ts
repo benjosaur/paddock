@@ -89,7 +89,7 @@ export const copilotSnapshotSchema = z.object({
 });
 
 export const copilotChatInputSchema = z.object({
-  messages: z.array(copilotMessageSchema).min(1).max(40),
+  messages: z.array(copilotMessageSchema).min(1).max(120),
   catalog: copilotCatalogSchema,
   snapshot: copilotSnapshotSchema,
 });
