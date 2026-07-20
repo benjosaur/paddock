@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { volunteerMetadataSchema } from "shared";
+import { dbAttachmentEntity } from "../attachment/schema";
 import { dbTrainingRecord } from "../training/schema";
 import { dbPackage } from "../package/schema";
 import { dbMagLogVolunteer } from "../mag/schema";
@@ -28,6 +29,7 @@ export const dbVolunteerFull = z.union([
   dbPackage,
   dbMagLogVolunteer,
   dbHubGrubLogVolunteer,
+  dbAttachmentEntity,
 ]);
 
 export type DbVolunteerMetadata = z.infer<typeof dbVolunteerMetadata>;

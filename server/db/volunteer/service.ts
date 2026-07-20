@@ -20,6 +20,7 @@ import { DbReqPackage, DbSolePackage } from "../package/schema";
 import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
+import { AttachmentService } from "../attachment/service";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
@@ -33,6 +34,7 @@ export class VolunteerService {
   trainingRecordService = new TrainingRecordService();
   packageRepository = new PackageRepository();
   trainingRecordRepository = new TrainingRecordRepository();
+  attachmentService = new AttachmentService();
 
   async getAll(user: User): Promise<VolunteerMetadata[]> {
     try {
@@ -302,7 +304,10 @@ export class VolunteerService {
         id,
         user
       );
-      const updatedVolunteerRecords = initialVolunteerRecords.map((record) => {
+      const updatedVolunteerRecords = initialVolunteerRecords
+        // attachments carry no duplicated volunteer name
+        .filter((record) => !record.sK.startsWith("att"))
+        .map((record) => {
         if (record.sK.startsWith("v#")) {
           return updatedVolunteerEntity;
         } else {
@@ -324,6 +329,9 @@ export class VolunteerService {
 
   async delete(user: User, volunteerId: string): Promise<number[]> {
     try {
+      // remove attachment S3 objects first; the row sweep below would
+      // otherwise orphan them (their keys only live on the att# rows)
+      await this.attachmentService.purgeForOwner(volunteerId, user);
       const deletedCount = await this.volunteerRepository.delete(
         volunteerId,
         user
@@ -396,6 +404,9 @@ export class VolunteerService {
       } else if (item.sK.startsWith("mag")) {
         continue;
       } else if (item.sK.startsWith("hg")) {
+        continue;
+      } else if (item.sK.startsWith("att")) {
+        // attachments are fetched separately via the attachments router
         continue;
       } else {
         console.dir(item, { depth: null });
