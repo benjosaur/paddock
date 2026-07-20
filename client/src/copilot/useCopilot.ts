@@ -22,6 +22,9 @@ export interface CopilotEntry {
 
 // Not a product limit — a runaway backstop so a pathological model loop
 // can't burn tokens unattended. The stop button is the real control.
+// Invariant: 1 + 2 * RUNAWAY_TURN_LIMIT must stay under the server's
+// copilotChatInputSchema messages cap (120), or maximal runs die on
+// input validation.
 const RUNAWAY_TURN_LIMIT = 50;
 // Target size for replayed history (the active request is never trimmed).
 const MAX_WIRE_MESSAGES = 30;

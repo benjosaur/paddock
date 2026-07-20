@@ -40,9 +40,18 @@ export const copilotContentBlockSchema = z.discriminatedUnion("type", [
   copilotToolResultBlockSchema,
 ]);
 
+// Hard cap on blocks per message. The service clamps model output to this
+// before returning it, because the client replays every returned message
+// back through this schema — an oversized message would otherwise fail
+// validation on all subsequent requests.
+export const COPILOT_MAX_CONTENT_BLOCKS = 24;
+
 export const copilotMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.array(copilotContentBlockSchema).min(1).max(24),
+  content: z
+    .array(copilotContentBlockSchema)
+    .min(1)
+    .max(COPILOT_MAX_CONTENT_BLOCKS),
 });
 
 // Catalog: everything the model may target, built client-side per request so
@@ -113,6 +122,8 @@ export const copilotSnapshotSchema = z.object({
 });
 
 export const copilotChatInputSchema = z.object({
+  // A maximal run sends 1 + 2 * RUNAWAY_TURN_LIMIT messages (useCopilot.ts);
+  // keep this cap above that or long runs die on input validation.
   messages: z.array(copilotMessageSchema).min(1).max(120),
   catalog: copilotCatalogSchema,
   snapshot: copilotSnapshotSchema,

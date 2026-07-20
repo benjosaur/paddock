@@ -1,6 +1,7 @@
 import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 
 import {
+  COPILOT_MAX_CONTENT_BLOCKS,
   copilotChatOutputSchema,
   type CopilotCatalog,
   type CopilotChatInput,
@@ -124,8 +125,17 @@ export class CopilotService {
         },
       );
 
+      // The client replays this message verbatim through
+      // copilotMessageSchema (min 1, max COPILOT_MAX_CONTENT_BLOCKS), so an
+      // unclamped turn would poison the conversation and fail every
+      // subsequent request. Dropped tool_use blocks are simply never
+      // executed; the model re-issues them on the next turn if still needed.
+      if (content.length === 0) {
+        content.push({ type: "text", text: "(no response)" });
+      }
+
       return copilotChatOutputSchema.parse({
-        content,
+        content: content.slice(0, COPILOT_MAX_CONTENT_BLOCKS),
         stopReason: response.stop_reason ?? null,
       });
     } catch (error) {
