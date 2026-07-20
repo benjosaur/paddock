@@ -27,6 +27,7 @@ import { StagingBanner } from "./components/StagingBanner";
 import { Dashboard } from "./pages/Dashboard";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PermissionGate } from "./components/PermissionGate";
+import { CopilotDock } from "./copilot/CopilotDock";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -107,6 +108,7 @@ function AppContent() {
             </ErrorBoundary>
           </main>
         </div>
+        <CopilotDock user={user} />
       </Router>
     </QueryClientProvider>
   );
