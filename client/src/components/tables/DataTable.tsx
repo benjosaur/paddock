@@ -334,6 +334,11 @@ export function DataTable<
                     onChange={(e) =>
                       handleColumnFilterChange(String(col.key), e.target.value)
                     }
+                    data-copilot-id={
+                      tableId
+                        ? `filter.${tableId}.${String(col.key)}`
+                        : undefined
+                    }
                     className="h-8 text-xs !font-normal placeholder:font-normal"
                   />
                 </th>

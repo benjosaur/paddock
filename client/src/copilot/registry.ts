@@ -123,6 +123,15 @@ export function buildSnapshot(): CopilotSnapshot {
     kind,
   }));
 
+  const filters = targets
+    .filter(
+      (el): el is HTMLInputElement =>
+        el instanceof HTMLInputElement &&
+        (el.dataset.copilotId ?? "").startsWith("filter.") &&
+        el.value !== "",
+    )
+    .map((el) => ({ targetId: el.dataset.copilotId as string, value: el.value }));
+
   return {
     path: window.location.pathname,
     visibleTargetIds,
@@ -131,6 +140,7 @@ export function buildSnapshot(): CopilotSnapshot {
       searchInput instanceof HTMLInputElement ? searchInput.value : "",
     rows,
     fields,
+    filters,
   };
 }
 

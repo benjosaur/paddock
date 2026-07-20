@@ -96,6 +96,12 @@ export const copilotFieldSchema = z.object({
   kind: z.string(),
 });
 
+// An active per-column filter (only non-empty ones are reported).
+export const copilotFilterSchema = z.object({
+  targetId: z.string(),
+  value: z.string(),
+});
+
 export const copilotSnapshotSchema = z.object({
   path: z.string(),
   visibleTargetIds: z.array(z.string()).max(200),
@@ -103,6 +109,7 @@ export const copilotSnapshotSchema = z.object({
   searchTerm: z.string().default(""),
   rows: z.array(copilotRowSchema).max(40).default([]),
   fields: z.array(copilotFieldSchema).max(80).default([]),
+  filters: z.array(copilotFilterSchema).max(30).default([]),
 });
 
 export const copilotChatInputSchema = z.object({
@@ -133,6 +140,7 @@ export type CopilotCatalog = z.infer<typeof copilotCatalogSchema>;
 export type CopilotSortState = z.infer<typeof copilotSortStateSchema>;
 export type CopilotRow = z.infer<typeof copilotRowSchema>;
 export type CopilotField = z.infer<typeof copilotFieldSchema>;
+export type CopilotFilter = z.infer<typeof copilotFilterSchema>;
 export type CopilotSnapshot = z.infer<typeof copilotSnapshotSchema>;
 export type CopilotChatInput = z.infer<typeof copilotChatInputSchema>;
 export type CopilotChatOutput = z.infer<typeof copilotChatOutputSchema>;
