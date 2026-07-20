@@ -24,7 +24,8 @@ export const trainingRecordSchema = z.object({
   endDate: z.union([z.string().date(), z.literal("open")]).default("open"),
   details: z.object({
     name: z.string(),
-    recordName: z.enum(trainingRecordTypes),
+    // Values come from the configurable trainingRecordTypes option list.
+    recordName: z.string().min(1),
     recordNumber: z.string().default(""),
     notes: z.string().default(""),
   }),
@@ -426,6 +427,7 @@ export const tableColumnConfigSchema = z.object({
 export const appConfigSchema = z.object({
   services: optionListSchema,
   localities: optionListSchema,
+  trainingRecordTypes: optionListSchema,
   tableColumns: tableColumnConfigSchema,
 });
 
@@ -475,6 +477,9 @@ export const defaultAppConfig: AppConfig = {
   },
   localities: {
     options: localities.map((value) => ({ value, active: true })),
+  },
+  trainingRecordTypes: {
+    options: trainingRecordTypes.map((value) => ({ value, active: true })),
   },
   tableColumns: { visibleColumns: {} },
 };

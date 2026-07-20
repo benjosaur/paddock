@@ -10,6 +10,7 @@ import {
   configurableTableIds,
   protectedLocalityValues,
   protectedServiceValues,
+  protectedTrainingRecordTypeValues,
 } from "shared/const";
 import { addDbMiddleware } from "../service";
 import { ConfigRepository } from "./repository";
@@ -25,6 +26,8 @@ export class ConfigService {
       for (const item of items) {
         if (item.sK === "services") config.services = item.data;
         else if (item.sK === "localities") config.localities = item.data;
+        else if (item.sK === "trainingRecordTypes")
+          config.trainingRecordTypes = item.data;
         else if (item.sK === "tableColumns") config.tableColumns = item.data;
       }
       return config;
@@ -49,6 +52,18 @@ export class ConfigService {
       "localities",
       input,
       protectedLocalityValues
+    );
+  }
+
+  async updateTrainingRecordTypes(
+    user: User,
+    input: OptionList
+  ): Promise<AppConfig> {
+    return await this.updateOptionList(
+      user,
+      "trainingRecordTypes",
+      input,
+      protectedTrainingRecordTypeValues
     );
   }
 
@@ -89,7 +104,7 @@ export class ConfigService {
 
   private async updateOptionList(
     user: User,
-    sK: "services" | "localities",
+    sK: "services" | "localities" | "trainingRecordTypes",
     input: OptionList,
     protectedValues: readonly string[]
   ): Promise<AppConfig> {

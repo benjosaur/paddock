@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { router, createProtectedProcedure } from "../prod/trpc";
 import { trainingRecordSchema } from "shared/schemas/index";
 import { endTrainingRecordDetailsSchema } from "shared";
@@ -38,6 +39,12 @@ export const trainingRecordsRouter = router({
     .input(trainingRecordSchema.omit({ id: true }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.services.training.create(input, ctx.user);
+    }),
+
+  createMany: createProtectedProcedure("trainingRecords", "create")
+    .input(z.array(trainingRecordSchema.omit({ id: true })).min(1))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.training.createMany(input, ctx.user);
     }),
 
   update: createProtectedProcedure("trainingRecords", "update")
