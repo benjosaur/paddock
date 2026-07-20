@@ -113,6 +113,11 @@ export function buildSnapshot(): CopilotSnapshot {
         .map((tr, index) => ({
           index,
           label: (tr.querySelector("td")?.textContent ?? "").trim().slice(0, 60),
+          // Record-keyed actions-menu target, read from the row itself so a
+          // reorder between snapshot and click cannot retarget another record.
+          actionsTargetId: tr.querySelector<HTMLElement>(
+            '[data-copilot-id^="rowactions."]',
+          )?.dataset.copilotId,
         }))
     : [];
 
@@ -162,6 +167,13 @@ export function describeTarget(
   if (kind === "search") {
     const table = catalog.tables.find((t) => t.searchTargetId === targetId);
     if (table) return `the ${table.label} search box`;
+  }
+  if (kind === "rowactions") {
+    const table = catalog.tables.find((t) => t.tableId === rest[0]);
+    return `a ${table?.label ?? ""} row's actions menu`.replace("  ", " ");
+  }
+  if (kind === "rowmenu") {
+    return `“${rest.join(".")}” in the row menu`;
   }
   return `“${targetId}”`;
 }

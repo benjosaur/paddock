@@ -133,11 +133,12 @@ export const copilotSortStateSchema = z.object({
   direction: z.enum(["asc", "desc"]),
 });
 
-// A visible table row: index (used in rowactions.<tableId>.<index> targets)
-// plus its first-column text so the model can pick the right record.
+// A visible table row: its first-column text so the model can pick the
+// right record, and the record-keyed target id of its actions menu.
 export const copilotRowSchema = z.object({
   index: z.number().int().min(0),
   label: z.string(),
+  actionsTargetId: z.string().optional(),
 });
 
 // A form field currently on screen, addressable as field.<slug> targets.
