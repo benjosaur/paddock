@@ -2,6 +2,7 @@ import { signInWithRedirect } from "aws-amplify/auth";
 import { LayoutGrid, Linkedin, LogOut } from "lucide-react";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/ben-blaker-085108175/";
+const BOOKING_URL = "https://cal.com/ben-blaker";
 const WIVEY_URL = "https://wiveycares.net";
 
 const btnBase =
@@ -121,7 +122,7 @@ export function LandingPage() {
               <button onClick={handleSignIn} className={btnPrimary}>
                 Sign in to Paddock
               </button>
-              <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={btnQuiet}>
+              <a href={BOOKING_URL} target="_blank" rel="noreferrer" className={btnQuiet}>
                 Book a walkthrough
               </a>
             </div>
@@ -293,7 +294,7 @@ export function LandingPage() {
             </h2>
             <div className="flex flex-wrap justify-center gap-3">
               <a
-                href={LINKEDIN_URL}
+                href={BOOKING_URL}
                 target="_blank"
                 rel="noreferrer"
                 className={`${btnBase} bg-white text-pk-ink hover:bg-pk-cream`}
