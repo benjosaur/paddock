@@ -407,6 +407,7 @@ export function DataTable<
                         )}
                         {onAttachments && (
                           <DropdownMenuItem
+                            data-copilot-id="rowmenu.attachments"
                             onClick={() => onAttachments(item.id)}
                           >
                             <Paperclip className="mr-2 h-4 w-4" />
