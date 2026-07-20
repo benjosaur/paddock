@@ -59,6 +59,23 @@ function result(
   };
 }
 
+// One-line state readout appended to every successful tool result, so the
+// model can attribute what the next snapshot shows to the action it just
+// took (otherwise it reads its own effect as pre-existing state).
+function currentUiState(): string {
+  const sortedHeader = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-copilot-id^="sort."]'),
+  ).find((el) => el.getAttribute("aria-sort") && isVisible(el));
+  const sort = sortedHeader
+    ? `${(sortedHeader.dataset.copilotId ?? "").replace(/^sort\./, "")} ${
+        sortedHeader.getAttribute("aria-sort") === "descending"
+          ? "descending"
+          : "ascending"
+      }`
+    : "none";
+  return `path=${window.location.pathname}, sort=${sort}`;
+}
+
 export async function executeToolUse(
   toolUse: CopilotToolUseBlock,
   cursor: CursorHandle | null,
@@ -87,7 +104,10 @@ export async function executeToolUse(
     await cursor?.click();
     el.click();
     await sleep(SETTLE_MS);
-    return result(toolUse, `Clicked ${targetId}.`);
+    return result(
+      toolUse,
+      `Clicked ${targetId}. Effect of this click: ${currentUiState()}.`,
+    );
   }
 
   if (toolUse.name === "ui_type") {
@@ -101,7 +121,10 @@ export async function executeToolUse(
     el.focus();
     setNativeValue(el, text);
     await sleep(SETTLE_MS);
-    return result(toolUse, `Typed "${text}" into ${targetId}.`);
+    return result(
+      toolUse,
+      `Typed "${text}" into ${targetId}. Effect: ${currentUiState()}.`,
+    );
   }
 
   return result(toolUse, `Unknown tool "${toolUse.name}".`, true);
