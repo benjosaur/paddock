@@ -52,7 +52,7 @@ export function CopilotCursor({
           ],
           {
             duration: Math.min(900, Math.max(250, distance * 0.8)),
-            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            easing: "ease-in",
           },
         );
         try {
