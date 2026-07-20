@@ -3,7 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Lock, Plus } from "lucide-react";
 import { OptionList } from "shared";
-import { protectedLocalityValues, protectedServiceValues } from "shared/const";
+import {
+  protectedLocalityValues,
+  protectedServiceValues,
+  protectedTrainingRecordTypeValues,
+} from "shared/const";
 import { trpc } from "../utils/trpc";
 import { copilotIdSegment } from "../utils/copilotId";
 import { useConfig } from "../hooks/useConfig";
@@ -244,6 +248,11 @@ export function SettingsPage() {
       onSuccess: invalidateConfig,
     })
   );
+  const updateTrainingRecordTypesMutation = useMutation(
+    trpc.config.updateTrainingRecordTypes.mutationOptions({
+      onSuccess: invalidateConfig,
+    })
+  );
   const updateTableColumnsMutation = useMutation(
     trpc.config.updateTableColumns.mutationOptions({
       onSuccess: invalidateConfig,
@@ -283,6 +292,17 @@ export function SettingsPage() {
               protectedValues={protectedLocalityValues}
               onSave={(draft) => updateLocalitiesMutation.mutateAsync(draft)}
               isSaving={updateLocalitiesMutation.isPending}
+            />
+            <OptionListEditor
+              title="Training Record Types"
+              copilotKey="trainingRecordTypes"
+              addPlaceholder="Add training record type..."
+              list={config.trainingRecordTypes}
+              protectedValues={protectedTrainingRecordTypeValues}
+              onSave={(draft) =>
+                updateTrainingRecordTypesMutation.mutateAsync(draft)
+              }
+              isSaving={updateTrainingRecordTypesMutation.isPending}
             />
           </div>
         </TabsContent>
