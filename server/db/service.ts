@@ -8,6 +8,7 @@ import { RequestService } from "./requests/service";
 import { TrainingRecordService } from "./training/service";
 import { VolunteerService } from "./volunteer/service";
 import { ReportService } from "./analytics/service";
+import { CopilotService } from "../services/copilot";
 
 export function addDbMiddleware<T>(
   input: T,
@@ -33,5 +34,6 @@ export function createServices() {
     requests: new RequestService(),
     training: new TrainingRecordService(),
     analytics: new ReportService(),
+    copilot: new CopilotService(),
   };
 }
