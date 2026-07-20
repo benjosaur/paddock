@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { trpc } from "../../utils/trpc";
 import { DataTable } from "../tables/DataTable";
 import { Note, NotesEditor } from "../NotesEditor";
-import { ImageAttachments } from "../ImageAttachments";
+import { Attachments } from "../Attachments";
 import { PermissionGate } from "../PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
@@ -144,7 +144,7 @@ export function ClientDetailModal({
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="requests">New Care Requests</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="images">Images</TabsTrigger>
+              <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -360,10 +360,10 @@ export function ClientDetailModal({
             </TabsContent>
 
             <TabsContent
-              value="images"
+              value="attachments"
               className="p-4 border rounded-lg bg-white/80"
             >
-              <ImageAttachments ownerId={client.id} />
+              <Attachments ownerId={client.id} resource="clients" layout="grid" />
             </TabsContent>
           </Tabs>
         </div>
