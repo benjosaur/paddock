@@ -31,7 +31,7 @@ import type { TableColumn, TrainingRecord } from "../../types";
 import { AppRouterKeys } from "shared";
 import { useConfig } from "../../hooks/useConfig";
 import { copilotIdSegment } from "../../utils/copilotId";
-import { applyColumnVisibility } from "../../utils/tableRegistry";
+import { applyColumnVisibility } from "../../utils/columnVisibility";
 
 const EMPTY_VALUES = new Set(["", "n/a", "no dbs", "no public liability", "unknown", "ongoing"]);
 

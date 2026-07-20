@@ -1,10 +1,7 @@
 import { configurableTableIds } from "shared/const";
 import { getVisibleMenuItems } from "../utils/permissions";
-import {
-  applyColumnVisibility,
-  tableRegistry,
-  ConfigurableTableId,
-} from "../utils/tableRegistry";
+import { applyColumnVisibility } from "../utils/columnVisibility";
+import { tableRegistry, ConfigurableTableId } from "../utils/tableRegistry";
 import type {
   AppConfig,
   CopilotCatalog,
