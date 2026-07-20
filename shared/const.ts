@@ -27,6 +27,14 @@ export const hasRequestedStatuses: (typeof attendanceAllowanceStatuses)[number][
 export const isReceivingStatuses: (typeof attendanceAllowanceStatuses)[number][] =
   ["Low", "High"] as const;
 export const booleanTypes = ["Y", "N"] as const;
+export const allowedImageTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+] as const;
+export const maxImageBytes = 10 * 1024 * 1024; // 10MB
 export const notesSource = ["Phone", "Email", "In Person"] as const;
 export const serviceOptions = [
   "Personal Care",
