@@ -81,11 +81,28 @@ export const copilotSortStateSchema = z.object({
   direction: z.enum(["asc", "desc"]),
 });
 
+// A visible table row: index (used in rowactions.<tableId>.<index> targets)
+// plus its first-column text so the model can pick the right record.
+export const copilotRowSchema = z.object({
+  index: z.number().int().min(0),
+  label: z.string(),
+});
+
+// A form field currently on screen, addressable as field.<slug> targets.
+export const copilotFieldSchema = z.object({
+  targetId: z.string(),
+  label: z.string(),
+  value: z.string(),
+  kind: z.string(),
+});
+
 export const copilotSnapshotSchema = z.object({
   path: z.string(),
   visibleTargetIds: z.array(z.string()).max(200),
   sort: copilotSortStateSchema.nullable(),
   searchTerm: z.string().default(""),
+  rows: z.array(copilotRowSchema).max(40).default([]),
+  fields: z.array(copilotFieldSchema).max(80).default([]),
 });
 
 export const copilotChatInputSchema = z.object({
@@ -114,6 +131,8 @@ export type CopilotColumn = z.infer<typeof copilotColumnSchema>;
 export type CopilotTable = z.infer<typeof copilotTableSchema>;
 export type CopilotCatalog = z.infer<typeof copilotCatalogSchema>;
 export type CopilotSortState = z.infer<typeof copilotSortStateSchema>;
+export type CopilotRow = z.infer<typeof copilotRowSchema>;
+export type CopilotField = z.infer<typeof copilotFieldSchema>;
 export type CopilotSnapshot = z.infer<typeof copilotSnapshotSchema>;
 export type CopilotChatInput = z.infer<typeof copilotChatInputSchema>;
 export type CopilotChatOutput = z.infer<typeof copilotChatOutputSchema>;

@@ -1,5 +1,6 @@
 import type { CopilotToolResultBlock, CopilotToolUseBlock } from "../types";
 import type { CursorHandle } from "./CopilotCursor";
+import { discoverFields, isVisible, type DiscoveredField } from "./fields";
 
 // How long the executor waits after an action so navigation/re-render can
 // settle before the next snapshot is taken.
@@ -9,13 +10,7 @@ const TARGET_ID_PATTERN = /^[\w.-]+$/;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function isVisible(el: HTMLElement): boolean {
-  if (typeof el.checkVisibility === "function" && !el.checkVisibility()) {
-    return false;
-  }
-  const rect = el.getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0;
-}
+export { isVisible };
 
 // The same target id can exist twice (e.g. nav links in the hidden mobile
 // drawer and the desktop sidebar) — always act on a visible instance.
@@ -26,6 +21,16 @@ async function waitForTarget(targetId: string): Promise<HTMLElement | null> {
     const match = Array.from(
       document.querySelectorAll<HTMLElement>(selector),
     ).find(isVisible);
+    if (match) return match;
+    await sleep(120);
+  }
+  return null;
+}
+
+async function waitForField(targetId: string): Promise<DiscoveredField | null> {
+  const deadline = Date.now() + TARGET_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const match = discoverFields().find((f) => f.targetId === targetId);
     if (match) return match;
     await sleep(120);
   }
@@ -73,7 +78,70 @@ function currentUiState(): string {
           : "ascending"
       }`
     : "none";
-  return `path=${window.location.pathname}, sort=${sort}`;
+  const dialogOpen = Array.from(
+    document.querySelectorAll<HTMLElement>('[role="dialog"]'),
+  ).some(isVisible);
+  return `path=${window.location.pathname}, sort=${sort}, dialogOpen=${dialogOpen}`;
+}
+
+// HITL guard: committing buttons (form Save/Submit and dialog confirms) are
+// never instrumented, so they normally can't be targeted at all — this is
+// the backstop in case one ever ends up resolvable.
+function isCommitButton(el: HTMLElement): boolean {
+  const button = el.closest("button");
+  return !!button && button.type === "submit" && !!button.form;
+}
+
+async function moveCursorTo(el: HTMLElement, cursor: CursorHandle | null) {
+  el.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+  await sleep(80);
+  const rect = el.getBoundingClientRect();
+  await cursor?.moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+async function typeIntoField(
+  toolUse: CopilotToolUseBlock,
+  field: DiscoveredField,
+  text: string,
+  cursor: CursorHandle | null,
+): Promise<CopilotToolResultBlock> {
+  if (field.kind === "readonly") {
+    return result(
+      toolUse,
+      `"${field.label}" is read-only. ui_click its field target to open its edit dialog, fill the dialog's field, then ask the user to apply it.`,
+      true,
+    );
+  }
+  if (!field.typeTarget) {
+    return result(toolUse, `"${field.label}" cannot be typed into.`, true);
+  }
+
+  await moveCursorTo(field.el, cursor);
+  await cursor?.click();
+  field.typeTarget.focus();
+  setNativeValue(field.typeTarget, text);
+
+  if (field.kind === "select") {
+    // react-select: typing filters the options; Enter picks the focused
+    // (closest-matching) one.
+    await sleep(250);
+    field.typeTarget.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        code: "Enter",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
+
+  await sleep(SETTLE_MS);
+  const after =
+    discoverFields().find((f) => f.targetId === field.targetId)?.value ?? "";
+  return result(
+    toolUse,
+    `Typed "${text}" into "${field.label}". Its value is now "${after}". Effect: ${currentUiState()}.`,
+  );
 }
 
 export async function executeToolUse(
@@ -86,7 +154,9 @@ export async function executeToolUse(
     return result(toolUse, "Invalid or missing target_id.", true);
   }
 
-  const el = await waitForTarget(targetId);
+  const isField = targetId.startsWith("field.");
+  const field = isField ? await waitForField(targetId) : null;
+  const el = isField ? (field?.el ?? null) : await waitForTarget(targetId);
   if (!el) {
     return result(
       toolUse,
@@ -95,12 +165,15 @@ export async function executeToolUse(
     );
   }
 
-  el.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
-  await sleep(80);
-  const rect = el.getBoundingClientRect();
-  await cursor?.moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2);
-
   if (toolUse.name === "ui_click") {
+    if (isCommitButton(el)) {
+      return result(
+        toolUse,
+        "Blocked: that button saves or submits changes, which is reserved for the user. Ask them to review and press it themselves.",
+        true,
+      );
+    }
+    await moveCursorTo(el, cursor);
     await cursor?.click();
     el.click();
     await sleep(SETTLE_MS);
@@ -111,12 +184,17 @@ export async function executeToolUse(
   }
 
   if (toolUse.name === "ui_type") {
-    const text = typeof toolUse.input.text === "string" ? toolUse.input.text : "";
+    const text =
+      typeof toolUse.input.text === "string" ? toolUse.input.text : "";
+    if (field) {
+      return typeIntoField(toolUse, field, text, cursor);
+    }
     if (
       !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
     ) {
       return result(toolUse, `Target "${targetId}" is not a text input.`, true);
     }
+    await moveCursorTo(el, cursor);
     await cursor?.click();
     el.focus();
     setNativeValue(el, text);

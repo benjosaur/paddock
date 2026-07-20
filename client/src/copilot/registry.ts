@@ -8,7 +8,7 @@ import type {
   CopilotSortState,
   UserRole,
 } from "../types";
-import { isVisible } from "./executor";
+import { discoverFields, isVisible } from "./fields";
 
 // What each page is for, in the model's terms. Keys match menu item keys.
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -104,12 +104,33 @@ export function buildSnapshot(): CopilotSnapshot {
     (el.dataset.copilotId ?? "").startsWith("search."),
   );
 
+  const tableEl = Array.from(
+    document.querySelectorAll<HTMLElement>("table[data-copilot-table]"),
+  ).find(isVisible);
+  const rows = tableEl
+    ? Array.from(tableEl.querySelectorAll("tbody tr"))
+        .slice(0, 40)
+        .map((tr, index) => ({
+          index,
+          label: (tr.querySelector("td")?.textContent ?? "").trim().slice(0, 60),
+        }))
+    : [];
+
+  const fields = discoverFields().map(({ targetId, label, value, kind }) => ({
+    targetId,
+    label,
+    value: value.slice(0, 120),
+    kind,
+  }));
+
   return {
     path: window.location.pathname,
     visibleTargetIds,
     sort,
     searchTerm:
       searchInput instanceof HTMLInputElement ? searchInput.value : "",
+    rows,
+    fields,
   };
 }
 
