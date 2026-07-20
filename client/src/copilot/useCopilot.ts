@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import { buildCatalog, buildSnapshot, describeTarget } from "./registry";
 import { executeToolUse } from "./executor";
+import { startToastCapture, stopToastCapture } from "./toastCapture";
 import type { CursorHandle } from "./CopilotCursor";
 
 export interface CopilotEntry {
@@ -94,6 +95,9 @@ export function useCopilot(
     setBusy(true);
     abortRef.current = false;
     push("user", trimmedText);
+    // No toast popups while the copilot works: toasts are captured into the
+    // tool results as app feedback instead of appearing over the screen.
+    startToastCapture();
 
     const catalog = buildCatalog(role, config);
     const wire: CopilotMessage[] = [
@@ -162,6 +166,7 @@ export function useCopilot(
         `Copilot request failed: ${error instanceof Error ? error.message : "unknown error"}`,
       );
     } finally {
+      stopToastCapture();
       cursorRef.current?.hide();
       wireRef.current = trimWire(wire);
       setStatus(null);

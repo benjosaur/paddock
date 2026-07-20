@@ -1,6 +1,7 @@
 import type { CopilotToolResultBlock, CopilotToolUseBlock } from "../types";
 import type { CursorHandle } from "./CopilotCursor";
 import { discoverFields, isVisible, type DiscoveredField } from "./fields";
+import { drainCapturedToasts } from "./toastCapture";
 
 // How long the executor waits after an action so navigation/re-render can
 // settle before the next snapshot is taken.
@@ -64,9 +65,6 @@ function result(
   };
 }
 
-// One-line state readout appended to every successful tool result, so the
-// model can attribute what the next snapshot shows to the action it just
-// took (otherwise it reads its own effect as pre-existing state).
 function currentUiState(): string {
   const sortedHeader = Array.from(
     document.querySelectorAll<HTMLElement>('[data-copilot-id^="sort."]'),
@@ -82,6 +80,54 @@ function currentUiState(): string {
     document.querySelectorAll<HTMLElement>('[role="dialog"]'),
   ).some(isVisible);
   return `path=${window.location.pathname}, sort=${sort}, dialogOpen=${dialogOpen}`;
+}
+
+const MAX_DIFF_IDS = 8;
+
+function visibleTargetIdSet(): Set<string> {
+  return new Set(
+    Array.from(document.querySelectorAll<HTMLElement>("[data-copilot-id]"))
+      .filter(isVisible)
+      .map((el) => el.dataset.copilotId ?? "")
+      .filter(Boolean),
+  );
+}
+
+function formatIdList(ids: string[]): string {
+  const shown = ids.slice(0, MAX_DIFF_IDS).join(", ");
+  return ids.length > MAX_DIFF_IDS
+    ? `${shown} (+${ids.length - MAX_DIFF_IDS} more)`
+    : shown;
+}
+
+// Effect readout appended to every successful tool result: UI state, the
+// targets this very action added/removed, and any app notifications it
+// triggered (toasts are diverted into the copilot's capture buffer while it
+// runs). This is what lets the model attribute what the next snapshot shows
+// to the action it just took — otherwise it reads its own effect as
+// pre-existing state, e.g. treating an option it just added as a duplicate.
+function describeEffect(before: Set<string>): string {
+  const after = visibleTargetIdSet();
+  const appeared = [...after].filter((id) => !before.has(id));
+  const disappeared = [...before].filter((id) => !after.has(id));
+  const parts = [`Effect: ${currentUiState()}.`];
+  if (appeared.length) {
+    parts.push(
+      `Newly on screen (added by this action): ${formatIdList(appeared)}.`,
+    );
+  }
+  if (disappeared.length) {
+    parts.push(`No longer on screen: ${formatIdList(disappeared)}.`);
+  }
+  const notifications = drainCapturedToasts();
+  if (notifications.length) {
+    parts.push(
+      `App notifications: ${notifications
+        .map((n) => `[${n.severity}] ${n.text}`)
+        .join(" | ")}.`,
+    );
+  }
+  return parts.join(" ");
 }
 
 // HITL guard: committing buttons (form Save/Submit and dialog confirms) are
@@ -104,6 +150,7 @@ async function typeIntoField(
   field: DiscoveredField,
   text: string,
   cursor: CursorHandle | null,
+  before: Set<string>,
 ): Promise<CopilotToolResultBlock> {
   if (field.kind === "readonly") {
     return result(
@@ -140,7 +187,7 @@ async function typeIntoField(
     discoverFields().find((f) => f.targetId === field.targetId)?.value ?? "";
   return result(
     toolUse,
-    `Typed "${text}" into "${field.label}". Its value is now "${after}". Effect: ${currentUiState()}.`,
+    `Typed "${text}" into "${field.label}". Its value is now "${after}". ${describeEffect(before)}`,
   );
 }
 
@@ -165,6 +212,8 @@ export async function executeToolUse(
     );
   }
 
+  const before = visibleTargetIdSet();
+
   if (toolUse.name === "ui_click") {
     if (isCommitButton(el)) {
       return result(
@@ -177,17 +226,14 @@ export async function executeToolUse(
     await cursor?.click();
     el.click();
     await sleep(SETTLE_MS);
-    return result(
-      toolUse,
-      `Clicked ${targetId}. Effect of this click: ${currentUiState()}.`,
-    );
+    return result(toolUse, `Clicked ${targetId}. ${describeEffect(before)}`);
   }
 
   if (toolUse.name === "ui_type") {
     const text =
       typeof toolUse.input.text === "string" ? toolUse.input.text : "";
     if (field) {
-      return typeIntoField(toolUse, field, text, cursor);
+      return typeIntoField(toolUse, field, text, cursor, before);
     }
     if (
       !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
@@ -201,7 +247,7 @@ export async function executeToolUse(
     await sleep(SETTLE_MS);
     return result(
       toolUse,
-      `Typed "${text}" into ${targetId}. Effect: ${currentUiState()}.`,
+      `Typed "${text}" into ${targetId}. ${describeEffect(before)}`,
     );
   }
 
