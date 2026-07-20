@@ -77,9 +77,14 @@ export function discoverFields(): DiscoveredField[] {
       if (!inner) return;
       kind = "select";
       typeTarget = inner;
+      // isMulti selects render one multiValue chip per pick instead of a
+      // singleValue element — read whichever variant is present.
       value =
         control.querySelector('[class*="singleValue"]')?.textContent?.trim() ??
-        "";
+        Array.from(control.querySelectorAll('[class*="multiValue"]'))
+          .map((chip) => (chip.textContent ?? "").trim())
+          .filter(Boolean)
+          .join(", ");
     }
 
     claimed.add(control);
