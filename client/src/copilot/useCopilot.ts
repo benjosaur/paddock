@@ -10,7 +10,11 @@ import type {
   UserRole,
 } from "../types";
 import { buildCatalog, buildSnapshot, describeTarget } from "./registry";
-import { executeToolUse } from "./executor";
+import {
+  executeToolUse,
+  notExecutedResult,
+  parseActionReport,
+} from "./executor";
 import { startToastCapture, stopToastCapture } from "./toastCapture";
 import type { CursorHandle } from "./CopilotCursor";
 
@@ -136,23 +140,29 @@ export function useCopilot(
         cursorRef.current?.show();
         for (const toolUse of toolUses) {
           if (abortRef.current || failed) {
-            results.push({
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              content: abortRef.current
-                ? "Not executed: the user stopped the copilot."
-                : "Not executed: a previous action failed.",
-              is_error: true,
-            });
+            results.push(
+              notExecutedResult(
+                toolUse,
+                abortRef.current
+                  ? "Not executed: the user stopped the copilot."
+                  : "Not executed: a previous action failed.",
+              ),
+            );
             continue;
           }
           const label = describeAction(toolUse, catalog);
           setStatus(label);
           push("action", label);
           const actionResult = await executeToolUse(toolUse, cursorRef.current);
+          const actionReport = parseActionReport(actionResult.content);
+          // Diverted app toasts surface in the chat so the user still sees
+          // feedback that would otherwise only reach the model.
+          for (const n of actionReport?.notifications ?? []) {
+            push(n.severity === "error" ? "error" : "action", `App: ${n.text}`);
+          }
           if (actionResult.is_error) {
             failed = true;
-            push("error", actionResult.content);
+            push("error", actionReport?.error ?? actionResult.content);
           }
           results.push(actionResult);
         }
