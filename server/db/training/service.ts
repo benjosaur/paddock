@@ -132,6 +132,40 @@ export class TrainingRecordService {
       throw error;
     }
   }
+
+  async createMany(
+    records: Omit<TrainingRecord, "id">[],
+    user: User
+  ): Promise<string[]> {
+    try {
+      const validated = trainingRecordSchema
+        .omit({ id: true })
+        .array()
+        .min(1)
+        .parse(records);
+      const ownerIds = new Set(validated.map((record) => record.ownerId));
+      if (ownerIds.size > 1) {
+        throw new Error("All records in a batch must belong to the same owner");
+      }
+      const recordNames = validated.map((record) =>
+        record.details.recordName.toLowerCase()
+      );
+      if (new Set(recordNames).size !== recordNames.length) {
+        throw new Error(
+          "Each record must have a different training record type"
+        );
+      }
+      const ids: string[] = [];
+      for (const record of validated) {
+        ids.push(await this.create(record, user));
+      }
+      return ids;
+    } catch (error) {
+      console.error("Service Layer Error creating training records:", error);
+      throw error;
+    }
+  }
+
   async update(record: TrainingRecord, user: User): Promise<void> {
     try {
       const validatedInput = trainingRecordSchema.parse(record);

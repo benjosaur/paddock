@@ -118,6 +118,7 @@ export const protectedLocalityValues = [
   "Other",
   "Unknown",
 ] as const;
+export const protectedTrainingRecordTypeValues = coreTrainingRecordTypes;
 export const configurableTableIds = [
   "clients",
   "mps",

@@ -18,6 +18,15 @@ export const configRouter = router({
       return await ctx.services.config.updateLocalities(ctx.user, input);
     }),
 
+  updateTrainingRecordTypes: createProtectedProcedure("config", "update")
+    .input(optionListSchema)
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.services.config.updateTrainingRecordTypes(
+        ctx.user,
+        input
+      );
+    }),
+
   updateTableColumns: createProtectedProcedure("config", "update")
     .input(tableColumnConfigSchema)
     .mutation(async ({ ctx, input }) => {
