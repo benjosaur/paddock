@@ -10,7 +10,13 @@ import type {
   UserRole,
 } from "../types";
 import { buildCatalog, buildSnapshot, describeTarget } from "./registry";
-import { executeToolUse } from "./executor";
+import {
+  executeToolUse,
+  notExecutedResult,
+  parseActionReport,
+} from "./executor";
+import { startToastCapture, stopToastCapture } from "./toastCapture";
+import { trimWire } from "./wire";
 import type { CursorHandle } from "./CopilotCursor";
 
 export interface CopilotEntry {
@@ -21,36 +27,10 @@ export interface CopilotEntry {
 
 // Not a product limit — a runaway backstop so a pathological model loop
 // can't burn tokens unattended. The stop button is the real control.
+// Invariant: 1 + 2 * RUNAWAY_TURN_LIMIT must stay under the server's
+// copilotChatInputSchema messages cap (120), or maximal runs die on
+// input validation.
 const RUNAWAY_TURN_LIMIT = 50;
-// Target size for replayed history (the active request is never trimmed).
-const MAX_WIRE_MESSAGES = 30;
-
-function isUserTextMessage(message: CopilotMessage): boolean {
-  return message.role === "user" && message.content[0]?.type === "text";
-}
-
-// Drop oldest turns, keeping two invariants: the head stays a plain user
-// text message (so tool_use blocks never lose their paired tool_result) and
-// everything from the ACTIVE request's user message onward is untouchable —
-// a long action chain must not trim away its own goal mid-loop.
-function trimWire(messages: CopilotMessage[]): CopilotMessage[] {
-  let activeStart = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (isUserTextMessage(messages[i])) {
-      activeStart = i;
-      break;
-    }
-  }
-  let history = messages.slice(0, activeStart);
-  const active = messages.slice(activeStart);
-  while (history.length + active.length > MAX_WIRE_MESSAGES && history.length) {
-    history = history.slice(1);
-    while (history.length && !isUserTextMessage(history[0])) {
-      history = history.slice(1);
-    }
-  }
-  return [...history, ...active];
-}
 
 function describeAction(
   toolUse: CopilotToolUseBlock,
@@ -95,13 +75,17 @@ export function useCopilot(
     abortRef.current = false;
     push("user", trimmedText);
 
-    const catalog = buildCatalog(role, config);
     const wire: CopilotMessage[] = [
       ...wireRef.current,
       { role: "user", content: [{ type: "text", text: trimmedText }] },
     ];
 
     try {
+      // No toast popups while the copilot works: toasts are captured into
+      // the tool results as app feedback instead of appearing over the
+      // screen. Inside the try so the finally always undoes it.
+      startToastCapture();
+      const catalog = buildCatalog(role, config);
       for (let turn = 0; turn < RUNAWAY_TURN_LIMIT; turn++) {
         if (abortRef.current) break;
         setStatus("Thinking…");
@@ -128,23 +112,29 @@ export function useCopilot(
         cursorRef.current?.show();
         for (const toolUse of toolUses) {
           if (abortRef.current || failed) {
-            results.push({
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              content: abortRef.current
-                ? "Not executed: the user stopped the copilot."
-                : "Not executed: a previous action failed.",
-              is_error: true,
-            });
+            results.push(
+              notExecutedResult(
+                toolUse,
+                abortRef.current
+                  ? "Not executed: the user stopped the copilot."
+                  : "Not executed: a previous action failed.",
+              ),
+            );
             continue;
           }
           const label = describeAction(toolUse, catalog);
           setStatus(label);
           push("action", label);
           const actionResult = await executeToolUse(toolUse, cursorRef.current);
+          const actionReport = parseActionReport(actionResult.content);
+          // Diverted app toasts surface in the chat so the user still sees
+          // feedback that would otherwise only reach the model.
+          for (const n of actionReport?.notifications ?? []) {
+            push(n.severity === "error" ? "error" : "action", `App: ${n.text}`);
+          }
           if (actionResult.is_error) {
             failed = true;
-            push("error", actionResult.content);
+            push("error", actionReport?.error ?? actionResult.content);
           }
           results.push(actionResult);
         }
@@ -162,6 +152,7 @@ export function useCopilot(
         `Copilot request failed: ${error instanceof Error ? error.message : "unknown error"}`,
       );
     } finally {
+      stopToastCapture();
       cursorRef.current?.hide();
       wireRef.current = trimWire(wire);
       setStatus(null);
@@ -171,6 +162,9 @@ export function useCopilot(
 
   const stop = () => {
     abortRef.current = true;
+    // Don't wait for an in-flight request to settle before giving toasts
+    // back to the user; the finally's stopToastCapture is a no-op by then.
+    stopToastCapture();
   };
 
   return { entries, busy, status, send, stop };

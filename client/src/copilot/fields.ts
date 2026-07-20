@@ -1,6 +1,7 @@
 // Generic, zero-instrumentation discovery of form fields: labels drive it,
 // so any page built from the app's <label> + <Input>/<Select> pattern is
 // editable by the copilot without per-form changes.
+import { copilotIdSegment } from "../utils/copilotId";
 
 export function isVisible(el: HTMLElement): boolean {
   if (typeof el.checkVisibility === "function" && !el.checkVisibility()) {
@@ -8,6 +9,14 @@ export function isVisible(el: HTMLElement): boolean {
   }
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
+}
+
+// Single source for the visible instrumented-target scan, shared by the
+// snapshot builder and the executor's effect diff so they cannot drift.
+export function visibleTargetElements(): HTMLElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>("[data-copilot-id]"),
+  ).filter(isVisible);
 }
 
 export interface DiscoveredField {
@@ -31,19 +40,15 @@ const SKIPPED_INPUT_TYPES = new Set([
   "reset",
 ]);
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
-
 // react-select renders a container div whose inner input is a combobox.
 function selectInnerInput(el: Element): HTMLInputElement | null {
   return el.querySelector<HTMLInputElement>(
     'input[role="combobox"], input[aria-autocomplete="list"]',
   );
+}
+
+function dialogTitle(dialog: HTMLElement): string {
+  return dialog.querySelector("h2")?.textContent?.trim() || "Dialog";
 }
 
 export function discoverFields(): DiscoveredField[] {
@@ -77,13 +82,30 @@ export function discoverFields(): DiscoveredField[] {
       if (!inner) return;
       kind = "select";
       typeTarget = inner;
+      // isMulti selects render one multiValue chip per pick instead of a
+      // singleValue element — read whichever variant is present.
       value =
         control.querySelector('[class*="singleValue"]')?.textContent?.trim() ??
-        "";
+        Array.from(control.querySelectorAll('[class*="multiValue"]'))
+          .map((chip) => (chip.textContent ?? "").trim())
+          .filter(Boolean)
+          .join(", ");
     }
 
     claimed.add(control);
-    const base = slugify(labelText) || "field";
+    // Fields inside an open dialog are scoped by its title
+    // (field.<dialog>.<label>): the page's same-labelled fields behind the
+    // overlay stay discoverable, so without the scope the two would collide
+    // and the positional -N suffix could rebind between snapshot and
+    // execution.
+    const container = control.closest<HTMLElement>('[role="dialog"]');
+    const scope =
+      container && isVisible(container)
+        ? copilotIdSegment(dialogTitle(container))
+        : "";
+    const labelSlug = copilotIdSegment(labelText) || "field";
+    const base =
+      scope && scope !== labelSlug ? `${scope}.${labelSlug}` : labelSlug;
     let slug = base;
     for (let i = 2; usedSlugs.has(slug); i++) slug = `${base}-${i}`;
     usedSlugs.add(slug);
@@ -131,10 +153,9 @@ export function discoverFields(): DiscoveredField[] {
   // labelled by the dialog's title.
   document.querySelectorAll<HTMLElement>('[role="dialog"]').forEach((dialog) => {
     if (!isVisible(dialog)) return;
-    const title = dialog.querySelector("h2")?.textContent?.trim() || "Dialog";
     dialog
       .querySelectorAll<HTMLElement>("input, textarea")
-      .forEach((el) => push(title, el));
+      .forEach((el) => push(dialogTitle(dialog), el));
   });
 
   return out.slice(0, 80);

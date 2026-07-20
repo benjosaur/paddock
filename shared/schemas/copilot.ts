@@ -34,15 +34,67 @@ export const copilotToolResultBlockSchema = z.object({
   is_error: z.boolean().optional(),
 });
 
+// A tool_result's content is a CopilotActionReport serialised as JSON. The
+// client executor builds it against this schema and the server prompt
+// documents each field from copilotReportFieldDocs, so the model-facing
+// contract lives in this one file (the `satisfies` below keeps schema and
+// docs from drifting apart).
+export const copilotNotificationSchema = z.object({
+  severity: z.enum(["success", "error", "notice"]),
+  text: z.string(),
+});
+
+export const copilotActionReportSchema = z.object({
+  ok: z.boolean(),
+  action: z.enum(["click", "type"]),
+  target: z.string(),
+  error: z.string().optional(),
+  value: z.string().optional(),
+  state: z.object({
+    path: z.string(),
+    sort: z.string(),
+    dialogOpen: z.boolean(),
+  }),
+  appeared: z.array(z.string()),
+  disappeared: z.array(z.string()),
+  notifications: z.array(copilotNotificationSchema),
+});
+
+export type CopilotNotification = z.infer<typeof copilotNotificationSchema>;
+export type CopilotActionReport = z.infer<typeof copilotActionReportSchema>;
+
+export const copilotReportFieldDocs = {
+  ok: "true when the action executed; false means it could not run (see error)",
+  action: "click or type",
+  target: "the target id acted on",
+  error: "why the action could not run (only when ok is false)",
+  value: "the field's value after typing (type actions only)",
+  state: "UI state after the action: path, sort, dialogOpen",
+  appeared:
+    "target ids visible after the action but not before (list may end with '+N more'). An action that REVEALS content (navigating, switching tabs, opening a menu or dialog) shows EXISTING things — only a creation action (e.g. option-add) actually created what appeared",
+  disappeared: "target ids visible before the action but not after",
+  notifications:
+    "app notifications (toasts) raised while the action ran, as severity + text. Usually caused by this very action, but a slow effect of an earlier action or the user acting in parallel can also produce one",
+} as const satisfies Record<keyof CopilotActionReport, string>;
+
 export const copilotContentBlockSchema = z.discriminatedUnion("type", [
   copilotTextBlockSchema,
   copilotToolUseBlockSchema,
   copilotToolResultBlockSchema,
 ]);
 
+// Hard cap on blocks per message. The service clamps model output to this
+// before returning it, because the client replays every returned message
+// back through this schema — an oversized message would otherwise fail
+// validation on all subsequent requests.
+export const COPILOT_MAX_CONTENT_BLOCKS = 24;
+
 export const copilotMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.array(copilotContentBlockSchema).min(1).max(24),
+  content: z
+    .array(copilotContentBlockSchema)
+    .min(1)
+    .max(COPILOT_MAX_CONTENT_BLOCKS),
 });
 
 // Catalog: everything the model may target, built client-side per request so
@@ -81,11 +133,12 @@ export const copilotSortStateSchema = z.object({
   direction: z.enum(["asc", "desc"]),
 });
 
-// A visible table row: index (used in rowactions.<tableId>.<index> targets)
-// plus its first-column text so the model can pick the right record.
+// A visible table row: its first-column text so the model can pick the
+// right record, and the record-keyed target id of its actions menu.
 export const copilotRowSchema = z.object({
   index: z.number().int().min(0),
   label: z.string(),
+  actionsTargetId: z.string().optional(),
 });
 
 // A form field currently on screen, addressable as field.<slug> targets.
@@ -113,6 +166,8 @@ export const copilotSnapshotSchema = z.object({
 });
 
 export const copilotChatInputSchema = z.object({
+  // A maximal run sends 1 + 2 * RUNAWAY_TURN_LIMIT messages (useCopilot.ts);
+  // keep this cap above that or long runs die on input validation.
   messages: z.array(copilotMessageSchema).min(1).max(120),
   catalog: copilotCatalogSchema,
   snapshot: copilotSnapshotSchema,

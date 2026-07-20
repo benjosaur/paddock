@@ -1,7 +1,9 @@
 import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 
 import {
+  COPILOT_MAX_CONTENT_BLOCKS,
   copilotChatOutputSchema,
+  copilotReportFieldDocs,
   type CopilotCatalog,
   type CopilotChatInput,
   type CopilotChatOutput,
@@ -73,16 +75,21 @@ function buildSystemPrompt(
     "- Only ever use target ids that appear in the catalog or the current snapshot. Never invent ids.",
     "- Elements on a page only exist while that page is open: if the target you need is not in the snapshot's visible ids, first ui_click the page's nav.* id, then act.",
     "- BEFORE sorting, check the snapshot's sort field: if the table is already sorted the way the user wants, don't click — just confirm. One click on a sort.* header sorts ascending; a second click on the same header toggles descending.",
-    "- The snapshot is refreshed after each of your actions runs, so it INCLUDES their effects, and each tool result states what its action changed. If the snapshot matches what an action you already took was meant to achieve, that action worked — report success; never second-guess it as having been unnecessary.",
-    "- Every data row has an actions menu: ui_click rowactions.<tableId>.<rowIndex> opens it, and its rowmenu.* items (view, attachments, edit, add-*, renew, end, cover) then appear in the next snapshot for you to click. The snapshot's rows list gives each row's index and first-column text — to act on a specific record, search for it first, then pick the matching row's index. If more than one row could match, ask the user which one before acting.",
+    "- The snapshot is refreshed after each of your actions runs, so it INCLUDES their effects. Every tool result is a JSON action report (fields documented below). Read causality from the report rather than inferring it: appeared says exactly what showed up because of that action (mind its reveal-vs-create rule), and notifications carry the app's feedback (e.g. a rejected duplicate). Never second-guess a completed ok action as having been unnecessary, and never claim you created something a reveal action merely showed.",
+    "- Every data row has an actions menu: the snapshot's rows list gives each row's first-column text and its actionsTargetId (rowactions.<tableId>.<recordId>, tied to the record itself, not the row position). ui_click that id to open the menu; its rowmenu.* items (view, attachments, edit, add-*, renew, end, cover) then appear in the next snapshot for you to click. To act on a specific record, search for it first, then use the matching row's actionsTargetId. If more than one row could match, ask the user which one before acting.",
     "- Each column also has a filter box (filter.<tableId>.<columnKey>): ui_type into it to filter that single column; filters AND-combine with the search box. Active filters appear in the snapshot's filters list; ui_type an empty string to clear one.",
-    "- The snapshot's fields list shows the form fields on screen (label, current value, kind) with field.* target ids. ui_type fills text/textarea fields; dates take YYYY-MM-DD. For kind=select, ui_type the option's text and the closest matching option is picked automatically. kind=readonly fields can't be typed — ui_click one to open its edit dialog, fill the dialog's field, and leave applying it to the user.",
-    "- Settings page: tab.* targets switch tabs. To stage a new dropdown option, ui_type the value into option-input.<list> (services or localities) then ui_click option-add.<list>; option-toggle.<list>.<value> archives or restores an existing option. All of these only stage a draft — the user must press Save to apply it.",
-    "- HARD RULE (human in the loop): you can NEVER press Save, Submit, Confirm, Delete or any other button that commits changes — they are not clickable for you by design. After preparing changes (a filled form or dialog), summarise what you set up and ask the user to review and press the button themselves.",
+    "- The snapshot's fields list shows the form fields on screen (label, current value, kind) with field.* target ids; fields inside an open dialog are scoped by its title (field.<dialog>.<label>), distinct from the page's fields behind it. ui_type fills text/textarea fields; dates take YYYY-MM-DD. For kind=select, ui_type the option's text and the closest matching option is picked automatically. kind=readonly fields can't be typed — ui_click one to open its edit dialog, fill the dialog's field, and leave applying it to the user.",
+    "- Settings page: tab.* targets switch tabs. To stage a new dropdown option, ui_type the value into option-input.<list> (services or localities) then ui_click option-add.<list> — that click's report listing the new option-toggle.<list>.<value> id under appeared confirms the staged add, while a value that already existed is instead rejected with an 'already exists' error notification and nothing appears. option-toggle.<list>.<value> archives or restores an existing option. All of these only stage a draft — finish by telling the user to press Save to apply it.",
+    "- HARD RULE (human in the loop): you can NEVER press Save, Submit, Confirm, Delete or any other button that commits changes — they are not clickable for you by design. After preparing changes (a filled form, dialog or staged settings draft), summarise what you set up and ask the user to review and press the button themselves.",
     "- Users phrase things loosely (e.g. \"feed dates\" for the \"Fee Date\" column). Match their intent against the catalog's labels and headers.",
     "- If a request cannot be done with the available targets, say so briefly instead of guessing.",
     "- When the task is done, reply with one or two short sentences confirming what is now on screen. Beyond the rows list's first-column text and the fields list's values, you cannot see data — never fabricate values.",
     "- Write plain sentences only — no markdown, no asterisks, no headings (replies render as plain text).",
+    "",
+    "Tool result format — every tool result is a JSON report with these fields:",
+    ...Object.entries(copilotReportFieldDocs).map(
+      ([field, doc]) => `- ${field}: ${doc}`,
+    ),
     "",
     `The signed-in user's role is ${user.role}; the catalog already reflects what they are allowed to see.`,
     "",
@@ -124,8 +131,17 @@ export class CopilotService {
         },
       );
 
+      // The client replays this message verbatim through
+      // copilotMessageSchema (min 1, max COPILOT_MAX_CONTENT_BLOCKS), so an
+      // unclamped turn would poison the conversation and fail every
+      // subsequent request. Dropped tool_use blocks are simply never
+      // executed; the model re-issues them on the next turn if still needed.
+      if (content.length === 0) {
+        content.push({ type: "text", text: "(no response)" });
+      }
+
       return copilotChatOutputSchema.parse({
-        content,
+        content: content.slice(0, COPILOT_MAX_CONTENT_BLOCKS),
         stopReason: response.stop_reason ?? null,
       });
     } catch (error) {

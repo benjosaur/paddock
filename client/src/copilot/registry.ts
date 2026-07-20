@@ -1,6 +1,10 @@
 import { configurableTableIds } from "shared/const";
 import { getVisibleMenuItems } from "../utils/permissions";
-import { tableRegistry, ConfigurableTableId } from "../utils/tableRegistry";
+import {
+  applyColumnVisibility,
+  tableRegistry,
+  ConfigurableTableId,
+} from "../utils/tableRegistry";
 import type {
   AppConfig,
   CopilotCatalog,
@@ -8,7 +12,7 @@ import type {
   CopilotSortState,
   UserRole,
 } from "../types";
-import { discoverFields, isVisible } from "./fields";
+import { discoverFields, isVisible, visibleTargetElements } from "./fields";
 
 // What each page is for, in the model's terms. Keys match menu item keys.
 const PAGE_DESCRIPTIONS: Record<string, string> = {
@@ -28,14 +32,11 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   settings: "Admin settings: dropdown options and table column visibility.",
 };
 
-// Mirrors DataTable's column-visibility rule: an explicit config list wins,
-// otherwise all non-defaultHidden columns are shown.
 function visibleColumnsFor(tableId: ConfigurableTableId, config: AppConfig) {
-  const registryEntry = tableRegistry[tableId];
-  const visibleKeys = config.tableColumns.visibleColumns[tableId];
-  return visibleKeys
-    ? registryEntry.columns.filter((col) => visibleKeys.includes(col.key))
-    : registryEntry.columns.filter((col) => !col.defaultHidden);
+  return applyColumnVisibility(
+    tableRegistry[tableId].columns,
+    config.tableColumns.visibleColumns[tableId],
+  );
 }
 
 export function buildCatalog(role: UserRole, config: AppConfig): CopilotCatalog {
@@ -68,9 +69,7 @@ export function buildCatalog(role: UserRole, config: AppConfig): CopilotCatalog 
 }
 
 export function buildSnapshot(): CopilotSnapshot {
-  const targets = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-copilot-id]"),
-  ).filter(isVisible);
+  const targets = visibleTargetElements();
 
   const visibleTargetIds = Array.from(
     new Set(targets.map((el) => el.dataset.copilotId ?? "")),
@@ -113,6 +112,11 @@ export function buildSnapshot(): CopilotSnapshot {
         .map((tr, index) => ({
           index,
           label: (tr.querySelector("td")?.textContent ?? "").trim().slice(0, 60),
+          // Record-keyed actions-menu target, read from the row itself so a
+          // reorder between snapshot and click cannot retarget another record.
+          actionsTargetId: tr.querySelector<HTMLElement>(
+            '[data-copilot-id^="rowactions."]',
+          )?.dataset.copilotId,
         }))
     : [];
 
@@ -162,6 +166,13 @@ export function describeTarget(
   if (kind === "search") {
     const table = catalog.tables.find((t) => t.searchTargetId === targetId);
     if (table) return `the ${table.label} search box`;
+  }
+  if (kind === "rowactions") {
+    const table = catalog.tables.find((t) => t.tableId === rest[0]);
+    return `a ${table?.label ?? ""} row's actions menu`.replace("  ", " ");
+  }
+  if (kind === "rowmenu") {
+    return `“${rest.join(".")}” in the row menu`;
   }
   return `“${targetId}”`;
 }

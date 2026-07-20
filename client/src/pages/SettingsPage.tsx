@@ -5,6 +5,7 @@ import { Lock, Plus } from "lucide-react";
 import { OptionList } from "shared";
 import { protectedLocalityValues, protectedServiceValues } from "shared/const";
 import { trpc } from "../utils/trpc";
+import { copilotIdSegment } from "../utils/copilotId";
 import { useConfig } from "../hooks/useConfig";
 import {
   tableRegistry,
@@ -30,11 +31,6 @@ interface OptionListEditorProps {
   isSaving: boolean;
 }
 
-const optionSlug = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 function OptionListEditor({
   title,
@@ -60,9 +56,15 @@ function OptionListEditor({
   const addOption = () => {
     const value = newValue.trim();
     if (!value) return;
-    if (
-      options.some((option) => option.value.toLowerCase() === value.toLowerCase())
-    ) {
+    const slug = copilotIdSegment(value);
+    if (!slug) {
+      toast.error("Option names need at least one letter or number");
+      return;
+    }
+    // Compare at slug level: option-toggle target ids are slugs, so two
+    // values collapsing to the same slug (e.g. "Dog Walking" and
+    // "Dog-Walking") would render indistinguishable toggles.
+    if (options.some((option) => copilotIdSegment(option.value) === slug)) {
       toast.error(`"${value}" already exists`);
       return;
     }
@@ -105,7 +107,7 @@ function OptionListEditor({
               <Button
                 variant="outline"
                 size="sm"
-                data-copilot-id={`option-toggle.${copilotKey}.${optionSlug(option.value)}`}
+                data-copilot-id={`option-toggle.${copilotKey}.${copilotIdSegment(option.value)}`}
                 onClick={() => toggleActive(option.value)}
               >
                 {option.active ? "Archive" : "Restore"}
