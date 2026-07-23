@@ -34,6 +34,10 @@ export const allowedAttachmentTypes = [
   "image/gif",
   "image/webp",
   "application/pdf",
+  // Word .docx, legacy Word .doc, OpenOffice/LibreOffice .odt
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "application/vnd.oasis.opendocument.text",
 ] as const;
 export const maxAttachmentBytes = 10 * 1024 * 1024; // 10MB
 export const notesSource = ["Phone", "Email", "In Person"] as const;
