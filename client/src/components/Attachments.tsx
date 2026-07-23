@@ -127,7 +127,11 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
       <Button
         variant="destructive"
         size="sm"
-        className="h-6 px-2 shrink-0"
+        // At h-6 scale the Button hover animation reads as a resize:
+        // hover:shadow-sm pins the shadow-md swell, and transition-none stops
+        // WebKit re-rasterizing the label mid-transition (text drops its
+        // subpixel smoothing and thins, so the pill looks narrower for ~1s).
+        className="h-6 px-2 shrink-0 hover:shadow-sm transition-none"
         onClick={() => setDeleteTarget(attachment)}
       >
         Delete
