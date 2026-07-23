@@ -88,7 +88,9 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     event.target.value = ""; // allow re-selecting the same file
     if (!file) return;
     if (!allowedAttachmentTypes.some((type) => type === file.type)) {
-      toast.error("Only JPEG, PNG, GIF, WebP or PDF files are allowed");
+      toast.error(
+        "Only images (JPEG, PNG, GIF, WebP), PDFs and documents (.docx, .doc, .odt) are allowed"
+      );
       return;
     }
     if (file.size > maxAttachmentBytes) {
@@ -152,7 +154,8 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
           <h3 className="text-lg font-semibold text-gray-700">Attachments</h3>
         ) : (
           <span className="text-sm text-gray-500">
-            Images and PDFs, up to {maxAttachmentBytes / (1024 * 1024)}MB
+            Images, PDFs and documents (.docx, .doc, .odt), up to{" "}
+            {maxAttachmentBytes / (1024 * 1024)}MB
           </span>
         )}
         {uploadButton}

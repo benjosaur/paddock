@@ -31,8 +31,9 @@ export const trainingRecordSchema = z.object({
   }),
 });
 
-// Image/PDF attached to an entity (client, MP or volunteer); ownerId is the
-// owning entity's id. Storage details (S3 key, presigned URLs) stay server-side.
+// File (image, PDF or document) attached to an entity (client, MP or
+// volunteer); ownerId is the owning entity's id. Storage details (S3 key,
+// presigned URLs) stay server-side.
 export const attachmentSchema = z.object({
   id: z.string(),
   ownerId: z.string(),

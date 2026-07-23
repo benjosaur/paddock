@@ -101,9 +101,9 @@ export class AttachmentService {
       if (!contentType || size === 0 || size > maxAttachmentBytes) {
         await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: s3Key }));
         throw new Error(
-          `Upload rejected: must be an image or PDF (${allowedAttachmentTypes.join(
-            ", "
-          )}) no larger than ${maxAttachmentBytes / (1024 * 1024)}MB`
+          `Upload rejected: must be an image, PDF or document (.docx, .doc, .odt) no larger than ${
+            maxAttachmentBytes / (1024 * 1024)
+          }MB`
         );
       }
 
