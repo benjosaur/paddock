@@ -127,7 +127,9 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
       <Button
         variant="destructive"
         size="sm"
-        className="h-6 px-2 shrink-0"
+        // hover:shadow-sm pins the hover shadow at rest size: the default
+        // shadow-md swell reads as the button resizing at h-6 scale.
+        className="h-6 px-2 shrink-0 hover:shadow-sm"
         onClick={() => setDeleteTarget(attachment)}
       >
         Delete
