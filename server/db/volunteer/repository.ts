@@ -36,41 +36,21 @@ export class VolunteerRepository {
 
   async getAllNotEndedYet(user: User): Promise<DbVolunteerMetadata[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-
-    const openVolunteerCommand = new QueryCommand({
+    // endDate is an ISO date or "open"; "open" sorts after any date, so one
+    // range captures both open and future-ended rows
+    const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
-      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      KeyConditionExpression: "entityType = :pk AND endDate > :today",
       ExpressionAttributeValues: {
-        ":pk": `volunteer`,
-        ":sK": "open",
-      },
-    });
-
-    const endsAfterTodayVolunteerCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI2",
-      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
-      ExpressionAttributeValues: {
-        ":pk": `volunteer#${currentYear}`,
-        ":sK": currentDate,
+        ":pk": "volunteer",
+        ":today": currentDate,
       },
     });
 
     try {
-      const [openVolunteerResult, endsAfterTodayVolunteerResult] = await Promise.all([
-        client.send(openVolunteerCommand),
-        client.send(endsAfterTodayVolunteerCommand),
-      ]);
-
-      const allItems = [
-        ...(openVolunteerResult.Items || []),
-        ...(endsAfterTodayVolunteerResult.Items || []),
-      ];
-      const parsedResult = dbVolunteerMetadata
-        .array()
-        .parse(allItems);
+      const result = await client.send(command);
+      const parsedResult = dbVolunteerMetadata.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting volunteers not ended yet:", error);

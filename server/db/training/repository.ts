@@ -29,41 +29,21 @@ export class TrainingRecordRepository {
   async getAllNotEndedYet(user: User): Promise<DbTrainingRecord[]> {
     // Here we make a distinction between ended and expired, else views cluttered with expired records of ended carers.
     const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-
-    const openTrainingRecordCommand = new QueryCommand({
+    // endDate is an ISO date or "open"; "open" sorts after any date, so one
+    // range captures both open and future-ended rows
+    const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
-      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      KeyConditionExpression: "entityType = :pk AND endDate > :today",
       ExpressionAttributeValues: {
-        ":pk": `trainingRecord`,
-        ":sK": "open",
-      },
-    });
-
-    const endsAfterTodayTrainingRecordCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI2",
-      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
-      ExpressionAttributeValues: {
-        ":pk": `trainingRecord#${currentYear}`,
-        ":sK": currentDate,
+        ":pk": "trainingRecord",
+        ":today": currentDate,
       },
     });
 
     try {
-      const [openTrainingRecordResult, endsAfterTodayTrainingRecordResult] = await Promise.all([
-        client.send(openTrainingRecordCommand),
-        client.send(endsAfterTodayTrainingRecordCommand),
-      ]);
-
-      const allItems = [
-        ...(openTrainingRecordResult.Items || []),
-        ...(endsAfterTodayTrainingRecordResult.Items || []),
-      ];
-      const parsedResult = dbTrainingRecord
-        .array()
-        .parse(allItems);
+      const result = await client.send(command);
+      const parsedResult = dbTrainingRecord.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting training records not ended yet:", error);

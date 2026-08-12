@@ -34,39 +34,21 @@ export class MpRepository {
 
   async getAllNotEndedYet(user: User): Promise<DbMpMetadata[]> {
     const currentDate = new Date().toISOString().slice(0, 10);
-    const currentYear = parseInt(currentDate.slice(0, 4));
-    // MPs cannot end in the future; treat open endDate as active
-    const openMpCommand = new QueryCommand({
+    // endDate is an ISO date or "open"; "open" sorts after any date, so one
+    // range captures both open and future-ended rows
+    const command = new QueryCommand({
       TableName: getTableName(user),
       IndexName: "GSI2",
-      KeyConditionExpression: "entityType = :pk AND endDate = :sK",
+      KeyConditionExpression: "entityType = :pk AND endDate > :today",
       ExpressionAttributeValues: {
-        ":pk": `mp`,
-        ":sK": "open",
-      },
-    });
-
-    const endsAfterTodayMpCommand = new QueryCommand({
-      TableName: getTableName(user),
-      IndexName: "GSI2",
-      KeyConditionExpression: `entityType = :pk AND endDate > :sK`,
-      ExpressionAttributeValues: {
-        ":pk": `mp#${currentYear}`,
-        ":sK": currentDate,
+        ":pk": "mp",
+        ":today": currentDate,
       },
     });
 
     try {
-      const [openMpResult, endsAfterTodayMpResult] = await Promise.all([
-        client.send(openMpCommand),
-        client.send(endsAfterTodayMpCommand),
-      ]);
-
-      const allItems = [
-        ...(openMpResult.Items || []),
-        ...(endsAfterTodayMpResult.Items || []),
-      ];
-      const parsedResult = dbMpMetadata.array().parse(allItems);
+      const result = await client.send(command);
+      const parsedResult = dbMpMetadata.array().parse(result.Items);
       return parsedResult;
     } catch (error) {
       console.error("Error getting MPs not ended:", error);
