@@ -101,6 +101,7 @@ export function ClientForm() {
     },
     requests: [],
     magLogs: [],
+    attachments: [],
   });
 
   const [openField, setOpenField] = useState<string | null>(null);

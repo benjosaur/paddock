@@ -21,6 +21,7 @@ import { PackageService } from "../package/service";
 import { PackageRepository } from "../package/repository";
 import { RequestService } from "../requests/service";
 import { AttachmentService } from "../attachment/service";
+import { DbAttachmentEntity } from "../attachment/schema";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { EndPersonDetails, endPersonDetailsSchema } from "shared";
@@ -117,10 +118,15 @@ export class VolunteerService {
             await this.requestService.getById(requestId, user)
         )
       );
+      const attachments = await this.attachmentService.withViewUrls(
+        volunteer.filter((dbResult): dbResult is DbAttachmentEntity =>
+          dbResult.sK.startsWith("att#")
+        )
+      );
       const volunteerMetadata =
         this.transformDbVolunteerToSharedMetaData(volunteer);
       const fullVolunteer: VolunteerFull[] = [
-        { ...volunteerMetadata[0], requests, solePackages },
+        { ...volunteerMetadata[0], requests, solePackages, attachments },
       ];
       const parsedResult = volunteerFullSchema.array().parse(fullVolunteer);
       return parsedResult[0];
@@ -406,7 +412,7 @@ export class VolunteerService {
       } else if (item.sK.startsWith("hg")) {
         continue;
       } else if (item.sK.startsWith("att")) {
-        // attachments are fetched separately via the attachments router
+        // attachments join the Full shape in getById (with signed view urls)
         continue;
       } else {
         console.dir(item, { depth: null });

@@ -4,10 +4,11 @@ import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { rolePermissions } from "shared/permissions";
 import { router, protectedProcedure } from "../prod/trpc";
 
-// Attachments piggyback on the owning entity's permissions: viewing needs the
-// owner resource's read, changing needs its update — the same gates as any
-// other data on that entity. The resource depends on the ownerId prefix, so
-// the check happens per-request instead of via createProtectedProcedure.
+// Attachments are read as part of the owner's getById; the mutations here
+// piggyback on the owning entity's permissions — changing an attachment needs
+// the owner resource's update, the same gate as any other data on that
+// entity. The resource depends on the ownerId prefix, so the check happens
+// per-request instead of via createProtectedProcedure.
 const ownerResources = {
   "c#": "clients",
   "mp#": "mps",
@@ -26,7 +27,7 @@ const attachmentIdSchema = z.string().startsWith("att#");
 const assertOwnerPermission = (
   user: User,
   ownerId: string,
-  action: "read" | "update"
+  action: "update"
 ): void => {
   const prefix = (
     Object.keys(ownerResources) as (keyof typeof ownerResources)[]
@@ -40,13 +41,6 @@ const assertOwnerPermission = (
 };
 
 export const attachmentsRouter = router({
-  listByOwner: protectedProcedure
-    .input(z.object({ ownerId: ownerIdSchema }))
-    .query(async ({ ctx, input }) => {
-      assertOwnerPermission(ctx.user, input.ownerId, "read");
-      return await ctx.services.attachment.listByOwner(input.ownerId, ctx.user);
-    }),
-
   createUploadUrl: protectedProcedure
     .input(
       z.object({

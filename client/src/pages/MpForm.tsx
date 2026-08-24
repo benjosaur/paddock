@@ -47,6 +47,7 @@ export function MpForm() {
     },
     trainingRecords: [],
     requests: [],
+    attachments: [],
   });
 
   const queryClient = useQueryClient();

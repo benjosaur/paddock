@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
-import { Attachment, attachmentSchema } from "shared";
+import { Attachment, AttachmentWithUrl, attachmentSchema } from "shared";
 import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { getTableName } from "../repository";
 import { addDbMiddleware } from "../service";
@@ -42,8 +42,6 @@ const getImagesBucket = (): string => {
 // tables themselves.
 const buildS3Key = (ownerId: string, uuid: string, user: User): string =>
   `${getTableName(user)}/${ownerId.replace(/#/g, "_")}/${uuid}`;
-
-export type AttachmentWithUrl = Attachment & { url: string };
 
 export class AttachmentService {
   attachmentRepository = new AttachmentRepository();
@@ -130,21 +128,32 @@ export class AttachmentService {
     }
   }
 
-  async listByOwner(
-    ownerId: string,
-    user: User
-  ): Promise<AttachmentWithUrl[]> {
+  // Attaches presigned view URLs to already-fetched att# rows; called by the
+  // owning entity's getById, which serves attachments as part of the person.
+  // Never throws on a missing IMAGES_BUCKET — that would take down every
+  // detail view of an owner holding attachments — the urls are just empty.
+  async withViewUrls(rows: DbAttachmentEntity[]): Promise<AttachmentWithUrl[]> {
     try {
-      const bucket = getImagesBucket();
-      const rows = await this.attachmentRepository.listByOwner(ownerId, user);
+      if (rows.length === 0) return [];
+      const bucket = process.env.IMAGES_BUCKET;
+      if (!bucket) {
+        console.warn(
+          "IMAGES_BUCKET is unset: serving attachments without view urls"
+        );
+      }
       const withUrls = await Promise.all(
         rows.map(async (row) => ({
           ...this.transformDbAttachmentToShared(row),
-          url: await getSignedUrl(
-            s3,
-            new GetObjectCommand({ Bucket: bucket, Key: row.details.s3Key }),
-            { expiresIn: VIEW_URL_TTL_SECONDS }
-          ),
+          url: bucket
+            ? await getSignedUrl(
+                s3,
+                new GetObjectCommand({
+                  Bucket: bucket,
+                  Key: row.details.s3Key,
+                }),
+                { expiresIn: VIEW_URL_TTL_SECONDS }
+              )
+            : "",
         }))
       );
       // newest document date first; upload time breaks ties
@@ -154,7 +163,7 @@ export class AttachmentService {
           b.updatedAt.localeCompare(a.updatedAt)
       );
     } catch (error) {
-      console.error("Service Layer Error listing attachments:", error);
+      console.error("Service Layer Error signing attachment urls:", error);
       throw error;
     }
   }

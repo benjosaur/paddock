@@ -49,6 +49,7 @@ export function VolunteerForm() {
     trainingRecords: [],
     requests: [],
     solePackages: [],
+    attachments: [],
   });
 
   const queryClient = useQueryClient();

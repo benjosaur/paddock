@@ -42,13 +42,18 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     date: string;
   } | null>(null);
 
-  const attachmentsQuery = useQuery(
-    trpc.attachments.listByOwner.queryOptions({ ownerId })
-  );
+  // The list is part of the owner's getById payload. queryOptions isn't
+  // callable on the 3-way router union, but queryKey and the vanilla client
+  // are — and the key matches the detail modals' own getById queries, so the
+  // tab and the popups share one cache entry and one invalidation.
+  const ownerQuery = useQuery({
+    queryKey: trpc[resource].getById.queryKey({ id: ownerId }),
+    queryFn: () => trpcClient[resource].getById.query({ id: ownerId }),
+  });
 
   const invalidateList = () =>
     queryClient.invalidateQueries({
-      queryKey: trpc.attachments.listByOwner.queryKey({ ownerId }),
+      queryKey: trpc[resource].getById.queryKey({ id: ownerId }),
     });
 
   // One mutation for the whole flow (presign -> PUT to S3 -> confirm) so a
@@ -111,7 +116,11 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     setPendingUpload({ file, date: new Date().toISOString().split("T")[0] });
   };
 
-  const attachments = attachmentsQuery.data ?? [];
+  const attachments = ownerQuery.data?.attachments ?? [];
+
+  // The server serves url: "" instead of failing the whole owner query when
+  // IMAGES_BUCKET is unset; render names without links in that case.
+  const notConfigured = attachments.some((attachment) => !attachment.url);
 
   const uploadButton = (
     <PermissionGate resource={resource} action="update">
@@ -148,14 +157,10 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     </PermissionGate>
   );
 
-  const statusMessage = attachmentsQuery.isLoading ? (
+  const statusMessage = ownerQuery.isLoading ? (
     <p className="text-sm text-gray-500">Loading attachments...</p>
-  ) : attachmentsQuery.isError ? (
-    <p className="text-sm text-red-600">
-      {attachmentsQuery.error.message.includes("not configured")
-        ? "Attachments are not configured for this environment."
-        : "Failed to load attachments."}
-    </p>
+  ) : ownerQuery.isError ? (
+    <p className="text-sm text-red-600">Failed to load attachments.</p>
   ) : attachments.length === 0 ? (
     <p className="text-sm text-gray-500">No attachments yet.</p>
   ) : null;
@@ -174,6 +179,12 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
         {uploadButton}
       </div>
 
+      {notConfigured && (
+        <p className="text-sm text-red-600">
+          Attachments are not configured for this environment.
+        </p>
+      )}
+
       {statusMessage ??
         (layout === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -182,8 +193,12 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                 key={attachment.id}
                 className="border rounded-lg overflow-hidden bg-white"
               >
-                <a href={attachment.url} target="_blank" rel="noreferrer">
-                  {isImage(attachment.details.contentType) ? (
+                <a
+                  href={attachment.url || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {attachment.url && isImage(attachment.details.contentType) ? (
                     <img
                       src={attachment.url}
                       alt={attachment.details.fileName}
@@ -221,7 +236,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                 key={attachment.id}
                 className="flex items-center gap-3 p-2 text-sm"
               >
-                {isImage(attachment.details.contentType) ? (
+                {attachment.url && isImage(attachment.details.contentType) ? (
                   <img
                     src={attachment.url}
                     alt=""
@@ -234,7 +249,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                   </span>
                 )}
                 <a
-                  href={attachment.url}
+                  href={attachment.url || undefined}
                   target="_blank"
                   rel="noreferrer"
                   className="flex-1 truncate text-gray-700 hover:underline"

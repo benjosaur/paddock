@@ -18,6 +18,7 @@ import { PackageRepository } from "../package/repository";
 import { DbTrainingRecord } from "../training/schema";
 import { RequestService } from "../requests/service";
 import { AttachmentService } from "../attachment/service";
+import { DbAttachmentEntity } from "../attachment/schema";
 import { genericUpdate } from "../repository";
 import { addDbMiddleware } from "../service";
 import { coreTrainingRecordTypes } from "shared/const";
@@ -88,8 +89,13 @@ export class MpService {
             await this.requestService.getById(requestId, user)
         )
       );
+      const attachments = await this.attachmentService.withViewUrls(
+        mpDbResults.filter((dbResult): dbResult is DbAttachmentEntity =>
+          dbResult.sK.startsWith("att#")
+        )
+      );
       const mpMetadata = this.transformDbMpToSharedMetaData(mpDbResults);
-      const fullMp: MpFull[] = [{ ...mpMetadata[0], requests }];
+      const fullMp: MpFull[] = [{ ...mpMetadata[0], requests, attachments }];
       const parsedResult = mpFullSchema.array().parse(fullMp);
       return parsedResult[0];
     } catch (error) {
@@ -308,7 +314,7 @@ export class MpService {
       } else if (item.sK.startsWith("mag")) {
         continue;
       } else if (item.sK.startsWith("att")) {
-        // attachments are fetched separately via the attachments router
+        // attachments join the Full shape in getById (with signed view urls)
         continue;
       } else throw new Error(`Undefined Case: ${item}`);
     }

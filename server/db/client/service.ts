@@ -138,7 +138,14 @@ export class ClientService {
           async (magLogId) => await this.magLogService.getById(magLogId, user)
         )
       );
-      const fullClient = [{ ...clientMetadata[0], requests, magLogs }];
+      const attachments = await this.attachmentService.withViewUrls(
+        client.filter((dbResult): dbResult is DbAttachmentEntity =>
+          dbResult.sK.startsWith("att#")
+        )
+      );
+      const fullClient = [
+        { ...clientMetadata[0], requests, magLogs, attachments },
+      ];
       const parsedResult = clientFullSchema.array().parse(fullClient);
 
       return parsedResult[0];
@@ -557,7 +564,7 @@ export class ClientService {
       } else if (item.sK.startsWith("hg")) {
         continue;
       } else if (item.sK.startsWith("att")) {
-        // image attachments are fetched separately via the attachments router
+        // attachments join the Full shape in getById (with signed view urls)
         continue;
       } else throw new Error(`Undefined Case: ${item}`);
     }

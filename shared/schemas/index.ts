@@ -47,6 +47,12 @@ export const attachmentSchema = z.object({
   }),
 });
 
+// Served shape: a presigned S3 view URL is attached at read time (empty when
+// the environment has no images bucket configured).
+export const attachmentWithUrlSchema = attachmentSchema.extend({
+  url: z.string(),
+});
+
 export const userRoleSchema = z.enum(userRoles);
 
 const addressSchema = z.object({
@@ -249,6 +255,7 @@ export const clientMetadataSchema = z.object({
 export const clientFullSchema = clientMetadataSchema.extend({
   requests: z.array(requestFullSchema).default([]),
   magLogs: z.array(magLogSchema).default([]),
+  attachments: z.array(attachmentWithUrlSchema).default([]),
 });
 
 export const mpMetadataSchema = z.object({
@@ -273,6 +280,7 @@ export const mpMetadataSchema = z.object({
 
 export const mpFullSchema = mpMetadataSchema.omit({ packages: true }).extend({
   requests: z.array(requestFullSchema).default([]),
+  attachments: z.array(attachmentWithUrlSchema).default([]),
 });
 
 export const volunteerMetadataSchema = mpMetadataSchema
@@ -296,6 +304,7 @@ export const volunteerFullSchema = volunteerMetadataSchema
   })
   .extend({
     requests: z.array(requestFullSchema).default([]),
+    attachments: z.array(attachmentWithUrlSchema).default([]),
   });
 
 export const attendanceAllowanceCrossSectionSchema = z.object({
@@ -449,6 +458,7 @@ export type RequestMetadata = z.infer<typeof requestMetadataSchema>;
 export type RequestFull = z.infer<typeof requestFullSchema>;
 export type TrainingRecord = z.infer<typeof trainingRecordSchema>;
 export type Attachment = z.infer<typeof attachmentSchema>;
+export type AttachmentWithUrl = z.infer<typeof attachmentWithUrlSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type AttendanceAllowanceCrossSection = z.infer<
   typeof attendanceAllowanceCrossSectionSchema
