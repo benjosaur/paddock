@@ -49,9 +49,8 @@ export class NormalReportService {
   }
 
   async generateActivePackagesCrossSection(user: User): Promise<CrossSection> {
-    const packages = await this.packageService.getAllWithoutInfoNotEndedYet(
-      user
-    );
+    const packages =
+      await this.packageService.getAllWithoutInfoNotEndedYet(user);
     const crossSection: CrossSection = {
       totalHours: 0,
       localities: [],
@@ -91,7 +90,7 @@ export class NormalReportService {
       : await this.requestService.getAllMetadataWithoutInfo(user, startYear);
     const report = this.constructEmptyReport(startYear, currentYear);
     for (const request of requests) {
-      this.addItemToReport(request, report, isInfo);
+      this.addItemToReport(request, report, startYear, isInfo);
     }
     return report;
   }
@@ -109,7 +108,7 @@ export class NormalReportService {
     );
     const report = this.constructEmptyReport(startYear, currentYear);
     for (const pkg of packages) {
-      this.addItemToReport(pkg, report, isInfo);
+      this.addItemToReport(pkg, report, startYear, isInfo);
     }
     return report;
   }
@@ -127,7 +126,7 @@ export class NormalReportService {
     );
     const report = this.constructEmptyReport(startYear, currentYear);
     for (const pkg of packages) {
-      this.addItemToReport(pkg, report, isInfo);
+      this.addItemToReport(pkg, report, startYear, isInfo);
     }
     return report;
   }
@@ -158,6 +157,7 @@ export class NormalReportService {
   private addItemToReport(
     item: RequestMetadata | Package,
     report: Report,
+    reportStartYear: number,
     isInfo: boolean
   ): void {
     const startDate = item.startDate;
@@ -180,17 +180,26 @@ export class NormalReportService {
     const endMonth = parseInt(endDate.slice(5, 7));
     const endDay = parseInt(endDate.slice(8, 10));
 
-    let currentDay = startDay;
-    let currentMonth = startMonth;
-    let currentYear = startYear;
+    // Queries only guaranteed to have end dates >= report start year.
+    // Thus, when start date before report start year - must only start logging from report start date
 
-    this.addHoursToReport(
-      item.details.oneOffStartDateHours,
-      report,
-      item,
-      startYear,
-      startMonth
-    );
+    const isItemStartBeforeReportStart = startYear < reportStartYear;
+
+    let currentDay = isItemStartBeforeReportStart ? 1 : startDay;
+    let currentMonth = isItemStartBeforeReportStart ? 1 : startMonth;
+    let currentYear = isItemStartBeforeReportStart
+      ? reportStartYear
+      : startYear;
+
+    if (!isItemStartBeforeReportStart) {
+      this.addHoursToReport(
+        item.details.oneOffStartDateHours,
+        report,
+        item,
+        startYear,
+        startMonth
+      );
+    }
 
     while (
       currentYear < endYear ||
@@ -214,7 +223,8 @@ export class NormalReportService {
         currentMonth++;
       }
     }
-    const hoursToAdd = item.details.weeklyHours * ((endDay - currentDay) / 7);
+    const hoursToAdd =
+      item.details.weeklyHours * ((endDay - currentDay + 1) / 7);
     this.addHoursToReport(hoursToAdd, report, item, currentYear, currentMonth);
   }
 

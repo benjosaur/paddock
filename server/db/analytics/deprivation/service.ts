@@ -52,9 +52,8 @@ export class DeprivationReportService {
   async generateActivePackagesDeprivationCrossSection(
     user: User
   ): Promise<DeprivationCrossSection> {
-    const packages = await this.packageService.getAllWithoutInfoNotEndedYet(
-      user
-    );
+    const packages =
+      await this.packageService.getAllWithoutInfoNotEndedYet(user);
     const crossSection: DeprivationCrossSection = {
       totalHours: 0,
       deprivationCategories: [],
@@ -96,7 +95,7 @@ export class DeprivationReportService {
       : await this.requestService.getAllMetadataWithoutInfo(user, startYear);
     const report = this.constructEmptyDeprivationReport(startYear, currentYear);
     for (const request of requests) {
-      this.addItemToDeprivationReport(request, report, isInfo);
+      this.addItemToDeprivationReport(request, report, startYear, isInfo);
     }
     return report;
   }
@@ -114,7 +113,7 @@ export class DeprivationReportService {
     );
     const report = this.constructEmptyDeprivationReport(startYear, currentYear);
     for (const pkg of packages) {
-      this.addItemToDeprivationReport(pkg, report, isInfo);
+      this.addItemToDeprivationReport(pkg, report, startYear, isInfo);
     }
     return report;
   }
@@ -157,6 +156,7 @@ export class DeprivationReportService {
   private addItemToDeprivationReport(
     item: RequestMetadata | Package,
     report: DeprivationReport,
+    reportStartYear: number,
     isInfo: boolean
   ): void {
     const startDate = item.startDate;
@@ -178,17 +178,26 @@ export class DeprivationReportService {
     const endYear = parseInt(endDate.slice(0, 4));
     const endMonth = parseInt(endDate.slice(5, 7));
     const endDay = parseInt(endDate.slice(8, 10));
-    let currentDay = startDay;
-    let currentMonth = startMonth;
-    let currentYear = startYear;
+    // Queries only guaranteed to have end dates >= report start year.
+    // Thus, when start date before report start year - must only start logging from report start date
 
-    this.addHoursToDeprivationReport(
-      item.details.oneOffStartDateHours,
-      report,
-      item,
-      startYear,
-      startMonth
-    );
+    const isItemStartBeforeReportStart = startYear < reportStartYear;
+
+    let currentDay = isItemStartBeforeReportStart ? 1 : startDay;
+    let currentMonth = isItemStartBeforeReportStart ? 1 : startMonth;
+    let currentYear = isItemStartBeforeReportStart
+      ? reportStartYear
+      : startYear;
+
+    if (!isItemStartBeforeReportStart) {
+      this.addHoursToDeprivationReport(
+        item.details.oneOffStartDateHours,
+        report,
+        item,
+        startYear,
+        startMonth
+      );
+    }
 
     while (
       currentYear < endYear ||
@@ -212,7 +221,8 @@ export class DeprivationReportService {
         currentMonth++;
       }
     }
-    const hoursToAdd = item.details.weeklyHours * ((endDay - currentDay) / 7);
+    const hoursToAdd =
+      item.details.weeklyHours * ((endDay - currentDay + 1) / 7);
     this.addHoursToDeprivationReport(
       hoursToAdd,
       report,
