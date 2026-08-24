@@ -66,6 +66,7 @@ export const attachmentsRouter = router({
         ownerId: ownerIdSchema,
         attachmentId: attachmentIdSchema,
         fileName: z.string().min(1).max(255),
+        date: z.string().date(),
       })
     )
     .mutation(async ({ ctx, input }) => {

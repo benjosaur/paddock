@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import { trpc, trpcClient } from "../utils/trpc";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,12 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     fileName: string;
   } | null>(null);
 
+  // File picked but awaiting its document date before the upload runs.
+  const [pendingUpload, setPendingUpload] = useState<{
+    file: File;
+    date: string;
+  } | null>(null);
+
   const attachmentsQuery = useQuery(
     trpc.attachments.listByOwner.queryOptions({ ownerId })
   );
@@ -47,7 +54,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
   // One mutation for the whole flow (presign -> PUT to S3 -> confirm) so a
   // failure at any step surfaces as a single error toast.
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, date }: { file: File; date: string }) => {
       const { attachmentId, uploadUrl } =
         await trpcClient.attachments.createUploadUrl.mutate({
           ownerId,
@@ -66,6 +73,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
         ownerId,
         attachmentId,
         fileName: file.name,
+        date,
       });
     },
     onSuccess: () => {
@@ -99,7 +107,8 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
       );
       return;
     }
-    uploadMutation.mutate(file);
+    // Ask for the document's date before uploading (defaults to today).
+    setPendingUpload({ file, date: new Date().toISOString().split("T")[0] });
   };
 
   const attachments = attachmentsQuery.data ?? [];
@@ -195,7 +204,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                     {attachment.details.fileName}
                   </span>
                   <span className="shrink-0 text-gray-400">
-                    {formatYmdToDmy(attachment.updatedAt.slice(0, 10))}
+                    {formatYmdToDmy(attachment.date)}
                   </span>
                   {deleteButton({
                     id: attachment.id,
@@ -234,7 +243,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                   {attachment.details.fileName}
                 </a>
                 <span className="shrink-0 text-xs text-gray-400">
-                  {formatYmdToDmy(attachment.updatedAt.slice(0, 10))}
+                  {formatYmdToDmy(attachment.date)}
                 </span>
                 {deleteButton({
                   id: attachment.id,
@@ -244,6 +253,62 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
             ))}
           </ul>
         ))}
+
+      <Dialog
+        open={pendingUpload !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingUpload(null);
+        }}
+      >
+        <DialogContent className="md:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Upload attachment</DialogTitle>
+          </DialogHeader>
+          {pendingUpload && (
+            <div className="space-y-4">
+              <p
+                className="text-sm text-gray-600 truncate"
+                title={pendingUpload.file.name}
+              >
+                {pendingUpload.file.name}
+              </p>
+              <div>
+                <label
+                  htmlFor="attachment-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Document date
+                </label>
+                <Input
+                  id="attachment-date"
+                  type="date"
+                  value={pendingUpload.date}
+                  onChange={(e) =>
+                    setPendingUpload({ ...pendingUpload, date: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPendingUpload(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={pendingUpload.date === ""}
+                  onClick={() => {
+                    uploadMutation.mutate(pendingUpload);
+                    setPendingUpload(null);
+                  }}
+                >
+                  Upload
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <DeleteAlert
         isOpen={deleteTarget !== null}

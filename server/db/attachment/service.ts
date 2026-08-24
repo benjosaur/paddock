@@ -77,7 +77,12 @@ export class AttachmentService {
   // failed/abandoned upload never shows up in listings. HEAD gives the
   // authoritative size/contentType — a presigned PUT cannot enforce a size cap.
   async confirm(
-    input: { ownerId: string; attachmentId: string; fileName: string },
+    input: {
+      ownerId: string;
+      attachmentId: string;
+      fileName: string;
+      date: string;
+    },
     user: User
   ): Promise<Attachment> {
     try {
@@ -112,6 +117,7 @@ export class AttachmentService {
           pK: input.ownerId,
           sK: input.attachmentId,
           entityType: "attachment" as const,
+          date: input.date,
           details: { fileName: input.fileName, contentType, size, s3Key },
         },
         user
@@ -141,8 +147,12 @@ export class AttachmentService {
           ),
         }))
       );
-      // newest first
-      return withUrls.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      // newest document date first; upload time breaks ties
+      return withUrls.sort(
+        (a, b) =>
+          b.date.localeCompare(a.date) ||
+          b.updatedAt.localeCompare(a.updatedAt)
+      );
     } catch (error) {
       console.error("Service Layer Error listing attachments:", error);
       throw error;
@@ -194,6 +204,7 @@ export class AttachmentService {
       id: row.sK,
       ownerId: row.pK,
       updatedAt: row.updatedAt,
+      date: row.date,
       details: row.details,
     });
   }

@@ -38,6 +38,8 @@ export const attachmentSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   updatedAt: z.string().datetime(),
+  // The document's own date, entered at upload — not the upload time.
+  date: z.string().date(),
   details: z.object({
     fileName: z.string().min(1),
     contentType: z.enum(allowedAttachmentTypes),
