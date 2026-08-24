@@ -7,11 +7,20 @@ import type { HubGrubLog, TableColumn } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const hubGrubLogColumns: TableColumn<HubGrubLog>[] = [
-  { key: "date", header: "Date", render: (item) => formatYmdToDmy(item.date) },
+  {
+    key: "date",
+    header: "Date",
+    render: (item) => formatYmdToDmy(item.date),
+    sortValue: (item) => item.date || null,
+  },
   {
     key: "total",
     header: "Total Attendees",
     render: (item: HubGrubLog) =>
+      item.details.totalVolunteers +
+      item.details.totalClients +
+      item.details.otherAttendees,
+    sortValue: (item) =>
       item.details.totalVolunteers +
       item.details.totalClients +
       item.details.otherAttendees,
@@ -24,11 +33,17 @@ export const hubGrubLogColumns: TableColumn<HubGrubLog>[] = [
       const count = item.details.totalVolunteers ?? 0;
       return Math.round(duration * count * 100) / 100;
     },
+    sortValue: (item) => {
+      const duration = item.totalHours ?? 0;
+      const count = item.details.totalVolunteers ?? 0;
+      return Math.round(duration * count * 100) / 100;
+    },
   },
   {
     key: "notes",
     header: "Notes",
     render: (item) => item.details.notes,
+    sortValue: (item) => item.details.notes || null,
   },
 ];
 
@@ -40,11 +55,6 @@ export default function HubGrubLogRoutes() {
   const hubGrubQuery = useQuery(trpc.hubGrub.getAll.queryOptions());
 
   const hubGrub = hubGrubQuery.data || [];
-
-  // Sort logs by date (newest first)
-  const sortedHubGrub = hubGrub
-    .slice()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const deleteHubGrubLogMutation = useMutation(
     trpc.hubGrub.delete.mutationOptions({
@@ -81,8 +91,10 @@ export default function HubGrubLogRoutes() {
             key="hub-grub-logs"
             title="Hub & Grub"
             searchPlaceholder="Search Hub & Grub logs..."
-            data={sortedHubGrub}
+            data={hubGrub}
             columns={hubGrubLogColumns}
+            defaultSortKey="date"
+            defaultSortDirection="desc"
             onEdit={handleEdit}
             onDelete={handleDelete}
             onCreate={handleAddNew}
