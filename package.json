@@ -19,6 +19,8 @@
     "build:server": "cd server && bun run build",
     "deploy:staging": "cd server && bun run deploy:staging",
     "deploy:prod": "cd server && bun run deploy",
+    "deploy:staging:hotswap": "cd server && bun run deploy:staging:hotswap",
+    "deploy:prod:hotswap": "cd server && bun run deploy:hotswap",
     "lint": "cd client && bun run lint",
     "preview": "cd client && bun run preview"
   },
