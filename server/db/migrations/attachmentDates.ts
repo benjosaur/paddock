@@ -1,5 +1,8 @@
-import { ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { client } from "../repository";
+import {
+  DynamoDBDocumentClient,
+  ScanCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 // One-off backfill for the mandatory attachment `date` field (2026-08):
 // sets date = the updatedAt day on every att# row that lacks one. Idempotent
@@ -8,11 +11,10 @@ import { client } from "../repository";
 // deploy-order note in the introducing commit. Delete once every table
 // (WiveyCares2, Test2, *-Staging, local) is migrated.
 //
-//   bun run db.ts migrate:attachment-dates <tableName> [--dry-run]
-//
-// Uses the shared document client: DynamoDB Local when NODE_ENV != production,
-// AWS credentials from the environment otherwise.
+// The caller supplies the connection — see
+// server/scripts/migrate-attachment-dates-remote.ts for the cloud entry point.
 export async function runAttachmentDatesMigration(
+  client: DynamoDBDocumentClient,
   tableName: string,
   options: { dryRun: boolean }
 ): Promise<void> {
