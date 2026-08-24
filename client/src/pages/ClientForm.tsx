@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Paperclip } from "lucide-react";
@@ -248,11 +248,15 @@ export function ClientForm() {
     })
   );
 
+  // Hydrate once per id: later refetches keep the cache fresh for modals and
+  // popups but must not overwrite in-progress form input.
+  const hydratedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (clientQuery.data) {
+    if (clientQuery.data && hydratedFor.current !== id) {
+      hydratedFor.current = id;
       setFormData(clientQuery.data);
     }
-  }, [clientQuery.data]);
+  }, [clientQuery.data, id]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
