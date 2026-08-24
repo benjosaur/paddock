@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FileText } from "lucide-react";
 import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
+import type { AttachmentWithUrl } from "shared";
 import { trpc, trpcClient } from "../utils/trpc";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -45,9 +47,12 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
   // The list is part of the owner's getById payload. queryOptions isn't
   // callable on the 3-way router union, but queryKey and the vanilla client
   // are — and the key matches the detail modals' own getById queries, so the
-  // tab and the popups share one cache entry and one invalidation.
-  const ownerQuery = useQuery({
-    queryKey: trpc[resource].getById.queryKey({ id: ownerId }),
+  // tab and the popups share one cache entry and one invalidation. The
+  // explicit data generic (the union's common subset) sidesteps the tagged
+  // key's conflicting inference; the queryFn still returns the whole owner so
+  // the shared cache entry stays complete.
+  const ownerQuery = useQuery<{ attachments: AttachmentWithUrl[] }>({
+    queryKey: trpc[resource].getById.queryKey({ id: ownerId }) as QueryKey,
     queryFn: () => trpcClient[resource].getById.query({ id: ownerId }),
   });
 
