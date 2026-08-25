@@ -2,8 +2,6 @@
 // bubbles, files are media, and what the system did appears as centred
 // dividers between them. The composer sits at the top, next to the newest
 // entry, so adding something is where your eye already is.
-import { Paperclip } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   EVENT_META,
   TONE,
@@ -18,6 +16,7 @@ import {
 import {
   AttachmentName,
   AttachmentThumb,
+  Composer,
   DeleteButton,
   EmptyState,
   EntryIcon,
@@ -36,28 +35,14 @@ export function JournalTimeline({
   openAddFile,
 }: VariantProps) {
   const days = groupByDay(state.visible);
-  const firstName = person.name.split(" ")[0];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-2 rounded-2xl border border-gray-200/70 bg-white p-2 shadow-sm">
-        <button
-          type="button"
-          onClick={openAddNote}
-          className="flex h-10 flex-1 cursor-text items-center rounded-xl bg-gray-50 px-4 text-left text-sm text-gray-400 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
-        >
-          Add a note about {firstName}…
-        </button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={openAddFile}
-          aria-label="Add file"
-          title="Add file"
-        >
-          <Paperclip className="h-4 w-4" />
-        </Button>
-      </div>
+      <Composer
+        personName={person.name}
+        onNote={openAddNote}
+        onFile={openAddFile}
+      />
       <div className="flex items-center justify-end py-2">
         <FilterChips state={state} />
       </div>

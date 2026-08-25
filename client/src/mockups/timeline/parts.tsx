@@ -1,5 +1,11 @@
 // Small pieces shared by every variant so the variants stay about layout.
-import { FileText, FilePlus2, MessageSquarePlus, Trash2 } from "lucide-react";
+import {
+  FileText,
+  FilePlus2,
+  MessageSquarePlus,
+  Paperclip,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { MockPerson } from "./data";
@@ -127,6 +133,40 @@ export function AddButtons({
       <Button variant={fileVariant} size={size} onClick={onFile} className="gap-1.5">
         <FilePlus2 className="h-4 w-4" />
         Add file
+      </Button>
+    </div>
+  );
+}
+
+// Journal-style entry bar: a fake input that opens the note dialog, and a
+// paperclip for files. Adding lives where the newest entry is.
+export function Composer({
+  personName,
+  onNote,
+  onFile,
+}: {
+  personName: string;
+  onNote: () => void;
+  onFile: () => void;
+}) {
+  const firstName = personName.split(" ")[0];
+  return (
+    <div className="flex items-center gap-2 rounded-2xl border border-gray-200/70 bg-white p-2 shadow-sm">
+      <button
+        type="button"
+        onClick={onNote}
+        className="flex h-10 flex-1 cursor-text items-center rounded-xl bg-gray-50 px-4 text-left text-sm text-gray-400 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+      >
+        Add a note about {firstName}…
+      </button>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onFile}
+        aria-label="Add file"
+        title="Add file"
+      >
+        <Paperclip className="h-4 w-4" />
       </Button>
     </div>
   );

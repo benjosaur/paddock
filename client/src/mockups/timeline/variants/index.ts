@@ -32,7 +32,7 @@ export const VARIANTS: Variant[] = [
     slug: "3",
     name: "Spine",
     blurb:
-      "System events on a centre spine, coordinator notes to the left, files to the right — the side tells you the source.",
+      "Chosen direction: system events on a centre spine, notes left, files right, with the journal composer for adding.",
     component: SpineTimeline,
   },
   {

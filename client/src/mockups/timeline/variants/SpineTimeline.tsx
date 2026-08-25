@@ -1,7 +1,7 @@
 // Variant 3 — Spine. A centre line carries what the system knows (care
 // requests, packages, MAG, AA). What the coordinator typed sits to the
 // left; what they filed sits to the right. The side tells you the source.
-import { Fragment } from "react";
+// Adding is a journal-style composer at the top (from variant 5).
 import {
   EVENT_META,
   TONE,
@@ -12,15 +12,13 @@ import {
   type EventEntry,
   type NoteEntry,
 } from "../model";
-import { FilePlus2, MessageSquarePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   AttachmentName,
   AttachmentThumb,
+  Composer,
   DeleteButton,
   EmptyState,
   EntryIcon,
-  FilterChips,
   attachmentMeta,
   highlightClass,
   noteMeta,
@@ -30,6 +28,7 @@ import { cn } from "@/lib/utils";
 
 export function SpineTimeline({
   state,
+  person,
   openAddNote,
   openAddFile,
 }: VariantProps) {
@@ -37,38 +36,16 @@ export function SpineTimeline({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 pb-2">
-        <h3 className="text-lg font-semibold text-gray-800">Timeline</h3>
-        <FilterChips state={state} />
-      </header>
+      <Composer
+        personName={person.name}
+        onNote={openAddNote}
+        onFile={openAddFile}
+      />
 
-      {/* Column headings double as the add buttons: the action lives on the
-          side its result will appear. */}
-      <div className="grid grid-cols-[1fr_3rem_1fr] items-center border-b border-gray-200/70 pb-2">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            Notes
-          </span>
-          <Button size="sm" onClick={openAddNote} className="gap-1.5">
-            <MessageSquarePlus className="h-4 w-4" />
-            Add note
-          </Button>
-        </div>
-        <div />
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={openAddFile}
-            className="gap-1.5"
-          >
-            <FilePlus2 className="h-4 w-4" />
-            Add file
-          </Button>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            Files
-          </span>
-        </div>
+      <div className="mt-3 grid grid-cols-[1fr_3rem_1fr] border-b border-gray-200/70 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+        <span>Notes</span>
+        <span className="text-center">Record</span>
+        <span className="text-right">Files</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-2">
@@ -81,10 +58,16 @@ export function SpineTimeline({
             />
           </div>
         ) : (
-          <div className="relative grid grid-cols-[1fr_3rem_1fr] gap-y-3 pb-8 pt-3 before:absolute before:bottom-0 before:left-1/2 before:top-0 before:w-px before:-translate-x-1/2 before:bg-gray-200">
+          // The spine is one line behind every month; each month is its own
+          // section so its sticky pill is pushed out by the next month
+          // instead of stacking on top of it.
+          <div className="relative pb-8 before:absolute before:bottom-0 before:left-1/2 before:top-0 before:w-px before:-translate-x-1/2 before:bg-gray-200">
             {months.map((month) => (
-              <Fragment key={month.key}>
-                <div className="sticky top-0 z-10 col-span-3 flex justify-center py-1">
+              <section
+                key={month.key}
+                className="grid grid-cols-[1fr_3rem_1fr] gap-y-3 pb-3"
+              >
+                <div className="sticky top-0 z-10 col-span-3 flex justify-center bg-white/95 py-1 backdrop-blur">
                   <span className="rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 shadow-sm">
                     {month.label}
                   </span>
@@ -113,7 +96,7 @@ export function SpineTimeline({
                     />
                   );
                 })}
-              </Fragment>
+              </section>
             ))}
           </div>
         )}
@@ -125,10 +108,13 @@ export function SpineTimeline({
 function SpineEvent({ entry, isNew }: { entry: EventEntry; isNew: boolean }) {
   const tone = TONE[EVENT_META[entry.kind].tone];
   return (
-    <div id={entryDomId(entry.id)} className="col-span-3 flex justify-center scroll-mt-12">
+    <div
+      id={entryDomId(entry.id)}
+      className="col-span-3 flex scroll-mt-12 justify-center"
+    >
       <div
         className={cn(
-          "flex max-w-[70%] items-center gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm",
+          "relative z-[1] flex max-w-[70%] items-center gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm",
           tone.chip,
           highlightClass(isNew),
         )}
@@ -153,7 +139,7 @@ function SpineEvent({ entry, isNew }: { entry: EventEntry; isNew: boolean }) {
 
 function Dot() {
   return (
-    <div className="flex items-start justify-center pt-4">
+    <div className="relative z-[1] flex items-start justify-center pt-4">
       <span className="h-2.5 w-2.5 rounded-full bg-white ring-2 ring-gray-300" />
     </div>
   );
@@ -173,7 +159,7 @@ function SpineNote({
       <div
         id={entryDomId(entry.id)}
         className={cn(
-          "group relative col-start-1 scroll-mt-12 rounded-xl border border-gray-200/70 bg-white px-4 py-3 shadow-sm after:absolute after:right-[-1.5rem] after:top-[1.15rem] after:h-px after:w-6 after:bg-gray-200",
+          "group relative z-[1] col-start-1 scroll-mt-12 rounded-xl border border-gray-200/70 bg-white px-4 py-3 shadow-sm after:absolute after:right-[-1.5rem] after:top-[1.15rem] after:h-px after:w-6 after:bg-gray-200",
           highlightClass(isNew),
         )}
       >
@@ -213,7 +199,7 @@ function SpineFile({
       <div
         id={entryDomId(entry.id)}
         className={cn(
-          "group relative col-start-3 scroll-mt-12 flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white px-3 py-2.5 shadow-sm before:absolute before:left-[-1.5rem] before:top-[1.15rem] before:h-px before:w-6 before:bg-gray-200",
+          "group relative z-[1] col-start-3 flex scroll-mt-12 items-center gap-3 rounded-xl border border-gray-200/70 bg-white px-3 py-2.5 shadow-sm before:absolute before:left-[-1.5rem] before:top-[1.15rem] before:h-px before:w-6 before:bg-gray-200",
           highlightClass(isNew),
         )}
       >
