@@ -1,12 +1,16 @@
 // Dummy data for the timeline mockups: one client with a realistic two-year
 // history. Dates are relative to today's date (2026-08-25 when written).
-import type { TimelineEntry } from "./model";
+import type { DateSpan, TimelineEntry } from "./model";
 
 export interface MockPerson {
   id: string;
   name: string;
   locality: string;
   customId: string;
+  // Mirrors client.requests[] and their packages[] (start/end dates) — what
+  // the month pills count as care requested and care delivered.
+  careRequests: DateSpan[];
+  carePackages: DateSpan[];
 }
 
 export const MOCK_CLIENT: MockPerson = {
@@ -14,6 +18,14 @@ export const MOCK_CLIENT: MockPerson = {
   name: "Margaret Hale",
   locality: "Wiveliscombe",
   customId: "WC-0142",
+  careRequests: [
+    { id: "req-1", startDate: "2024-03-18", endDate: "2025-06-30" },
+    { id: "req-2", startDate: "2025-07-07", endDate: "open" },
+  ],
+  carePackages: [
+    { id: "pkg-1", startDate: "2024-03-25", endDate: "2025-06-30" },
+    { id: "pkg-2", startDate: "2025-08-04", endDate: "open" },
+  ],
 };
 
 // Placeholder "photos" as inline SVG so the mockup needs no network.
@@ -33,6 +45,14 @@ const DOCX =
 
 export const SEED_ENTRIES: TimelineEntry[] = [
   // ---- 2024: referral, agreement, first care package -----------------
+  {
+    id: "no-referral",
+    type: "note",
+    date: "2024-02-26",
+    source: "Phone",
+    minutesTaken: 15,
+    note: "Referral from Dr Patel at Wiveliscombe surgery: Margaret (82) recovering from a hip replacement, lives alone, daughter Claire nearby. Booked a first visit for next week.",
+  },
   {
     id: "ev-agreement",
     type: "event",
@@ -226,9 +246,17 @@ export const SEED_ENTRIES: TimelineEntry[] = [
     detail: "Unpaid · Companionship, Transport · 2h/wk · urgent",
   },
   {
+    id: "no-volunteer-search",
+    type: "note",
+    date: "2025-07-24",
+    source: "Phone",
+    minutesTaken: 10,
+    note: "No volunteer matched yet. Tom L (new volunteer, Milverton) is interested — meeting him Thursday to talk it through before introducing him to Margaret.",
+  },
+  {
     id: "ev-pkg2-start",
     type: "event",
-    date: "2025-07-14",
+    date: "2025-08-04",
     kind: "package-start",
     title: "Care confirmed",
     detail: "Tom Lyddon (volunteer) · 2h/wk",
@@ -236,7 +264,7 @@ export const SEED_ENTRIES: TimelineEntry[] = [
   {
     id: "at-gate",
     type: "attachment",
-    date: "2025-07-14",
+    date: "2025-08-04",
     fileName: "Garden gate – parking note.jpg",
     contentType: "image/jpeg",
     size: 980_774,
@@ -245,7 +273,7 @@ export const SEED_ENTRIES: TimelineEntry[] = [
   {
     id: "no-tom-intro",
     type: "note",
-    date: "2025-07-15",
+    date: "2025-08-05",
     source: "Phone",
     minutesTaken: 10,
     note: "Tom's first visit went well — took Margaret to the Thursday market. He'll do Musgrove appointments too if given a week's notice.",

@@ -5,6 +5,7 @@
 import {
   EVENT_META,
   TONE,
+  countActiveInMonth,
   entryDomId,
   fmtShortYear,
   groupByMonth,
@@ -67,10 +68,12 @@ export function SpineTimeline({
                 key={month.key}
                 className="grid grid-cols-[1fr_3rem_1fr] gap-y-3 pb-3"
               >
-                <div className="sticky top-0 z-10 col-span-3 flex justify-center bg-white/95 py-1 backdrop-blur">
-                  <span className="rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 shadow-sm">
-                    {month.label}
-                  </span>
+                <div className="sticky top-0 z-10 col-span-3 flex justify-center bg-white py-1">
+                  <MonthPill
+                    label={month.label}
+                    requests={countActiveInMonth(person.careRequests, month.key)}
+                    delivered={countActiveInMonth(person.carePackages, month.key)}
+                  />
                 </div>
                 {month.entries.map((entry) => {
                   const isNew = entry.id === state.justAddedId;
@@ -102,6 +105,33 @@ export function SpineTimeline({
         )}
       </div>
     </div>
+  );
+}
+
+// Month marker with what care was in place that month: requests open and
+// packages (care confirmed) delivering. Zero reads as quiet, not absent.
+function MonthPill({
+  label,
+  requests,
+  delivered,
+}: {
+  label: string;
+  requests: number;
+  delivered: number;
+}) {
+  const count = (n: number, text: string, tone: string) => (
+    <span className={cn("normal-case tracking-normal", n ? tone : "text-gray-400")}>
+      {n} {text}
+    </span>
+  );
+  return (
+    <span className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 shadow-sm">
+      {label}
+      <span className="h-3 w-px bg-gray-200" />
+      {count(requests, requests === 1 ? "request" : "requests", TONE.blue.text)}
+      <span className="text-gray-300">·</span>
+      {count(delivered, "care delivered", TONE.green.text)}
+    </span>
   );
 }
 

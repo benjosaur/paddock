@@ -127,6 +127,27 @@ export function groupByMonth(entries: TimelineEntry[]): MonthGroup[] {
   return groups;
 }
 
+// ---------------------------------------------------------------- spans
+
+// Same shape as requests/packages: YYYY-MM-DD start, YYYY-MM-DD or "open" end.
+export interface DateSpan {
+  id: string;
+  startDate: string;
+  endDate: string;
+}
+
+// How many spans were active at any point in the month (key: YYYY-MM).
+// String comparison is enough: "-01" and "-31" bracket every valid day.
+export function countActiveInMonth(spans: DateSpan[], monthKey: string): number {
+  const monthStart = `${monthKey}-01`;
+  const monthEnd = `${monthKey}-31`;
+  return spans.filter(
+    (span) =>
+      span.startDate <= monthEnd &&
+      (span.endDate === "open" || span.endDate >= monthStart),
+  ).length;
+}
+
 // ------------------------------------------------------------------- dates
 // All string-based: YYYY-MM-DD never goes through `new Date(str)`, which
 // would shift the day in some timezones.
