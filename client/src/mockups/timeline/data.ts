@@ -7,8 +7,8 @@ export interface MockPerson {
   name: string;
   locality: string;
   customId: string;
-  // Mirrors client.requests[] and their packages[] (start/end dates) — what
-  // the month pills count as care requested and care delivered.
+  // Mirrors client.requests[] and their packages[] (start/end dates and
+  // weekly hours) — what the month pills sum as hours requested/delivered.
   careRequests: DateSpan[];
   carePackages: DateSpan[];
 }
@@ -19,12 +19,12 @@ export const MOCK_CLIENT: MockPerson = {
   locality: "Wiveliscombe",
   customId: "WC-0142",
   careRequests: [
-    { id: "req-1", startDate: "2024-03-18", endDate: "2025-06-30" },
-    { id: "req-2", startDate: "2025-07-07", endDate: "open" },
+    { id: "req-1", startDate: "2024-03-18", endDate: "2025-06-30", weeklyHours: 4 },
+    { id: "req-2", startDate: "2025-07-07", endDate: "open", weeklyHours: 2 },
   ],
   carePackages: [
-    { id: "pkg-1", startDate: "2024-03-25", endDate: "2025-06-30" },
-    { id: "pkg-2", startDate: "2025-08-04", endDate: "open" },
+    { id: "pkg-1", startDate: "2024-03-25", endDate: "2025-06-30", weeklyHours: 4 },
+    { id: "pkg-2", startDate: "2025-08-04", endDate: "open", weeklyHours: 2 },
   ],
 };
 

@@ -5,9 +5,10 @@
 import {
   EVENT_META,
   TONE,
-  countActiveInMonth,
   entryDomId,
+  fmtHours,
   fmtShortYear,
+  hoursInMonth,
   groupByMonth,
   type AttachmentEntry,
   type EventEntry,
@@ -71,8 +72,8 @@ export function SpineTimeline({
                 <div className="sticky top-0 z-10 col-span-3 flex justify-center bg-white py-1">
                   <MonthPill
                     label={month.label}
-                    requests={countActiveInMonth(person.careRequests, month.key)}
-                    delivered={countActiveInMonth(person.carePackages, month.key)}
+                    requested={hoursInMonth(person.careRequests, month.key)}
+                    delivered={hoursInMonth(person.carePackages, month.key)}
                   />
                 </div>
                 {month.entries.map((entry) => {
@@ -108,29 +109,29 @@ export function SpineTimeline({
   );
 }
 
-// Month marker with what care was in place that month: requests open and
-// packages (care confirmed) delivering. Zero reads as quiet, not absent.
+// Month marker with the care in that month: hours requested (open care
+// requests) and hours delivered (care confirmed). Zero reads as quiet.
 function MonthPill({
   label,
-  requests,
+  requested,
   delivered,
 }: {
   label: string;
-  requests: number;
+  requested: number;
   delivered: number;
 }) {
-  const count = (n: number, text: string, tone: string) => (
+  const hours = (n: number, text: string, tone: string) => (
     <span className={cn("normal-case tracking-normal", n ? tone : "text-gray-400")}>
-      {n} {text}
+      {fmtHours(n)} {text}
     </span>
   );
   return (
     <span className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 shadow-sm">
       {label}
       <span className="h-3 w-px bg-gray-200" />
-      {count(requests, requests === 1 ? "request" : "requests", TONE.blue.text)}
+      {hours(requested, "requested", TONE.blue.text)}
       <span className="text-gray-300">·</span>
-      {count(delivered, "care delivered", TONE.green.text)}
+      {hours(delivered, "delivered", TONE.green.text)}
     </span>
   );
 }

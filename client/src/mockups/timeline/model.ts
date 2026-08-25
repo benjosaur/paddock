@@ -129,23 +129,45 @@ export function groupByMonth(entries: TimelineEntry[]): MonthGroup[] {
 
 // ---------------------------------------------------------------- spans
 
-// Same shape as requests/packages: YYYY-MM-DD start, YYYY-MM-DD or "open" end.
+// Same shape as requests/packages: YYYY-MM-DD start, YYYY-MM-DD or "open"
+// end, and details.weeklyHours.
 export interface DateSpan {
   id: string;
   startDate: string;
   endDate: string;
+  weeklyHours: number;
 }
 
-// How many spans were active at any point in the month (key: YYYY-MM).
-// String comparison is enough: "-01" and "-31" bracket every valid day.
-export function countActiveInMonth(spans: DateSpan[], monthKey: string): number {
-  const monthStart = `${monthKey}-01`;
-  const monthEnd = `${monthKey}-31`;
-  return spans.filter(
-    (span) =>
-      span.startDate <= monthEnd &&
-      (span.endDate === "open" || span.endDate >= monthStart),
-  ).length;
+const utc = (ymd: string) => {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return Date.UTC(y, m - 1, d);
+};
+
+// Hours the spans add up to within one month (key: YYYY-MM): weekly hours
+// pro-rated over the days each span overlaps the month.
+export function hoursInMonth(spans: DateSpan[], monthKey: string): number {
+  const [y, m] = monthKey.split("-").map(Number);
+  const monthStart = Date.UTC(y, m - 1, 1);
+  const monthEnd = Date.UTC(y, m, 0); // last day of the month
+  const day = 86_400_000;
+  let hours = 0;
+  for (const span of spans) {
+    const from = Math.max(utc(span.startDate), monthStart);
+    const to = Math.min(
+      span.endDate === "open" ? Infinity : utc(span.endDate),
+      monthEnd,
+    );
+    if (to < from) continue;
+    const days = (to - from) / day + 1;
+    hours += (span.weeklyHours * days) / 7;
+  }
+  return hours;
+}
+
+/** "18h", "2.5h" */
+export function fmtHours(hours: number): string {
+  const rounded = Math.round(hours * 2) / 2;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`;
 }
 
 // ------------------------------------------------------------------- dates
