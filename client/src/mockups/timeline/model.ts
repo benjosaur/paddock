@@ -130,12 +130,13 @@ export function groupByMonth(entries: TimelineEntry[]): MonthGroup[] {
 // ---------------------------------------------------------------- spans
 
 // Same shape as requests/packages: YYYY-MM-DD start, YYYY-MM-DD or "open"
-// end, and details.weeklyHours.
+// end, details.weeklyHours and details.oneOffStartDateHours.
 export interface DateSpan {
   id: string;
   startDate: string;
   endDate: string;
   weeklyHours: number;
+  oneOffStartDateHours: number;
 }
 
 const utc = (ymd: string) => {
@@ -144,7 +145,8 @@ const utc = (ymd: string) => {
 };
 
 // Hours the spans add up to within one month (key: YYYY-MM): weekly hours
-// pro-rated over the days each span overlaps the month.
+// pro-rated over the days each span overlaps the month, plus the one-off
+// hours in the month the span starts.
 export function hoursInMonth(spans: DateSpan[], monthKey: string): number {
   const [y, m] = monthKey.split("-").map(Number);
   const monthStart = Date.UTC(y, m - 1, 1);
@@ -160,6 +162,7 @@ export function hoursInMonth(spans: DateSpan[], monthKey: string): number {
     if (to < from) continue;
     const days = (to - from) / day + 1;
     hours += (span.weeklyHours * days) / 7;
+    if (span.startDate.startsWith(monthKey)) hours += span.oneOffStartDateHours;
   }
   return hours;
 }

@@ -19,12 +19,36 @@ export const MOCK_CLIENT: MockPerson = {
   locality: "Wiveliscombe",
   customId: "WC-0142",
   careRequests: [
-    { id: "req-1", startDate: "2024-03-18", endDate: "2025-06-30", weeklyHours: 4 },
-    { id: "req-2", startDate: "2025-07-07", endDate: "open", weeklyHours: 2 },
+    {
+      id: "req-1",
+      startDate: "2024-03-18",
+      endDate: "2025-06-30",
+      weeklyHours: 4,
+      oneOffStartDateHours: 3,
+    },
+    {
+      id: "req-2",
+      startDate: "2025-07-07",
+      endDate: "open",
+      weeklyHours: 2,
+      oneOffStartDateHours: 0,
+    },
   ],
   carePackages: [
-    { id: "pkg-1", startDate: "2024-03-25", endDate: "2025-06-30", weeklyHours: 4 },
-    { id: "pkg-2", startDate: "2025-08-04", endDate: "open", weeklyHours: 2 },
+    {
+      id: "pkg-1",
+      startDate: "2024-03-25",
+      endDate: "2025-06-30",
+      weeklyHours: 4,
+      oneOffStartDateHours: 3,
+    },
+    {
+      id: "pkg-2",
+      startDate: "2025-08-04",
+      endDate: "open",
+      weeklyHours: 2,
+      oneOffStartDateHours: 0,
+    },
   ],
 };
 
@@ -101,7 +125,7 @@ export const SEED_ENTRIES: TimelineEntry[] = [
     date: "2024-03-18",
     kind: "request-start",
     title: "Care request started",
-    detail: "Paid · Personal Care, Domestic · 4h/wk",
+    detail: "Paid · Personal Care, Domestic · 4h/wk + 3h one-off",
   },
   {
     id: "no-matching",
@@ -117,7 +141,7 @@ export const SEED_ENTRIES: TimelineEntry[] = [
     date: "2024-03-25",
     kind: "package-start",
     title: "Care confirmed",
-    detail: "Sarah Pocock · 4h/wk",
+    detail: "Sarah Pocock · 4h/wk + 3h one-off (deep clean)",
   },
   {
     id: "at-keysafe",
