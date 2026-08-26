@@ -199,11 +199,11 @@ function DetailShell({
       <div className="flex min-h-0 flex-grow flex-col pr-2">
         <Tabs defaultValue="timeline" className="mt-4 flex min-h-0 w-full flex-1 flex-col">
           <TabsList className="mb-4 grid w-full grid-cols-5">
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="contact">Contact Info</TabsTrigger>
             <TabsTrigger value="services">Services & Needs</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
             <TabsTrigger value="requests">New Care Requests</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
           {["contact", "services", "logs", "requests"].map((value) => (
             <TabsContent
