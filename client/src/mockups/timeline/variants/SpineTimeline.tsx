@@ -130,7 +130,6 @@ function MonthPill({
       {label}
       <span className="h-3 w-px bg-gray-200" />
       {hours(requested, "requested", TONE.blue.text)}
-      <span className="text-gray-300">·</span>
       {hours(delivered, "delivered", TONE.green.text)}
     </span>
   );
