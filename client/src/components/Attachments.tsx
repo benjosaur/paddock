@@ -1,11 +1,16 @@
 import { useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FileText } from "lucide-react";
 import { allowedAttachmentTypes, maxAttachmentBytes } from "shared/const";
 import type { AttachmentWithUrl } from "shared";
 import { trpc, trpcClient } from "../utils/trpc";
+import {
+  useAttachmentMutations,
+  validateAttachmentFile,
+  type AttachmentResource,
+} from "../hooks/useAttachmentMutations";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -18,20 +23,19 @@ import { DeleteAlert } from "./DeleteAlert";
 import { PermissionGate } from "./PermissionGate";
 import { formatYmdToDmy } from "@/utils/date";
 
-export type AttachmentResource = "clients" | "mps" | "volunteers";
+export type { AttachmentResource } from "../hooks/useAttachmentMutations";
 
 interface AttachmentsProps {
   ownerId: string;
   // Permission resource of the owning entity: upload/delete need its update.
   resource: AttachmentResource;
-  // grid: thumbnail tiles (detail modals). list: compact rows (dialog).
-  layout: "grid" | "list";
 }
 
 const isImage = (contentType: string) => contentType.startsWith("image/");
 
-export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
-  const queryClient = useQueryClient();
+// Compact attachment list used by the on-demand dialog (table row menus and
+// the edit forms). The detail modals show attachments on the Timeline tab.
+export function Attachments({ ownerId, resource }: AttachmentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
@@ -56,65 +60,15 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
     queryFn: () => trpcClient[resource].getById.query({ id: ownerId }),
   });
 
-  const invalidateList = () =>
-    queryClient.invalidateQueries({
-      queryKey: trpc[resource].getById.queryKey({ id: ownerId }),
-    });
-
-  // One mutation for the whole flow (presign -> PUT to S3 -> confirm) so a
-  // failure at any step surfaces as a single error toast.
-  const uploadMutation = useMutation({
-    mutationFn: async ({ file, date }: { file: File; date: string }) => {
-      const { attachmentId, uploadUrl } =
-        await trpcClient.attachments.createUploadUrl.mutate({
-          ownerId,
-          contentType: file.type as (typeof allowedAttachmentTypes)[number],
-          size: file.size,
-        });
-      const putResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!putResponse.ok) {
-        throw new Error(`Upload failed (HTTP ${putResponse.status})`);
-      }
-      return await trpcClient.attachments.confirm.mutate({
-        ownerId,
-        attachmentId,
-        fileName: file.name,
-        date,
-      });
-    },
-    onSuccess: () => {
-      toast.success("File uploaded");
-      invalidateList();
-    },
-  });
-
-  const deleteMutation = useMutation(
-    trpc.attachments.delete.mutationOptions({
-      onSuccess: () => {
-        toast.success("Attachment deleted");
-        invalidateList();
-      },
-    })
-  );
+  const { upload, remove } = useAttachmentMutations(ownerId, resource);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = ""; // allow re-selecting the same file
     if (!file) return;
-    if (!allowedAttachmentTypes.some((type) => type === file.type)) {
-      toast.error(
-        "Only images (JPEG, PNG, GIF, WebP), PDFs and documents (.docx, .doc, .odt) are allowed"
-      );
-      return;
-    }
-    if (file.size > maxAttachmentBytes) {
-      toast.error(
-        `File must be ${maxAttachmentBytes / (1024 * 1024)}MB or smaller`
-      );
+    const problem = validateAttachmentFile(file);
+    if (problem) {
+      toast.error(problem);
       return;
     }
     // Ask for the document's date before uploading (defaults to today).
@@ -127,41 +81,6 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
   // IMAGES_BUCKET is unset; render names without links in that case.
   const notConfigured = attachments.some((attachment) => !attachment.url);
 
-  const uploadButton = (
-    <PermissionGate resource={resource} action="update">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={allowedAttachmentTypes.join(",")}
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <Button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploadMutation.isPending}
-      >
-        {uploadMutation.isPending ? "Uploading..." : "Upload File"}
-      </Button>
-    </PermissionGate>
-  );
-
-  const deleteButton = (attachment: { id: string; fileName: string }) => (
-    <PermissionGate resource={resource} action="update">
-      <Button
-        variant="destructive"
-        size="sm"
-        // At h-6 scale the Button hover animation reads as a resize:
-        // hover:shadow-sm pins the shadow-md swell, and transition-none stops
-        // WebKit re-rasterizing the label mid-transition (text drops its
-        // subpixel smoothing and thins, so the pill looks narrower for ~1s).
-        className="h-6 px-2 shrink-0 hover:shadow-sm transition-none"
-        onClick={() => setDeleteTarget(attachment)}
-      >
-        Delete
-      </Button>
-    </PermissionGate>
-  );
-
   const statusMessage = ownerQuery.isLoading ? (
     <p className="text-sm text-gray-500">Loading attachments...</p>
   ) : ownerQuery.isError ? (
@@ -173,15 +92,25 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        {layout === "grid" ? (
-          <h3 className="text-lg font-semibold text-gray-700">Attachments</h3>
-        ) : (
-          <span className="text-sm text-gray-500">
-            Images, PDFs and documents (.docx, .doc, .odt), up to{" "}
-            {maxAttachmentBytes / (1024 * 1024)}MB
-          </span>
-        )}
-        {uploadButton}
+        <span className="text-sm text-gray-500">
+          Images, PDFs and documents (.docx, .doc, .odt), up to{" "}
+          {maxAttachmentBytes / (1024 * 1024)}MB
+        </span>
+        <PermissionGate resource={resource} action="update">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={allowedAttachmentTypes.join(",")}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={upload.isPending}
+          >
+            {upload.isPending ? "Uploading..." : "Upload File"}
+          </Button>
+        </PermissionGate>
       </div>
 
       {notConfigured && (
@@ -190,89 +119,61 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
         </p>
       )}
 
-      {statusMessage ??
-        (layout === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                className="border rounded-lg overflow-hidden bg-white"
-              >
-                <a
-                  href={attachment.url || undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {attachment.url && isImage(attachment.details.contentType) ? (
-                    <img
-                      src={attachment.url}
-                      alt={attachment.details.fileName}
-                      loading="lazy"
-                      className="h-40 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-40 w-full flex items-center justify-center bg-gray-50 text-gray-400">
-                      <FileText className="h-12 w-12" />
-                    </div>
-                  )}
-                </a>
-                <div className="p-2 text-xs text-gray-600 flex items-center justify-between gap-2">
-                  <span
-                    className="truncate"
-                    title={attachment.details.fileName}
-                  >
-                    {attachment.details.fileName}
-                  </span>
-                  <span className="shrink-0 text-gray-400">
-                    {formatYmdToDmy(attachment.date)}
-                  </span>
-                  {deleteButton({
-                    id: attachment.id,
-                    fileName: attachment.details.fileName,
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <ul className="divide-y border rounded-lg bg-white">
-            {attachments.map((attachment) => (
-              <li
-                key={attachment.id}
-                className="flex items-center gap-3 p-2 text-sm"
-              >
-                {attachment.url && isImage(attachment.details.contentType) ? (
-                  <img
-                    src={attachment.url}
-                    alt=""
-                    loading="lazy"
-                    className="h-10 w-10 rounded object-cover shrink-0"
-                  />
-                ) : (
-                  <span className="h-10 w-10 rounded bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                )}
-                <a
-                  href={attachment.url || undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 truncate text-gray-700 hover:underline"
-                  title={attachment.details.fileName}
-                >
-                  {attachment.details.fileName}
-                </a>
-                <span className="shrink-0 text-xs text-gray-400">
-                  {formatYmdToDmy(attachment.date)}
+      {statusMessage ?? (
+        <ul className="divide-y border rounded-lg bg-white">
+          {attachments.map((attachment) => (
+            <li
+              key={attachment.id}
+              className="flex items-center gap-3 p-2 text-sm"
+            >
+              {attachment.url && isImage(attachment.details.contentType) ? (
+                <img
+                  src={attachment.url}
+                  alt=""
+                  loading="lazy"
+                  className="h-10 w-10 rounded object-cover shrink-0"
+                />
+              ) : (
+                <span className="h-10 w-10 rounded bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
+                  <FileText className="h-5 w-5" />
                 </span>
-                {deleteButton({
-                  id: attachment.id,
-                  fileName: attachment.details.fileName,
-                })}
-              </li>
-            ))}
-          </ul>
-        ))}
+              )}
+              <a
+                href={attachment.url || undefined}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 truncate text-gray-700 hover:underline"
+                title={attachment.details.fileName}
+              >
+                {attachment.details.fileName}
+              </a>
+              <span className="shrink-0 text-xs text-gray-400">
+                {formatYmdToDmy(attachment.date)}
+              </span>
+              <PermissionGate resource={resource} action="update">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  // At h-6 scale the Button hover animation reads as a resize:
+                  // hover:shadow-sm pins the shadow-md swell, and transition-none
+                  // stops WebKit re-rasterizing the label mid-transition (text
+                  // drops its subpixel smoothing and thins, so the pill looks
+                  // narrower for ~1s).
+                  className="h-6 px-2 shrink-0 hover:shadow-sm transition-none"
+                  onClick={() =>
+                    setDeleteTarget({
+                      id: attachment.id,
+                      fileName: attachment.details.fileName,
+                    })
+                  }
+                >
+                  Delete
+                </Button>
+              </PermissionGate>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Dialog
         open={pendingUpload !== null}
@@ -318,7 +219,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
                 <Button
                   disabled={pendingUpload.date === ""}
                   onClick={() => {
-                    uploadMutation.mutate(pendingUpload);
+                    upload.mutate(pendingUpload);
                     setPendingUpload(null);
                   }}
                 >
@@ -337,7 +238,7 @@ export function Attachments({ ownerId, resource, layout }: AttachmentsProps) {
         }}
         onConfirm={() => {
           if (deleteTarget) {
-            deleteMutation.mutate({ ownerId, attachmentId: deleteTarget.id });
+            remove.mutate({ ownerId, attachmentId: deleteTarget.id });
           }
           setDeleteTarget(null);
         }}
@@ -369,7 +270,7 @@ export function AttachmentsDialog({
           <DialogTitle>Attachments</DialogTitle>
         </DialogHeader>
         {ownerId && (
-          <Attachments ownerId={ownerId} resource={resource} layout="list" />
+          <Attachments ownerId={ownerId} resource={resource} />
         )}
       </DialogContent>
     </Dialog>

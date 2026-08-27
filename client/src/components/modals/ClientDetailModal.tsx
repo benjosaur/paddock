@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -12,8 +12,9 @@ import { DeleteAlert } from "../DeleteAlert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { trpc } from "../../utils/trpc";
 import { DataTable } from "../tables/DataTable";
-import { Note, NotesEditor } from "../NotesEditor";
-import { Attachments } from "../Attachments";
+import { Timeline } from "../timeline/Timeline";
+import { buildClientTimeline } from "../timeline/build";
+import type { Note } from "../timeline/model";
 import { PermissionGate } from "../PermissionGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { magLogColumns } from "@/routes/MagLogRoutes";
@@ -41,22 +42,11 @@ export function ClientDetailModal({
     trpc.clients.getById.queryOptions({ id: clientId })
   );
   const client = clientQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<
-    {
-      date: string;
-      note: string;
-      source: "Phone" | "Email" | "In Person";
-      minutesTaken: number;
-    }[]
-  >([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  // Update local notes when client data changes
-  useEffect(() => {
-    if (client?.details.notes) {
-      setCurrentNotes(client.details.notes);
-    }
-  }, [client?.details.notes]);
+  const timeline = useMemo(
+    () => (client ? buildClientTimeline(client) : null),
+    [client]
+  );
 
   const updateClientMutation = useMutation(
     trpc.clients.update.mutationOptions({
@@ -136,20 +126,41 @@ export function ClientDetailModal({
             Client Details: {client.details.name}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto pr-2">
-          <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-6 mb-4">
+        {/* min-h-0 down the chain so the Timeline tab owns its own scroll
+            region; the other tabs scroll their content themselves. */}
+        <div className="flex min-h-0 flex-grow flex-col pr-2">
+          <Tabs
+            defaultValue="timeline"
+            className="mt-4 flex min-h-0 w-full flex-1 flex-col"
+          >
+            <TabsList className="grid w-full grid-cols-5 mb-4">
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="contact">Contact Info</TabsTrigger>
               <TabsTrigger value="services">Services & Needs</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="requests">New Care Requests</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
 
             <TabsContent
+              value="timeline"
+              className="flex min-h-0 flex-1 flex-col p-4 border rounded-lg bg-white/80"
+            >
+              {timeline && (
+                <Timeline
+                  data={timeline}
+                  personName={client.details.name}
+                  ownerId={client.id}
+                  resource="clients"
+                  notes={client.details.notes}
+                  onSaveNotes={handleNotesSubmit}
+                  isSavingNotes={updateClientMutation.isPending}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent
               value="contact"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 General Info
@@ -220,7 +231,7 @@ export function ClientDetailModal({
 
             <TabsContent
               value="services"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Services & Needs
@@ -282,7 +293,7 @@ export function ClientDetailModal({
 
             <TabsContent
               value="logs"
-              className="p-4 border rounded-lg bg-white/80 space-y-6"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80 space-y-6"
             >
               <div>
                 <h4 className="text-md font-semibold mb-2 text-gray-600">
@@ -325,7 +336,7 @@ export function ClientDetailModal({
 
             <TabsContent
               value="requests"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 New Care Requests
@@ -346,25 +357,6 @@ export function ClientDetailModal({
               )}
             </TabsContent>
 
-            <TabsContent
-              value="notes"
-              className="p-4 border rounded-lg bg-white/80 space-y-4"
-            >
-              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-              <NotesEditor
-                onSubmit={handleNotesSubmit}
-                isPending={updateClientMutation.isPending}
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
-            </TabsContent>
-
-            <TabsContent
-              value="attachments"
-              className="p-4 border rounded-lg bg-white/80"
-            >
-              <Attachments ownerId={client.id} resource="clients" layout="grid" />
-            </TabsContent>
           </Tabs>
         </div>
         <DialogFooter className="mt-4">

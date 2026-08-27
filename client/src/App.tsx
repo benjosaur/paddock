@@ -28,7 +28,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PermissionGate } from "./components/PermissionGate";
 import { CopilotDock } from "./copilot/CopilotDock";
-import TimelineMockupRoutes from "./mockups/timeline/TimelineMockupRoutes";
 
 function AppContent() {
   const { user, isLoading, signOut } = useAuth();
@@ -85,12 +84,6 @@ function AppContent() {
                   element={<PublicLiabilityRoutes />}
                 />
                 <Route path="/requests/*" element={<RequestRoutes />} />
-                {import.meta.env.DEV && (
-                  <Route
-                    path="/mockups/timeline/*"
-                    element={<TimelineMockupRoutes />}
-                  />
-                )}
                 <Route
                   path="/settings"
                   element={

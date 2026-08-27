@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -9,9 +9,10 @@ import {
   DialogClose,
 } from "../ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Attachments } from "../Attachments";
 import { trpc } from "../../utils/trpc";
-import { Note, NotesEditor } from "../NotesEditor";
+import { Timeline } from "../timeline/Timeline";
+import { buildVolunteerTimeline } from "../timeline/build";
+import type { Note } from "../timeline/model";
 import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,15 +40,11 @@ export function VolunteerDetailModal({
     trpc.volunteers.getById.queryOptions({ id: volunteerId }),
   );
   const volunteer = volunteerQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<Note[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  // Update local notes when volunteer data changes
-  useEffect(() => {
-    if (volunteer?.details.notes) {
-      setCurrentNotes(volunteer.details.notes);
-    }
-  }, [volunteer?.details.notes]);
+  const timeline = useMemo(
+    () => (volunteer ? buildVolunteerTimeline(volunteer) : null),
+    [volunteer],
+  );
 
   const updateVolunteerMutation = useMutation(
     trpc.volunteers.update.mutationOptions({
@@ -147,19 +144,40 @@ export function VolunteerDetailModal({
             Volunteer Details: {volunteer.details.name}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto pr-2">
-          <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-5 mb-4">
+        {/* min-h-0 down the chain so the Timeline tab owns its own scroll
+            region; the other tabs scroll their content themselves. */}
+        <div className="flex min-h-0 flex-grow flex-col pr-2">
+          <Tabs
+            defaultValue="timeline"
+            className="mt-4 flex min-h-0 w-full flex-1 flex-col"
+          >
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="contact">General Info</TabsTrigger>
               <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Care Confirmed</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
 
             <TabsContent
+              value="timeline"
+              className="flex min-h-0 flex-1 flex-col p-4 border rounded-lg bg-white/80"
+            >
+              {timeline && (
+                <Timeline
+                  data={timeline}
+                  personName={volunteer.details.name}
+                  ownerId={volunteer.id}
+                  resource="volunteers"
+                  notes={volunteer.details.notes}
+                  onSaveNotes={handleNotesSubmit}
+                  isSavingNotes={updateVolunteerMutation.isPending}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent
               value="contact"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 General Information
@@ -207,7 +225,7 @@ export function VolunteerDetailModal({
 
             <TabsContent
               value="training"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Training Records
@@ -223,7 +241,7 @@ export function VolunteerDetailModal({
 
             <TabsContent
               value="logs"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Care Confirmed
@@ -235,29 +253,6 @@ export function VolunteerDetailModal({
               />
             </TabsContent>
 
-            <TabsContent
-              value="notes"
-              className="p-4 border rounded-lg bg-white/80 space-y-4"
-            >
-              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-              <NotesEditor
-                onSubmit={handleNotesSubmit}
-                isPending={updateVolunteerMutation.isPending}
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
-            </TabsContent>
-
-            <TabsContent
-              value="attachments"
-              className="p-4 border rounded-lg bg-white/80"
-            >
-              <Attachments
-                ownerId={volunteer.id}
-                resource="volunteers"
-                layout="grid"
-              />
-            </TabsContent>
           </Tabs>
         </div>
         <DialogFooter className="mt-4">

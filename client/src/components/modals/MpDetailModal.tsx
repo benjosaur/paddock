@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -9,9 +9,10 @@ import {
   DialogClose,
 } from "../ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Attachments } from "../Attachments";
 import { trpc } from "../../utils/trpc";
-import { Note, NotesEditor } from "../NotesEditor";
+import { Timeline } from "../timeline/Timeline";
+import { buildMpTimeline } from "../timeline/build";
+import type { Note } from "../timeline/model";
 import { PermissionGate } from "../PermissionGate";
 import { DeleteAlert } from "../DeleteAlert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,22 +38,8 @@ export function MpDetailModal({
   const queryClient = useQueryClient();
   const mpQuery = useQuery(trpc.mps.getById.queryOptions({ id: mpId }));
   const mp = mpQuery.data;
-  const [currentNotes, setCurrentNotes] = useState<
-    {
-      date: string;
-      note: string;
-      source: "Phone" | "Email" | "In Person";
-      minutesTaken: number;
-    }[]
-  >([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  // Update local notes when mp data changes
-  useEffect(() => {
-    if (mp?.details.notes) {
-      setCurrentNotes(mp.details.notes);
-    }
-  }, [mp?.details.notes]);
+  const timeline = useMemo(() => (mp ? buildMpTimeline(mp) : null), [mp]);
 
   const updateMpMutation = useMutation(
     trpc.mps.update.mutationOptions({
@@ -152,19 +139,40 @@ export function MpDetailModal({
             MP Details: {mp.details.name}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto pr-2">
-          <Tabs defaultValue="contact" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-5 mb-4">
+        {/* min-h-0 down the chain so the Timeline tab owns its own scroll
+            region; the other tabs scroll their content themselves. */}
+        <div className="flex min-h-0 flex-grow flex-col pr-2">
+          <Tabs
+            defaultValue="timeline"
+            className="mt-4 flex min-h-0 w-full flex-1 flex-col"
+          >
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="contact">General Info</TabsTrigger>
               <TabsTrigger value="training">Training Records</TabsTrigger>
               <TabsTrigger value="logs">Care Confirmed</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
             </TabsList>
 
             <TabsContent
+              value="timeline"
+              className="flex min-h-0 flex-1 flex-col p-4 border rounded-lg bg-white/80"
+            >
+              {timeline && (
+                <Timeline
+                  data={timeline}
+                  personName={mp.details.name}
+                  ownerId={mp.id}
+                  resource="mps"
+                  notes={mp.details.notes}
+                  onSaveNotes={handleNotesSubmit}
+                  isSavingNotes={updateMpMutation.isPending}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent
               value="contact"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 General Information
@@ -215,7 +223,7 @@ export function MpDetailModal({
 
             <TabsContent
               value="training"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Training Records
@@ -231,7 +239,7 @@ export function MpDetailModal({
 
             <TabsContent
               value="logs"
-              className="p-4 border rounded-lg bg-white/80"
+              className="min-h-0 overflow-y-auto p-4 border rounded-lg bg-white/80"
             >
               <h3 className="text-lg font-semibold mb-3 text-gray-700">
                 Care Confirmed
@@ -243,25 +251,6 @@ export function MpDetailModal({
               />
             </TabsContent>
 
-            <TabsContent
-              value="notes"
-              className="p-4 border rounded-lg bg-white/80 space-y-4"
-            >
-              <h3 className="text-lg font-semibold text-gray-700">Notes</h3>
-              <NotesEditor
-                onSubmit={handleNotesSubmit}
-                isPending={updateMpMutation.isPending}
-                notes={currentNotes}
-                onChange={setCurrentNotes}
-              />
-            </TabsContent>
-
-            <TabsContent
-              value="attachments"
-              className="p-4 border rounded-lg bg-white/80"
-            >
-              <Attachments ownerId={mp.id} resource="mps" layout="grid" />
-            </TabsContent>
           </Tabs>
         </div>
         <DialogFooter className="mt-4">

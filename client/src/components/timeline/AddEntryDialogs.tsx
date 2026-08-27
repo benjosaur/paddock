@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, Upload, X } from "lucide-react";
 import { allowedAttachmentTypes, maxAttachmentBytes, notesSource } from "shared/const";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,19 +9,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  validateAttachmentFile,
+  type AttachmentUploadInput,
+} from "@/hooks/useAttachmentMutations";
 import {
   SOURCE_ICON,
   fileKind,
   formatBytes,
   isImage,
   todayYmd,
+  type Note,
   type NoteSource,
 } from "./model";
-import type { AttachmentInput, NoteInput } from "./useTimelineState";
 
 // Both dialogs ask for the date first. The date is what places the entry
 // in the timeline, so it is the one field that is never optional.
@@ -53,34 +57,38 @@ function Field({
 
 // ---------------------------------------------------------------- note
 
-interface AddNoteDialogProps {
+interface NoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (note: NoteInput) => void;
+  onSave: (note: Note) => void;
   personName: string;
+  // Editing an existing note; omitted when adding.
+  initial?: Note;
+  isSaving: boolean;
 }
 
-export function AddNoteDialog({
+export function NoteDialog({
   open,
   onOpenChange,
   onSave,
   personName,
-}: AddNoteDialogProps) {
+  initial,
+  isSaving,
+}: NoteDialogProps) {
   const [date, setDate] = useState(todayYmd);
   const [source, setSource] = useState<NoteSource>("Phone");
   const [minutes, setMinutes] = useState("10");
   const [text, setText] = useState("");
 
   useEffect(() => {
-    if (open) {
-      setDate(todayYmd());
-      setSource("Phone");
-      setMinutes("10");
-      setText("");
-    }
-  }, [open]);
+    if (!open) return;
+    setDate(initial?.date ?? todayYmd());
+    setSource(initial?.source ?? "Phone");
+    setMinutes(String(initial?.minutesTaken ?? 10));
+    setText(initial?.note ?? "");
+  }, [open, initial]);
 
-  const canSave = date !== "" && text.trim() !== "";
+  const canSave = date !== "" && text.trim() !== "" && !isSaving;
 
   const save = () => {
     if (!canSave) return;
@@ -97,10 +105,11 @@ export function AddNoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="md:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add note</DialogTitle>
+          <DialogTitle>{initial ? "Edit note" : "Add note"}</DialogTitle>
           <DialogDescription>
-            Log a contact with {personName}. It appears in the timeline on the
-            date you give.
+            {initial
+              ? "Change the note or the date it belongs to."
+              : `Log a contact with ${personName}. It appears in the timeline on the date you give.`}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -180,7 +189,7 @@ export function AddNoteDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={!canSave}>
-              Add note
+              {initial ? "Save note" : "Add note"}
             </Button>
           </DialogFooter>
         </form>
@@ -191,19 +200,19 @@ export function AddNoteDialog({
 
 // ---------------------------------------------------------------- file
 
-interface AddAttachmentDialogProps {
+interface AttachmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (attachment: AttachmentInput) => void;
+  onSave: (input: AttachmentUploadInput) => void;
   personName: string;
 }
 
-export function AddAttachmentDialog({
+export function AttachmentDialog({
   open,
   onOpenChange,
   onSave,
   personName,
-}: AddAttachmentDialogProps) {
+}: AttachmentDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState(todayYmd);
   const [file, setFile] = useState<File | null>(null);
@@ -221,21 +230,21 @@ export function AddAttachmentDialog({
     }
   }, [open]);
 
+  // Release the preview object URL when it's replaced or the dialog closes.
+  useEffect(() => {
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
   const choose = (candidate: File | undefined) => {
     if (!candidate) return;
-    if (!allowedAttachmentTypes.some((type) => type === candidate.type)) {
-      setError(
-        "Only images (JPEG, PNG, GIF, WebP), PDFs and documents (.docx, .doc, .odt) are allowed.",
-      );
-      return;
-    }
-    if (candidate.size > maxAttachmentBytes) {
-      setError(`File must be ${maxAttachmentBytes / (1024 * 1024)}MB or smaller.`);
+    const problem = validateAttachmentFile(candidate);
+    if (problem) {
+      setError(problem);
       return;
     }
     setError(null);
     setFile(candidate);
-    // Mockup only: object URLs are never revoked here.
     setPreviewUrl(isImage(candidate.type) ? URL.createObjectURL(candidate) : null);
   };
 
@@ -243,13 +252,7 @@ export function AddAttachmentDialog({
 
   const save = () => {
     if (!file || !canSave) return;
-    onSave({
-      date,
-      fileName: file.name,
-      contentType: file.type,
-      size: file.size,
-      url: previewUrl ?? "#",
-    });
+    onSave({ file, date });
     onOpenChange(false);
   };
 
@@ -276,7 +279,7 @@ export function AddAttachmentDialog({
             className="hidden"
             onChange={(event) => {
               choose(event.target.files?.[0]);
-              event.target.value = "";
+              event.target.value = ""; // allow re-selecting the same file
             }}
           />
 
@@ -294,7 +297,10 @@ export function AddAttachmentDialog({
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-800" title={file.name}>
+                <p
+                  className="truncate text-sm font-medium text-gray-800"
+                  title={file.name}
+                >
                   {file.name}
                 </p>
                 <p className="text-xs text-gray-500">
